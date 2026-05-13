@@ -1,17 +1,92 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: html}">
 
+<head>
+    <title>Dashboard — EstudiaFácil</title>
+</head>
+
 <body>
 
-    <main layout:fragment="content" class="container py-8">
+    <th:block layout:fragment="page-title">Dashboard</th:block>
+    <th:block layout:fragment="page-subtitle">Gestiona tus cursos y estudiantes desde un solo lugar</th:block>
+
+    <main layout:fragment="content">
+
+        <!-- Stats cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="card" style="padding: 1.5rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Total Estudiantes</p>
+                        <p style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">248</p>
+                    </div>
+                    <div style="width: 48px; height: 48px; background: hsl(210, 85%, 55%, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="hsl(210, 85%, 55%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--success); margin-top: 8px; font-weight: 500;">+12 este mes</p>
+            </div>
+
+            <div class="card" style="padding: 1.5rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Cursos Activos</p>
+                        <p style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">15</p>
+                    </div>
+                    <div style="width: 48px; height: 48px; background: hsl(150, 60%, 45%, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="hsl(150, 60%, 45%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--success); margin-top: 8px; font-weight: 500;">+3 nuevos</p>
+            </div>
+
+            <div class="card" style="padding: 1.5rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Tareas Pendientes</p>
+                        <p style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">42</p>
+                    </div>
+                    <div style="width: 48px; height: 48px; background: hsl(35, 90%, 60%, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="hsl(35, 90%, 60%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                    </div>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--error); margin-top: 8px; font-weight: 500;">8 urgentes</p>
+            </div>
+
+            <div class="card" style="padding: 1.5rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Asistencia Hoy</p>
+                        <p style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">94%</p>
+                    </div>
+                    <div style="width: 48px; height: 48px; background: hsl(150, 65%, 42%, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="hsl(150, 65%, 42%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                    </div>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--success); margin-top: 8px; font-weight: 500;">Excelente</p>
+            </div>
+        </div>
+
+        <!-- Tabla de usuarios -->
         <div class="header-section">
             <div>
                 <h1 class="page-title">Gestión de Usuarios</h1>
-                <p class="page-subtitle">Administra los usuarios del sistema utilizando HTMX para búsquedas dinámicas.
-                </p>
+                <p class="page-subtitle">Administra los usuarios del sistema utilizando HTMX para búsquedas dinámicas.</p>
             </div>
 
-            <!-- Botón para abrir el modal (Alpine.js) -->
             <div x-data>
                 <button @click="$dispatch('open-modal')" class="btn btn-primary shadow-sm hover-scale">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -24,11 +99,10 @@
             </div>
         </div>
 
-        <div class="card glassmorphism mt-6">
+        <div class="card mt-6">
             <div class="card-header">
                 <h2 class="card-title">Directorio de Personal</h2>
 
-                <!-- Buscador en tiempo real con HTMX -->
                 <div class="search-box">
                     <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -45,18 +119,17 @@
             </div>
 
             <div class="table-container">
-                <!-- La tabla se renderiza aquí y HTMX reemplazará su contenido -->
                 <table class="table" id="tabla-usuarios">
                     <div th:replace="~{fragments/tabla-usuarios :: tabla-contenido}"></div>
                 </table>
             </div>
         </div>
 
-        <!-- Modal Interactivo con Alpine.js -->
+        <!-- Modal -->
         <div x-data="{ open: false }" @open-modal.window="open = true" @keydown.escape.window="open = false"
             class="modal-backdrop" x-show="open" x-transition.opacity style="display: none;">
 
-            <div class="modal-dialog glassmorphism" @click.away="open = false" x-show="open"
+            <div class="modal-dialog" @click.away="open = false" x-show="open"
                 x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 transform scale-90"
                 x-transition:enter-end="opacity-100 transform scale-100"
@@ -81,7 +154,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Rol</label>
-                            <select class="form-select">
+                            <select class="form-input">
                                 <option>Usuario</option>
                                 <option>Editor</option>
                                 <option>Admin</option>
