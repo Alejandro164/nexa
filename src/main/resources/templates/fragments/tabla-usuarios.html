@@ -1,6 +1,6 @@
 <tbody th:fragment="tabla-contenido">
     <tr th:if="${#lists.isEmpty(usuarios)}">
-        <td colspan="4" class="text-center py-8 text-muted">
+        <td colspan="6" class="text-center py-8 text-muted">
             <div class="empty-state">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-muted"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <p>No se encontraron usuarios que coincidan con la búsqueda.</p>
@@ -18,11 +18,22 @@
             </div>
         </td>
         <td>
-            <span class="badge" th:classappend="${usuario.rol == 'Admin' ? 'badge-primary' : (usuario.rol == 'Editor' ? 'badge-info' : 'badge-secondary')}" th:text="${usuario.rol}"></span>
+            <span class="text-sm" th:text="${usuario.usuario}"></span>
         </td>
         <td>
-            <span class="status-indicator" th:classappend="${usuario.estado == 'Activo' ? 'status-active' : 'status-inactive'}"></span>
-            <span th:text="${usuario.estado}"></span>
+            <span class="text-sm" th:text="${usuario.cedula != null ? usuario.cedula : '—'}"></span>
+        </td>
+        <td>
+            <div class="d-flex flex-wrap gap-1">
+                <span th:each="rol : ${usuario.roles}"
+                      class="badge"
+                      th:classappend="${rol.nombre == 'ROLE_ADMIN' ? 'badge-primary' : (rol.nombre == 'ROLE_EDITOR' ? 'badge-info' : 'badge-secondary')}"
+                      th:text="${rol.nombre.replace('ROLE_', '')}"></span>
+            </div>
+        </td>
+        <td>
+            <span class="status-indicator" th:classappend="${usuario.activo ? 'status-active' : 'status-inactive'}"></span>
+            <span th:text="${usuario.activo ? 'Activo' : 'Inactivo'}"></span>
         </td>
         <td class="text-right">
             <button class="btn btn-icon text-muted hover-primary">
