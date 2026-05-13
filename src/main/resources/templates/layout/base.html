@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.8/dist/cdn.min.js"></script>
+
+    <style>
+        /* ── User menu trigger ── */
+        .user-menu-trigger {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: inherit;
+            padding: 6px 10px;
+            border-radius: 12px;
+            transition: background 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .user-menu-trigger:hover { background: rgba(255,255,255,0.06); }
+        .user-menu-trigger.open  { background: rgba(255,255,255,0.09); }
+
+        .user-menu-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            max-width: 140px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chevron {
+            opacity: 0.6;
+            transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+            flex-shrink: 0;
+        }
+        .chevron.rotated { transform: rotate(180deg); }
+
+        /* ── Dropdown panel ── */
+        .user-dropdown {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            min-width: 230px;
+            background: linear-gradient(145deg, hsl(230,22%,14%), hsl(230,22%,11%));
+            border: 1px solid hsl(230,20%,24%);
+            border-radius: 18px;
+            box-shadow:
+                0 0 0 1px hsl(250,84%,65%,0.06),
+                0 20px 50px hsl(0,0%,0%,0.55),
+                0 4px 12px hsl(0,0%,0%,0.3);
+            z-index: 1000;
+            overflow: hidden;
+            transform-origin: top right;
+        }
+
+        /* Encabezado del dropdown */
+        .dropdown-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 16px 14px;
+            border-bottom: 1px solid hsl(230,20%,19%);
+            background: hsl(230,22%,16%,0.5);
+        }
+
+        .dropdown-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, hsl(250,84%,65%), hsl(195,85%,60%));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px hsl(250,84%,65%,0.3);
+        }
+
+        .dropdown-user-info { overflow: hidden; }
+
+        .dropdown-user-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: hsl(220,15%,95%);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-user-email {
+            font-size: 0.75rem;
+            color: hsl(220,10%,55%);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px;
+        }
+
+        /* Badge de sesión activa */
+        .session-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: hsl(145,65%,52%);
+            background: hsl(145,65%,52%,0.12);
+            border: 1px solid hsl(145,65%,52%,0.25);
+            border-radius: 20px;
+            padding: 2px 7px;
+            margin-top: 4px;
+        }
+        .session-badge::before {
+            content: '';
+            width: 5px; height: 5px;
+            background: hsl(145,65%,52%);
+            border-radius: 50%;
+        }
+
+        /* Acciones del dropdown */
+        .dropdown-actions { padding: 8px; }
+
+        .dropdown-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.15s, color 0.15s;
+            text-align: left;
+            color: hsl(355,75%,65%);
+        }
+        .dropdown-btn:hover {
+            background: hsl(355,75%,60%,0.12);
+            color: hsl(355,75%,72%);
+        }
+
+        /* Mobile logout */
+        .mobile-logout-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px 16px;
+            color: hsl(355,75%,65%);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-top: 1px solid hsl(230,20%,20%);
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body class="bg-light text-dark">
+
+    <!-- Navbar Responsivo con Alpine.js -->
+    <nav class="navbar glassmorphism"
+         x-data="{ mobileMenuOpen: false, userMenuOpen: false }"
+         xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+        <div class="container nav-content">
+            <a href="/" class="logo">🚀 AdminPro</a>
+
+            <div class="nav-links desktop-only">
+                <a href="/" class="nav-link active">Inicio</a>
+                <a href="#" class="nav-link">Usuarios</a>
+                <a href="#" class="nav-link">Reportes</a>
+                <a href="#" class="nav-link">Configuración</a>
+            </div>
+
+            <!-- Perfil de usuario con dropdown (desktop) -->
+            <div class="user-profile desktop-only" style="position:relative;">
+                <button id="btn-user-menu"
+                        class="user-menu-trigger"
+                        :class="{ 'open': userMenuOpen }"
+                        @click="userMenuOpen = !userMenuOpen"
+                        @click.outside="userMenuOpen = false"
+                        :aria-expanded="userMenuOpen">
+                    <div class="avatar"
+                         th:text="${#strings.substring(#authentication.principal.nombre, 0, 1).toUpperCase()}">U</div>
+                    <span class="user-menu-name"
+                          th:text="${#authentication.principal.nombre}">Usuario</span>
+                    <svg class="chevron" :class="{ 'rotated': userMenuOpen }"
+                         xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>
+
+                <!-- Dropdown menu -->
+                <div class="user-dropdown"
+                     x-show="userMenuOpen"
+                     x-transition:enter="transition ease-out duration-150"
+                     x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     style="display:none;">
+
+                    <!-- Encabezado: avatar grande + info -->
+                    <div class="dropdown-header">
+                        <div class="dropdown-avatar"
+                             th:text="${#strings.substring(#authentication.principal.nombre, 0, 1).toUpperCase()}">U</div>
+                        <div class="dropdown-user-info">
+                            <div class="dropdown-user-name"
+                                 th:text="${#authentication.principal.nombre}">Nombre Apellido</div>
+                            <div class="dropdown-user-email"
+                                 th:text="${#authentication.principal.username}">usuario@email.com</div>
+                            <div class="session-badge">Sesión activa</div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div class="dropdown-actions">
+                        <form id="logout-form" th:action="@{/logout}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button id="btn-cerrar-sesion" type="submit" class="dropdown-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                    <polyline points="16 17 21 12 16 7"/>
+                                    <line x1="21" y1="12" x2="9" y2="12"/>
+                                </svg>
+                                Cerrar sesión
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hamburger button -->
+            <button class="mobile-menu-btn" @click="mobileMenuOpen = !mobileMenuOpen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" x-show="mobileMenuOpen" x-transition.opacity style="display: none;">
+            <a href="/" class="nav-link">Inicio</a>
+            <a href="#" class="nav-link">Usuarios</a>
+            <a href="#" class="nav-link">Reportes</a>
+            <a href="#" class="nav-link">Configuración</a>
+            <!-- Cerrar sesión mobile -->
+            <form th:action="@{/logout}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="mobile-logout-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Cerrar sesión
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <main class="container py-8" layout:fragment="content">
+        <!-- El contenido específico de cada página irá aquí -->
+    </main>
+
+    <!-- Notificación Toast con Alpine.js -->
+    <div x-data="{ show: false, message: '' }"
+        @notify.window="show = true; message = $event.detail; setTimeout(() => show = false, 3000)"
+        class="toast glassmorphism" x-show="show" x-transition.duration.300ms style="display: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span x-text="message"></span>
+    </div>
+
+</body>
+
+</html>

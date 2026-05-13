@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: html}">
+
+<body>
+
+    <main layout:fragment="content" class="container py-8">
+        <div class="header-section">
+            <div>
+                <h1 class="page-title">Gestión de Usuarios</h1>
+                <p class="page-subtitle">Administra los usuarios del sistema utilizando HTMX para búsquedas dinámicas.
+                </p>
+            </div>
+
+            <!-- Botón para abrir el modal (Alpine.js) -->
+            <div x-data>
+                <button @click="$dispatch('open-modal')" class="btn btn-primary shadow-sm hover-scale">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Nuevo Usuario
+                </button>
+            </div>
+        </div>
+
+        <div class="card glassmorphism mt-6">
+            <div class="card-header">
+                <h2 class="card-title">Directorio de Personal</h2>
+
+                <!-- Buscador en tiempo real con HTMX -->
+                <div class="search-box">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input class="form-input shadow-sm" type="search" name="q"
+                        placeholder="Buscar por nombre o email..." hx-get="/usuarios/buscar"
+                        hx-trigger="keyup changed delay:300ms, search" hx-target="#tabla-usuarios"
+                        hx-indicator=".htmx-indicator">
+                    <div class="spinner htmx-indicator ml-2"></div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <!-- La tabla se renderiza aquí y HTMX reemplazará su contenido -->
+                <table class="table" id="tabla-usuarios">
+                    <div th:replace="~{fragments/tabla-usuarios :: tabla-contenido}"></div>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Interactivo con Alpine.js -->
+        <div x-data="{ open: false }" @open-modal.window="open = true" @keydown.escape.window="open = false"
+            class="modal-backdrop" x-show="open" x-transition.opacity style="display: none;">
+
+            <div class="modal-dialog glassmorphism" @click.away="open = false" x-show="open"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform scale-90"
+                x-transition:enter-end="opacity-100 transform scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 transform scale-100"
+                x-transition:leave-end="opacity-0 transform scale-90">
+
+                <div class="modal-header">
+                    <h3 class="modal-title">Agregar Nuevo Usuario</h3>
+                    <button @click="open = false" class="close-btn">&times;</button>
+                </div>
+
+                <div class="modal-body">
+                    <form @submit.prevent="open = false; $dispatch('notify', 'Usuario guardado correctamente')">
+                        <div class="form-group">
+                            <label class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Rol</label>
+                            <select class="form-select">
+                                <option>Usuario</option>
+                                <option>Editor</option>
+                                <option>Admin</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" @click="open = false" class="btn btn-secondary">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+
+</html>
