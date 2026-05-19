@@ -33,7 +33,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 1234
     ports:
-      - "8080:8080" # App
+      - "8082:8080" # App (host:container)
       - "5005:5005" # Debug remoto (IntelliJ / VS Code)
     volumes:
       # Monta el código fuente completo para hot reload
