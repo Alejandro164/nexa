@@ -10,7 +10,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
 
     <!-- Alpine.js -->
@@ -26,29 +26,35 @@
         }
 
         :root {
-            --primary: hsl(210, 85%, 55%);
-            --primary-light: hsl(210, 85%, 65%);
-            --primary-dark: hsl(210, 85%, 45%);
-            --accent: hsl(150, 60%, 45%);
-            --accent-light: hsl(150, 60%, 55%);
-            --warm: hsl(35, 90%, 60%);
-            --bg-main: hsl(210, 25%, 96%);
-            --bg-card: hsl(0, 0%, 100%);
-            --border: hsl(210, 15%, 88%);
-            --text-primary: hsl(215, 20%, 20%);
-            --text-secondary: hsl(215, 10%, 50%);
-            --text-light: hsl(215, 10%, 65%);
-            --success: hsl(150, 65%, 42%);
-            --error: hsl(355, 70%, 55%);
-            --input-bg: hsl(210, 15%, 97%);
-            --shadow-sm: hsl(210, 20%, 80%, 0.25);
-            --shadow-lg: hsl(210, 20%, 60%, 0.35);
+            --deep-blue: #1e3a5f;
+            --mid-blue: #2d5a87;
+            --accent: #60a5fa;
+            --bg-general: #f8fafc;
+            --white: #ffffff;
+            --title: #1e293b;
+            --subtitle: #64748b;
+            --label: #334155;
+            --input-bg: #f8fafc;
+            --input-border: #e2e8f0;
+            --input-placeholder: #94a3b8;
+            --focus-ring: rgba(45, 90, 135, 0.1);
+            --divider: #e2e8f0;
+            --support-bg: #f1f5f9;
+            --support-text: #475569;
+            --support-hover-bg: #e2e8f0;
+            --support-hover-text: #1e293b;
+            --footer-link: #2d5a87;
+            --error-bg: #fef2f2;
+            --error-border: #fecaca;
+            --error-text: #dc2626;
+            --whatsapp: #25d366;
+            --email-color: #dc2626;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg-main);
-            color: var(--text-primary);
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-general);
+            color: var(--title);
             min-height: 100vh;
             display: flex;
             overflow: hidden;
@@ -64,7 +70,7 @@
         /* ── Panel izquierdo decorativo ── */
         .login-hero {
             flex: 1;
-            background: linear-gradient(135deg, hsl(210, 80%, 50%) 0%, hsl(200, 75%, 45%) 40%, hsl(170, 60%, 45%) 100%);
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -78,17 +84,13 @@
             content: '';
             position: absolute;
             inset: 0;
-            background:
-                radial-gradient(circle at 20% 80%, hsl(150, 60%, 50%, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, hsl(35, 80%, 60%, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, hsl(280, 50%, 50%, 0.15) 0%, transparent 60%);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: pulseOverlay 8s ease-in-out infinite;
         }
 
-        .hero-pattern {
-            position: absolute;
-            inset: 0;
-            opacity: 0.06;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        @keyframes pulseOverlay {
+            0%, 100% { opacity: 0.85; }
+            50% { opacity: 1; }
         }
 
         .hero-content {
@@ -100,34 +102,27 @@
         }
 
         .hero-icon {
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 28px;
+            width: 96px;
+            height: 96px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 32px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             animation: float 6s ease-in-out infinite;
         }
 
         @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-12px);
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
         }
 
         .hero-icon svg {
-            width: 52px;
-            height: 52px;
+            width: 48px;
+            height: 48px;
             color: white;
         }
 
@@ -135,12 +130,13 @@
             font-size: 2rem;
             font-weight: 700;
             margin-bottom: 16px;
-            line-height: 1.2;
+            line-height: 1.25;
+            letter-spacing: -0.3px;
         }
 
         .hero-content p {
             font-size: 1.05rem;
-            opacity: 0.9;
+            opacity: 0.85;
             line-height: 1.6;
             font-weight: 300;
         }
@@ -149,24 +145,29 @@
             margin-top: 40px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
         .hero-feature {
             display: flex;
             align-items: center;
             gap: 14px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             padding: 14px 20px;
             border-radius: 14px;
             backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            transition: background 0.25s;
+        }
+
+        .hero-feature:hover {
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .hero-feature-icon {
             width: 40px;
             height: 40px;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(96, 165, 250, 0.2);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -177,6 +178,7 @@
         .hero-feature-icon svg {
             width: 20px;
             height: 20px;
+            color: #60a5fa;
         }
 
         .hero-feature span {
@@ -191,7 +193,7 @@
             align-items: center;
             justify-content: center;
             padding: 40px;
-            background: var(--bg-main);
+            background: #ffffff;
         }
 
         .login-card {
@@ -201,15 +203,8 @@
         }
 
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(24px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* ── Logo ── */
@@ -224,11 +219,11 @@
             width: 44px;
             height: 44px;
             border-radius: 12px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+            background: #60a5fa;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 16px hsl(210, 85%, 55%, 0.3);
+            box-shadow: 0 4px 16px rgba(96, 165, 250, 0.3);
         }
 
         .logo-icon svg {
@@ -240,23 +235,24 @@
         .logo-text {
             font-size: 1.35rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: var(--title);
             letter-spacing: -0.5px;
         }
 
         .logo-text span {
-            color: var(--primary);
+            color: #60a5fa;
         }
 
         h1 {
             font-size: 1.65rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: #1e293b;
             margin-bottom: 8px;
+            letter-spacing: -0.3px;
         }
 
         .subtitle {
-            color: var(--text-secondary);
+            color: #64748b;
             font-size: 0.95rem;
             margin-bottom: 36px;
             font-weight: 400;
@@ -275,15 +271,15 @@
         }
 
         .alert-error {
-            background: hsl(355, 70%, 55%, 0.08);
-            border: 1px solid hsl(355, 70%, 55%, 0.2);
-            color: hsl(355, 70%, 45%);
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
         }
 
         .alert-success {
-            background: hsl(150, 65%, 42%, 0.08);
-            border: 1px solid hsl(150, 65%, 42%, 0.2);
-            color: hsl(150, 65%, 35%);
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
         }
 
         /* ── Form ── */
@@ -295,7 +291,7 @@
             display: block;
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--text-primary);
+            color: #334155;
             margin-bottom: 8px;
         }
 
@@ -308,7 +304,7 @@
             left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-light);
+            color: #94a3b8;
             transition: color 0.2s;
             pointer-events: none;
         }
@@ -318,28 +314,28 @@
         input[type="text"] {
             width: 100%;
             padding: 14px 14px 14px 46px;
-            background: var(--input-bg);
-            border: 1.5px solid var(--border);
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
             border-radius: 12px;
-            color: var(--text-primary);
-            font-family: 'Poppins', sans-serif;
+            color: var(--title);
+            font-family: 'Inter', system-ui, sans-serif;
             font-size: 0.95rem;
             transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
             outline: none;
         }
 
         input::placeholder {
-            color: var(--text-light);
+            color: #94a3b8;
         }
 
         input:focus {
-            border-color: var(--primary);
-            background: white;
-            box-shadow: 0 0 0 4px hsl(210, 85%, 55%, 0.1);
+            border-color: #2d5a87;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(45, 90, 135, 0.1);
         }
 
         .input-wrap:focus-within .input-icon {
-            color: var(--primary);
+            color: #2d5a87;
         }
 
         /* Password toggle */
@@ -351,13 +347,13 @@
             background: none;
             border: none;
             cursor: pointer;
-            color: var(--text-light);
+            color: #94a3b8;
             transition: color 0.2s;
             padding: 4px;
         }
 
         .pwd-toggle:hover {
-            color: var(--primary);
+            color: #2d5a87;
         }
 
         /* ── Submit button ── */
@@ -366,33 +362,141 @@
             padding: 15px;
             border: none;
             border-radius: 12px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
             color: #fff;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             letter-spacing: 0.3px;
-            transition: all 0.2s;
-            box-shadow: 0 4px 16px hsl(210, 85%, 55%, 0.35);
+            transition: opacity 0.2s;
             margin-top: 8px;
         }
 
         .btn-login:hover {
-            box-shadow: 0 6px 24px hsl(210, 85%, 55%, 0.45);
-            transform: translateY(-1px);
+            opacity: 0.92;
         }
 
         .btn-login:active {
-            transform: translateY(0);
+            opacity: 0.85;
+        }
+
+        /* ── Support button ── */
+        .btn-support {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            background: #f1f5f9;
+            color: #475569;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            margin-top: 20px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-support:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .btn-support svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* ── Divider ── */
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 28px 0 20px;
+            position: relative;
+        }
+
+        .divider::before {
+            content: 'o contacta con soporte';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            padding: 0 14px;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            font-weight: 400;
+            white-space: nowrap;
+        }
+
+        /* ── Contact links ── */
+        .contact-links {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.2s, border-color 0.2s;
+            font-family: 'Inter', system-ui, sans-serif;
+            white-space: nowrap;
+        }
+
+        .contact-link svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .contact-link--whatsapp {
+            color: #25d366;
+            border-color: rgba(37, 211, 102, 0.3);
+        }
+
+        .contact-link--whatsapp:hover {
+            background: rgba(37, 211, 102, 0.06);
+            border-color: rgba(37, 211, 102, 0.5);
+        }
+
+        .contact-link--email {
+            color: #dc2626;
+            border-color: rgba(220, 38, 38, 0.3);
+        }
+
+        .contact-link--email:hover {
+            background: rgba(220, 38, 38, 0.06);
+            border-color: rgba(220, 38, 38, 0.5);
         }
 
         /* ── Footer ── */
         .card-footer {
             margin-top: 32px;
             text-align: center;
-            font-size: 0.8rem;
-            color: var(--text-light);
+            font-size: 0.78rem;
+            color: #94a3b8;
+        }
+
+        .card-footer a {
+            color: #2d5a87;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .card-footer a:hover {
+            text-decoration: underline;
         }
 
         /* ── Responsive ── */
@@ -414,7 +518,6 @@
 
         <!-- Panel izquierdo decorativo -->
         <div class="login-hero">
-            <div class="hero-pattern"></div>
             <div class="hero-content">
                 <div class="hero-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -479,7 +582,7 @@
                     <div class="logo-text">Estudia<span>Fácil</span></div>
                 </div>
 
-                <h1>¡Bienvenido de nuevo!</h1>
+                <h1>Bienvenido</h1>
                 <p class="subtitle">Ingresa tus credenciales para acceder al portal</p>
 
                 <!-- Mensaje de error -->
@@ -542,8 +645,7 @@
                                 <svg x-show="showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
-                                    <path
-                                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
                                     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
                                     <line x1="1" y1="1" x2="23" y2="23" />
                                 </svg>
@@ -552,12 +654,41 @@
                     </div>
 
                     <button id="btn-iniciar-sesion" type="submit" class="btn-login">
-                        Acceder al portal
+                        Iniciar Sesión
                     </button>
                 </form>
 
+                <button class="btn-support" onclick="window.location.href='#'">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    ¿Necesitas ayuda?
+                </button>
+
+                <div class="divider"></div>
+
+                <div class="contact-links">
+                    <a href="https://wa.me/50688888888" target="_blank" rel="noopener" class="contact-link contact-link--whatsapp">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
+                        </svg>
+                        WhatsApp
+                    </a>
+                    <a href="mailto:soporte@estudiafacil.com" class="contact-link contact-link--email">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        Email
+                    </a>
+                </div>
+
                 <div class="card-footer">
-                    &copy; 2026 EstudiaFácil — Plataforma Educativa
+                    &copy; 2026 EstudiaFácil &mdash; <a href="#">Plataforma Educativa</a>
                 </div>
             </div>
         </div>
