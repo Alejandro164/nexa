@@ -1,18 +1,18 @@
 /* --- Variables --- */
 :root {
-    --primary: #4F46E5;
-    --primary-hover: #4338CA;
-    --secondary: #6B7280;
-    --success: #10B981;
-    --danger: #EF4444;
-    --info: #3B82F6;
-    --background: #F3F4F6;
+    --primary: #2d5a87;
+    --primary-hover: #1e3a5f;
+    --secondary: #64748b;
+    --success: #22c55e;
+    --danger: #dc2626;
+    --info: #60a5fa;
+    --background: #f8fafc;
     --surface: rgba(255, 255, 255, 0.7);
     --surface-solid: #FFFFFF;
-    --text-main: #111827;
-    --text-muted: #6B7280;
-    --border: rgba(229, 231, 235, 0.5);
-    --border-solid: #E5E7EB;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border: rgba(226, 232, 240, 0.5);
+    --border-solid: #e2e8f0;
     --radius: 12px;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -28,12 +28,8 @@
 }
 
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     background-color: var(--background);
-    background-image: 
-        radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, transparent 50%), 
-        radial-gradient(at 50% 0%, hsla(225,39%,30%,0.05) 0, transparent 50%), 
-        radial-gradient(at 100% 0%, hsla(339,49%,30%,0.05) 0, transparent 50%);
     color: var(--text-main);
     line-height: 1.5;
     min-height: 100vh;
@@ -136,7 +132,7 @@ body {
 .avatar {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, var(--primary), var(--info));
+    background: linear-gradient(135deg, #2d5a87, #60a5fa);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -292,7 +288,7 @@ body {
 
 .form-input:focus, .form-select:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
 }
 
 .table-container {
@@ -338,9 +334,9 @@ body {
     font-weight: 500;
 }
 
-.badge-primary { background-color: rgba(79, 70, 229, 0.1); color: var(--primary); }
-.badge-info { background-color: rgba(59, 130, 246, 0.1); color: var(--info); }
-.badge-secondary { background-color: rgba(107, 114, 128, 0.1); color: var(--text-muted); }
+.badge-primary { background-color: rgba(45, 90, 135, 0.1); color: var(--primary); }
+.badge-info { background-color: rgba(96, 165, 250, 0.1); color: var(--info); }
+.badge-secondary { background-color: rgba(100, 116, 139, 0.1); color: var(--text-muted); }
 
 .status-indicator {
     display: inline-block;
@@ -459,7 +455,7 @@ body {
 .spinner {
     width: 20px;
     height: 20px;
-    border: 2px solid rgba(79, 70, 229, 0.2);
+    border: 2px solid rgba(45, 90, 135, 0.2);
     border-top-color: var(--primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;

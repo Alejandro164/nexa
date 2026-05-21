@@ -26,26 +26,26 @@
         :root {
             --sidebar-width: 280px;
             --sidebar-collapsed: 78px;
-            --sidebar-bg: #FFFFFF;
-            --sidebar-bg-hover: hsl(210, 20%, 96%);
-            --sidebar-bg-active: hsl(210, 85%, 60%, 0.08);
-            --sidebar-text: hsl(215, 10%, 45%);
-            --sidebar-text-active: hsl(215, 20%, 18%);
-            --sidebar-accent: hsl(210, 85%, 55%);
-            --sidebar-accent-glow: hsl(210, 85%, 55%, 0.1);
-            --sidebar-border: hsl(210, 15%, 90%);
-            --main-bg: hsl(210, 20%, 97%);
-            --primary: hsl(210, 85%, 55%);
-            --primary-light: hsl(210, 85%, 65%);
-            --accent: hsl(150, 60%, 45%);
-            --warm: hsl(35, 90%, 60%);
-            --text-primary: hsl(215, 20%, 20%);
-            --text-secondary: hsl(215, 10%, 50%);
-            --text-light: hsl(215, 10%, 65%);
-            --success: hsl(150, 65%, 42%);
-            --error: hsl(355, 70%, 55%);
-            --border: hsl(210, 15%, 88%);
-            --input-bg: hsl(210, 15%, 97%);
+            --sidebar-bg: #ffffff;
+            --sidebar-bg-hover: #f1f5f9;
+            --sidebar-bg-active: rgba(45, 90, 135, 0.08);
+            --sidebar-text: #64748b;
+            --sidebar-text-active: #1e293b;
+            --sidebar-accent: #2d5a87;
+            --sidebar-accent-glow: rgba(45, 90, 135, 0.08);
+            --sidebar-border: #e2e8f0;
+            --main-bg: #f8fafc;
+            --primary: #2d5a87;
+            --primary-light: #60a5fa;
+            --accent: #60a5fa;
+            --warm: #f59e0b;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-light: #94a3b8;
+            --success: #22c55e;
+            --error: #dc2626;
+            --border: #e2e8f0;
+            --input-bg: #f8fafc;
             --surface: rgba(255, 255, 255, 0.7);
             --surface-solid: #FFFFFF;
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -97,7 +97,7 @@
         .sidebar-logo {
             width: 38px;
             height: 38px;
-            background: linear-gradient(135deg, var(--sidebar-accent), var(--accent));
+            background: linear-gradient(135deg, #2d5a87, #60a5fa);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -132,8 +132,8 @@
             top: 28px;
             width: 28px;
             height: 28px;
-            background: var(--sidebar-accent);
-            border: 2px solid var(--sidebar-bg);
+            background: #2d5a87;
+            border: 2px solid #ffffff;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -184,7 +184,7 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: hsl(215, 10%, 55%);
+            color: #94a3b8;
             padding: 0 12px;
             margin-bottom: 8px;
             white-space: nowrap;
@@ -218,8 +218,8 @@
         }
 
         .nav-item.active {
-            background: var(--sidebar-accent-glow);
-            color: var(--sidebar-accent);
+            background: #2d5a87;
+            color: #ffffff;
         }
 
         .nav-item.active::before {
@@ -230,7 +230,7 @@
             transform: translateY(-50%);
             width: 3px;
             height: 20px;
-            background: var(--sidebar-accent);
+            background: #60a5fa;
             border-radius: 0 3px 3px 0;
         }
 
@@ -291,7 +291,7 @@
         .sidebar-user-avatar {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, var(--sidebar-accent), var(--accent));
+            background: linear-gradient(135deg, #2d5a87, #60a5fa);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -324,7 +324,7 @@
 
         .sidebar-user-role {
             font-size: 0.72rem;
-            color: hsl(215, 10%, 55%);
+            color: #94a3b8;
             white-space: nowrap;
         }
 
@@ -369,11 +369,11 @@
         }
 
         .user-dropdown-item.danger {
-            color: hsl(355, 70%, 60%);
+            color: var(--error);
         }
 
         .user-dropdown-item.danger:hover {
-            background: hsl(355, 70%, 60%, 0.12);
+            background: rgba(220, 38, 38, 0.12);
         }
 
         .user-dropdown-item svg {
@@ -651,7 +651,7 @@
 
         .form-input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
         }
 
         .table-container {
@@ -688,9 +688,9 @@
             font-weight: 500;
         }
 
-        .badge-primary { background-color: rgba(79, 70, 229, 0.1); color: var(--primary); }
-        .badge-success { background-color: rgba(16, 185, 129, 0.1); color: var(--success); }
-        .badge-danger { background-color: rgba(239, 68, 68, 0.1); color: var(--error); }
+        .badge-primary { background-color: rgba(45, 90, 135, 0.1); color: var(--primary); }
+        .badge-success { background-color: rgba(34, 197, 94, 0.1); color: var(--success); }
+        .badge-danger { background-color: rgba(220, 38, 38, 0.1); color: var(--error); }
 
         .status-indicator {
             display: inline-block;
@@ -804,7 +804,7 @@
         .spinner {
             width: 20px;
             height: 20px;
-            border: 2px solid rgba(79, 70, 229, 0.2);
+            border: 2px solid rgba(45, 90, 135, 0.2);
             border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -827,7 +827,7 @@
         .me-3 { margin-right: 0.75rem; }
         .gap-1 { gap: 0.25rem; }
         .flex-wrap { flex-wrap: wrap; }
-        .hover-bg:hover { background-color: hsl(210, 15%, 96%); }
+        .hover-bg:hover { background-color: #f1f5f9; }
         .transition-colors { transition: background-color 0.2s ease; }
         .empty-state { padding: 2rem; text-align: center; }
         .avatar-sm {
@@ -848,16 +848,16 @@
             padding: 0.125rem 0.625rem; border-radius: 9999px;
             font-size: 0.75rem; font-weight: 500;
         }
-        .badge-primary { background-color: rgba(79, 70, 229, 0.1); color: var(--primary); }
-        .badge-info { background-color: rgba(59, 130, 246, 0.1); color: var(--info); }
-        .badge-secondary { background-color: rgba(107, 114, 128, 0.1); color: var(--text-muted); }
+        .badge-primary { background-color: rgba(45, 90, 135, 0.1); color: var(--primary); }
+        .badge-info { background-color: rgba(96, 165, 250, 0.1); color: var(--primary-light); }
+        .badge-secondary { background-color: rgba(100, 116, 139, 0.1); color: var(--text-secondary); }
         .btn-icon {
             padding: 0.4rem; background: transparent; border-radius: 6px;
             border: none; cursor: pointer; transition: background 0.15s;
         }
         .btn-icon:hover { background-color: var(--input-bg); }
         .hover-primary:hover { color: var(--primary); }
-        .hover-danger:hover { color: var(--error); background-color: rgba(239, 68, 68, 0.1); }
+        .hover-danger:hover { color: var(--error); background-color: rgba(220, 38, 38, 0.1); }
     </style>
 </head>
 
