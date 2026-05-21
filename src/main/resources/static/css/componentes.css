@@ -1,0 +1,281 @@
+/* ─────────────────────────────────────────────
+   Estilos para la página de componentes
+   ───────────────────────────────────────────── */
+
+.comp-section {
+    margin-bottom: 3rem;
+}
+
+.comp-section-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.comp-section-desc {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+}
+
+.comp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+.comp-demo-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.comp-demo-card h4 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.comp-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.comp-row--col {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* ── Paleta de colores ── */
+.color-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.color-swatch {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.color-swatch-preview {
+    height: 64px;
+}
+
+.color-swatch-info {
+    padding: 0.6rem 0.8rem;
+    background: #ffffff;
+}
+
+.color-swatch-info .name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.color-swatch-info .hex {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* ── Input demo ── */
+.input-demo {
+    width: 100%;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.9rem;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-demo:focus {
+    border-color: #2d5a87;
+    box-shadow: 0 0 0 4px rgba(45, 90, 135, 0.1);
+    background: #ffffff;
+}
+
+.input-demo::placeholder {
+    color: #94a3b8;
+}
+
+/* ── Buttons demo sizes ── */
+.btn-demo-sm {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+}
+
+.btn-demo-lg {
+    padding: 16px 28px;
+    font-size: 1.05rem;
+}
+
+/* ── Table demo ── */
+.comp-table-wrap {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.comp-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.comp-table th,
+.comp-table td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    font-size: 0.875rem;
+}
+
+.comp-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+.comp-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* ── Alert demo ── */
+.alert-demo {
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+
+/* ── Modal demo ── */
+.modal-demo-inline {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Avatar sizes ── */
+.avatar-demo-xs { width: 24px; height: 24px; font-size: 0.65rem; }
+.avatar-demo-sm { width: 32px; height: 32px; font-size: 0.75rem; }
+.avatar-demo-md { width: 44px; height: 44px; font-size: 1rem; }
+.avatar-demo-lg { width: 64px; height: 64px; font-size: 1.4rem; }
+
+/* ── Tab demo ── */
+.tab-demo-bar {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 1rem;
+}
+
+.tab-demo-btn {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    background: none;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.tab-demo-btn:hover {
+    color: #1e293b;
+}
+
+.tab-demo-btn.active {
+    color: #2d5a87;
+    border-bottom-color: #2d5a87;
+}
+
+/* ── Toggle switch ── */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: #2d5a87;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+/* ── Progress bar ── */
+.progress-bar-track {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2d5a87, #60a5fa);
+    border-radius: 4px;
+    transition: width 0.4s;
+}
+
+/* ── Tooltip demo ── */
+.tooltip-demo {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    border-bottom: 1px dashed #64748b;
+    color: #1e293b;
+    font-weight: 500;
+}
