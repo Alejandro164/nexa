@@ -155,6 +155,134 @@ public class GlobalExceptionHandler {
 }
 ```
 
+### 1.5 Paquete `repository/` — consultas de alto rendimiento con `JdbcTemplate`
+
+Para queries que requieren máxima velocidad (reportes, dropdowns con filtros complejos, dashboards), se **omite JPA** y se usa `NamedParameterJdbcTemplate` o `SimpleJdbcCall` directamente desde el Repository.
+
+**Regla de decisión:**
+
+| Escenario | Solución |
+|---|---|
+| SP con lógica compleja multi-step (transacciones, cursores, temp tables) | `SimpleJdbcCall` + `RowMapper<T>` |
+| Query plana de alta frecuencia (filtros, dropdowns, reportes) | `NamedParameterJdbcTemplate` + `RowMapper<T>` |
+| CRUD estándar, baja complejidad | JPA (`JpaRepository`) |
+
+**NUNCA devolver `List<Map<String, Object>>`** desde el Repository. Siempre usar `RowMapper<T>` o `BeanPropertyRowMapper<T>` para type-safety.
+
+#### Patrón: SP con `SimpleJdbcCall` + `RowMapper`
+
+Cuando el procedimiento tiene lógica que debe residir en BD, **generar siempre el script SQL junto al código Java**. El SP se versiona en `src/main/resources/db/`:
+
+```sql
+-- src/main/resources/db/sp_GetProgramasParaDropDown.sql
+CREATE OR REPLACE PROCEDURE sp_GetProgramasParaDropDown(
+    IN id_junta BIGINT,
+    IN p_id_fuente BIGINT,
+    IN p_id_tipo_presupuesto BIGINT,
+    IN p_solo_con_monto BOOLEAN,
+    IN p_anio INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT p.id, p.nombre, p.monto
+    FROM programas p
+    WHERE p.id_junta = id_junta
+      AND p.id_fuente = p_id_fuente
+      AND p.id_tipo_presupuesto = p_id_tipo_presupuesto
+      AND (p_solo_con_monto = false OR p.monto > 0)
+      AND p.anio = p_anio
+    ORDER BY p.nombre;
+END;
+$$;
+```
+
+Llamada desde el Repository con tipo seguro:
+
+```java
+@Repository
+public class ProgramaRepository {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public ProgramaRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    private final RowMapper<ProgramaDTO> programaRowMapper = (rs, rowNum) ->
+        new ProgramaDTO(
+            rs.getLong("id"),
+            rs.getString("nombre"),
+            rs.getBigDecimal("monto")
+        );
+
+    public List<ProgramaDTO> ejecutarSpGetProgramas(
+            long idJunta, long idFuente, long idTipoPresupuesto,
+            boolean soloConMonto, int anio) {
+
+        SimpleJdbcCall call = new SimpleJdbcCall(jdbcTemplate)
+            .withProcedureName("sp_GetProgramasParaDropDown")
+            .returningResultSet("resultado", programaRowMapper);
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("id_junta", idJunta)
+            .addValue("p_id_fuente", idFuente)
+            .addValue("p_id_tipo_presupuesto", idTipoPresupuesto)
+            .addValue("p_solo_con_monto", soloConMonto)
+            .addValue("p_anio", anio);
+
+        return (List<ProgramaDTO>) call.execute(params).get("resultado");
+    }
+}
+```
+
+#### Patrón: SQL inline con `NamedParameterJdbcTemplate` + `RowMapper`
+
+Cuando la query es plana y querés versionarla en Git sin depender de un SP:
+
+```java
+public List<ProgramaDTO> buscarProgramas(
+        long idJunta, long idFuente, long idTipoPresupuesto,
+        boolean soloConMonto, int anio) {
+
+    String sql = """
+        SELECT p.id, p.nombre, p.monto
+        FROM programas p
+        WHERE p.id_junta = :idJunta
+          AND p.id_fuente = :idFuente
+          AND p.id_tipo_presupuesto = :idTipoPresupuesto
+          AND (:soloConMonto = false OR p.monto > 0)
+          AND p.anio = :anio
+        ORDER BY p.nombre
+        """;
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("idJunta", idJunta)
+        .addValue("idFuente", idFuente)
+        .addValue("idTipoPresupuesto", idTipoPresupuesto)
+        .addValue("soloConMonto", soloConMonto)
+        .addValue("anio", anio);
+
+    return new NamedParameterJdbcTemplate(jdbcTemplate)
+        .query(sql, params, programaRowMapper);
+}
+```
+
+#### Inyección de `JdbcTemplate`
+
+Spring Boot autoconfigura el bean. Solo declaralo en el constructor:
+
+```java
+private final JdbcTemplate jdbcTemplate;
+
+public MiRepository(JdbcTemplate jdbcTemplate) {
+    this.jdbcTemplate = jdbcTemplate;
+}
+```
+
+`NamedParameterJdbcTemplate` se obtiene envolviendo el `JdbcTemplate`: `new NamedParameterJdbcTemplate(jdbcTemplate)`.
+
 ## 2. Arquitectura Frontend (Templates)
 
 ### 2.1 Estructura de directorios
@@ -399,7 +527,10 @@ Cada operación de escritura registra un `log.info(...)` con el resultado.
 Para agregar un nuevo dominio (ej: "Curso"):
 
 1. **Entity**: `entity/Curso.java` con anotaciones JPA.
-2. **Repository**: `repository/CursoRepository.java` extendiendo `JpaRepository<Curso, Long>`.
+2. **Repository**:
+   - CRUD estándar: `repository/CursoRepository.java` extendiendo `JpaRepository<Curso, Long>`.
+   - Alto rendimiento: inyectar `JdbcTemplate` en el mismo Repository, agregar `RowMapper<T>` y método con `NamedParameterJdbcTemplate` o `SimpleJdbcCall`.
+   - Si usa SP: crear script SQL en `src/main/resources/db/sp_NombreProcedimiento.sql`.
 3. **DTO**: `dto/CursoDTO.java` con validaciones Jakarta. **Solo si aplica** (formularios con campos sensibles, validaciones diferenciadas crear/editar, o necesidad de aplanar relaciones).
 4. **Service**: `service/CursoService.java` con `@Transactional` y CRUD completo.
 5. **Controller**: `controller/CursoController.java` con `@RequestMapping("/curso")` y soporte HTMX.
