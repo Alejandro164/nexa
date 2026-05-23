@@ -56,6 +56,12 @@ public class SecurityConfig {
                 .cacheControl(cache -> {}) // emite Cache-Control: no-cache, no-store, must-revalidate
                 .frameOptions(frame -> frame.deny())
             )
+            .sessionManagement(session -> session
+                .sessionFixation().migrateSession()
+                .maximumSessions(1)
+                    .maxSessionsPreventsLogin(false)
+                    .expiredUrl("/login?expired")
+            )
             .authorizeHttpRequests(auth -> auth
                 // Recursos públicos
                 .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
@@ -75,7 +81,7 @@ public class SecurityConfig {
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout")
                 .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
+                .deleteCookies("SESSION")
                 .permitAll()
             );
 
