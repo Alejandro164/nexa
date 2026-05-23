@@ -1,5 +1,6 @@
 package com.empresa.proyecto.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,6 +45,7 @@ public class Empresa {
     public void setDireccion(String direccion) { this.direccion = direccion; }
     public Boolean getActiva() { return activa; }
     public void setActiva(Boolean activa) { this.activa = activa; }
+    @JsonIgnore
     public Set<Usuario> getUsuarios() { return usuarios; }
     public void setUsuarios(Set<Usuario> usuarios) { this.usuarios = usuarios; }
 }

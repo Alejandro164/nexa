@@ -1,5 +1,6 @@
 package com.empresa.proyecto.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -106,9 +107,11 @@ public class Usuario implements UserDetails {
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }
 
+    @JsonIgnore
     public Set<Rol> getRoles() { return roles; }
     public void setRoles(Set<Rol> roles) { this.roles = roles; }
 
+    @JsonIgnore
     public Set<Empresa> getEmpresas() { return empresas; }
     public void setEmpresas(Set<Empresa> empresas) { this.empresas = empresas; }
 }
