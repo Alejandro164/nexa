@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{index}">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
 
 <head>
     <title>Componentes UI — EstudiaFácil</title>
@@ -11,827 +10,1315 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Componentes UI</th:block>
-    <th:block layout:fragment="page-subtitle">Librería de componentes del sistema de diseño de EstudiaFácil</th:block>
+    <th:block layout:fragment="page-title">Sistema de Diseño & Componentes</th:block>
+    <th:block layout:fragment="page-subtitle">Biblioteca de elementos interactivos de alto nivel para la interfaz de
+        EstudiaFácil</th:block>
 
     <main layout:fragment="content" th:fragment="htmx-content">
-
         <link rel="stylesheet" th:href="@{/css/componentes.css}">
 
-        <!-- ═══════════════════════════════════════════
-             PALETA DE COLORES
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Paleta de colores</h3>
-            <p class="comp-section-desc">Tokens de color del sistema de diseño EstudiaFácil. <span style="font-weight: 600; color: var(--primary);">*(Haz clic en cualquier color para copiar su código HEX)*</span></p>
-            
-            <div class="color-swatches">
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#1e3a5f;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Deep Blue (Primary Dark)</div>
-                        <div class="hex">#1e3a5f</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#2d5a87;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Mid Blue (Primary)</div>
-                        <div class="hex">#2d5a87</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#60a5fa;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Accent (Light Blue)</div>
-                        <div class="hex">#60a5fa</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#1e293b;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Text Primary</div>
-                        <div class="hex">#1e293b</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#64748b;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Text Secondary</div>
-                        <div class="hex">#64748b</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#334155;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Text Label</div>
-                        <div class="hex">#334155</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#f8fafc; border: 1px solid #e2e8f0;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Background Main</div>
-                        <div class="hex">#f8fafc</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#e2e8f0;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Border / Divider</div>
-                        <div class="hex">#e2e8f0</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#22c55e;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Success (Green)</div>
-                        <div class="hex">#22c55e</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#dc2626;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Error (Red)</div>
-                        <div class="hex">#dc2626</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#f59e0b;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Warm (Amber)</div>
-                        <div class="hex">#f59e0b</div>
-                    </div>
-                </div>
-                <div class="color-swatch">
-                    <div class="color-swatch-preview" style="background:#94a3b8;"></div>
-                    <div class="color-swatch-info">
-                        <div class="name">Placeholder</div>
-                        <div class="hex">#94a3b8</div>
-                    </div>
-                </div>
+        <div class="comp-layout">
+
+            <!-- ═══════════════════════════════════════════
+                 NAVEGACIÓN INTERNA (SIDEBAR IZQUIERDA)
+            ═══════════════════════════════════════════ -->
+            <div class="comp-sidebar-wrapper">
+                <nav class="comp-sidebar-nav">
+                    <h4>Componentes</h4>
+                    <ul class="comp-nav-list">
+                        <li><a href="#colores" class="comp-nav-link active">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path
+                                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" />
+                                    <path
+                                        d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" />
+                                </svg>
+                                Paleta de Colores
+                            </a></li>
+                        <li><a href="#botones" class="comp-nav-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="9" y1="3" x2="9" y2="21" />
+                                </svg>
+                                Botones y Acciones
+                            </a></li>
+                        <li><a href="#inputs" class="comp-nav-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                                Formularios e Inputs
+                            </a></li>
+                        <li><a href="#display" class="comp-nav-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="3" y1="9" x2="21" y2="9" />
+                                    <line x1="9" y1="21" x2="9" y2="9" />
+                                </svg>
+                                Visualización de Datos
+                            </a></li>
+                        <li><a href="#navegacion" class="comp-nav-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="9 18 15 12 9 6" />
+                                </svg>
+                                Navegación y Wizard
+                            </a></li>
+                        <li><a href="#feedback" class="comp-nav-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path
+                                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                Alertas y Overlays
+                            </a></li>
+                        <li><a href="#timeline" class="comp-nav-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                Línea de Tiempo
+                            </a></li>
+                    </ul>
+                </nav>
             </div>
-        </section>
 
-        <!-- ═══════════════════════════════════════════
-             BOTONES
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Botones</h3>
-            <p class="comp-section-desc">Variantes, tamaños y estados de botones del sistema.</p>
+            <!-- ═══════════════════════════════════════════
+                 CONTENIDO PRINCIPAL DE COMPONENTES
+            ═══════════════════════════════════════════ -->
+            <div class="comp-content-area">
 
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Muestras de Botones</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-botones">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-botones-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
+                <!-- ═══════════════════════════════════════════
+                     PALETA DE COLORES
+                ═══════════════════════════════════════════ -->
+                <section id="colores" class="comp-section">
+                    <h3 class="comp-section-title">Paleta de colores</h3>
+                    <p class="comp-section-desc">Identidad de marca y colores funcionales basados en la paleta de
+                        EstudiaFácil. Haz clic sobre cualquier tono para copiar su código hexadecimal.</p>
+
+                    <h4
+                        style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">
+                        Colores de Marca</h4>
+                    <div class="color-swatches-grid">
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #1e3a5f;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Primary Dark (Deep Blue)</div>
+                                <div class="hex">#1e3a5f</div>
+                            </div>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #2d5a87;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Primary Brand (Mid Blue)</div>
+                                <div class="hex">#2d5a87</div>
+                            </div>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #60a5fa;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Accent (Light Blue)</div>
+                                <div class="hex">#60a5fa</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="comp-row" style="margin-bottom: 1.5rem;">
-                    <button class="btn btn-primary">Primario</button>
-                    <button class="btn btn-secondary">Secundario</button>
-                    <button class="btn btn-icon hover-primary" title="Editar">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button class="btn btn-icon hover-danger" title="Eliminar">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
-                </div>
+                    <h4
+                        style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-top: 1.5rem;">
+                        Colores de Estado (Semánticos)</h4>
+                    <div class="color-swatches-grid">
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #22c55e;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Success (Éxito)</div>
+                                <div class="hex">#22c55e</div>
+                            </div>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #dc2626;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Danger (Error)</div>
+                                <div class="hex">#dc2626</div>
+                            </div>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #f59e0b;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Warning (Alerta)</div>
+                                <div class="hex">#f59e0b</div>
+                            </div>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #06b6d4;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Info (Información)</div>
+                                <div class="hex">#06b6d4</div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div class="comp-row" style="margin-bottom: 1.5rem; border-top: 1px dashed var(--border); padding-top: 1rem;">
-                    <span style="font-size:0.8rem; color:var(--text-secondary); width:100%; display:block; margin-bottom:0.5rem;">Tamaños de botones:</span>
-                    <button class="btn btn-primary btn-demo-sm">Pequeño</button>
-                    <button class="btn btn-primary">Estándar</button>
-                    <button class="btn btn-primary btn-demo-lg">Grande</button>
-                </div>
+                    <h4
+                        style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-top: 1.5rem;">
+                        Escala de Grises / Neutros</h4>
+                    <div class="color-swatches-grid">
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #1e293b;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Slate 800 (Text Primary)</div>
+                                <div class="hex">#1e293b</div>
+                            </div>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #64748b;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Slate 500 (Text Secondary)</div>
+                                <div class="hex">#64748b</div>
+                            </div>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #e2e8f0;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Slate 200 (Border)</div>
+                                <div class="hex">#e2e8f0</div>
+                            </div>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-preview" style="background: #f8fafc; border:1px solid #cbd5e1;">
+                                <span class="copy-overlay">Copiar HEX</span>
+                            </div>
+                            <div class="color-swatch-info">
+                                <div class="name">Slate 50 (Background)</div>
+                                <div class="hex">#f8fafc</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-                <div class="comp-row" style="border-top: 1px dashed var(--border); padding-top: 1rem;">
-                    <span style="font-size:0.8rem; color:var(--text-secondary); width:100%; display:block; margin-bottom:0.5rem;">Botón con Gradiente Premium (Inicio de Sesión):</span>
-                    <button style="width:auto;padding:14px 32px;border:none;border-radius:12px;background:linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);color:#ffffff;font-family:'Inter',system-ui,sans-serif;font-size:1rem;font-weight:600;cursor:pointer;letter-spacing:0.3px;transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(45, 90, 135, 0.2)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">Iniciar Sesión</button>
-                </div>
+                <!-- ═══════════════════════════════════════════
+                     BOTONES Y ACCIONES
+                ═══════════════════════════════════════════ -->
+                <section id="botones" class="comp-section">
+                    <h3 class="comp-section-title">Botones y Acciones</h3>
+                    <p class="comp-section-desc">Variaciones de botones del sistema para jerarquizar las interacciones
+                        del usuario de forma profesional.</p>
 
-                <div id="code-botones-container" class="code-container" style="display: none;">
-                    <pre><code id="code-botones-text">&lt;!-- Botón Primario --&gt;
-&lt;button class="btn btn-primary"&gt;Primario&lt;/button&gt;
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Variantes del Botón</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-btn-variants">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                                <button class="btn btn-primary btn-demo-sm btn-copy-code"
+                                    data-target="code-btn-variants-text">
+                                    Copiar
+                                </button>
+                            </div>
+                        </div>
 
-&lt;!-- Botón Secundario --&gt;
-&lt;button class="btn btn-secondary"&gt;Secundario&lt;/button&gt;
+                        <div class="comp-row">
+                            <button class="btn btn-primary">Primary Button</button>
+                            <button class="btn btn-secondary">Secondary Button</button>
+                            <button class="btn btn-outline">Outline Button</button>
+                            <button class="btn btn-ghost">Ghost Button</button>
+                            <button class="btn btn-destructive">Destructive Action</button>
+                        </div>
 
-&lt;!-- Botón Icono Primario --&gt;
-&lt;button class="btn btn-icon hover-primary"&gt;
-    &lt;svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"&gt;...&lt;/svg&gt;
-&lt;/button&gt;
+                        <div id="code-btn-variants-container" class="code-container" style="display: none;">
+                            <pre><code id="code-btn-variants-text">&lt;button class="btn btn-primary"&gt;Primary Button&lt;/button&gt;
+&lt;button class="btn btn-secondary"&gt;Secondary Button&lt;/button&gt;
+&lt;button class="btn btn-outline"&gt;Outline Button&lt;/button&gt;
+&lt;button class="btn btn-ghost"&gt;Ghost Button&lt;/button&gt;
+&lt;button class="btn btn-destructive"&gt;Destructive Action&lt;/button&gt;</code></pre>
+                        </div>
+                    </div>
 
-&lt;!-- Botón Pequeño --&gt;
-&lt;button class="btn btn-primary btn-demo-sm"&gt;Pequeño&lt;/button&gt;
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Tamaños y Estados Especiales</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-btn-states">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                                <button class="btn btn-primary btn-demo-sm btn-copy-code"
+                                    data-target="code-btn-states-text">
+                                    Copiar
+                                </button>
+                            </div>
+                        </div>
 
-&lt;!-- Botón Grande --&gt;
-&lt;button class="btn btn-primary btn-demo-lg"&gt;Grande&lt;/button&gt;
+                        <div class="comp-row" style="margin-bottom: 1.5rem;">
+                            <button class="btn btn-primary btn-demo-sm">Small Size</button>
+                            <button class="btn btn-primary">Default Size</button>
+                            <button class="btn btn-primary btn-demo-lg">Large Size</button>
+                        </div>
 
-&lt;!-- Botón Gradiente de Login --&gt;
-&lt;button style="padding: 14px 32px; border: none; border-radius: 12px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: #ffffff; font-size: 1rem; font-weight: 600; cursor: pointer;"&gt;
-    Iniciar Sesión
+                        <div class="comp-row" style="border-top: 1px dashed var(--border); padding-top: 1.25rem;">
+                            <button class="btn btn-primary" disabled>Disabled State</button>
+                            <button class="btn btn-primary btn-loading">Loading State</button>
+                            <button class="btn btn-secondary btn-loading">Loading Light</button>
+                        </div>
+
+                        <div id="code-btn-states-container" class="code-container" style="display: none;">
+                            <pre><code id="code-btn-states-text">&lt;!-- Tamaños --&gt;
+&lt;button class="btn btn-primary btn-demo-sm"&gt;Small Size&lt;/button&gt;
+&lt;button class="btn btn-primary"&gt;Default Size&lt;/button&gt;
+&lt;button class="btn btn-primary btn-demo-lg"&gt;Large Size&lt;/button&gt;
+
+&lt;!-- Estados --&gt;
+&lt;button class="btn btn-primary" disabled&gt;Disabled State&lt;/button&gt;
+&lt;button class="btn btn-primary btn-loading"&gt;Loading State&lt;/button&gt;</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Grupos de Botones e Iconos</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-btn-groups">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                                <button class="btn btn-primary btn-demo-sm btn-copy-code"
+                                    data-target="code-btn-groups-text">
+                                    Copiar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="comp-row">
+                            <!-- Grupo de Botones -->
+                            <div class="btn-group">
+                                <button class="btn btn-secondary btn-demo-sm">Izquierda</button>
+                                <button class="btn btn-secondary btn-demo-sm">Centro</button>
+                                <button class="btn btn-secondary btn-demo-sm">Derecha</button>
+                            </div>
+
+                            <!-- Botones con Iconos -->
+                            <button class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                    <polyline points="17 21 17 13 7 13 7 21" />
+                                    <polyline points="7 3 7 8 15 8" />
+                                </svg>
+                                Guardar Registro
+                            </button>
+
+                            <button class="btn btn-outline" style="color: var(--error); border-color: var(--error);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                                Eliminar
+                            </button>
+                        </div>
+
+                        <div id="code-btn-groups-container" class="code-container" style="display: none;">
+                            <pre><code id="code-btn-groups-text">&lt;!-- Grupo de botones --&gt;
+&lt;div class="btn-group"&gt;
+    &lt;button class="btn btn-secondary"&gt;Izquierda&lt;/button&gt;
+    &lt;button class="btn btn-secondary"&gt;Centro&lt;/button&gt;
+    &lt;button class="btn btn-secondary"&gt;Derecha&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;!-- Botón con Icono --&gt;
+&lt;button class="btn btn-primary"&gt;
+    &lt;svg ...&gt;&lt;/svg&gt; Guardar
 &lt;/button&gt;</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════
-             INPUTS
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Inputs</h3>
-            <p class="comp-section-desc">Campos de formulario con variantes de estado.</p>
-
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Muestras de Campos</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-inputs">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-inputs-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
-                    </div>
-                </div>
-
-                <div class="comp-grid">
-                    <div class="input-wrap">
-                        <label class="form-label">Por Defecto</label>
-                        <input type="text" class="input-demo" placeholder="Placeholder #94a3b8">
-                    </div>
-                    <div class="input-wrap">
-                        <label class="form-label">Con Enfoque (Focus)</label>
-                        <input type="text" class="input-demo" value="Input enfocado (haga click)" style="border-color: #2d5a87; box-shadow: 0 0 0 4px rgba(45, 90, 135, 0.1); background: #ffffff;">
-                    </div>
-                    <div class="input-wrap">
-                        <label class="form-label">Con Icono (Correo)</label>
-                        <div style="position:relative;">
-                            <svg style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                            <input type="email" class="input-demo" style="padding-left:44px;" placeholder="correo@ejemplo.com">
                         </div>
                     </div>
-                    <div class="input-wrap">
-                        <label class="form-label">Con Icono (Contraseña)</label>
-                        <div style="position:relative;">
-                            <svg style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            <input type="password" class="input-demo" style="padding-left:44px;" placeholder="••••••••">
+                </section>
+
+                <!-- ═══════════════════════════════════════════
+                     FORMULARIOS E INPUTS
+                ═══════════════════════════════════════════ -->
+                <section id="inputs" class="comp-section">
+                    <h3 class="comp-section-title">Formularios e Inputs</h3>
+                    <p class="comp-section-desc">Entradas de formulario validadas con microinteracciones y controles
+                        enriquecidos de selección.</p>
+
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Estados de Validación e Iconos</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-form-validation">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="input-wrap">
-                        <label class="form-label">Deshabilitado (Disabled)</label>
-                        <input type="text" class="input-demo" placeholder="Campo deshabilitado" disabled style="opacity:0.6; cursor:not-allowed;">
-                    </div>
-                    <div class="input-wrap">
-                        <label class="form-label">Selector (Select)</label>
-                        <select class="input-demo" style="appearance:auto;padding-right:14px;">
-                            <option>Administrador</option>
-                            <option>Editor</option>
-                            <option>Usuario</option>
-                        </select>
-                    </div>
-                </div>
 
-                <div id="code-inputs-container" class="code-container" style="display: none;">
-                    <pre><code id="code-inputs-text">&lt;!-- Input estándar --&gt;
-&lt;div class="form-group"&gt;
-    &lt;label class="form-label"&gt;Etiqueta&lt;/label&gt;
-    &lt;input type="text" class="form-input" placeholder="Escribe aquí..."&gt;
+                        <div class="comp-grid">
+                            <!-- Validación correcta -->
+                            <div class="form-group is-valid">
+                                <label class="form-label">Nombre de Usuario (Válido)</label>
+                                <div style="position:relative;">
+                                    <input type="text" class="input-demo" value="alejandro_chaves">
+                                </div>
+                                <span class="validation-message">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                        <polyline points="22 4 12 14.01 9 11.01" />
+                                    </svg>
+                                    El nombre de usuario está disponible.
+                                </span>
+                            </div>
+
+                            <!-- Validación incorrecta -->
+                            <div class="form-group is-invalid">
+                                <label class="form-label">Correo Electrónico (Incorrecto)</label>
+                                <div style="position:relative;">
+                                    <input type="email" class="input-demo" value="correo-invalido@">
+                                </div>
+                                <span class="validation-message">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="12" y1="8" x2="12" y2="12" />
+                                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                                    </svg>
+                                    Por favor introduce un correo válido.
+                                </span>
+                            </div>
+                        </div>
+
+                        <div id="code-form-validation-container" class="code-container" style="display: none;">
+                            <pre><code id="code-form-validation-text">&lt;!-- Input Válido --&gt;
+&lt;div class="form-group is-valid"&gt;
+    &lt;label class="form-label"&gt;Nombre de Usuario&lt;/label&gt;
+    &lt;input type="text" class="form-input"&gt;
+    &lt;span class="validation-message"&gt;Disponible&lt;/span&gt;
 &lt;/div&gt;
 
-&lt;!-- Input con icono izquierda (Email) --&gt;
-&lt;div style="position: relative;"&gt;
-    &lt;svg style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"&gt;
-        &lt;path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/&gt;
-        &lt;polyline points="22,6 12,13 2,6"/&gt;
-    &lt;/svg&gt;
-    &lt;input type="email" class="form-input" style="padding-left: 44px;" placeholder="correo@ejemplo.com"&gt;
-&lt;/div&gt;
-
-&lt;!-- Menú desplegable (Select) --&gt;
-&lt;select class="form-input" style="appearance: auto;"&gt;
-    &lt;option&gt;Administrador&lt;/option&gt;
-    &lt;option&gt;Editor&lt;/option&gt;
-    &lt;option&gt;Usuario&lt;/option&gt;
-&lt;/select&gt;</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════
-             BADGES & ESTADOS
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Badges & Estados</h3>
-            <p class="comp-section-desc">Indicadores de estado y etiquetas de clasificación.</p>
-
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Muestras de Badges e Indicadores</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-badges">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-badges-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
-                    </div>
-                </div>
-
-                <div class="comp-row" style="margin-bottom: 1.5rem;">
-                    <span class="badge badge-primary">Admin</span>
-                    <span class="badge badge-info" style="background:rgba(96,165,250,0.1);color:#60a5fa;">Editor</span>
-                    <span class="badge badge-secondary">Usuario</span>
-                    <span class="badge badge-success" style="background:rgba(34,197,94,0.1);color:#22c55e;">Activo</span>
-                    <span class="badge badge-danger" style="background:rgba(220,38,38,0.1);color:#dc2626;">Inactivo</span>
-                </div>
-
-                <div class="comp-row" style="border-top: 1px dashed var(--border); padding-top: 1rem; gap:1.5rem;">
-                    <span style="font-size:0.8rem; color:var(--text-secondary); width:100%; display:block; margin-bottom:0.5rem;">Indicadores de estado (Tablas/Directorio):</span>
-                    <div class="d-flex align-items-center">
-                        <span class="status-indicator status-active"></span>
-                        <span class="text-sm">Activo (Verde)</span>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <span class="status-indicator status-inactive"></span>
-                        <span class="text-sm">Inactivo (Rojo)</span>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <span class="status-indicator" style="background-color:#f59e0b;"></span>
-                        <span class="text-sm">Pendiente (Ámbar)</span>
-                    </div>
-                </div>
-
-                <div id="code-badges-container" class="code-container" style="display: none;">
-                    <pre><code id="code-badges-text">&lt;!-- Badges de Roles o Etiquetas --&gt;
-&lt;span class="badge badge-primary"&gt;Admin&lt;/span&gt;
-&lt;span class="badge badge-success"&gt;Activo&lt;/span&gt;
-&lt;span class="badge badge-danger"&gt;Inactivo&lt;/span&gt;
-
-&lt;!-- Indicador de estado con texto al lado --&gt;
-&lt;div class="d-flex align-items-center"&gt;
-    &lt;span class="status-indicator status-active"&gt;&lt;/span&gt;
-    &lt;span&gt;Activo&lt;/span&gt;
+&lt;!-- Input Inválido --&gt;
+&lt;div class="form-group is-invalid"&gt;
+    &lt;label class="form-label"&gt;Correo Electrónico&lt;/label&gt;
+    &lt;input type="email" class="form-input"&gt;
+    &lt;span class="validation-message"&gt;Introduce un correo válido&lt;/span&gt;
 &lt;/div&gt;</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════
-             ALERTAS
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Alertas</h3>
-            <p class="comp-section-desc">Mensajes de feedback para el usuario. <span style="font-weight: 600; color: var(--primary);">*(Haz clic en cualquier alerta para simular un Toast de notificación)*</span></p>
-
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Muestras de Mensajes</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-alerts">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-alerts-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
-                    </div>
-                </div>
-
-                <div class="comp-row--col" style="gap:1rem;">
-                    <div class="alert-demo" style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                        Credenciales inválidas. Verifica tu correo y contraseña.
-                    </div>
-                    <div class="alert-demo" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#16a34a;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
-                        Sesión cerrada correctamente. ¡Hasta pronto!
-                    </div>
-                    <div class="alert-demo" style="background:#fffbeb; border:1px solid #fde68a; color:#d97706;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                        </svg>
-                        Tu sesión expirará en 5 minutos. Guarda tu trabajo.
-                    </div>
-                </div>
-
-                <div id="code-alerts-container" class="code-container" style="display: none;">
-                    <pre><code id="code-alerts-text">&lt;!-- Alerta de Error/Peligro --&gt;
-&lt;div class="alert-demo" style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;"&gt;
-    &lt;svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"&gt;
-        &lt;circle cx="12" cy="12" r="10"/&gt;&lt;line x1="12" y1="8" x2="12" y2="12"/&gt;&lt;line x1="12" y1="16" x2="12.01" y2="16"/&gt;
-    &lt;/svg&gt;
-    Credenciales inválidas. Verifica tu correo y contraseña.
-&lt;/div&gt;
-
-&lt;!-- Alerta de Éxito --&gt;
-&lt;div class="alert-demo" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a;"&gt;
-    &lt;svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"&gt;
-        &lt;path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/&gt;&lt;polyline points="22 4 12 14.01 9 11.01"/&gt;
-    &lt;/svg&gt;
-    Sesión cerrada correctamente.
-&lt;/div&gt;</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════
-             CARDS
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Cards</h3>
-            <p class="comp-section-desc">Contenedores de contenido con sombra y bordes redondeados.</p>
-
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Variantes de Contenedor</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-cards">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-cards-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
-                    </div>
-                </div>
-
-                <div class="comp-grid">
-                    <div class="card" style="padding:1.5rem;">
-                        <h4 style="font-weight:600;margin-bottom:0.5rem;color:var(--text-primary);">Card Simple</h4>
-                        <p style="font-size:0.875rem;color:var(--text-secondary);">Contenido dentro de una card estándar con sombra sutil y esquinas redondeadas profesionales.</p>
-                    </div>
-                    <div class="card">
-                        <div class="card-header" style="border-bottom: 1px solid var(--border); background: var(--input-bg);">
-                            <h3 class="card-title" style="font-size:1rem; font-weight:600; color:var(--text-primary);">Card con Header</h3>
-                            <button class="btn btn-primary btn-demo-sm">Acción</button>
-                        </div>
-                        <div style="padding:1.5rem;">
-                            <p style="font-size:0.875rem;color:var(--text-secondary);">Header estructurado con fondo claro, bordes marcados y alineación fluida de botones de control.</p>
                         </div>
                     </div>
-                </div>
 
-                <div id="code-cards-container" class="code-container" style="display: none;">
-                    <pre><code id="code-cards-text">&lt;!-- Card Simple --&gt;
-&lt;div class="card" style="padding: 1.5rem;"&gt;
-    &lt;h4 style="font-weight: 600; margin-bottom: 0.5rem;"&gt;Título de la Card&lt;/h4&gt;
-    &lt;p style="font-size: 0.875rem; color: var(--text-secondary);"&gt;Contenido principal de la tarjeta...&lt;/p&gt;
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Grupos de Inputs y Selección Avanzada</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-input-groups">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="comp-grid" style="margin-bottom: 1.5rem;">
+                            <!-- Input Group Prepended -->
+                            <div class="form-group">
+                                <label class="form-label">Dominio del Portal</label>
+                                <div class="input-group">
+                                    <span class="input-group-addon">https://</span>
+                                    <input type="text" class="input-demo" placeholder="nombre-centro">
+                                    <span class="input-group-addon">.estudiafacil.com</span>
+                                </div>
+                            </div>
+
+                            <!-- Input Group Appended -->
+                            <div class="form-group">
+                                <label class="form-label">Monto de Matrícula</label>
+                                <div class="input-group">
+                                    <span class="input-group-addon">$</span>
+                                    <input type="number" class="input-demo" placeholder="150">
+                                    <span class="input-group-addon">.00 USD</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="comp-row"
+                            style="border-top: 1px dashed var(--border); padding-top: 1.25rem; gap: 2rem;">
+                            <!-- Checkbox Custom -->
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="custom-checkbox" checked>
+                                Acepto términos y condiciones
+                            </label>
+
+                            <!-- Radio Button Custom -->
+                            <div class="comp-row" style="gap: 1.5rem;">
+                                <label class="radio-label">
+                                    <input type="radio" name="demo-radio" class="custom-radio" checked>
+                                    Opción A
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="demo-radio" class="custom-radio">
+                                    Opción B
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="code-input-groups-container" class="code-container" style="display: none;">
+                            <pre><code id="code-input-groups-text">&lt;!-- Input Group con prefijo y sufijo --&gt;
+&lt;div class="input-group"&gt;
+    &lt;span class="input-group-addon"&gt;https://&lt;/span&gt;
+    &lt;input type="text" class="input-demo"&gt;
+    &lt;span class="input-group-addon"&gt;.estudiafacil.com&lt;/span&gt;
 &lt;/div&gt;
 
-&lt;!-- Card Completa con Encabezado --&gt;
-&lt;div class="card"&gt;
-    &lt;div class="card-header"&gt;
-        &lt;h3 class="card-title"&gt;Encabezado&lt;/h3&gt;
-        &lt;button class="btn btn-primary btn-demo-sm"&gt;Acción&lt;/button&gt;
-    &lt;/div&gt;
-    &lt;div style="padding: 1.5rem;"&gt;
-        &lt;p style="font-size: 0.875rem; color: var(--text-secondary);"&gt;Contenido de la tarjeta...&lt;/p&gt;
-    &lt;/div&gt;
-&lt;/div&gt;</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════
-             TABLAS
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Tablas</h3>
-            <p class="comp-section-desc">Estructura de datos tabulares con filas interactivas hover.</p>
-
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Muestra de Tabla de Datos</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-tablas">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-tablas-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
+&lt;!-- Custom Checkbox --&gt;
+&lt;label class="checkbox-label"&gt;
+    &lt;input type="checkbox" class="custom-checkbox"&gt; Acepto
+&lt;/label&gt;</code></pre>
+                        </div>
                     </div>
-                </div>
 
-                <div class="comp-table-wrap">
-                    <table class="comp-table">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Rol</th>
-                                <th>Estado</th>
-                                <th style="text-align:right;">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="hover-bg transition-colors">
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-sm me-3" style="background:linear-gradient(135deg,#2d5a87,#60a5fa);color:white;font-weight:600;">M</div>
-                                        <div>
-                                            <div class="font-medium text-dark" style="font-weight: 500;">María Fernández</div>
-                                            <div class="text-sm text-muted" style="font-size: 0.8rem; color:var(--text-secondary);">maria@estudiafacil.com</div>
-                                        </div>
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Drag-and-Drop Area y Formulario Completo</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-form-advanced">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Drag and Drop area -->
+                        <div class="form-group" style="margin-bottom: 2rem;">
+                            <label class="form-label">Subir Archivo de Matrícula (Excel, CSV)</label>
+                            <div class="upload-dropzone" id="dropzone-demo">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                <p
+                                    style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                                    Arrastra tus archivos aquí o haz clic para buscar</p>
+                                <p style="font-size: 0.75rem; color: var(--text-light);">Límite de tamaño: 10MB.
+                                    Formatos admitidos: XLS, XLSX, CSV</p>
+                            </div>
+                        </div>
+
+                        <!-- Formulario de Configuración Muestra -->
+                        <div class="card"
+                            style="border: 1px solid var(--border-solid); padding: 1.75rem; background: var(--background);">
+                            <h4
+                                style="font-size: 1.05rem; font-weight:600; margin-bottom: 1.25rem; color: var(--text-primary); display: flex; align-items:center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                                Ajustes de Perfil
+                            </h4>
+                            <form
+                                onsubmit="event.preventDefault(); showNotification('Ajustes guardados correctamente (Simulación)');">
+                                <div class="comp-grid" style="margin-bottom: 1.25rem;">
+                                    <div class="form-group">
+                                        <label class="form-label">Nombre</label>
+                                        <input type="text" class="input-demo" value="Alejandro Chaves">
                                     </div>
-                                </td>
-                                <td><span class="badge badge-primary">Admin</span></td>
-                                <td>
-                                    <span class="status-indicator status-active"></span>
-                                    <span style="font-size:0.875rem;">Activo</span>
-                                </td>
-                                <td class="text-right" style="text-align:right;">
-                                    <button class="btn btn-icon hover-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                    </button>
-                                    <button class="btn btn-icon hover-danger">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr class="hover-bg transition-colors">
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-sm me-3" style="background:linear-gradient(135deg,#2d5a87,#60a5fa);color:white;font-weight:600;">C</div>
-                                        <div>
-                                            <div class="font-medium text-dark" style="font-weight: 500;">Carlos Ruiz</div>
-                                            <div class="text-sm text-muted" style="font-size: 0.8rem; color:var(--text-secondary);">carlos@estudiafacil.com</div>
-                                        </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Rol del Sistema</label>
+                                        <select class="input-demo" style="appearance: auto;">
+                                            <option>Administrador Global</option>
+                                            <option>Docente</option>
+                                            <option>Estudiante</option>
+                                        </select>
                                     </div>
-                                </td>
-                                <td><span class="badge badge-info" style="background:rgba(96,165,250,0.1);color:#60a5fa;font-weight: 600;">Editor</span></td>
-                                <td>
-                                    <span class="status-indicator status-inactive"></span>
-                                    <span style="font-size:0.875rem;">Inactivo</span>
-                                </td>
-                                <td class="text-right" style="text-align:right;">
-                                    <button class="btn btn-icon hover-primary">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                    </button>
-                                    <button class="btn btn-icon hover-danger">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 1.5rem;">
+                                    <label class="form-label">Bibliografía / Notas adicionales</label>
+                                    <textarea class="input-demo" rows="3" style="resize:vertical;"
+                                        placeholder="Escribe algo sobre ti..."></textarea>
+                                </div>
+                                <div style="display:flex; justify-content: flex-end; gap: 0.75rem;">
+                                    <button type="button" class="btn btn-secondary">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Guardar Ajustes</button>
+                                </div>
+                            </form>
+                        </div>
 
-                <div id="code-tablas-container" class="code-container" style="display: none;">
-                    <pre><code id="code-tablas-text">&lt;!-- Estructura de Tabla Estilo EstudiaFácil --&gt;
+                        <div id="code-form-advanced-container" class="code-container" style="display: none;">
+                            <pre><code id="code-form-advanced-text">&lt;!-- Dropzone component --&gt;
+&lt;div class="upload-dropzone"&gt;
+    &lt;svg ...&gt;&lt;/svg&gt;
+    &lt;p&gt;Arrastra tus archivos aquí o haz clic&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;!-- Form Layout --&gt;
+&lt;form&gt;
+    &lt;div class="form-group"&gt;
+        &lt;label class="form-label"&gt;Nombre&lt;/label&gt;
+        &lt;input type="text" class="form-input"&gt;
+    &lt;/div&gt;
+&lt;/form&gt;</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════
+                     VISUALIZACIÓN DE DATOS (KPI CARDS Y TABLAS)
+                ═══════════════════════════════════════════ -->
+                <section id="display" class="comp-section">
+                    <h3 class="comp-section-title">Visualización de datos</h3>
+                    <p class="comp-section-desc">Módulos para desplegar información crítica del negocio y bases de datos
+                        estructuradas.</p>
+
+                    <!-- Tarjetas de Métricas (KPIs) -->
+                    <h4
+                        style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">
+                        Tarjetas de Métricas (KPI Cards)</h4>
+                    <div class="comp-grid" style="margin-bottom: 2rem;">
+                        <!-- KPI 1 -->
+                        <div class="kpi-card">
+                            <div class="kpi-card-header">
+                                <span class="kpi-card-title">Centros Educativos</span>
+                                <div class="kpi-card-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                        <polyline points="9 22 9 12 15 12 15 22" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="kpi-card-value">1,482</div>
+                            <div class="kpi-card-footer">
+                                <span class="trend-badge up">
+                                    ▲ 12.4%
+                                </span>
+                                <span style="color: var(--text-light)">desde el último mes</span>
+                            </div>
+                        </div>
+
+                        <!-- KPI 2 -->
+                        <div class="kpi-card">
+                            <div class="kpi-card-header">
+                                <span class="kpi-card-title">Usuarios Activos</span>
+                                <div class="kpi-card-icon"
+                                    style="background: rgba(34,197,94,0.06); color: var(--success);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                        <circle cx="9" cy="7" r="4" />
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="kpi-card-value">28,945</div>
+                            <div class="kpi-card-footer">
+                                <span class="trend-badge up">
+                                    ▲ 8.1%
+                                </span>
+                                <span style="color: var(--text-light)">desde la semana pasada</span>
+                            </div>
+                        </div>
+
+                        <!-- KPI 3 -->
+                        <div class="kpi-card">
+                            <div class="kpi-card-header">
+                                <span class="kpi-card-title">Tasa de Deserción</span>
+                                <div class="kpi-card-icon"
+                                    style="background: rgba(220,38,38,0.06); color: var(--error);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <line x1="18" y1="20" x2="18" y2="10" />
+                                        <line x1="12" y1="20" x2="12" y2="4" />
+                                        <line x1="6" y1="20" x2="6" y2="14" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="kpi-card-value">2.4%</div>
+                            <div class="kpi-card-footer">
+                                <span class="trend-badge down">
+                                    ▼ 0.6%
+                                </span>
+                                <span style="color: var(--text-light)">en comparación al 2025</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla Premium Filtrable -->
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Tabla de Datos con Filtros y Controles</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-tables-premium">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Controles de la Tabla -->
+                        <div class="comp-row" style="justify-content: space-between; margin-bottom: 1.25rem;">
+                            <div class="search-box">
+                                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                </svg>
+                                <input type="text" id="table-demo-search" class="form-input"
+                                    style="padding-left: 2.25rem;" placeholder="Filtrar por nombre o correo...">
+                            </div>
+                            <button class="btn btn-primary btn-demo-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19" />
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                </svg>
+                                Añadir Fila
+                            </button>
+                        </div>
+
+                        <!-- Contenedor de la Tabla -->
+                        <div class="comp-table-wrap">
+                            <table class="comp-table">
+                                <thead>
+                                    <tr>
+                                        <th>Institución</th>
+                                        <th>Código Centro</th>
+                                        <th>Usuarios Registrados</th>
+                                        <th>Estado</th>
+                                        <th style="text-align: right;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="hover-bg transition-colors">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm me-3"
+                                                    style="background: linear-gradient(135deg,#2d5a87,#60a5fa); color:#fff; font-weight:600; border:none; width: 34px; height: 34px;">
+                                                    L</div>
+                                                <div>
+                                                    <div class="font-medium text-dark" style="font-weight:600;">Liceo de
+                                                        Costa Rica</div>
+                                                    <div class="text-sm text-muted" style="font-size:0.775rem;">San
+                                                        José, Centro</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-secondary"
+                                                style="font-family: monospace;">CR-00214</span></td>
+                                        <td>1,240 Estudiantes</td>
+                                        <td>
+                                            <span class="status-indicator status-active"></span>
+                                            <span class="text-sm font-medium">Activo</span>
+                                        </td>
+                                        <td style="text-align: right;">
+                                            <div class="comp-row" style="justify-content: flex-end; gap: 0.25rem;">
+                                                <button class="btn btn-icon hover-primary" title="Editar">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2">
+                                                        <path
+                                                            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                        <path
+                                                            d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                    </svg>
+                                                </button>
+                                                <button class="btn btn-icon hover-danger" title="Eliminar">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2">
+                                                        <polyline points="3 6 5 6 21 6" />
+                                                        <path
+                                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover-bg transition-colors">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm me-3"
+                                                    style="background: linear-gradient(135deg,#2d5a87,#60a5fa); color:#fff; font-weight:600; border:none; width: 34px; height: 34px;">
+                                                    C</div>
+                                                <div>
+                                                    <div class="font-medium text-dark" style="font-weight:600;">Colegio
+                                                        Clodomiro Picado</div>
+                                                    <div class="text-sm text-muted" style="font-size:0.775rem;">
+                                                        Turrialba, Cartago</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-secondary"
+                                                style="font-family: monospace;">CR-00984</span></td>
+                                        <td>940 Estudiantes</td>
+                                        <td>
+                                            <span class="status-indicator status-active"></span>
+                                            <span class="text-sm font-medium">Activo</span>
+                                        </td>
+                                        <td style="text-align: right;">
+                                            <div class="comp-row" style="justify-content: flex-end; gap: 0.25rem;">
+                                                <button class="btn btn-icon hover-primary" title="Editar">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2">
+                                                        <path
+                                                            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                        <path
+                                                            d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                    </svg>
+                                                </button>
+                                                <button class="btn btn-icon hover-danger" title="Eliminar">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2">
+                                                        <polyline points="3 6 5 6 21 6" />
+                                                        <path
+                                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover-bg transition-colors">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm me-3"
+                                                    style="background: linear-gradient(135deg,#64748b,#cbd5e1); color:#fff; font-weight:600; border:none; width: 34px; height: 34px;">
+                                                    I</div>
+                                                <div>
+                                                    <div class="font-medium text-dark" style="font-weight:600;">
+                                                        Instituto Tecnológico de Alajuela</div>
+                                                    <div class="text-sm text-muted" style="font-size:0.775rem;">
+                                                        Alajuela, Centro</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-secondary"
+                                                style="font-family: monospace;">CR-00105</span></td>
+                                        <td>0 Estudiantes</td>
+                                        <td>
+                                            <span class="status-indicator status-inactive"></span>
+                                            <span class="text-sm font-medium">Inactivo</span>
+                                        </td>
+                                        <td style="text-align: right;">
+                                            <div class="comp-row" style="justify-content: flex-end; gap: 0.25rem;">
+                                                <button class="btn btn-icon hover-primary" title="Editar">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2">
+                                                        <path
+                                                            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                        <path
+                                                            d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                    </svg>
+                                                </button>
+                                                <button class="btn btn-icon hover-danger" title="Eliminar">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2">
+                                                        <polyline points="3 6 5 6 21 6" />
+                                                        <path
+                                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación Acoplada -->
+                        <div class="pagination">
+                            <button class="pagination-item disabled">◀</button>
+                            <button class="pagination-item active">1</button>
+                            <button class="pagination-item">2</button>
+                            <button class="pagination-item">3</button>
+                            <button class="pagination-item">▶</button>
+                        </div>
+
+                        <div id="code-tables-premium-container" class="code-container" style="display: none;">
+                            <pre><code id="code-tables-premium-text">&lt;!-- Estructura de Tabla Premium con Paginación --&gt;
 &lt;div class="table-container"&gt;
     &lt;table class="table"&gt;
-        &lt;thead&gt;
-            &lt;tr&gt;
-                &lt;th&gt;Nombre&lt;/th&gt;
-                &lt;th&gt;Rol&lt;/th&gt;
-                &lt;th&gt;Estado&lt;/th&gt;
-                &lt;th style="text-align: right;"&gt;Acciones&lt;/th&gt;
-            &lt;/tr&gt;
-        &lt;/thead&gt;
-        &lt;tbody&gt;
-            &lt;tr&gt;
-                &lt;td&gt;
-                    &lt;div class="d-flex align-items-center"&gt;
-                        &lt;div class="avatar-sm me-3" style="background: linear-gradient(135deg,#2d5a87,#60a5fa); color:white;"&gt;M&lt;/div&gt;
-                        &lt;div&gt;
-                            &lt;div class="font-medium"&gt;María Fernández&lt;/div&gt;
-                            &lt;div class="text-sm text-secondary"&gt;maria@correo.com&lt;/div&gt;
-                        &lt;/div&gt;
-                    &lt;/div&gt;
-                &lt;/td&gt;
-                &lt;td&gt;&lt;span class="badge badge-primary"&gt;Admin&lt;/span&gt;&lt;/td&gt;
-                &lt;td&gt;&lt;span class="status-indicator status-active"&gt;&lt;/span&gt; Activo&lt;/td&gt;
-                &lt;td style="text-align: right;"&gt;
-                    &lt;button class="btn btn-icon hover-primary"&gt;...&lt;/button&gt;
-                &lt;/td&gt;
-            &lt;/tr&gt;
-        &lt;/tbody&gt;
+        &lt;thead&gt; ... &lt;/thead&gt;
+        &lt;tbody&gt; ... &lt;/tbody&gt;
     &lt;/table&gt;
+&lt;/div&gt;
+&lt;div class="pagination"&gt;
+    &lt;button class="pagination-item"&gt;1&lt;/button&gt;
 &lt;/div&gt;</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════
-             MODAL
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Modal</h3>
-            <p class="comp-section-desc">Diálogo modal para formularios de ingreso y confirmaciones de acciones.</p>
-
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Demostración de Diálogo</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-modal">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-modal-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
-                    </div>
-                </div>
-
-                <div class="comp-row" style="margin-bottom: 2rem;">
-                    <!-- Botón para lanzar el Modal interactivo real -->
-                    <button id="btn-trigger-modal" class="btn btn-primary btn-demo-lg" style="gap: 8px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-                        Probar Modal Interactivo
-                    </button>
-                </div>
-
-                <!-- Representación estática en línea del modal para diseño visual -->
-                <div class="modal-demo-inline" style="max-width:500px; margin: 0 auto; border: 1px solid var(--border);">
-                    <div class="modal-header" style="border-bottom:1px solid var(--border); padding: 1.25rem 1.5rem; display:flex; justify-content:space-between; align-items:center;">
-                        <h3 class="modal-title" style="font-size:1.125rem; font-weight:600;">Agregar Nuevo Usuario (Vista previa)</h3>
-                        <button class="close-btn" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
-                    </div>
-                    <div class="modal-body" style="padding:1.5rem;">
-                        <div class="form-group" style="margin-bottom:1.25rem;">
-                            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Nombre Completo</label>
-                            <input type="text" class="input-demo" placeholder="Ej: Juan Pérez" style="padding-left:14px;">
-                        </div>
-                        <div class="form-group" style="margin-bottom:1.25rem;">
-                            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Correo Electrónico</label>
-                            <input type="email" class="input-demo" placeholder="Ej: juan@correo.com" style="padding-left:14px;">
-                        </div>
-                        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:2rem;">
-                            <button class="btn btn-secondary">Cancelar</button>
-                            <button class="btn btn-primary">Guardar</button>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div id="code-modal-container" class="code-container" style="display: none;">
-                    <pre><code id="code-modal-text">&lt;!-- Modal HTML Base --&gt;
-&lt;div class="modal-backdrop" id="my-modal" style="display: none;"&gt;
-    &lt;div class="modal-dialog"&gt;
+                <!-- ═══════════════════════════════════════════
+                     NAVEGACIÓN Y PASOS (WIZARDS & TABS)
+                ═══════════════════════════════════════════ -->
+                <section id="navegacion" class="comp-section">
+                    <h3 class="comp-section-title">Navegación y Pasos</h3>
+                    <p class="comp-section-desc">Menús deslizables, indicadores de progreso paso a paso (Wizards) y
+                        migas de pan (Breadcrumbs) para guiar al usuario.</p>
+
+                    <!-- Breadcrumbs -->
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Migas de Pan (Breadcrumbs)</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-breadcrumbs">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
+                        </div>
+
+                        <nav
+                            style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 500;">
+                            <a href="#" style="color: var(--primary); text-decoration: none;">Inicio</a>
+                            <span style="color: var(--text-light);">/</span>
+                            <a href="#" style="color: var(--primary); text-decoration: none;">Centros Educativos</a>
+                            <span style="color: var(--text-light);">/</span>
+                            <span style="color: var(--text-muted);">Liceo de Costa Rica</span>
+                        </nav>
+
+                        <div id="code-breadcrumbs-container" class="code-container" style="display: none;">
+                            <pre><code id="code-breadcrumbs-text">&lt;nav class="breadcrumbs"&gt;
+    &lt;a href="#"&gt;Inicio&lt;/a&gt; &lt;span&gt;/&lt;/span&gt;
+    &lt;a href="#"&gt;Centros&lt;/a&gt; &lt;span&gt;/&lt;/span&gt;
+    &lt;span class="active"&gt;Liceo&lt;/span&gt;
+&lt;/nav&gt;</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Step Wizard -->
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Indicador de Pasos (Wizard)</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-wizard">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="step-indicator">
+                            <div class="step-indicator-progress" style="width: 50%;"></div>
+                            <div class="step-node completed">
+                                <div class="step-circle">1</div>
+                                <span class="step-label">Datos Generales</span>
+                            </div>
+                            <div class="step-node active">
+                                <div class="step-circle">2</div>
+                                <span class="step-label">Plan de Estudio</span>
+                            </div>
+                            <div class="step-node">
+                                <div class="step-circle">3</div>
+                                <span class="step-label">Finalizar Registro</span>
+                            </div>
+                        </div>
+                        <p style="font-size:0.8rem; color: var(--text-light); text-align:center; margin-top: 1rem;">
+                            *(Haz clic en los números de paso para cambiar el estado de la barra)*</p>
+
+                        <div id="code-wizard-container" class="code-container" style="display: none;">
+                            <pre><code id="code-wizard-text">&lt;div class="step-indicator"&gt;
+    &lt;div class="step-indicator-progress" style="width: 50%;"&gt;&lt;/div&gt;
+    &lt;div class="step-node completed"&gt; &lt;div class="step-circle"&gt;1&lt;/div&gt; &lt;/div&gt;
+    &lt;div class="step-node active"&gt; &lt;div class="step-circle"&gt;2&lt;/div&gt; &lt;/div&gt;
+    &lt;div class="step-node"&gt; &lt;div class="step-circle"&gt;3&lt;/div&gt; &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Pestañas (Tabs) Alternativas -->
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Pestañas (Tabs)</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-tabs-premium">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tab-demo-container">
+                            <div class="tab-demo-bar">
+                                <button class="tab-demo-btn active">Usuarios</button>
+                                <button class="tab-demo-btn">Centros Educativos</button>
+                                <button class="tab-demo-btn">Reportes de Matrícula</button>
+                            </div>
+                            <div class="tab-demo-content" style="padding-top: 1rem;">
+                                <p style="font-size:0.9rem; color:var(--text-muted);">Panel de Gestión de Usuarios.
+                                    Permite buscar, filtrar y asignar roles a los administradores.</p>
+                            </div>
+                            <div class="tab-demo-content" style="padding-top: 1rem; display: none;">
+                                <p style="font-size:0.9rem; color:var(--text-muted);">Listado de Centros Educativos
+                                    autorizados por el MEP para la plataforma de EstudiaFácil.</p>
+                            </div>
+                            <div class="tab-demo-content" style="padding-top: 1rem; display: none;">
+                                <p style="font-size:0.9rem; color:var(--text-muted);">Reporte analítico trimestral sobre
+                                    el ingreso, egreso y retención de estudiantes matriculados.</p>
+                            </div>
+                        </div>
+
+                        <div id="code-tabs-premium-container" class="code-container" style="display: none;">
+                            <pre><code id="code-tabs-premium-text">&lt;div class="tab-container"&gt;
+    &lt;div class="tab-bar"&gt;
+        &lt;button class="tab-btn active"&gt;Pestaña 1&lt;/button&gt;
+        &lt;button class="tab-btn"&gt;Pestaña 2&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div class="tab-content"&gt; ... &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════
+                     FEEDBACK Y OVERLAYS (ALERTAS, MODALES Y TOASTS)
+                ═══════════════════════════════════════════ -->
+                <section id="feedback" class="comp-section">
+                    <h3 class="comp-section-title">Alertas y Overlays</h3>
+                    <p class="comp-section-desc">Notificaciones flotantes instantáneas (Toasts), banners de información
+                        y ventanas de confirmación críticas (Modales).</p>
+
+                    <!-- Alertas Banner -->
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Banners de Alerta e Información</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-alerts-banners">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="comp-row--col">
+                            <!-- Info Alert -->
+                            <div class="alert-demo"
+                                style="background:#ecfeff; border:1px solid #c5f6fa; color:#0891b2;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="16" x2="12" y2="12" />
+                                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                                <span>Una nueva actualización del sistema está planificada para este domingo a las 2:00
+                                    AM.</span>
+                            </div>
+
+                            <!-- Success Alert -->
+                            <div class="alert-demo"
+                                style="background:#f0fdf4; border:1px solid #bbf7d0; color:#16a34a;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </svg>
+                                <span>La matrícula del Liceo de Costa Rica se ha sincronizado correctamente.</span>
+                            </div>
+
+                            <!-- Warning Alert -->
+                            <div class="alert-demo"
+                                style="background:#fffbeb; border:1px solid #fde68a; color:#d97706;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path
+                                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                <span>Tu cuenta presenta problemas de sincronización de seguridad. Restablece tus
+                                    credenciales.</span>
+                            </div>
+
+                            <!-- Error Alert -->
+                            <div class="alert-demo"
+                                style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                <span>Error 500: No se ha podido establecer comunicación con la base de datos de centros
+                                    del MEP.</span>
+                            </div>
+                        </div>
+
+                        <div id="code-alerts-banners-container" class="code-container" style="display: none;">
+                            <pre><code id="code-alerts-banners-text">&lt;!-- Alerta Semántica en Banner --&gt;
+&lt;div class="alert-demo" style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a;"&gt;
+    &lt;svg ...&gt;&lt;/svg&gt;
+    &lt;span&gt;Mensaje de éxito&lt;/span&gt;
+&lt;/div&gt;</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Toasts dinámicos y Modales -->
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Notificaciones Toasts & Lanzadores de Modales</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-overlays-demo">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
+                        </div>
+
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">
+                            Lanzar Toasts Dinámicos</h4>
+                        <div class="comp-row" style="margin-bottom: 2rem;">
+                            <button class="btn btn-primary btn-toast-trigger" data-type="info"
+                                data-msg="Nueva notificación de información de EstudiaFácil">Info Toast</button>
+                            <button class="btn btn-primary btn-toast-trigger" style="background-color: var(--success);"
+                                data-type="success" data-msg="Los cambios se guardaron con éxito en el servidor">Success
+                                Toast</button>
+                            <button class="btn btn-primary btn-toast-trigger"
+                                style="background-color: var(--warm); color: var(--text-primary);" data-type="warning"
+                                data-msg="Advertencia: Sesión a punto de caducar">Warning Toast</button>
+                            <button class="btn btn-primary btn-toast-trigger" style="background-color: var(--error);"
+                                data-type="error" data-msg="Error crítico: No se pudieron procesar los datos">Error
+                                Toast</button>
+                        </div>
+
+                        <!-- Toast Container para el demo visual -->
+                        <div id="toast-preview-container"
+                            style="position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 999;">
+                        </div>
+
+                        <h4
+                            style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; border-top: 1px dashed var(--border); padding-top: 1.5rem;">
+                            Ventanas Modales del Sistema</h4>
+                        <div class="comp-row">
+                            <!-- Modal Formulario -->
+                            <button id="btn-trigger-modal" class="btn btn-outline" style="gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="9" y1="3" x2="9" y2="21" />
+                                    <line x1="3" y1="9" x2="21" y2="9" />
+                                </svg>
+                                Modal Formulario (Crear Usuario)
+                            </button>
+
+                            <!-- Modal Confirmación destructivo -->
+                            <button id="btn-trigger-confirm" class="btn btn-destructive" style="gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                Modal de Advertencia (Confirmación Destructiva)
+                            </button>
+                        </div>
+
+                        <div id="code-overlays-demo-container" class="code-container" style="display: none;">
+                            <pre><code id="code-overlays-demo-text">&lt;!-- Estructura del Modal de Advertencia --&gt;
+&lt;div class="modal-backdrop" id="destructive-modal" style="display: none;"&gt;
+    &lt;div class="modal-dialog" style="max-width: 420px;"&gt;
         &lt;div class="modal-header"&gt;
-            &lt;h3 class="modal-title"&gt;Título del Modal&lt;/h3&gt;
-            &lt;button class="close-btn" onclick="cerrarModal()"&gt;&amp;times;&lt;/button&gt;
+            &lt;h3 class="modal-title"&gt;Confirmar acción&lt;/h3&gt;
+            &lt;button class="close-btn"&gt;&amp;times;&lt;/button&gt;
         &lt;/div&gt;
         &lt;div class="modal-body"&gt;
-            &lt;form&gt;
-                &lt;div class="form-group"&gt;
-                    &lt;label class="form-label"&gt;Campo de Texto&lt;/label&gt;
-                    &lt;input type="text" class="form-input"&gt;
-                &lt;/div&gt;
-                &lt;div class="modal-footer"&gt;
-                    &lt;button type="button" class="btn btn-secondary" onclick="cerrarModal()"&gt;Cancelar&lt;/button&gt;
-                    &lt;button type="submit" class="btn btn-primary"&gt;Guardar&lt;/button&gt;
-                &lt;/div&gt;
-            &lt;/form&gt;
+            &lt;p&gt;¿Estás seguro de que deseas continuar? Esta acción no se puede deshacer.&lt;/p&gt;
+            &lt;div class="modal-footer"&gt;
+                &lt;button class="btn btn-secondary"&gt;Cancelar&lt;/button&gt;
+                &lt;button class="btn btn-destructive"&gt;Confirmar y Eliminar&lt;/button&gt;
+            &lt;/div&gt;
         &lt;/div&gt;
     &lt;/div&gt;
 &lt;/div&gt;</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════
-             AVATARES
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Avatares</h3>
-            <p class="comp-section-desc">Representaciones visuales de usuarios en distintos tamaños.</p>
-
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Variantes de Avatar</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-avatars">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-avatars-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
+                        </div>
                     </div>
-                </div>
+                </section>
 
-                <div class="comp-row" style="margin-bottom: 1.5rem;">
-                    <span style="font-size:0.8rem; color:var(--text-secondary); width:100%; display:block; margin-bottom:0.5rem;">Avatar Gradiente (Varios Tamaños):</span>
-                    <div class="avatar-demo-xs" style="background:linear-gradient(135deg,#2d5a87,#60a5fa);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;box-shadow:var(--shadow-sm);">A</div>
-                    <div class="avatar-demo-sm" style="background:linear-gradient(135deg,#2d5a87,#60a5fa);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;box-shadow:var(--shadow-sm);">B</div>
-                    <div class="avatar-demo-md" style="background:linear-gradient(135deg,#2d5a87,#60a5fa);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;box-shadow:var(--shadow);">C</div>
-                    <div class="avatar-demo-lg" style="background:linear-gradient(135deg,#2d5a87,#60a5fa);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;box-shadow:var(--shadow-lg);">D</div>
-                </div>
+                <!-- ═══════════════════════════════════════════
+                     LÍNEA DE TIEMPO (TIMELINE)
+                ═══════════════════════════════════════════ -->
+                <section id="timeline" class="comp-section" style="margin-bottom: 6rem;">
+                    <h3 class="comp-section-title">Línea de tiempo (Timeline)</h3>
+                    <p class="comp-section-desc">Estructura cronológica ideal para registros de actividad escolar,
+                        historial de matrículas o auditoría interna.</p>
 
-                <div class="comp-row" style="border-top: 1px dashed var(--border); padding-top: 1rem;">
-                    <span style="font-size:0.8rem; color:var(--text-secondary); width:100%; display:block; margin-bottom:0.5rem;">Avatar de Lista (Light con bordes marcados):</span>
-                    <div class="d-flex align-items-center">
-                        <div class="avatar-sm me-3" style="font-weight:600;">M</div>
-                        <span style="font-size: 0.9rem; font-weight: 500;">Fondo Light Estándar (Iniciales)</span>
-                    </div>
-                </div>
+                    <div class="comp-demo-card">
+                        <div class="comp-demo-card-header">
+                            <h4>Historial de Actividad Reciente</h4>
+                            <div class="comp-card-actions">
+                                <button class="btn btn-secondary btn-demo-sm btn-toggle-code"
+                                    data-target="code-timeline">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                    Ver Código
+                                </button>
+                            </div>
+                        </div>
 
-                <div id="code-avatars-container" class="code-container" style="display: none;">
-                    <pre><code id="code-avatars-text">&lt;!-- Avatar Gradiente Redondo (Tamaño Estándar - 36px) --&gt;
-&lt;div class="avatar" style="width: 36px; height: 36px; background: linear-gradient(135deg, #2d5a87, #60a5fa); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600;"&gt;
-    A
-&lt;/div&gt;
+                        <div class="timeline">
+                            <!-- Actividad 1 -->
+                            <div class="timeline-item success">
+                                <div class="timeline-icon"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-time">Hoy, hace 10 min</div>
+                                    <div class="timeline-title">Sincronización de estudiantes exitosa</div>
+                                    <div class="timeline-desc">Se agregaron 45 estudiantes nuevos desde la pasarela de
+                                        matrícula del MEP al Liceo de Costa Rica. Proceso ejecutado por Alejandro
+                                        Chaves.</div>
+                                </div>
+                            </div>
 
-&lt;!-- Avatar con Color Light (Thymeleaf fragment style) --&gt;
-&lt;div class="avatar-sm"&gt;M&lt;/div&gt;</code></pre>
-                </div>
-            </div>
-        </section>
+                            <!-- Actividad 2 -->
+                            <div class="timeline-item warning">
+                                <div class="timeline-icon"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-time">Ayer, 04:30 PM</div>
+                                    <div class="timeline-title">Alerta de inactividad de usuarios</div>
+                                    <div class="timeline-desc">El centro "Instituto Tecnológico de Alajuela" ha estado
+                                        inactivo por más de 30 días. Se envió correo de auditoría automática a los
+                                        directivos.</div>
+                                </div>
+                            </div>
 
-        <!-- ═══════════════════════════════════════════
-             TABS
-        ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Tabs</h3>
-            <p class="comp-section-desc">Navegación por pestañas para alternar vistas dinámicamente.</p>
+                            <!-- Actividad 3 -->
+                            <div class="timeline-item danger">
+                                <div class="timeline-icon"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-time">22 de Mayo, 09:12 AM</div>
+                                    <div class="timeline-title">Error en base de datos de matrículas</div>
+                                    <div class="timeline-desc">Fallo de lectura de clave en tabla de cobros asociados.
+                                        Matrícula rechazada temporalmente para la institución ID: 104.</div>
+                                </div>
+                            </div>
+                        </div>
 
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Muestra de Pestañas</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-tabs">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-tabs-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
-                    </div>
-                </div>
-
-                <div class="tab-demo-bar">
-                    <button class="tab-demo-btn active">Usuarios</button>
-                    <button class="tab-demo-btn">Centros Educativos</button>
-                    <button class="tab-demo-btn">Reportes</button>
-                </div>
-                <p style="font-size:0.875rem;color:var(--text-secondary); margin-top: 0.5rem; transition: color 0.2s;">Contenido de la pestaña activa. Vista cambiada dinámicamente.</p>
-
-                <div id="code-tabs-container" class="code-container" style="display: none;">
-                    <pre><code id="code-tabs-text">&lt;!-- Estructura de Pestañas (Tabs) --&gt;
-&lt;div class="tabs-container" x-data="{ tab: 'usuarios' }"&gt;
-    &lt;div class="tab-bar" style="display: flex; border-bottom: 1px solid var(--border);"&gt;
-        &lt;button @click="tab = 'usuarios'" :class="tab === 'usuarios' ? 'active' : ''" class="tab-btn"&gt;Usuarios&lt;/button&gt;
-        &lt;button @click="tab = 'centros'" :class="tab === 'centros' ? 'active' : ''" class="tab-btn"&gt;Centros Educativos&lt;/button&gt;
+                        <div id="code-timeline-container" class="code-container" style="display: none;">
+                            <pre><code id="code-timeline-text">&lt;!-- Estructura de Timeline --&gt;
+&lt;div class="timeline"&gt;
+    &lt;div class="timeline-item success"&gt;
+        &lt;div class="timeline-icon"&gt;&lt;/div&gt;
+        &lt;div class="timeline-content"&gt;
+            &lt;div class="timeline-time"&gt;Hora/Fecha&lt;/div&gt;
+            &lt;div class="timeline-title"&gt;Título del Evento&lt;/div&gt;
+            &lt;div class="timeline-desc"&gt;Descripción detallada...&lt;/div&gt;
+        &lt;/div&gt;
     &lt;/div&gt;
-    &lt;div x-show="tab === 'usuarios'"&gt;Panel de Usuarios&lt;/div&gt;
-    &lt;div x-show="tab === 'centros'"&gt;Panel de Centros Educativos&lt;/div&gt;
 &lt;/div&gt;</code></pre>
-                </div>
+                        </div>
+                    </div>
+                </section>
+
             </div>
-        </section>
+        </div>
 
         <!-- ═══════════════════════════════════════════
-             EXTRAS
+             MODALES DE FLUJO INTERACTIVOS REALES
         ═══════════════════════════════════════════ -->
-        <section class="comp-section">
-            <h3 class="comp-section-title">Extras</h3>
-            <p class="comp-section-desc">Toggle switch, spinner, barra de progreso interactiva y tooltip.</p>
 
-            <div class="comp-demo-card">
-                <div class="comp-demo-card-header">
-                    <h4>Componentes Auxiliares</h4>
-                    <div class="comp-card-actions">
-                        <button class="btn btn-secondary btn-demo-sm btn-toggle-code" data-target="code-extras">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="6 9 12 15 18 9"/></svg>
-                            Ver Código
-                        </button>
-                        <button class="btn btn-primary btn-demo-sm btn-copy-code" data-target="code-extras-text">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                            Copiar Código
-                        </button>
-                    </div>
-                </div>
-
-                <div class="comp-grid">
-                    <!-- Toggle Switch -->
-                    <div class="comp-demo-card" style="border: none; padding: 0;">
-                        <h4 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Toggle Switch</h4>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-
-                    <!-- Spinner -->
-                    <div class="comp-demo-card" style="border: none; padding: 0;">
-                        <h4 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Cargando (Spinner)</h4>
-                        <div class="spinner"></div>
-                    </div>
-
-                    <!-- Progreso Interactiva -->
-                    <div class="comp-demo-card" style="border: none; padding: 0;">
-                        <h4 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Progreso Interactiva</h4>
-                        <div class="progress-bar-track">
-                            <div class="progress-bar-fill" style="width:68%;"></div>
-                        </div>
-                        <p class="text-sm text-muted" style="margin-top:0.5rem; font-size: 0.8rem; color: var(--text-secondary);">68% completado</p>
-                        <div class="comp-row" style="margin-top: 0.75rem;">
-                            <button id="btn-decrease-progress" class="btn btn-secondary btn-demo-sm">- 10%</button>
-                            <button id="btn-increase-progress" class="btn btn-secondary btn-demo-sm">+ 10%</button>
-                        </div>
-                    </div>
-
-                    <!-- Tooltip -->
-                    <div class="comp-demo-card" style="border: none; padding: 0;">
-                        <h4 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Tooltip Info</h4>
-                        <div class="tooltip-demo">
-                            Pasa el ratón aquí
-                            <span class="tooltip-text">Este es un tooltip útil sobre este elemento</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="code-extras-container" class="code-container" style="display: none;">
-                    <pre><code id="code-extras-text">&lt;!-- Toggle Switch --&gt;
-&lt;label class="toggle-switch"&gt;
-    &lt;input type="checkbox" checked&gt;
-    &lt;span class="toggle-slider"&gt;&lt;/span&gt;
-&lt;/label&gt;
-
-&lt;!-- Spinner de Carga (HTMX indicator) --&gt;
-&lt;div class="spinner"&gt;&lt;/div&gt;
-
-&lt;!-- Barra de Progreso --&gt;
-&lt;div class="progress-bar-track"&gt;
-    &lt;div class="progress-bar-fill" style="width: 50%;"&gt;&lt;/div&gt;
-&lt;/div&gt;
-
-&lt;!-- Tooltip --&gt;
-&lt;div class="tooltip-demo"&gt;
-    Pasa el ratón aquí
-    &lt;span class="tooltip-text"&gt;Texto descriptivo&lt;/span&gt;
-&lt;/div&gt;</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <!-- ═══════════════════════════════════════════
-             MODAL INTERACTIVO REAL (DE FLUJO)
-        ═══════════════════════════════════════════ -->
+        <!-- Modal 1: Formulario Crear Usuario -->
         <div id="interactive-modal" class="modal-backdrop" style="display: none;">
             <div class="modal-dialog">
                 <div class="modal-header">
@@ -841,22 +1328,31 @@
                 <div class="modal-body">
                     <form>
                         <div class="form-group" style="margin-bottom: 1.25rem;">
-                            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Nombre Completo</label>
-                            <input type="text" class="input-demo" placeholder="Escribe tu nombre completo..." required style="padding-left:14px;">
+                            <label class="form-label"
+                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Nombre
+                                Completo</label>
+                            <input type="text" class="input-demo" placeholder="Escribe tu nombre completo..." required
+                                style="padding-left:14px;">
                         </div>
                         <div class="form-group" style="margin-bottom: 1.25rem;">
-                            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Correo Electrónico</label>
-                            <input type="email" class="input-demo" placeholder="correo@ejemplo.com" required style="padding-left:14px;">
+                            <label class="form-label"
+                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Correo
+                                Electrónico</label>
+                            <input type="email" class="input-demo" placeholder="correo@ejemplo.com" required
+                                style="padding-left:14px;">
                         </div>
                         <div class="form-group" style="margin-bottom: 1.25rem;">
-                            <label class="form-label" style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Rol Asignado</label>
+                            <label class="form-label"
+                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Rol
+                                Asignado</label>
                             <select class="input-demo" style="appearance:auto;padding-right:14px;">
-                                <option>Usuario</option>
-                                <option>Editor</option>
+                                <option>Docente</option>
                                 <option>Administrador</option>
+                                <option>Estudiante</option>
                             </select>
                         </div>
-                        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:2rem;">
+                        <div class="modal-footer"
+                            style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:2rem;">
                             <button type="button" class="btn btn-secondary">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                         </div>
@@ -864,6 +1360,35 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal 2: Confirmación Destructiva -->
+        <div id="destructive-modal" class="modal-backdrop" style="display: none;">
+            <div class="modal-dialog" style="max-width: 420px;">
+                <div class="modal-header">
+                    <h3 class="modal-title" style="color: var(--error);">Eliminar Elemento</h3>
+                    <button class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size: 0.925rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem;">
+                        ¿Estás seguro de que deseas eliminar este registro permanentemente de la base de datos de
+                        EstudiaFácil? Esta acción no se puede deshacer.
+                    </p>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                        <button type="button" class="btn btn-secondary">Cancelar</button>
+                        <button type="button" class="btn btn-destructive">Confirmar y Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón flotante FAB para regresar arriba -->
+        <button class="btn-fab" onclick="window.scrollTo({top:0, behavior:'smooth'})" title="Regresar al inicio">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5" />
+                <polyline points="5 12 12 5 19 12" />
+            </svg>
+        </button>
 
     </main>
 

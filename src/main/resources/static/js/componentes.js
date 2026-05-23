@@ -13,15 +13,21 @@ function initComponentes() {
     initProgressBar();
     initAlertInteractions();
     initInteractiveModal();
+    initDestructiveModal();
     initTabs();
     initToggleSwitch();
+    initStepIndicator();
+    initTableFilter();
+    initScrollSpy();
+    initToastDemoSpawner();
 }
 
+// ── Paleta de colores ──
 function initColorSwatches() {
-    document.querySelectorAll('.color-swatch:not([data-initialized])').forEach(function(swatch) {
+    document.querySelectorAll('.color-swatch:not([data-initialized])').forEach(function (swatch) {
         swatch.setAttribute('data-initialized', 'true');
         swatch.style.cursor = 'pointer';
-        swatch.addEventListener('click', function() {
+        swatch.addEventListener('click', function () {
             var hexEl = swatch.querySelector('.hex');
             if (hexEl) {
                 copyToClipboard(hexEl.textContent, 'Color ' + hexEl.textContent + ' copiado al portapapeles');
@@ -30,24 +36,26 @@ function initColorSwatches() {
     });
 }
 
+// ── Copiado de código ──
 function initCopyCodeButtons() {
-    document.querySelectorAll('.btn-copy-code:not([data-initialized])').forEach(function(btn) {
+    document.querySelectorAll('.btn-copy-code:not([data-initialized])').forEach(function (btn) {
         btn.setAttribute('data-initialized', 'true');
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             var targetId = btn.getAttribute('data-target');
             var codeElement = document.getElementById(targetId);
             if (codeElement) {
                 var codeText = codeElement.textContent || codeElement.innerText;
-                copyToClipboard(codeText, 'Código del componente copiado al portapapeles');
+                copyToClipboard(codeText, 'Código del componente copiado');
             }
         });
     });
 }
 
+// ── Mostrar/ocultar código ──
 function initToggleCodeButtons() {
-    document.querySelectorAll('.btn-toggle-code:not([data-initialized])').forEach(function(btn) {
+    document.querySelectorAll('.btn-toggle-code:not([data-initialized])').forEach(function (btn) {
         btn.setAttribute('data-initialized', 'true');
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             var targetId = btn.getAttribute('data-target');
             var codeContainer = document.getElementById(targetId + '-container');
             if (codeContainer) {
@@ -63,6 +71,7 @@ function initToggleCodeButtons() {
     });
 }
 
+// ── Barra de progreso demo ──
 function initProgressBar() {
     var progressFill = document.querySelector('.progress-bar-fill');
     var progressText = document.querySelector('.progress-bar-track + p');
@@ -84,21 +93,23 @@ function initProgressBar() {
         }
     }
 
-    btnDecrease.addEventListener('click', function() { updateProgress(-10); });
-    btnIncrease.addEventListener('click', function() { updateProgress(10); });
+    btnDecrease.addEventListener('click', function () { updateProgress(-10); });
+    btnIncrease.addEventListener('click', function () { updateProgress(10); });
 }
 
+// ── Interacciones de alerta ──
 function initAlertInteractions() {
-    document.querySelectorAll('.alert-demo:not([data-initialized])').forEach(function(alert) {
+    document.querySelectorAll('.alert-demo:not([data-initialized])').forEach(function (alert) {
         alert.setAttribute('data-initialized', 'true');
         alert.style.cursor = 'pointer';
-        alert.addEventListener('click', function() {
+        alert.addEventListener('click', function () {
             var message = alert.textContent.trim();
             showNotification(message);
         });
     });
 }
 
+// ── Modal interactivo estándar ──
 function initInteractiveModal() {
     var modalTrigger = document.getElementById('btn-trigger-modal');
     var interactiveModal = document.getElementById('interactive-modal');
@@ -107,14 +118,14 @@ function initInteractiveModal() {
 
     modalTrigger.setAttribute('data-initialized', 'true');
 
-    modalTrigger.addEventListener('click', function() {
+    modalTrigger.addEventListener('click', function () {
         interactiveModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     });
 
     var closeButtons = interactiveModal.querySelectorAll('.close-btn, .btn-secondary, .modal-backdrop');
-    closeButtons.forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
+    closeButtons.forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
             if (btn.classList.contains('modal-backdrop') && e.target !== btn) return;
             interactiveModal.style.display = 'none';
             document.body.style.overflow = '';
@@ -123,7 +134,7 @@ function initInteractiveModal() {
 
     var modalForm = interactiveModal.querySelector('form');
     if (modalForm) {
-        modalForm.addEventListener('submit', function(e) {
+        modalForm.addEventListener('submit', function (e) {
             e.preventDefault();
             interactiveModal.style.display = 'none';
             document.body.style.overflow = '';
@@ -132,42 +143,198 @@ function initInteractiveModal() {
     }
 }
 
-function initTabs() {
-    var tabButtons = document.querySelectorAll('.tab-demo-btn:not([data-initialized])');
-    if (tabButtons.length === 0) return;
+// ── Modal de confirmación destructiva ──
+function initDestructiveModal() {
+    var trigger = document.getElementById('btn-trigger-confirm');
+    var modal = document.getElementById('destructive-modal');
+    if (!trigger || !modal) return;
+    if (trigger.hasAttribute('data-initialized')) return;
 
-    tabButtons.forEach(function(btn) {
-        btn.setAttribute('data-initialized', 'true');
-        btn.addEventListener('click', function() {
-            tabButtons.forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-            var tabDemoBar = document.querySelector('.tab-demo-bar');
-            if (tabDemoBar) {
-                var tabContentText = tabDemoBar.nextElementSibling;
-                if (tabContentText) {
-                    tabContentText.textContent = 'Contenido de la pestaña: ' + btn.textContent.trim() + '. Vista cambiada dinámicamente.';
-                }
+    trigger.setAttribute('data-initialized', 'true');
+
+    trigger.addEventListener('click', function () {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    });
+
+    var closeButtons = modal.querySelectorAll('.close-btn, .btn-secondary, .modal-backdrop, .btn-destructive');
+    closeButtons.forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            if (btn.classList.contains('modal-backdrop') && e.target !== btn) return;
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            if (btn.classList.contains('btn-destructive')) {
+                showNotification('Elemento eliminado permanentemente');
             }
         });
     });
 }
 
+// ── Pestañas (Tabs) interactivos ──
+function initTabs() {
+    var tabDemoContainers = document.querySelectorAll('.tab-demo-container:not([data-initialized])');
+    tabDemoContainers.forEach(function (container) {
+        container.setAttribute('data-initialized', 'true');
+        var tabButtons = container.querySelectorAll('.tab-demo-btn');
+        var tabContents = container.querySelectorAll('.tab-demo-content');
+
+        tabButtons.forEach(function (btn, index) {
+            btn.addEventListener('click', function () {
+                tabButtons.forEach(function (b) { b.classList.remove('active'); });
+                tabContents.forEach(function (c) { c.style.display = 'none'; });
+
+                btn.classList.add('active');
+                if (tabContents[index]) {
+                    tabContents[index].style.display = 'block';
+                }
+            });
+        });
+    });
+}
+
+// ── Toggle Switch interaction ──
 function initToggleSwitch() {
     var toggleInput = document.querySelector('.toggle-switch input');
     if (!toggleInput) return;
     if (toggleInput.hasAttribute('data-initialized')) return;
 
     toggleInput.setAttribute('data-initialized', 'true');
-    toggleInput.addEventListener('change', function() {
+    toggleInput.addEventListener('change', function () {
         var state = toggleInput.checked ? 'activado' : 'desactivado';
         showNotification('Switch de estado ' + state);
     });
 }
 
+// ── Wizard (Indicador de Pasos) ──
+function initStepIndicator() {
+    var steps = document.querySelectorAll('.step-node');
+    var progress = document.querySelector('.step-indicator-progress');
+    if (steps.length === 0 || !progress) return;
+    if (steps[0].hasAttribute('data-initialized')) return;
+
+    steps.forEach(function (step, idx) {
+        step.setAttribute('data-initialized', 'true');
+        step.addEventListener('click', function () {
+            updateSteps(idx);
+        });
+    });
+
+    function updateSteps(activeIndex) {
+        steps.forEach(function (step, idx) {
+            if (idx < activeIndex) {
+                step.classList.add('completed');
+                step.classList.remove('active');
+            } else if (idx === activeIndex) {
+                step.classList.remove('completed');
+                step.classList.add('active');
+            } else {
+                step.classList.remove('completed');
+                step.classList.remove('active');
+            }
+        });
+
+        var pct = (activeIndex / (steps.length - 1)) * 100;
+        progress.style.width = pct + '%';
+    }
+}
+
+// ── Filtro en Tiempo Real para Tablas ──
+function initTableFilter() {
+    var filterInput = document.getElementById('table-demo-search');
+    var tableRows = document.querySelectorAll('.comp-table tbody tr');
+    if (!filterInput || tableRows.length === 0) return;
+    if (filterInput.hasAttribute('data-initialized')) return;
+
+    filterInput.setAttribute('data-initialized', 'true');
+    filterInput.addEventListener('input', function () {
+        var query = filterInput.value.toLowerCase().trim();
+        tableRows.forEach(function (row) {
+            var text = row.innerText.toLowerCase();
+            if (text.indexOf(query) > -1) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+}
+
+// ── Scroll Spy para Menú de Navegación Lateral ──
+function initScrollSpy() {
+    var links = document.querySelectorAll('.comp-nav-link');
+    var sections = document.querySelectorAll('.comp-section');
+    if (links.length === 0 || sections.length === 0) return;
+
+    window.addEventListener('scroll', function () {
+        var scrollPosition = window.scrollY + 120;
+        sections.forEach(function (section) {
+            var top = section.offsetTop;
+            var height = section.offsetHeight;
+            var id = section.getAttribute('id');
+
+            if (scrollPosition >= top && scrollPosition < top + height) {
+                links.forEach(function (link) {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + id) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    });
+}
+
+// ── Demostración de Toasts Semánticos ──
+function initToastDemoSpawner() {
+    var triggers = document.querySelectorAll('.btn-toast-trigger:not([data-initialized])');
+    var container = document.getElementById('toast-preview-container');
+    if (triggers.length === 0 || !container) return;
+
+    triggers.forEach(function (btn) {
+        btn.setAttribute('data-initialized', 'true');
+        btn.addEventListener('click', function () {
+            var type = btn.getAttribute('data-type');
+            var msg = btn.getAttribute('data-msg');
+            spawnToast(msg, type);
+        });
+    });
+
+    function spawnToast(message, type) {
+        var toast = document.createElement('div');
+        toast.className = 'toast-notification ' + type;
+
+        var iconSvg = '';
+        if (type === 'success') {
+            iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+        } else if (type === 'error') {
+            iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+        } else if (type === 'warning') {
+            iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warm)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        } else {
+            iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+        }
+
+        toast.innerHTML = iconSvg + '<span>' + message + '</span><button class="toast-close">&times;</button>';
+        container.appendChild(toast);
+
+        toast.querySelector('.toast-close').addEventListener('click', function () {
+            toast.remove();
+        });
+
+        setTimeout(function () {
+            toast.style.animation = 'slideDown 0.25s ease-out reverse';
+            setTimeout(function () {
+                toast.remove();
+            }, 230);
+        }, 4000);
+    }
+}
+
+// ── Utilitarias ──
 function copyToClipboard(text, successMessage) {
-    navigator.clipboard.writeText(text).then(function() {
+    navigator.clipboard.writeText(text).then(function () {
         showNotification(successMessage);
-    }).catch(function() {
+    }).catch(function () {
         var textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
@@ -188,6 +355,7 @@ function showNotification(message) {
     window.dispatchEvent(event);
 }
 
+// ── Registro de inicializadores ──
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initComponentes);
 } else {
