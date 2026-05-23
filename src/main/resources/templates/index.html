@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:fragment="html">
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8">
@@ -15,6 +15,16 @@
 
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.8/dist/cdn.min.js"></script>
+
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <script>
+        document.addEventListener('htmx:configRequest', function(evt) {
+            var token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            var header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+            if (token) evt.detail.headers[header] = token;
+        });
+    </script>
 
     <style>
         *,
@@ -960,7 +970,11 @@
             color: var(--error);
             background-color: rgba(220, 38, 38, 0.1);
         }
+
+        [x-cloak] { display: none !important; }
     </style>
+
+    <script th:src="@{/js/componentes.js}" defer></script>
 
     <th:block layout:fragment="head-extra"></th:block>
 </head>

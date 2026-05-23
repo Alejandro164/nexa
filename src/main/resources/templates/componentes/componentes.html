@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/base}">
+      layout:decorate="~{index}">
 
 <head>
     <title>Componentes UI — EstudiaFácil</title>
     <link rel="stylesheet" th:href="@{/css/componentes.css}">
-    <!-- Carga del archivo javascript interactivo -->
-    <script th:src="@{/componentes/componentes.js}" defer></script>
+    <script th:src="@{/js/componentes.js}" defer></script>
 </head>
 
 <body>
@@ -16,6 +15,8 @@
     <th:block layout:fragment="page-subtitle">Librería de componentes del sistema de diseño de EstudiaFácil</th:block>
 
     <main layout:fragment="content" th:fragment="htmx-content">
+
+        <link rel="stylesheet" th:href="@{/css/componentes.css}">
 
         <!-- ═══════════════════════════════════════════
              PALETA DE COLORES
