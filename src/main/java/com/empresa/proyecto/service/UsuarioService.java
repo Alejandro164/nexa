@@ -1,5 +1,6 @@
 package com.empresa.proyecto.service;
 
+import com.empresa.proyecto.dto.UsuarioDTO;
 import com.empresa.proyecto.entity.Usuario;
 import com.empresa.proyecto.repository.UsuarioRepository;
 import org.springframework.cache.annotation.CacheEvict;
@@ -20,13 +21,19 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "usuarios", key = "'todos'")
     public List<Usuario> obtenerTodos() {
         return usuarioRepository.findAll();
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "usuarios", key = "#filtro?.trim()?.toLowerCase() ?: 'todos'")
+    @Cacheable(value = "usuarios", key = "'todos'")
+    public List<UsuarioDTO> obtenerTodosDTO() {
+        return usuarioRepository.findAll().stream()
+                .map(UsuarioDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<Usuario> buscarPorNombre(String filtro) {
         if (filtro == null || filtro.trim().isEmpty()) {
             return usuarioRepository.findAll();

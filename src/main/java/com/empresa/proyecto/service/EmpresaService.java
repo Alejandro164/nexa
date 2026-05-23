@@ -1,5 +1,6 @@
 package com.empresa.proyecto.service;
 
+import com.empresa.proyecto.dto.EmpresaDTO;
 import com.empresa.proyecto.entity.Empresa;
 import com.empresa.proyecto.repository.EmpresaRepository;
 import org.springframework.cache.annotation.CacheEvict;
@@ -20,13 +21,19 @@ public class EmpresaService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "empresas", key = "'todas'")
     public List<Empresa> obtenerTodas() {
         return empresaRepository.findAll();
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "empresas", key = "#filtro?.trim()?.toLowerCase() ?: 'todas'")
+    @Cacheable(value = "empresas", key = "'todas'")
+    public List<EmpresaDTO> obtenerTodasDTO() {
+        return empresaRepository.findAll().stream()
+                .map(EmpresaDTO::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<Empresa> buscarPorNombre(String filtro) {
         if (filtro == null || filtro.trim().isEmpty()) {
             return empresaRepository.findAll();

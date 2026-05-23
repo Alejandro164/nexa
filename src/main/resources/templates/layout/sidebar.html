@@ -2,7 +2,11 @@
 
     <div class="nav-section">
         <div class="nav-section-title">Principal</div>
-        <a href="/" class="nav-item active">
+        <a href="/inicio" class="nav-item active"
+           hx-get="/inicio"
+           hx-target=".content-area"
+           hx-swap="innerHTML"
+           hx-push-url="true">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1" />

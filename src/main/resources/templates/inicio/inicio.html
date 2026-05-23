@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{index}">
+
+<head>
+    <title>Dashboard — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Dashboard</th:block>
+    <th:block layout:fragment="page-subtitle">Panel de control de EstudiaFácil</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+
+        <style>
+            .dash-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .dash-stat-card {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 14px;
+                padding: 1.5rem;
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                transition: box-shadow 0.2s, transform 0.2s;
+            }
+
+            .dash-stat-card:hover {
+                box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+                transform: translateY(-2px);
+            }
+
+            .dash-stat-icon {
+                width: 52px;
+                height: 52px;
+                border-radius: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .dash-stat-icon.users {
+                background: linear-gradient(135deg, rgba(45,90,135,0.12), rgba(96,165,250,0.18));
+                color: #2d5a87;
+            }
+
+            .dash-stat-icon.empresas {
+                background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.18));
+                color: #16a34a;
+            }
+
+            .dash-stat-icon.activos {
+                background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,191,36,0.18));
+                color: #d97706;
+            }
+
+            .dash-stat-icon.roles {
+                background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(167,139,250,0.18));
+                color: #7c3aed;
+            }
+
+            .dash-stat-value {
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: #1e293b;
+                line-height: 1.2;
+            }
+
+            .dash-stat-label {
+                font-size: 0.8rem;
+                color: #64748b;
+                margin-top: 2px;
+            }
+
+            .dash-stat-detail {
+                font-size: 0.75rem;
+                color: #94a3b8;
+                margin-top: 4px;
+            }
+
+            .dash-widgets {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            @media (max-width: 900px) {
+                .dash-widgets {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .dash-card {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 14px;
+                overflow: hidden;
+            }
+
+            .dash-card-header {
+                padding: 1.25rem 1.5rem;
+                border-bottom: 1px solid #e2e8f0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .dash-card-header h3 {
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: #1e293b;
+            }
+
+            .dash-card-body {
+                padding: 1.25rem 1.5rem;
+            }
+
+            .dash-list-item {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 0;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            .dash-list-item:last-child {
+                border-bottom: none;
+            }
+
+            .dash-avatar {
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                background: linear-gradient(135deg, #2d5a87, #60a5fa);
+                color: #fff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 0.85rem;
+                flex-shrink: 0;
+            }
+
+            .dash-avatar.alt {
+                background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            }
+
+            .dash-list-name {
+                font-weight: 500;
+                color: #1e293b;
+                font-size: 0.88rem;
+            }
+
+            .dash-list-sub {
+                font-size: 0.75rem;
+                color: #94a3b8;
+            }
+
+            .dash-quick-actions {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .dash-action-btn {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 14px 18px;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                text-decoration: none;
+                font-weight: 500;
+                font-size: 0.88rem;
+                color: #334155;
+                transition: all 0.2s;
+            }
+
+            .dash-action-btn:hover {
+                background: #f1f5f9;
+                border-color: #cbd5e1;
+                color: #1e293b;
+            }
+
+            .dash-action-btn svg {
+                width: 20px;
+                height: 20px;
+                flex-shrink: 0;
+            }
+        </style>
+
+        <!-- Stats Cards -->
+        <div class="dash-stats">
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon users">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="dash-stat-value" th:text="${totalUsuarios}">0</div>
+                    <div class="dash-stat-label">Usuarios Totales</div>
+                    <div class="dash-stat-detail" th:text="${usuariosActivos} + ' activos'">0 activos</div>
+                </div>
+            </div>
+
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon empresas">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="dash-stat-value" th:text="${totalEmpresas}">0</div>
+                    <div class="dash-stat-label">Centros Educativos</div>
+                    <div class="dash-stat-detail" th:text="${empresasActivas} + ' activos'">0 activos</div>
+                </div>
+            </div>
+
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon activos">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="dash-stat-value" th:text="${porcentajeActivos} + '%'">0%</div>
+                    <div class="dash-stat-label">Tasa de Actividad</div>
+                    <div class="dash-stat-detail">Usuarios activos del total</div>
+                </div>
+            </div>
+
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon roles">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="dash-stat-value" th:text="${totalRoles}">0</div>
+                    <div class="dash-stat-label">Roles Configurados</div>
+                    <div class="dash-stat-detail">Perfiles del sistema</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Widgets Row -->
+        <div class="dash-widgets">
+            <!-- Últimos Usuarios -->
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h3>Usuarios Recientes</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="dash-card-body">
+                    <th:block th:each="usuario, iterStat : ${ultimosUsuarios}">
+                        <div class="dash-list-item">
+                            <div class="dash-avatar" th:classappend="${iterStat.odd} ? 'alt'">
+                                <span th:text="${#strings.substring(usuario.nombre, 0, 1)}">U</span>
+                            </div>
+                            <div style="flex:1;">
+                                <div class="dash-list-name" th:text="${usuario.nombre}">Nombre</div>
+                                <div class="dash-list-sub" th:text="${usuario.email}">email</div>
+                            </div>
+                            <span class="badge badge-primary" th:if="${usuario.activo}" style="font-size:0.7rem;">Activo</span>
+                            <span class="badge badge-danger" th:unless="${usuario.activo}" style="font-size:0.7rem;background:rgba(220,38,38,0.1);color:#dc2626;">Inactivo</span>
+                        </div>
+                    </th:block>
+                    <div th:if="${#lists.isEmpty(ultimosUsuarios)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
+                        No hay usuarios registrados aún.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Centros Educativos -->
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h3>Centros Educativos</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                </div>
+                <div class="dash-card-body">
+                    <th:block th:each="empresa : ${ultimasEmpresas}">
+                        <div class="dash-list-item">
+                            <div class="dash-avatar alt" style="background:linear-gradient(135deg,#16a34a,#4ade80);">
+                                <span th:text="${#strings.substring(empresa.nombre, 0, 1)}">C</span>
+                            </div>
+                            <div style="flex:1;">
+                                <div class="dash-list-name" th:text="${empresa.nombre}">Nombre</div>
+                                <div class="dash-list-sub" th:text="${empresa.cedula}">cédula</div>
+                            </div>
+                            <span class="badge badge-success" th:if="${empresa.activa}" style="font-size:0.7rem;">Activo</span>
+                            <span class="badge badge-danger" th:unless="${empresa.activa}" style="font-size:0.7rem;background:rgba(220,38,38,0.1);color:#dc2626;">Inactivo</span>
+                        </div>
+                    </th:block>
+                    <div th:if="${#lists.isEmpty(ultimasEmpresas)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
+                        No hay centros educativos registrados.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <h3>Acciones Rápidas</h3>
+            </div>
+            <div class="dash-card-body">
+                <div class="dash-quick-actions">
+                    <a href="/componentes" class="dash-action-btn"
+                       hx-get="/componentes"
+                       hx-target=".content-area"
+                       hx-swap="innerHTML"
+                       hx-push-url="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2d5a87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                        Componentes UI
+                    </a>
+                    <a href="#" class="dash-action-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        Gestionar Usuarios
+                    </a>
+                    <a href="#" class="dash-action-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                        </svg>
+                        Gestionar Centros
+                    </a>
+                    <a href="/componentes" class="dash-action-btn"
+                       hx-get="/componentes"
+                       hx-target=".content-area"
+                       hx-swap="innerHTML"
+                       hx-push-url="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                        Configuración
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+
+</html>

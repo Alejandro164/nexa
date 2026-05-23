@@ -49,6 +49,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 1234
       SPRING_DATA_REDIS_HOST: redis
+      SPRING_DEVTOOLS_RESTART_ENABLED: false
     ports:
       - "8082:8080" # App (host:container)
       - "5005:5005" # Debug remoto (IntelliJ / VS Code)
