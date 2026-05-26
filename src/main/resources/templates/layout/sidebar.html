@@ -2,11 +2,8 @@
 
     <div class="nav-section">
         <div class="nav-section-title">Principal</div>
-        <a href="/inicio" class="nav-item active"
-           hx-get="/inicio"
-           hx-target=".content-area"
-           hx-swap="innerHTML"
-           hx-push-url="true">
+        <a href="/inicio" class="nav-item active" hx-get="/inicio" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -16,7 +13,8 @@
             </svg>
             <span class="nav-item-text">Dashboard</span>
         </a>
-        <a href="#" class="nav-item">
+        <a href="/mis-cursos" class="nav-item" hx-get="/mis-cursos" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -112,11 +110,8 @@
     <div class="nav-section">
         <div class="nav-section-title">Sistema</div>
 
-        <a href="/componentes" class="nav-item"
-           hx-get="/componentes"
-           hx-target=".content-area"
-           hx-swap="innerHTML"
-           hx-push-url="true">
+        <a href="/componentes" class="nav-item" hx-get="/componentes" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -132,7 +127,8 @@
         <div class="nav-section-title">Sesión</div>
         <form th:action="@{/logout}" method="post" style="margin: 0; width: 100%;">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-            <button type="submit" class="nav-item" style="background: none; border: none; width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; font-family: inherit; color: var(--error);">
+            <button type="submit" class="nav-item"
+                style="background: none; border: none; width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; font-family: inherit; color: var(--error);">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--error);">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

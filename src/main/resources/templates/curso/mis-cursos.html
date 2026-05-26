@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Mis Cursos — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Mis Cursos</th:block>
+    <th:block layout:fragment="page-subtitle">Gestiona y accede a tus cursos activos</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+
+        <style>
+            .cursos-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1.5rem;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .cursos-count {
+                font-size: 0.85rem;
+                color: var(--text-muted);
+                background: #f1f5f9;
+                padding: 0.35rem 0.85rem;
+                border-radius: 20px;
+                font-weight: 500;
+            }
+
+            .cursos-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+                gap: 1.25rem;
+                margin-bottom: 2rem;
+            }
+
+            .curso-card {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 14px;
+                overflow: hidden;
+                transition: box-shadow 0.2s, transform 0.2s;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .curso-card:hover {
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+                transform: translateY(-2px);
+            }
+
+            .curso-card-header {
+                padding: 1.25rem 1.25rem 0.75rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+
+            .curso-icon {
+                width: 46px;
+                height: 46px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .curso-icon.mate {
+                background: linear-gradient(135deg, rgba(45, 90, 135, 0.12), rgba(96, 165, 250, 0.18));
+                color: #2d5a87;
+            }
+
+            .curso-icon.prog {
+                background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.18));
+                color: #16a34a;
+            }
+
+            .curso-icon.redes {
+                background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(167, 139, 250, 0.18));
+                color: #7c3aed;
+            }
+
+            .curso-icon.db {
+                background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(251, 191, 36, 0.18));
+                color: #d97706;
+            }
+
+            .curso-icon.ingles {
+                background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(34, 211, 238, 0.18));
+                color: #0891b2;
+            }
+
+            .curso-badge {
+                font-size: 0.68rem;
+                font-weight: 600;
+                padding: 0.25rem 0.65rem;
+                border-radius: 20px;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+            }
+
+            .curso-badge.activo {
+                background: rgba(34, 197, 94, 0.1);
+                color: #16a34a;
+            }
+
+            .curso-badge.pendiente {
+                background: rgba(245, 158, 11, 0.1);
+                color: #d97706;
+            }
+
+            .curso-badge.completado {
+                background: rgba(100, 116, 139, 0.1);
+                color: #64748b;
+            }
+
+            .curso-card-body {
+                padding: 0 1.25rem 1rem;
+                flex: 1;
+            }
+
+            .curso-nombre {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #1e293b;
+                margin-bottom: 0.35rem;
+            }
+
+            .curso-instructor {
+                font-size: 0.8rem;
+                color: #64748b;
+                margin-bottom: 0.85rem;
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+            }
+
+            .curso-meta {
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 0.85rem;
+                font-size: 0.78rem;
+                color: #94a3b8;
+            }
+
+            .curso-meta-item {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+            }
+
+            .curso-meta-item svg {
+                width: 14px;
+                height: 14px;
+                flex-shrink: 0;
+            }
+
+            .curso-progress {
+                margin-bottom: 0.5rem;
+            }
+
+            .curso-progress-label {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.72rem;
+                color: #64748b;
+                margin-bottom: 0.35rem;
+            }
+
+            .curso-progress-bar {
+                height: 6px;
+                background: #e2e8f0;
+                border-radius: 3px;
+                overflow: hidden;
+            }
+
+            .curso-progress-fill {
+                height: 100%;
+                border-radius: 3px;
+                background: linear-gradient(90deg, #2d5a87, #60a5fa);
+                transition: width 0.3s;
+            }
+
+            .curso-progress-fill.alto {
+                background: linear-gradient(90deg, #16a34a, #4ade80);
+            }
+
+            .curso-progress-fill.medio {
+                background: linear-gradient(90deg, #2d5a87, #60a5fa);
+            }
+
+            .curso-progress-fill.bajo {
+                background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            }
+
+            .curso-card-footer {
+                padding: 0.75rem 1.25rem;
+                border-top: 1px solid #f1f5f9;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .curso-fecha {
+                font-size: 0.75rem;
+                color: #94a3b8;
+            }
+
+            .curso-action {
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: #2d5a87;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+                transition: color 0.2s;
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 0;
+            }
+
+            .curso-action:hover {
+                color: #1e3a5f;
+            }
+
+            .curso-action svg {
+                width: 15px;
+                height: 15px;
+            }
+
+            .cursos-empty {
+                text-align: center;
+                padding: 4rem 2rem;
+                background: #ffffff;
+                border: 2px dashed #e2e8f0;
+                border-radius: 14px;
+            }
+
+            .cursos-empty-icon {
+                width: 64px;
+                height: 64px;
+                background: #f1f5f9;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 1rem;
+                color: #94a3b8;
+            }
+
+            .cursos-empty h3 {
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: #1e293b;
+                margin-bottom: 0.5rem;
+            }
+
+            .cursos-empty p {
+                color: #64748b;
+                font-size: 0.85rem;
+            }
+
+            .cursos-filter {
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+
+            .filter-pill {
+                font-size: 0.78rem;
+                font-weight: 500;
+                padding: 0.4rem 0.9rem;
+                border-radius: 20px;
+                border: 1px solid #e2e8f0;
+                background: #ffffff;
+                color: #64748b;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .filter-pill:hover {
+                border-color: #2d5a87;
+                color: #2d5a87;
+            }
+
+            .filter-pill.active {
+                background: #2d5a87;
+                color: #ffffff;
+                border-color: #2d5a87;
+            }
+        </style>
+
+        <div class="cursos-header">
+            <div class="cursos-filter">
+                <button class="filter-pill active">Todos (5)</button>
+                <button class="filter-pill">En progreso</button>
+                <button class="filter-pill">Completados</button>
+                <button class="filter-pill">Pendientes</button>
+            </div>
+            <span class="cursos-count">5 cursos matriculados</span>
+        </div>
+
+        <div class="cursos-grid">
+            <div class="curso-card">
+                <div class="curso-card-header">
+                    <div class="curso-icon mate">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                    </div>
+                    <span class="curso-badge activo">En progreso</span>
+                </div>
+                <div class="curso-card-body">
+                    <div class="curso-nombre">Matemática Discreta</div>
+                    <div class="curso-instructor">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        Dr. Carlos Mendoza
+                    </div>
+                    <div class="curso-meta">
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            Lun y Mié
+                        </span>
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            08:00 - 10:00
+                        </span>
+                    </div>
+                    <div class="curso-progress">
+                        <div class="curso-progress-label">
+                            <span>Progreso</span>
+                            <span>72%</span>
+                        </div>
+                        <div class="curso-progress-bar">
+                            <div class="curso-progress-fill medio" style="width: 72%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="curso-card-footer">
+                    <span class="curso-fecha">Inicio: 12 Feb 2026</span>
+                    <button class="curso-action">
+                        Continuar
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="curso-card">
+                <div class="curso-card-header">
+                    <div class="curso-icon prog">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6" />
+                            <polyline points="8 6 2 12 8 18" />
+                        </svg>
+                    </div>
+                    <span class="curso-badge activo">En progreso</span>
+                </div>
+                <div class="curso-card-body">
+                    <div class="curso-nombre">Programación Avanzada en Java</div>
+                    <div class="curso-instructor">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        Ing. Laura Ramírez
+                    </div>
+                    <div class="curso-meta">
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            Mar y Jue
+                        </span>
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            13:00 - 15:00
+                        </span>
+                    </div>
+                    <div class="curso-progress">
+                        <div class="curso-progress-label">
+                            <span>Progreso</span>
+                            <span>45%</span>
+                        </div>
+                        <div class="curso-progress-bar">
+                            <div class="curso-progress-fill medio" style="width: 45%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="curso-card-footer">
+                    <span class="curso-fecha">Inicio: 15 Ene 2026</span>
+                    <button class="curso-action">
+                        Continuar
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="curso-card">
+                <div class="curso-card-header">
+                    <div class="curso-icon redes">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3" />
+                            <circle cx="6" cy="12" r="3" />
+                            <circle cx="18" cy="19" r="3" />
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                        </svg>
+                    </div>
+                    <span class="curso-badge completado">Completado</span>
+                </div>
+                <div class="curso-card-body">
+                    <div class="curso-nombre">Redes de Computadoras</div>
+                    <div class="curso-instructor">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        Msc. Diego Fernández
+                    </div>
+                    <div class="curso-meta">
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            Vie
+                        </span>
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            09:00 - 12:00
+                        </span>
+                    </div>
+                    <div class="curso-progress">
+                        <div class="curso-progress-label">
+                            <span>Progreso</span>
+                            <span>100%</span>
+                        </div>
+                        <div class="curso-progress-bar">
+                            <div class="curso-progress-fill alto" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="curso-card-footer">
+                    <span class="curso-fecha">Finalizado: 05 Abr 2026</span>
+                    <button class="curso-action">
+                        Ver certificado
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="curso-card">
+                <div class="curso-card-header">
+                    <div class="curso-icon db">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <ellipse cx="12" cy="5" rx="9" ry="3" />
+                            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                        </svg>
+                    </div>
+                    <span class="curso-badge pendiente">Pendiente</span>
+                </div>
+                <div class="curso-card-body">
+                    <div class="curso-nombre">Bases de Datos Avanzadas</div>
+                    <div class="curso-instructor">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        Dr. Carlos Mendoza
+                    </div>
+                    <div class="curso-meta">
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            Lun, Mié, Vie
+                        </span>
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            14:00 - 16:00
+                        </span>
+                    </div>
+                    <div class="curso-progress">
+                        <div class="curso-progress-label">
+                            <span>Progreso</span>
+                            <span>0%</span>
+                        </div>
+                        <div class="curso-progress-bar">
+                            <div class="curso-progress-fill medio" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="curso-card-footer">
+                    <span class="curso-fecha">Inicio: 01 Jun 2026</span>
+                    <button class="curso-action">
+                        Empezar
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="curso-card">
+                <div class="curso-card-header">
+                    <div class="curso-icon ingles">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="2" y1="12" x2="22" y2="12" />
+                            <path
+                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                        </svg>
+                    </div>
+                    <span class="curso-badge activo">En progreso</span>
+                </div>
+                <div class="curso-card-body">
+                    <div class="curso-nombre">Inglés Técnico para TI</div>
+                    <div class="curso-instructor">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        Prof. Ana Martínez
+                    </div>
+                    <div class="curso-meta">
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            Mar y Vie
+                        </span>
+                        <span class="curso-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            10:00 - 12:00
+                        </span>
+                    </div>
+                    <div class="curso-progress">
+                        <div class="curso-progress-label">
+                            <span>Progreso</span>
+                            <span>88%</span>
+                        </div>
+                        <div class="curso-progress-bar">
+                            <div class="curso-progress-fill alto" style="width: 88%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="curso-card-footer">
+                    <span class="curso-fecha">Inicio: 08 Mar 2026</span>
+                    <button class="curso-action">
+                        Continuar
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                            <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+
+</html>
