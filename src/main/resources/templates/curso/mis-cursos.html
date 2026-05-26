@@ -11,25 +11,28 @@
     <th:block layout:fragment="page-title">Mis Cursos</th:block>
     <th:block layout:fragment="page-subtitle">Gestiona y accede a tus cursos activos</th:block>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <main layout:fragment="content" th:fragment="htmx-content" x-data="{ currentFilter: 'todos' }">
 
         <style>
             .cursos-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 1.5rem;
+                margin-bottom: 2rem;
                 flex-wrap: wrap;
-                gap: 1rem;
+                gap: 1.25rem;
+                border-bottom: 1px solid var(--border);
+                padding-bottom: 1.25rem;
             }
 
             .cursos-count {
-                font-size: 0.85rem;
-                color: var(--text-muted);
-                background: #f1f5f9;
-                padding: 0.35rem 0.85rem;
+                font-size: 0.82rem;
+                color: var(--text-secondary);
+                background: var(--input-bg);
+                padding: 6px 12px;
                 border-radius: 20px;
                 font-weight: 500;
+                border: 1px solid var(--border);
             }
 
             .cursos-grid {
@@ -268,48 +271,96 @@
                 font-size: 0.85rem;
             }
 
-            .cursos-filter {
-                display: flex;
-                gap: 0.5rem;
-                flex-wrap: wrap;
+            .cursos-filter-container {
+                background: var(--surface-solid);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 4px;
+                display: inline-flex;
+                gap: 4px;
+                align-items: center;
+                box-shadow: var(--shadow-sm);
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .cursos-filter-container::-webkit-scrollbar {
+                display: none;
             }
 
             .filter-pill {
-                font-size: 0.78rem;
-                font-weight: 500;
-                padding: 0.4rem 0.9rem;
-                border-radius: 20px;
-                border: 1px solid #e2e8f0;
-                background: #ffffff;
-                color: #64748b;
+                font-size: 0.82rem;
+                font-weight: 600;
+                padding: 8px 16px;
+                border-radius: 10px;
+                border: none;
+                background: transparent;
+                color: var(--text-secondary);
                 cursor: pointer;
-                transition: all 0.2s;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                white-space: nowrap;
             }
 
             .filter-pill:hover {
-                border-color: #2d5a87;
-                color: #2d5a87;
+                color: var(--primary);
+                background-color: var(--input-bg);
             }
 
             .filter-pill.active {
-                background: #2d5a87;
+                background: var(--primary) !important;
+                color: #ffffff !important;
+                box-shadow: 0 4px 12px rgba(45, 90, 135, 0.18);
+            }
+
+            .filter-badge {
+                font-size: 0.72rem;
+                font-weight: 700;
+                background: var(--input-bg);
+                color: var(--text-secondary);
+                padding: 2px 6px;
+                border-radius: 6px;
+                transition: all 0.2s;
+            }
+
+            .filter-pill.active .filter-badge {
+                background: rgba(255, 255, 255, 0.2);
                 color: #ffffff;
-                border-color: #2d5a87;
             }
         </style>
 
         <div class="cursos-header">
-            <div class="cursos-filter">
-                <button class="filter-pill active">Todos (5)</button>
-                <button class="filter-pill">En progreso</button>
-                <button class="filter-pill">Completados</button>
-                <button class="filter-pill">Pendientes</button>
+            <div class="cursos-filter-container">
+                <button class="filter-pill" :class="{ 'active': currentFilter === 'todos' }" @click="currentFilter = 'todos'">
+                    Todos
+                    <span class="filter-badge">5</span>
+                </button>
+                <button class="filter-pill" :class="{ 'active': currentFilter === 'progreso' }" @click="currentFilter = 'progreso'">
+                    En progreso
+                    <span class="filter-badge">3</span>
+                </button>
+                <button class="filter-pill" :class="{ 'active': currentFilter === 'completado' }" @click="currentFilter = 'completado'">
+                    Completados
+                    <span class="filter-badge">1</span>
+                </button>
+                <button class="filter-pill" :class="{ 'active': currentFilter === 'pendiente' }" @click="currentFilter = 'pendiente'">
+                    Pendientes
+                    <span class="filter-badge">1</span>
+                </button>
             </div>
-            <span class="cursos-count">5 cursos matriculados</span>
+            <span class="cursos-count" x-text="
+                currentFilter === 'todos' ? '5 cursos matriculados' : 
+                currentFilter === 'progreso' ? '3 cursos en progreso' : 
+                currentFilter === 'completado' ? '1 curso completado' : 
+                '1 curso pendiente'
+            ">5 cursos matriculados</span>
         </div>
 
         <div class="cursos-grid">
-            <div class="curso-card">
+            <div class="curso-card" x-show="currentFilter === 'todos' || currentFilter === 'progreso'" x-transition>
                 <div class="curso-card-header">
                     <div class="curso-icon mate">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -372,7 +423,7 @@
                 </div>
             </div>
 
-            <div class="curso-card">
+            <div class="curso-card" x-show="currentFilter === 'todos' || currentFilter === 'progreso'" x-transition>
                 <div class="curso-card-header">
                     <div class="curso-icon prog">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -436,7 +487,7 @@
                 </div>
             </div>
 
-            <div class="curso-card">
+            <div class="curso-card" x-show="currentFilter === 'todos' || currentFilter === 'completado'" x-transition>
                 <div class="curso-card-header">
                     <div class="curso-icon redes">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -503,7 +554,7 @@
                 </div>
             </div>
 
-            <div class="curso-card">
+            <div class="curso-card" x-show="currentFilter === 'todos' || currentFilter === 'pendiente'" x-transition>
                 <div class="curso-card-header">
                     <div class="curso-icon db">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -568,7 +619,7 @@
                 </div>
             </div>
 
-            <div class="curso-card">
+            <div class="curso-card" x-show="currentFilter === 'todos' || currentFilter === 'progreso'" x-transition>
                 <div class="curso-card-header">
                     <div class="curso-icon ingles">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"

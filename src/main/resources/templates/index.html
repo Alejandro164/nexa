@@ -25,6 +25,21 @@
             var header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
             if (token) evt.detail.headers[header] = token;
         });
+
+        function updateActiveSidebar() {
+            var path = window.location.pathname;
+            document.querySelectorAll('.sidebar-nav .nav-item').forEach(function(item) {
+                var href = item.getAttribute('href');
+                if (href && (path === href || path.startsWith(href + '/'))) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', updateActiveSidebar);
+        document.addEventListener('htmx:afterSettle', updateActiveSidebar);
+        document.addEventListener('htmx:historyRestore', updateActiveSidebar);
     </script>
 
     <style>

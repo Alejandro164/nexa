@@ -1,0 +1,87 @@
+<div th:fragment="content" class="config-tab-fade-in" xmlns:th="http://www.thymeleaf.org">
+    
+    <div class="estudiante-search-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 style="font-size: 1.15rem; font-weight:700; color: var(--text-dark);">Espacios Físicos</h3>
+        <button class="btn btn-primary" id="btn-nuevo-espacio">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Registrar Aula / Laboratorio
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Inventario de Aulas y Recursos</h3>
+            <span class="badge badge-info">Capacidad Total Edificio</span>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Código Espacio</th>
+                        <th>Tipo de Aula</th>
+                        <th>Capacidad</th>
+                        <th>Recursos Disponibles</th>
+                        <th>Estado de Uso</th>
+                        <th class="text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">AULA-101</td>
+                        <td>Aula Académica Común</td>
+                        <td>35 estudiantes</td>
+                        <td>Proyector, Pizarra acrílica, AC</td>
+                        <td><span class="badge badge-success">Disponible</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-espacio" data-aula="AULA-101" title="Ver recursos">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">LAB-COMP-01</td>
+                        <td>Laboratorio de Computación</td>
+                        <td>30 estudiantes</td>
+                        <td>32 computadoras, Proyector interactivo</td>
+                        <td><span class="badge badge-success">Disponible</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-espacio" data-aula="LAB-COMP-01" title="Ver recursos">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">LAB-QUIM-02</td>
+                        <td>Laboratorio de Ciencias Naturales</td>
+                        <td>25 estudiantes</td>
+                        <td>Campana extractora, Microscopios, Mecheros</td>
+                        <td><span class="badge badge-warning">En Mantenimiento</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-espacio" data-aula="LAB-QUIM-02" title="Ver recursos">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Import modular javascript for this page -->
+    <script th:src="@{/js/configuracion/espacios-fisicos/espacios-fisicos.js}" defer></script>
+</div>

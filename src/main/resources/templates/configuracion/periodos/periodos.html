@@ -1,0 +1,88 @@
+<div th:fragment="content" class="config-tab-fade-in" xmlns:th="http://www.thymeleaf.org">
+    
+    <div class="estudiante-search-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 style="font-size: 1.15rem; font-weight:700; color: var(--text-dark);">Períodos Académicos</h3>
+        <button class="btn btn-primary" id="btn-nuevo-periodo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Agregar Período
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Distribución de Ponderación Anual</h3>
+            <span class="badge badge-primary">Modalidad: Trimestral</span>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Identificación</th>
+                        <th>Fecha de Inicio</th>
+                        <th>Fecha de Finalización</th>
+                        <th>Peso Evaluativo</th>
+                        <th>Estado</th>
+                        <th class="text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">Primer Trimestre</td>
+                        <td>08 de Febrero, 2026</td>
+                        <td>15 de Mayo, 2026</td>
+                        <td class="font-medium">30% del año</td>
+                        <td><span class="badge badge-secondary">Finalizado</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-periodo" data-periodo="Primer Trimestre" title="Ver actas">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">Segundo Trimestre</td>
+                        <td>18 de Mayo, 2026</td>
+                        <td>04 de Septiembre, 2026</td>
+                        <td class="font-medium">35% del año</td>
+                        <td><span class="badge badge-success">En Curso</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-periodo" data-periodo="Segundo Trimestre" title="Configurar período">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                    <polyline points="2 17 12 22 22 17"></polyline>
+                                    <polyline points="2 12 12 17 22 12"></polyline>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">Tercer Trimestre</td>
+                        <td>07 de Septiembre, 2026</td>
+                        <td>12 de Diciembre, 2026</td>
+                        <td class="font-medium">35% del año</td>
+                        <td><span class="badge badge-info">Programado</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-periodo" data-periodo="Tercer Trimestre" title="Editar periodo">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Import modular javascript for this page -->
+    <script th:src="@{/js/configuracion/periodos/periodos.js}" defer></script>
+</div>

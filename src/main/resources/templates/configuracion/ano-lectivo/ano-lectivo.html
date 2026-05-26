@@ -1,0 +1,84 @@
+<div th:fragment="content" class="config-tab-fade-in" xmlns:th="http://www.thymeleaf.org">
+    
+    <div class="estudiante-search-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 style="font-size: 1.15rem; font-weight:700; color: var(--text-dark);">Años Lectivos</h3>
+        <button class="btn btn-primary" id="btn-nuevo-ano">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Aperturar Año Lectivo
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Historial de Ciclos Anuales</h3>
+            <span class="badge badge-success">Periodo Vigente: 2026</span>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Año Lectivo</th>
+                        <th>Fecha de Inicio</th>
+                        <th>Fecha de Cierre</th>
+                        <th>Matrícula Estimada</th>
+                        <th>Estado</th>
+                        <th class="text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">Año Lectivo 2026</td>
+                        <td>08 de Febrero, 2026</td>
+                        <td>12 de Diciembre, 2026</td>
+                        <td>1,240 estudiantes</td>
+                        <td><span class="badge badge-success">Activo</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-edit-ano" data-year="2026" title="Configurar año">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors" style="opacity: 0.85;">
+                        <td class="font-medium">Año Lectivo 2025</td>
+                        <td>10 de Febrero, 2025</td>
+                        <td>15 de Diciembre, 2025</td>
+                        <td>1,180 estudiantes</td>
+                        <td><span class="badge badge-secondary">Cerrado</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-edit-ano" data-year="2025" title="Ver histórico">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors" style="opacity: 0.7;">
+                        <td class="font-medium">Año Lectivo 2024</td>
+                        <td>08 de Febrero, 2024</td>
+                        <td>10 de Diciembre, 2024</td>
+                        <td>1,120 estudiantes</td>
+                        <td><span class="badge badge-secondary">Cerrado</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-edit-ano" data-year="2024" title="Ver histórico">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Import modular javascript for this page -->
+    <script th:src="@{/js/configuracion/ano-lectivo/ano-lectivo.js}" defer></script>
+</div>

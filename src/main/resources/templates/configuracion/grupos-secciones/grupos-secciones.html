@@ -1,0 +1,90 @@
+<div th:fragment="content" class="config-tab-fade-in" xmlns:th="http://www.thymeleaf.org">
+    
+    <div class="estudiante-search-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 style="font-size: 1.15rem; font-weight:700; color: var(--text-dark);">Grupos y Secciones</h3>
+        <button class="btn btn-primary" id="btn-nuevo-grupo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Nueva Sección
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Distribución de Matrícula por Secciones</h3>
+            <span class="badge badge-primary">Total Grupos: 8</span>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Sección</th>
+                        <th>Nivel Educativo</th>
+                        <th>Docente Guía</th>
+                        <th>Estudiantes Matriculados</th>
+                        <th>Capacidad Máxima</th>
+                        <th class="text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">10-A</td>
+                        <td>10° Año</td>
+                        <td>Dr. Carlos Mendoza</td>
+                        <td class="font-medium">28 estudiantes</td>
+                        <td>30 alumnos</td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-grupo" data-seccion="10-A" title="Lista de clase">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">10-B</td>
+                        <td>10° Año</td>
+                        <td>Msc. Diego Fernández</td>
+                        <td class="font-medium">26 estudiantes</td>
+                        <td>30 alumnos</td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-grupo" data-seccion="10-B" title="Lista de clase">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">11-A</td>
+                        <td>11° Año</td>
+                        <td>Ing. Laura Ramírez</td>
+                        <td class="font-medium">30 estudiantes</td>
+                        <td><span class="badge badge-danger">Lleno (30)</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-grupo" data-seccion="11-A" title="Lista de clase">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Import modular javascript for this page -->
+    <script th:src="@{/js/configuracion/grupos-secciones/grupos-secciones.js}" defer></script>
+</div>

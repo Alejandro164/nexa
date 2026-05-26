@@ -1,0 +1,81 @@
+<div th:fragment="content" class="config-tab-fade-in" xmlns:th="http://www.thymeleaf.org">
+    
+    <div class="estudiante-search-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h3 style="font-size: 1.15rem; font-weight:700; color: var(--text-dark);">Estructura Académica</h3>
+        <button class="btn btn-primary" id="btn-nueva-estructura">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Agregar Nivel / Plan
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Planes Curriculares y Niveles Formativos</h3>
+            <span class="badge badge-info">Modalidad Diurna</span>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nivel Educativo</th>
+                        <th>Ciclo</th>
+                        <th>Código Curricular</th>
+                        <th>Asignaturas</th>
+                        <th>Estado</th>
+                        <th class="text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">Tercer Ciclo</td>
+                        <td>Colegio (7° a 9° Año)</td>
+                        <td>CUR-TC-03</td>
+                        <td>9 asignaturas oficiales</td>
+                        <td><span class="badge badge-success">Activo</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-estructura" data-ciclo="Tercer Ciclo" title="Ver asignaturas">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors">
+                        <td class="font-medium" style="color: var(--text-dark);">Educación Diversificada</td>
+                        <td>Bachillerato (10° a 11° Año)</td>
+                        <td>CUR-ED-04</td>
+                        <td>11 asignaturas oficiales</td>
+                        <td><span class="badge badge-success">Activo</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-estructura" data-ciclo="Educación Diversificada" title="Ver asignaturas">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover-bg transition-colors" style="opacity: 0.85;">
+                        <td class="font-medium" style="color: var(--text-dark);">Educación Técnica Profesional</td>
+                        <td>Colegio Técnico (10° a 12° Año)</td>
+                        <td>CUR-ETP-05</td>
+                        <td>14 asignaturas técnicas</td>
+                        <td><span class="badge badge-secondary">Inactivo</span></td>
+                        <td class="text-right">
+                            <button class="btn-icon hover-primary btn-ver-estructura" data-ciclo="Educación Técnica" title="Ver asignaturas">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Import modular javascript for this page -->
+    <script th:src="@{/js/configuracion/estructura-academica/estructura-academica.js}" defer></script>
+</div>
