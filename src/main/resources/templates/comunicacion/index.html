@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Comunicación — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Canal de Comunicación</th:block>
+    <th:block layout:fragment="page-subtitle">Comunícate con docentes, estudiantes y padres mediante mensajes internos, anuncios y notificaciones globales</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .message-preview {
+                display: flex;
+                gap: 12px;
+                padding: 1rem;
+                border-bottom: 1px solid var(--border);
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            .message-preview:hover {
+                background-color: var(--input-bg);
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'mensajes' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'mensajes' }" @click="activeTab = 'mensajes'">
+                        💬 Mensajes
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'anuncios' }" @click="activeTab = 'anuncios'">
+                        📢 Anuncios
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'notificaciones' }" @click="activeTab = 'notificaciones'">
+                        🔔 Notificaciones
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mensajes -->
+            <div x-show="activeTab === 'mensajes'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Mensajes Recibidos</h3>
+                        <button class="btn btn-primary">Redactar Mensaje</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="message-preview">
+                            <div class="avatar-sm">LS</div>
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <h4 style="font-weight:600; font-size:0.9rem;">Laura Soto (Madre de Sofia)</h4>
+                                    <span style="font-size:0.75rem; color:var(--text-light);">Hace 10 min</span>
+                                </div>
+                                <p style="font-weight:500; font-size:0.85rem; color:var(--text-primary); margin-top:2px;">Duda con respecto a la entrega de la maqueta</p>
+                                <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">Hola Licda. María, quería consultar si Sofia puede llevar la maqueta...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anuncios -->
+            <div x-show="activeTab === 'anuncios'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-medium">Anuncios Generales e Institucionales</h3>
+                        <button class="btn btn-primary">+ Publicar Anuncio</button>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <div style="border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <span class="badge badge-primary">Dirección General</span>
+                                <span style="font-size:0.8rem; color:var(--text-secondary);">28/05/2026</span>
+                            </div>
+                            <h4 style="font-weight:600; margin-bottom:4px;">Suspensión de Lecciones por Mantenimiento de Aulas</h4>
+                            <p style="font-size:0.9rem; color:var(--text-secondary);">Les informamos que el próximo lunes 1 de Junio no habrá lecciones por trabajos en la red eléctrica...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notificaciones -->
+            <div x-show="activeTab === 'notificaciones'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Notificaciones del Sistema (Alertas Push)</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="premium-list-item">
+                            <div>
+                                <h4 style="font-weight:600; font-size:0.9rem;">Nueva matrícula registrada</h4>
+                                <p style="font-size:0.8rem; color:var(--text-secondary);">Estudiante: Sofia Alpizar Soto • Completada con éxito.</p>
+                            </div>
+                            <span style="font-size:0.75rem; color:var(--text-light);">Hace 1 hora</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

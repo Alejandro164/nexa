@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Estudiantes — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Módulo de Estudiantes</th:block>
+    <th:block layout:fragment="page-subtitle">Administra los expedientes estudiantiles, matrículas, encargados y adecuaciones especiales</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar {
+                display: none;
+            }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'expedientes' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'expedientes' }" @click="activeTab = 'expedientes'">
+                        📁 Expedientes
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'prematricula' }" @click="activeTab = 'prematricula'">
+                        📝 Prematrícula
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'matricula' }" @click="activeTab = 'matricula'">
+                        🎓 Matrícula
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'consolidar' }" @click="activeTab = 'consolidar'">
+                        👥 Consolidar Grupos
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'familiares' }" @click="activeTab = 'familiares'">
+                        👨‍👩‍👧 Relaciones Familiares
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'adecuaciones' }" @click="activeTab = 'adecuaciones'">
+                        ♿ Adecuaciones
+                    </button>
+                </div>
+            </div>
+
+            <!-- Expedientes -->
+            <div x-show="activeTab === 'expedientes'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Buscar Expediente Estudiantil</h3>
+                        <div class="search-box">
+                            <input type="text" class="form-input" placeholder="Buscar por cédula o nombre...">
+                        </div>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Identificación</th>
+                                        <th>Estudiante</th>
+                                        <th>Nivel / Sección</th>
+                                        <th>Condición</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1-1892-0245</td>
+                                        <td style="font-weight:600;">Sofia Alpizar Soto</td>
+                                        <td>Sétimo Año (Sección 7-1)</td>
+                                        <td><span class="badge badge-success">Regular</span></td>
+                                        <td><button class="btn btn-secondary" style="padding:4px 8px;">Ver Ficha</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2-0811-0941</td>
+                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
+                                        <td>Octavo Año (Sección 8-2)</td>
+                                        <td><span class="badge badge-primary">Adecuación No Sig.</span></td>
+                                        <td><button class="btn btn-secondary" style="padding:4px 8px;">Ver Ficha</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prematrícula -->
+            <div x-show="activeTab === 'prematricula'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Pre-solicitudes de Ingreso</h3>
+                        <button class="btn btn-primary">Configurar Periodo</button>
+                    </div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <h4 style="color: var(--text-secondary); margin-bottom: 1rem;">No hay solicitudes pendientes en el ciclo actual</h4>
+                        <p style="font-size:0.9rem; color: var(--text-light);">El periodo de prematrícula abrirá el 1 de Octubre.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matrícula -->
+            <div x-show="activeTab === 'matricula'" class="tab-pane" x-cloak>
+                <div class="card" style="max-width: 700px; margin: 0 auto;">
+                    <div class="card-header">
+                        <h3 class="card-title font-medium">Asistente de Matrícula Oficial</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <div class="form-group">
+                            <label class="form-label">Estudiante Solicitante (Cédula/Nombre)</label>
+                            <input type="text" class="form-input" style="padding-left:0.75rem;" placeholder="Escriba para buscar...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Año Lectivo de Matrícula</label>
+                            <select class="form-input" style="padding-left:0.75rem;">
+                                <option>Año Lectivo Actual (2026)</option>
+                                <option>Próximo Año Lectivo (2027)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Asignar Grupo</label>
+                            <select class="form-input" style="padding-left:0.75rem;">
+                                <option>Sección 7-1 (Cupos: 28/30)</option>
+                                <option>Sección 7-2 (Cupos: 15/30)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" style="width:100%; margin-top:1rem;">Confirmar Matrícula</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consolidar Grupos -->
+            <div x-show="activeTab === 'consolidar'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Consolidación de Matrícula por Secciones</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <p style="color:var(--text-secondary); margin-bottom:1.5rem;">Revise la distribución de estudiantes para asegurar que se cumpla la cuota mínima y máxima por grupo MEP.</p>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                            <div style="border:1px solid var(--border); padding:1rem; border-radius:10px;">
+                                <h4 style="font-weight:600; color:var(--primary);">Séptimos Años</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary); margin:4px 0 10px;">Total Estudiantes: 43 • 2 Secciones Abiertas</p>
+                                <span class="badge badge-success">Consolidado</span>
+                            </div>
+                            <div style="border:1px solid var(--border); padding:1rem; border-radius:10px;">
+                                <h4 style="font-weight:600; color:var(--primary);">Octavos Años</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary); margin:4px 0 10px;">Total Estudiantes: 29 • 1 Sección Abierta</p>
+                                <span class="badge badge-success">Consolidado</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Relaciones Familiares -->
+            <div x-show="activeTab === 'familiares'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Asociación Estudiante - Encargado</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Padre / Encargado Legal</th>
+                                        <th>Parentesco</th>
+                                        <th>Teléfono Emergencia</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Sofia Alpizar Soto</td>
+                                        <td>Laura Soto Monge</td>
+                                        <td>Madre</td>
+                                        <td>+506 8899-4455</td>
+                                        <td><button class="btn btn-secondary" style="padding:4px 8px;">Editar Enlace</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Adecuaciones -->
+            <div x-show="activeTab === 'adecuaciones'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Adecuaciones Curriculares y Apoyos Educativos</h3>
+                        <button class="btn btn-primary">Registrar Adecuación</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Tipo Adecuación</th>
+                                        <th>Fecha Registro</th>
+                                        <th>Profesionales de Apoyo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
+                                        <td><span class="badge badge-primary">No Significativa (Acceso)</span></td>
+                                        <td>15/02/2026</td>
+                                        <td>Orientación, Psicología</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

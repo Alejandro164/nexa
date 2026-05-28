@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Seguridad — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Centro de Seguridad</th:block>
+    <th:block layout:fragment="page-subtitle">Verifica las sesiones de usuario activas, audita la bitácora de accesos y gestiona credenciales de acceso</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'sesiones' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'sesiones' }" @click="activeTab = 'sesiones'">
+                        🔒 Sesiones Activas
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'accesos' }" @click="activeTab = 'accesos'">
+                        📝 Bitácora de Accesos
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'contrasena' }" @click="activeTab = 'contrasena'">
+                        🔑 Cambiar Contraseña
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sesiones Activas -->
+            <div x-show="activeTab === 'sesiones'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Sesiones de Usuario Activas</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="premium-list-item">
+                            <div>
+                                <h4 style="font-weight:600;">Google Chrome en macOS</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);">IP: 186.15.112.4 • Ubicación aproximada: San José, Costa Rica</p>
+                            </div>
+                            <span class="badge badge-success">Sesión Actual</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bitácora de Accesos -->
+            <div x-show="activeTab === 'accesos'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Registro de Auditoría de Accesos (Log)</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha / Hora</th>
+                                        <th>Usuario</th>
+                                        <th>Dirección IP</th>
+                                        <th>Acción Realizada</th>
+                                        <th>Resultado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>28/05/2026 15:57 PM</td>
+                                        <td>alejandro@estudiafacil.ed.cr</td>
+                                        <td>186.15.112.4</td>
+                                        <td>Inicio de Sesión Web</td>
+                                        <td><span class="badge badge-success">Exitoso</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>28/05/2026 15:52 PM</td>
+                                        <td>alejandro@estudiafacil.ed.cr</td>
+                                        <td>186.15.112.4</td>
+                                        <td>Edición Configuración Institucional</td>
+                                        <td><span class="badge badge-success">Exitoso</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cambiar Contraseña -->
+            <div x-show="activeTab === 'contrasena'" class="tab-pane" x-cloak>
+                <div class="card" style="max-width:500px; margin:0 auto;">
+                    <div class="card-header">
+                        <h3 class="card-title">Cambiar mi Contraseña</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <form onsubmit="event.preventDefault(); alert('Contraseña cambiada exitosamente');">
+                            <div class="form-group">
+                                <label class="form-label">Contraseña Actual</label>
+                                <input type="password" class="form-input" style="padding-left:0.75rem;" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Nueva Contraseña</label>
+                                <input type="password" class="form-input" style="padding-left:0.75rem;" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Confirmar Nueva Contraseña</label>
+                                <input type="password" class="form-input" style="padding-left:0.75rem;" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Actualizar Credenciales</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

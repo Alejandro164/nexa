@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Agenda — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Agenda y Actividades</th:block>
+    <th:block layout:fragment="page-subtitle">Organiza tu calendario de clases, programa citas de atención a padres y gestiona aulas virtuales</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'calendario' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'calendario' }" @click="activeTab = 'calendario'">
+                        📅 Calendario
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'citas' }" @click="activeTab = 'citas'">
+                        👥 Citas
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'salas' }" @click="activeTab = 'salas'">
+                        💻 Salas Virtuales
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'recordatorios' }" @click="activeTab = 'recordatorios'">
+                        ⏰ Recordatorios
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendario -->
+            <div x-show="activeTab === 'calendario'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Calendario de Eventos</h3>
+                        <button class="btn btn-primary">+ Nuevo Evento</button>
+                    </div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <!-- Mock calendar widget -->
+                        <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; max-width: 600px; margin: 0 auto; border: 1px solid var(--border); border-radius: 12px; padding: 1rem;">
+                            <div style="font-weight:600; color:var(--primary); padding-bottom:8px;">L</div>
+                            <div style="font-weight:600; color:var(--primary); padding-bottom:8px;">M</div>
+                            <div style="font-weight:600; color:var(--primary); padding-bottom:8px;">M</div>
+                            <div style="font-weight:600; color:var(--primary); padding-bottom:8px;">J</div>
+                            <div style="font-weight:600; color:var(--primary); padding-bottom:8px;">V</div>
+                            <div style="font-weight:600; color:var(--primary); padding-bottom:8px;">S</div>
+                            <div style="font-weight:600; color:var(--primary); padding-bottom:8px;">D</div>
+                            
+                            <!-- Calendar numbers mock -->
+                            <div style="padding:10px; color:var(--text-light);">25</div>
+                            <div style="padding:10px; color:var(--text-light);">26</div>
+                            <div style="padding:10px; color:var(--text-light);">27</div>
+                            <div style="padding:10px; background-color: var(--primary); color:white; border-radius: 8px; font-weight:600;">28</div>
+                            <div style="padding:10px;">29</div>
+                            <div style="padding:10px;">30</div>
+                            <div style="padding:10px;">31</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Citas -->
+            <div x-show="activeTab === 'citas'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Citas de Atención a Padres de Familia</h3>
+                        <button class="btn btn-primary">+ Programar Cita</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha / Hora</th>
+                                        <th>Padre / Encargado</th>
+                                        <th>Docente / Funcionario</th>
+                                        <th>Motivo</th>
+                                        <th>Enlace / Lugar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>29/05/2026 08:30 AM</td>
+                                        <td style="font-weight:600;">Laura Soto Monge</td>
+                                        <td>Licda. María Pérez Castro</td>
+                                        <td>Revisión de rendimiento académico</td>
+                                        <td>Oficina de Orientación</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salas Virtuales -->
+            <div x-show="activeTab === 'salas'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Salas Virtuales y Clases Virtuales (Teams / Meet)</h3>
+                        <button class="btn btn-primary">+ Crear Sala</button>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <div class="grid-container">
+                            <div class="card" style="padding:1.5rem; border:1px solid var(--border);">
+                                <h4 style="font-weight:600; color:var(--primary);">Lección Virtual: Matemáticas 10-1</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px;">Docente: María Pérez • Hora: Jueves 09:00 AM</p>
+                                <button class="btn btn-secondary" style="margin-top:1rem; width:100%; justify-content:center;">Entrar a la videollamada</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recordatorios -->
+            <div x-show="activeTab === 'recordatorios'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recordatorios y Tareas Personales</h3>
+                        <button class="btn btn-primary">+ Nuevo Recordatorio</button>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <div class="premium-list-item">
+                            <div>
+                                <h4 style="font-weight:600;">Revisión de exámenes de reposición</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);">Fecha límite: Hoy 5:00 PM</p>
+                            </div>
+                            <span class="badge badge-danger">Pendiente</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

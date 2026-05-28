@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Reportes — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Estadísticas y Reportes</th:block>
+    <th:block layout:fragment="page-subtitle">Genera reportes para el Ministerio de Educación Pública (MEP) y visualiza indicadores agregados</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'mep' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'mep' }" @click="activeTab = 'mep'">
+                        📊 Reportes MEP
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'institucion' }" @click="activeTab = 'institucion'">
+                        🏫 Est. por Institución
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'circuito' }" @click="activeTab = 'circuito'">
+                        🛣️ Est. por Circuito
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'regional' }" @click="activeTab = 'regional'">
+                        🗺️ Est. por Dir. Regional
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reportes MEP -->
+            <div x-show="activeTab === 'mep'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Exportadores Oficiales del Ministerio de Educación Pública</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                            <div style="border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px; display:flex; flex-direction:column; justify-content:space-between; gap:1rem;">
+                                <div>
+                                    <h4 style="font-weight:600; color:var(--primary);">Reporte del Censo Inicial</h4>
+                                    <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">Archivo Excel pre-formateado con los campos requeridos por el MEP para matrícula inicial.</p>
+                                </div>
+                                <button class="btn btn-primary" style="align-self:flex-start;">Generar Excel</button>
+                            </div>
+                            <div style="border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px; display:flex; flex-direction:column; justify-content:space-between; gap:1rem;">
+                                <div>
+                                    <h4 style="font-weight:600; color:var(--primary);">Reporte de Rendimiento y Promoción</h4>
+                                    <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">Actas de notas consolidadas de aprobación y aplazados.</p>
+                                </div>
+                                <button class="btn btn-primary" style="align-self:flex-start;">Generar PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas por Institución -->
+            <div x-show="activeTab === 'institucion'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Métricas de la Institución</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1.5rem; text-align:center;">
+                            <div style="background-color: var(--input-bg); padding:1.5rem; border-radius:10px;">
+                                <h2 style="font-size:2.2rem; font-weight:700; color:var(--primary);">94.5%</h2>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);">Promoción Académica</p>
+                            </div>
+                            <div style="background-color: var(--input-bg); padding:1.5rem; border-radius:10px;">
+                                <h2 style="font-size:2.2rem; font-weight:700; color:var(--success);">1.2%</h2>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);">Deserción Escolar</p>
+                            </div>
+                            <div style="background-color: var(--input-bg); padding:1.5rem; border-radius:10px;">
+                                <h2 style="font-size:2.2rem; font-weight:700; color:var(--warm);">98.1%</h2>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);">Asistencia Media</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas por Circuito -->
+            <div x-show="activeTab === 'circuito'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Comparativas del Circuito Escolar</h3>
+                    </div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <h4 style="color:var(--text-secondary); margin-bottom:0.5rem;">Comparación de Rendimiento Promedio</h4>
+                        <p style="font-size:0.9rem; color:var(--text-light); margin-bottom:1.5rem;">Circuito Educativo 03 - San José Oeste</p>
+                        <div style="max-width: 400px; margin: 0 auto; height: 10px; background-color: var(--border); border-radius: 9999px; overflow: hidden; display:flex;">
+                            <div style="width: 82%; background-color: var(--primary);"></div>
+                            <div style="width: 18%; background-color: var(--border);"></div>
+                        </div>
+                        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px;">Nuestra Institución se ubica 8.2% sobre el promedio del circuito.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas por Dirección Regional -->
+            <div x-show="activeTab === 'regional'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Datos Consolidados Regionales</h3>
+                    </div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <h4 style="color:var(--text-secondary);">Dirección Regional de San José Centro</h4>
+                        <p style="font-size:0.9rem; color:var(--text-light); margin-top:4px;">No hay reportes agregados regionales cargados en el nodo local.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

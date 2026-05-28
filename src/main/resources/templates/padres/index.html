@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Portal de Padres — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Portal de Padres de Familia</th:block>
+    <th:block layout:fragment="page-subtitle">Monitorea el rendimiento, asistencia y tareas de tus hijos, y realiza solicitudes institucionales</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar {
+                display: none;
+            }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'hijos' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'hijos' }" @click="activeTab = 'hijos'">
+                        👨‍👩‍👧 Mis Hijos
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'notas' }" @click="activeTab = 'notas'">
+                        🏆 Ver Notas
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'asistencia' }" @click="activeTab = 'asistencia'">
+                        📅 Ver Asistencia
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'tareas' }" @click="activeTab = 'tareas'">
+                        📚 Tareas Asignadas
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'solicitudes' }" @click="activeTab = 'solicitudes'">
+                        📝 Solicitudes
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'comunicados' }" @click="activeTab = 'comunicados'">
+                        📢 Comunicados
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mis Hijos -->
+            <div x-show="activeTab === 'hijos'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Hijos Asociados a tu Cuenta</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="premium-list-item">
+                            <div>
+                                <h4 style="font-weight:600;">Sofia Alpizar Soto</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);">Sección 7-1 • Cédula: 1-1892-0245</p>
+                            </div>
+                            <span class="badge badge-success">Estudiante Activo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ver Notas -->
+            <div x-show="activeTab === 'notas'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Calificaciones del Estudiante</h3>
+                        <select class="form-input" style="max-width:150px;">
+                            <option>Sofia Alpizar</option>
+                        </select>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Materia</th>
+                                        <th>Cotidiano (15%)</th>
+                                        <th>Pruebas (40%)</th>
+                                        <th>Tareas (10%)</th>
+                                        <th>Nota I Trimestre</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Matemáticas</td>
+                                        <td>95</td>
+                                        <td>88</td>
+                                        <td>100</td>
+                                        <td style="font-weight:700; color:var(--success);">91 (Aprobado)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ver Asistencia -->
+            <div x-show="activeTab === 'asistencia'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Control de Ausencias y Tardías</h3>
+                    </div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <h4 style="color: var(--success); margin-bottom: 0.5rem;">Porcentaje de Asistencia: 100%</h4>
+                        <p style="font-size:0.9rem; color: var(--text-secondary);">El estudiante no registra ausencias ni tardías en el trimestre actual.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tareas Asignadas -->
+            <div x-show="activeTab === 'tareas'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Próximos Deberes y Tareas de tu Hijo</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="premium-list-item">
+                            <div>
+                                <h4 style="font-weight:600;">Maqueta de la Célula Vegetal</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);">Ciencias • Entrega: 12/06/2026</p>
+                            </div>
+                            <span class="badge badge-primary">Pendiente</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Solicitudes -->
+            <div x-show="activeTab === 'solicitudes'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-medium">Gestión de Trámites y Certificados</h3>
+                        <button class="btn btn-primary">+ Nueva Solicitud</button>
+                    </div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <h4 style="color:var(--text-secondary); margin-bottom:0.5rem;">No tienes solicitudes en trámite</h4>
+                        <p style="font-size:0.9rem; color:var(--text-light);">Aquí puedes solicitar constancias de matrícula y reportar cambios de dirección.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comunicados -->
+            <div x-show="activeTab === 'comunicados'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Boletines Informativos para Padres</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="premium-list-item">
+                            <div>
+                                <h4 style="font-weight:600;">Reunión General de Padres de Sétimo</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);">Fecha: 30/05/2026 05:00 PM • Gimnasio Institucional</p>
+                            </div>
+                            <span class="badge badge-primary">Importante</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

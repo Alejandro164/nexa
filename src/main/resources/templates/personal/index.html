@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Personal — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Módulo de Personal</th:block>
+    <th:block layout:fragment="page-subtitle">Gestiona la asistencia, tareas, evaluaciones y el estado de presencia de docentes y administrativos</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'asistencia' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'asistencia' }" @click="activeTab = 'asistencia'">
+                        📅 Asistencia del Personal
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'tareas' }" @click="activeTab = 'tareas'">
+                        📋 Tareas de Gestión
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'evaluacion' }" @click="activeTab = 'evaluacion'">
+                        🏆 Evaluación de Desempeño
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'presencia' }" @click="activeTab = 'presencia'">
+                        👤 Estado de Presencia
+                    </button>
+                </div>
+            </div>
+
+            <!-- Asistencia del Personal -->
+            <div x-show="activeTab === 'asistencia'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Registro de Marca Académica (Fichaje)</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Funcionario</th>
+                                        <th>Rol</th>
+                                        <th>Hora Entrada</th>
+                                        <th>Hora Salida</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Licda. María Pérez Castro</td>
+                                        <td>Docente Matemáticas</td>
+                                        <td>06:52 AM</td>
+                                        <td>--:--</td>
+                                        <td><span class="badge badge-success">En lección</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tareas de Gestión -->
+            <div x-show="activeTab === 'tareas'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Tareas y Obligaciones de Gestión Interna</h3>
+                        <button class="btn btn-primary">+ Nueva Tarea</button>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <div class="premium-list-item">
+                            <div>
+                                <h4 style="font-weight:600;">Entrega del reporte final de notas del I Trimestre</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);">Responsables: Todos los docentes • Límite: 30/05/2026</p>
+                            </div>
+                            <span class="badge badge-danger">Urgente</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluación de Desempeño -->
+            <div x-show="activeTab === 'evaluacion'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Evaluaciones y Observaciones del Director</h3>
+                    </div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <h4 style="color: var(--text-secondary); margin-bottom: 1rem;">No hay evaluaciones de desempeño programadas para este mes</h4>
+                        <p style="font-size:0.9rem; color: var(--text-light);">Las evaluaciones semestrales darán inicio en Junio.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado de Presencia -->
+            <div x-show="activeTab === 'presencia'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Estado de Disponibilidad del Personal</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:1rem;">
+                            <div style="border: 1px solid var(--border); padding: 1rem; border-radius: 10px; display:flex; align-items:center; gap:10px;">
+                                <div style="width:12px; height:12px; background:var(--success); border-radius:50%;"></div>
+                                <div>
+                                    <h4 style="font-weight:600; font-size:0.9rem;">María Pérez</h4>
+                                    <p style="font-size:0.75rem; color:var(--text-secondary);">Disponible - Aula 3</p>
+                                </div>
+                            </div>
+                            <div style="border: 1px solid var(--border); padding: 1rem; border-radius: 10px; display:flex; align-items:center; gap:10px;">
+                                <div style="width:12px; height:12px; background:var(--warm); border-radius:50%;"></div>
+                                <div>
+                                    <h4 style="font-weight:600; font-size:0.9rem;">Carlos Soto</h4>
+                                    <p style="font-size:0.75rem; color:var(--text-secondary);">Reunión de Departamento</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>
