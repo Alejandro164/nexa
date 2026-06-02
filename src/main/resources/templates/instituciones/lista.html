@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="tabla-instituciones">
+        <div class="table-responsive">
+            <table class="table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--border); text-align: left;">
+                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">Código</th>
+                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">Nombre</th>
+                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">Ubicación</th>
+                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">Estado</th>
+                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; text-align: right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${instituciones == null or instituciones.empty}">
+                        <td colspan="5" style="padding: 24px; text-align: center; color: var(--text-secondary);">
+                            No hay instituciones registradas.
+                        </td>
+                    </tr>
+                    <tr th:each="inst : ${instituciones}" style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px; font-weight: 600; color: var(--text-primary);" th:text="${inst.codigo}">001</td>
+                        <td style="padding: 12px;">
+                            <div style="font-weight: 600; color: var(--text-primary);" th:text="${inst.nombre}">Institución</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);" th:text="${inst.email}">email@ejemplo.com</div>
+                        </td>
+                        <td style="padding: 12px; color: var(--text-secondary);" th:text="${inst.direccion}">Dirección</td>
+                        <td style="padding: 12px;">
+                            <span th:if="${inst.activa}" class="badge badge-success">Activa</span>
+                            <span th:unless="${inst.activa}" class="badge badge-secondary">Inactiva</span>
+                        </td>
+                        <td style="padding: 12px; text-align: right;">
+                            <button class="btn btn-secondary btn-sm" 
+                                    th:attr="hx-get=@{/instituciones/form/{id}(id=${inst.id})}" 
+                                    hx-target="#modal-container" 
+                                    hx-swap="innerHTML"
+                                    @click="document.getElementById('modal-container').classList.add('show')"
+                                    style="padding: 6px 12px; margin-right: 4px;">
+                                Editar
+                            </button>
+                            <button class="btn btn-danger btn-sm" 
+                                    th:attr="hx-delete=@{/instituciones/{id}(id=${inst.id})}" 
+                                    hx-target="#instituciones-list" 
+                                    hx-confirm="¿Está seguro de eliminar esta institución?"
+                                    style="padding: 6px 12px;">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

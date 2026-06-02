@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{index}">
+
+<head>
+    <title>Instituciones — EstudiaFácil</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Instituciones</th:block>
+    <th:block layout:fragment="page-subtitle">Gestión central de instituciones educativas</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">Lista de Instituciones</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">Administra las sedes e instituciones registradas</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" hx-get="/instituciones/form" hx-target="#modal-container" hx-swap="innerHTML" @click="document.getElementById('modal-container').classList.add('show')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Nueva Institución
+                    </button>
+                </div>
+            </div>
+
+            <div id="instituciones-list" hx-get="/instituciones/lista" hx-trigger="load" hx-swap="innerHTML">
+                <!-- La lista se carga aquí por HTMX -->
+                <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                    Cargando instituciones...
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor genérico para Modales -->
+        <div id="modal-container" class="modal-overlay"></div>
+
+    </main>
+
+</body>
+</html>

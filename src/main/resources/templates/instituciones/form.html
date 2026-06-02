@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="form-content">
+        <div class="modal-content">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h3 style="font-weight: 600; font-size: 1.25rem; color: var(--text-primary);" 
+                    th:text="${institucion.id == null ? 'Nueva Institución' : 'Editar Institución'}">Institución</h3>
+                <button type="button" class="btn" style="background: transparent; border: none; padding: 4px; cursor: pointer;" 
+                        @click="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => $el.closest('.modal-overlay').innerHTML = '', 300)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form th:action="@{/instituciones/save}" method="post"
+                  hx-post="/instituciones/save" 
+                  hx-target="#instituciones-list" 
+                  @submit="document.getElementById('modal-container').classList.remove('show')">
+                
+                <input type="hidden" name="id" th:value="${institucion.id}" />
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-input" th:value="${institucion.nombre}" required placeholder="Ej. CTP de San José" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Código Presupuestario</label>
+                        <input type="text" name="codigo" class="form-input" th:value="${institucion.codigo}" required placeholder="Ej. 4022" />
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label">Dirección</label>
+                    <input type="text" name="direccion" class="form-input" th:value="${institucion.direccion}" placeholder="Dirección física" />
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="telefono" class="form-input" th:value="${institucion.telefono}" placeholder="Ej. 2222-2222" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Correo Electrónico</label>
+                        <input type="email" name="email" class="form-input" th:value="${institucion.email}" placeholder="correo@institucion.ed.cr" />
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="activa" th:checked="${institucion.id == null ? true : institucion.activa}" style="width: 16px; height: 16px; cursor: pointer;" />
+                        <span style="font-weight: 500; color: var(--text-primary);">Institución Activa</span>
+                    </label>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                    <button type="button" class="btn btn-secondary" 
+                            @click="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => $el.closest('.modal-overlay').innerHTML = '', 300)">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Guardar Institución
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
