@@ -959,6 +959,16 @@
     pointer-events: auto;
 }
 
+/* Puente invisible para mantener el hover al mover el mouse hacia el panel */
+.nav-dropdown-panel::before {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: 0;
+    width: 100%;
+    height: 15px;
+}
+
 .nav-dropdown:hover .nav-dropdown-panel {
     display: block;
     animation: ddFadeIn 0.18s ease-out;

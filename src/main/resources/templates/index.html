@@ -20,7 +20,7 @@
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <script>
-        document.addEventListener('htmx:configRequest', function(evt) {
+        document.addEventListener('htmx:configRequest', function (evt) {
             var token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
             var header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
             if (token) evt.detail.headers[header] = token;
@@ -28,7 +28,7 @@
 
         function updateActiveSidebar() {
             var path = window.location.pathname;
-            document.querySelectorAll('.sidebar-nav .nav-item').forEach(function(item) {
+            document.querySelectorAll('.sidebar-nav .nav-item').forEach(function (item) {
                 var href = item.getAttribute('href');
                 if (href && (path === href || path.startsWith(href + '/'))) {
                     item.classList.add('active');
@@ -654,7 +654,7 @@
         }
 
         .content-area {
-            padding: 32px;
+            padding: 15px;
         }
 
         .sidebar-overlay {
@@ -691,9 +691,7 @@
                 display: flex;
             }
 
-            .content-area {
-                padding: 24px 16px;
-            }
+
 
             .topbar {
                 padding: 16px;
@@ -1126,7 +1124,9 @@
             background-color: rgba(220, 38, 38, 0.1);
         }
 
-        [x-cloak] { display: none !important; }
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 
     <script th:src="@{/js/componentes.js}" defer></script>
