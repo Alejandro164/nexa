@@ -44,6 +44,10 @@ Thumbs.db
 ### Spring Boot ###
 *.log
 
-### Envrionment Variables ###
+### Environment Variables ###
 .env
 .env.*
+
+### Sensitive Configs and IDE folders ###
+application-prod.properties
+.opencode/
