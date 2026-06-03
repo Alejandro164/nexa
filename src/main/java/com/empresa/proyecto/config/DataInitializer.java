@@ -1,11 +1,7 @@
 package com.empresa.proyecto.config;
 
-import com.empresa.proyecto.entity.Empresa;
-import com.empresa.proyecto.entity.Rol;
-import com.empresa.proyecto.entity.Usuario;
-import com.empresa.proyecto.repository.EmpresaRepository;
-import com.empresa.proyecto.repository.RolRepository;
-import com.empresa.proyecto.repository.UsuarioRepository;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -15,7 +11,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
+import com.empresa.proyecto.entity.Empresa;
+import com.empresa.proyecto.entity.Rol;
+import com.empresa.proyecto.entity.Usuario;
+import com.empresa.proyecto.repository.EmpresaRepository;
+import com.empresa.proyecto.repository.RolRepository;
+import com.empresa.proyecto.repository.UsuarioRepository;
 
 /**
  * Inicializa datos de ejemplo al arrancar en perfil "dev".
@@ -24,7 +25,7 @@ import java.util.Set;
  * 
  * 
  * 
- * docker exec -i project_db_dev psql -U postgres -d project_db -c "
+ * docker exec -i nexa_db_dev psql -U postgres -d nexa -c "
  * TRUNCATE TABLE usuario_roles, usuario_empresas, usuarios RESTART IDENTITY
  * CASCADE;
  * TRUNCATE TABLE roles RESTART IDENTITY CASCADE;
@@ -69,28 +70,28 @@ public class DataInitializer implements ApplicationRunner {
 
         // ── 3. Usuarios ───────────────────────────────────────────────────────
         crearUsuarioSiNoExiste(
-                "Alejandro Chaves", "admin@empresa.com", "admin.chaves",
-                "1-2345-6789",  "admin1234", true,
+                "Alejandro Chaves", "admin@empresa.com", "admin",
+                "1-2345-6789", "admin", true,
                 Set.of(rolAdmin), Set.of(empresaAlpha, empresaBeta, empresaGamma));
 
         crearUsuarioSiNoExiste(
                 "María González", "maria@empresa.com", "maria.gonzalez",
-                "2-3456-7890",  "editor1234", true,
+                "2-3456-7890", "editor1", true,
                 Set.of(rolEditor), Set.of(empresaAlpha));
 
         crearUsuarioSiNoExiste(
                 "Carlos López", "carlos@empresa.com", "carlos.lopez",
-                "3-4567-8901",  "user1234", true,
+                "3-4567-8901", "user1234", true,
                 Set.of(rolUser), Set.of(empresaBeta));
 
         crearUsuarioSiNoExiste(
                 "Ana Rodríguez", "ana@empresa.com", "ana.rodriguez",
-                "4-5678-9012",  "user1234", true,
+                "4-5678-9012", "user1234", true,
                 Set.of(rolEditor, rolUser), Set.of(empresaAlpha, empresaGamma));
 
         crearUsuarioSiNoExiste(
                 "Luis Pérez", "luis@empresa.com", "luis.perez",
-                "5-6789-0123",  "user1234", false, // inactivo
+                "5-6789-0123", "user1234", false, // inactivo
                 Set.of(rolUser), Set.of(empresaGamma));
 
         log.info("=== [DataInitializer] Datos iniciales listos ===");

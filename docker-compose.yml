@@ -3,11 +3,11 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: project_db_dev
+    container_name: nexa_db_dev
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: project_db
+      POSTGRES_DB: nexa
     ports:
       - "5433:5432"
     volumes:
@@ -21,7 +21,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: project_redis_dev
+    container_name: nexa_redis_dev
     ports:
       - "6379:6379"
     volumes:
@@ -37,7 +37,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: proyecto_dev
+    container_name: nexa_dev
     depends_on:
       db:
         condition: service_healthy
@@ -45,7 +45,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/project_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/nexa
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 1234
       SPRING_DATA_REDIS_HOST: redis
