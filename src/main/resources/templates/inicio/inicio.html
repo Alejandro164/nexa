@@ -227,9 +227,9 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="dash-stat-value" th:text="${totalEmpresas}">0</div>
+                    <div class="dash-stat-value" th:text="${totalInstituciones}">0</div>
                     <div class="dash-stat-label">Centros Educativos</div>
-                    <div class="dash-stat-detail" th:text="${empresasActivas} + ' activos'">0 activos</div>
+                    <div class="dash-stat-detail" th:text="${institucionesActivas} + ' activos'">0 activos</div>
                 </div>
             </div>
 
@@ -296,20 +296,20 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                 </div>
                 <div class="dash-card-body">
-                    <th:block th:each="empresa : ${ultimasEmpresas}">
+                    <th:block th:each="institucion : ${ultimasInstituciones}">
                         <div class="dash-list-item">
                             <div class="dash-avatar alt" style="background:linear-gradient(135deg,#16a34a,#4ade80);">
-                                <span th:text="${#strings.substring(empresa.nombre, 0, 1)}">C</span>
+                                <span th:text="${#strings.substring(institucion.nombre, 0, 1)}">C</span>
                             </div>
                             <div style="flex:1;">
-                                <div class="dash-list-name" th:text="${empresa.nombre}">Nombre</div>
-                                <div class="dash-list-sub" th:text="${empresa.cedula}">cédula</div>
+                                <div class="dash-list-name" th:text="${institucion.nombre}">Nombre</div>
+                                <div class="dash-list-sub" th:text="${institucion.codigo}">código</div>
                             </div>
-                            <span class="badge badge-success" th:if="${empresa.activa}" style="font-size:0.7rem;">Activo</span>
-                            <span class="badge badge-danger" th:unless="${empresa.activa}" style="font-size:0.7rem;background:rgba(220,38,38,0.1);color:#dc2626;">Inactivo</span>
+                            <span class="badge badge-success" th:if="${institucion.activa}" style="font-size:0.7rem;">Activo</span>
+                            <span class="badge badge-danger" th:unless="${institucion.activa}" style="font-size:0.7rem;background:rgba(220,38,38,0.1);color:#dc2626;">Inactivo</span>
                         </div>
                     </th:block>
-                    <div th:if="${#lists.isEmpty(ultimasEmpresas)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
+                    <div th:if="${#lists.isEmpty(ultimasInstituciones)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
                         No hay centros educativos registrados.
                     </div>
                 </div>

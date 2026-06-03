@@ -29,4 +29,10 @@ public class InstitucionService {
     public void deleteById(Long id) {
         institucionRepository.deleteById(id);
     }
+
+    public List<com.empresa.proyecto.dto.InstitucionDTO> obtenerTodasDTO() {
+        return institucionRepository.findAll().stream()
+                .map(com.empresa.proyecto.dto.InstitucionDTO::new)
+                .toList();
+    }
 }

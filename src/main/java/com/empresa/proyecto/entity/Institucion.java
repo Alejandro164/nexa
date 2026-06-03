@@ -28,6 +28,9 @@ public class Institucion {
     @Column(nullable = false)
     private Boolean activa = true;
 
+    @ManyToMany(mappedBy = "instituciones")
+    private java.util.Set<Usuario> usuarios = new java.util.HashSet<>();
+
     public Institucion() {}
 
     public Institucion(String nombre, String codigo) {

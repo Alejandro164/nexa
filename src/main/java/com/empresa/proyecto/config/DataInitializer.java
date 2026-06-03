@@ -11,10 +11,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.empresa.proyecto.entity.Empresa;
+import com.empresa.proyecto.entity.Institucion;
 import com.empresa.proyecto.entity.Rol;
 import com.empresa.proyecto.entity.Usuario;
-import com.empresa.proyecto.repository.EmpresaRepository;
+import com.empresa.proyecto.repository.InstitucionRepository;
 import com.empresa.proyecto.repository.RolRepository;
 import com.empresa.proyecto.repository.UsuarioRepository;
 
@@ -23,13 +23,10 @@ import com.empresa.proyecto.repository.UsuarioRepository;
  * Es idempotente: verifica la existencia antes de insertar,
  * por lo que es seguro reiniciar la aplicación sin duplicar datos.
  * 
- * 
- * 
  * docker exec -i nexa_db_dev psql -U postgres -d nexa -c "
- * TRUNCATE TABLE usuario_roles, usuario_empresas, usuarios RESTART IDENTITY
- * CASCADE;
+ * TRUNCATE TABLE usuario_roles, usuario_instituciones, usuarios RESTART IDENTITY CASCADE;
  * TRUNCATE TABLE roles RESTART IDENTITY CASCADE;
- * TRUNCATE TABLE empresas RESTART IDENTITY CASCADE;
+ * TRUNCATE TABLE instituciones RESTART IDENTITY CASCADE;
  * "
  */
 @Component
@@ -39,16 +36,16 @@ public class DataInitializer implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     private final RolRepository rolRepository;
-    private final EmpresaRepository empresaRepository;
+    private final InstitucionRepository institucionRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(RolRepository rolRepository,
-            EmpresaRepository empresaRepository,
+            InstitucionRepository institucionRepository,
             UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder) {
         this.rolRepository = rolRepository;
-        this.empresaRepository = empresaRepository;
+        this.institucionRepository = institucionRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -63,36 +60,36 @@ public class DataInitializer implements ApplicationRunner {
         Rol rolEditor = crearRolSiNoExiste("ROLE_EDITOR");
         Rol rolUser = crearRolSiNoExiste("ROLE_USER");
 
-        // ── 2. Empresas ───────────────────────────────────────────────────────
-        Empresa empresaAlpha = crearEmpresaSiNoExiste("Alpha Corp S.A.", "1790012301001", "Av. Principal 100");
-        Empresa empresaBeta = crearEmpresaSiNoExiste("Beta Solutions Ltda.", "1790098765001", "Calle Secundaria 200");
-        Empresa empresaGamma = crearEmpresaSiNoExiste("Gamma Tech S.A.S.", "9000123456-1", "Zona Industrial 300");
+        // ── 2. Instituciones ──────────────────────────────────────────────────
+        Institucion instAlpha = crearInstitucionSiNoExiste("Liceo Alpha", "1790012301001", "Av. Principal 100");
+        Institucion instBeta = crearInstitucionSiNoExiste("Colegio Beta", "1790098765001", "Calle Secundaria 200");
+        Institucion instGamma = crearInstitucionSiNoExiste("Escuela Gamma", "9000123456-1", "Zona Industrial 300");
 
         // ── 3. Usuarios ───────────────────────────────────────────────────────
         crearUsuarioSiNoExiste(
                 "Alejandro Chaves", "admin@empresa.com", "admin",
                 "1-2345-6789", "admin", true,
-                Set.of(rolAdmin), Set.of(empresaAlpha, empresaBeta, empresaGamma));
+                Set.of(rolAdmin), Set.of(instAlpha, instBeta, instGamma));
 
         crearUsuarioSiNoExiste(
                 "María González", "maria@empresa.com", "maria.gonzalez",
                 "2-3456-7890", "editor1", true,
-                Set.of(rolEditor), Set.of(empresaAlpha));
+                Set.of(rolEditor), Set.of(instAlpha));
 
         crearUsuarioSiNoExiste(
                 "Carlos López", "carlos@empresa.com", "carlos.lopez",
                 "3-4567-8901", "user1234", true,
-                Set.of(rolUser), Set.of(empresaBeta));
+                Set.of(rolUser), Set.of(instBeta));
 
         crearUsuarioSiNoExiste(
                 "Ana Rodríguez", "ana@empresa.com", "ana.rodriguez",
                 "4-5678-9012", "user1234", true,
-                Set.of(rolEditor, rolUser), Set.of(empresaAlpha, empresaGamma));
+                Set.of(rolEditor, rolUser), Set.of(instAlpha, instGamma));
 
         crearUsuarioSiNoExiste(
                 "Luis Pérez", "luis@empresa.com", "luis.perez",
                 "5-6789-0123", "user1234", false, // inactivo
-                Set.of(rolUser), Set.of(empresaGamma));
+                Set.of(rolUser), Set.of(instGamma));
 
         log.info("=== [DataInitializer] Datos iniciales listos ===");
     }
@@ -108,19 +105,19 @@ public class DataInitializer implements ApplicationRunner {
         });
     }
 
-    private Empresa crearEmpresaSiNoExiste(String nombre, String cedula, String direccion) {
-        return empresaRepository.findByCedula(cedula).orElseGet(() -> {
-            Empresa e = new Empresa(nombre, cedula);
-            e.setDireccion(direccion);
-            empresaRepository.save(e);
-            log.info("  [EMPRESA creada] {}", nombre);
-            return e;
+    private Institucion crearInstitucionSiNoExiste(String nombre, String codigo, String direccion) {
+        return institucionRepository.findByCodigo(codigo).orElseGet(() -> {
+            Institucion inst = new Institucion(nombre, codigo);
+            inst.setDireccion(direccion);
+            institucionRepository.save(inst);
+            log.info("  [INSTITUCION creada] {}", nombre);
+            return inst;
         });
     }
 
     private void crearUsuarioSiNoExiste(String nombre, String email, String usuario,
             String cedula, String rawPassword, boolean activo,
-            Set<Rol> roles, Set<Empresa> empresas) {
+            Set<Rol> roles, Set<Institucion> instituciones) {
         if (usuarioRepository.existsByEmail(email)) {
             log.info("  [USUARIO ya existe] {}", email);
             return;
@@ -133,7 +130,7 @@ public class DataInitializer implements ApplicationRunner {
         u.setPassword(passwordEncoder.encode(rawPassword));
         u.setActivo(activo);
         u.setRoles(roles);
-        u.setEmpresas(empresas);
+        u.setInstituciones(instituciones);
         usuarioRepository.save(u);
         log.info("  [USUARIO creado] {} / {} ({})", email, usuario, activo ? "activo" : "inactivo");
     }

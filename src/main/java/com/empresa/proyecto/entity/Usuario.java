@@ -46,14 +46,14 @@ public class Usuario implements UserDetails {
     )
     private Set<Rol> roles = new HashSet<>();
 
-    // Many-to-Many con Empresa
+    // Many-to-Many con Institucion
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "usuario_empresas",
+        name = "usuario_instituciones",
         joinColumns = @JoinColumn(name = "usuario_id"),
-        inverseJoinColumns = @JoinColumn(name = "empresa_id")
+        inverseJoinColumns = @JoinColumn(name = "institucion_id")
     )
-    private Set<Empresa> empresas = new HashSet<>();
+    private Set<Institucion> instituciones = new HashSet<>();
 
     public Usuario() {}
 
@@ -111,6 +111,6 @@ public class Usuario implements UserDetails {
     public void setRoles(Set<Rol> roles) { this.roles = roles; }
 
     @JsonIgnore
-    public Set<Empresa> getEmpresas() { return empresas; }
-    public void setEmpresas(Set<Empresa> empresas) { this.empresas = empresas; }
+    public Set<Institucion> getInstituciones() { return instituciones; }
+    public void setInstituciones(Set<Institucion> instituciones) { this.instituciones = instituciones; }
 }
