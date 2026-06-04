@@ -13,33 +13,37 @@
 
     <main layout:fragment="content" th:fragment="htmx-content">
         <style>
-            .config-nav-container {
-                display: flex;
-                justify-content: center;
-                gap: 8px;
-                margin: 0 auto 1.5rem auto;
+            .config-tabs-container {
+                margin-bottom: 2rem;
                 background: #ffffff;
-                padding: 4px;
-                border-radius: 9999px;
-                max-width: 90%;
                 border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
                 box-shadow: var(--shadow-sm);
+                overflow: visible;
+            }
+            .config-tabs-container::-webkit-scrollbar {
+                display: none;
             }
             .config-tabs {
                 display: flex;
+                width: 100%;
                 gap: 6px;
             }
             .config-tab-btn {
+                flex: 1;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 gap: 8px;
-                padding: 6px 14px;
-                font-size: 0.82rem;
+                padding: 10px 16px;
+                font-size: 0.85rem;
                 font-weight: 600;
                 color: var(--text-secondary);
                 text-decoration: none;
-                border-radius: 9999px;
+                border-radius: 10px;
                 transition: all 0.25s ease;
                 cursor: pointer;
                 border: none;
@@ -51,9 +55,9 @@
                 background-color: var(--input-bg);
             }
             .config-tab-btn.active {
-                color: var(--primary) !important;
-                background-color: rgba(45, 90, 135, 0.08) !important;
-                box-shadow: none;
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
             }
             .tab-pane {
                 animation: fadeIn 0.35s ease-out;
@@ -65,7 +69,7 @@
         </style>
 
         <div x-data="{ activeTab: 'sesiones' }">
-            <div class="config-nav-container">
+            <div class="config-tabs-container">
                 <div class="config-tabs">
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'sesiones' }" @click="activeTab = 'sesiones'">
                         🔒 Sesiones Activas
