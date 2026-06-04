@@ -1,0 +1,90 @@
+<div th:fragment="content">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Matriz de Disponibilidad</h3>
+            <div style="display: flex; gap: 10px;">
+                <select class="form-input" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px;">
+                    <option>Carlos Mendoza Arias</option>
+                    <option>Laura Quirós Salas</option>
+                </select>
+                <button class="btn btn-primary">Guardar</button>
+            </div>
+        </div>
+        <div style="padding: 2rem;">
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Bloquea las horas en las que el docente <strong>NO</strong> está disponible para impartir clases.</p>
+            
+            <style>
+                .disp-grid {
+                    display: grid;
+                    grid-template-columns: 80px repeat(5, 1fr);
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    overflow: hidden;
+                }
+                .disp-header {
+                    background: #f1f5f9;
+                    padding: 8px;
+                    text-align: center;
+                    font-weight: 600;
+                    font-size: 0.8rem;
+                    border-right: 1px solid var(--border);
+                    border-bottom: 1px solid var(--border);
+                }
+                .disp-cell {
+                    padding: 12px;
+                    text-align: center;
+                    border-right: 1px solid var(--border);
+                    border-bottom: 1px solid var(--border);
+                    background: #ffffff;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                }
+                .disp-cell:hover { background: #f8fafc; }
+                .disp-cell.blocked {
+                    background: #fee2e2;
+                    color: #ef4444;
+                    font-weight: 600;
+                }
+                .disp-time {
+                    background: #f8fafc;
+                    font-weight: 600;
+                    color: var(--text-muted);
+                    font-size: 0.75rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            </style>
+
+            <div class="disp-grid">
+                <!-- Header -->
+                <div class="disp-header">Hora</div>
+                <div class="disp-header">Lunes</div>
+                <div class="disp-header">Martes</div>
+                <div class="disp-header">Miércoles</div>
+                <div class="disp-header">Jueves</div>
+                <div class="disp-header">Viernes</div>
+
+                <!-- Row 1 -->
+                <div class="disp-cell disp-time">07:00 - 08:20</div>
+                <div class="disp-cell">✓ Disponible</div>
+                <div class="disp-cell blocked">✕ Bloqueado</div>
+                <div class="disp-cell">✓ Disponible</div>
+                <div class="disp-cell blocked">✕ Bloqueado</div>
+                <div class="disp-cell">✓ Disponible</div>
+
+                <!-- Row 2 -->
+                <div class="disp-cell disp-time">08:40 - 10:00</div>
+                <div class="disp-cell">✓ Disponible</div>
+                <div class="disp-cell">✓ Disponible</div>
+                <div class="disp-cell">✓ Disponible</div>
+                <div class="disp-cell blocked">✕ Bloqueado</div>
+                <div class="disp-cell">✓ Disponible</div>
+            </div>
+            
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">
+                * Haz clic en una celda para alternar entre "Disponible" y "Bloqueado".
+            </div>
+        </div>
+    </div>
+</div>
