@@ -1,0 +1,43 @@
+<div th:fragment="content">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Gestión de Períodos Académicos</h3>
+            <button class="btn btn-primary">+ Nuevo Período</button>
+        </div>
+        <div style="padding: 2rem;">
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Define los ciclos lectivos para organizar la planificación académica e inscripciones.</p>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Descripción</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 600;">2025-I</td>
+                            <td>Primer Semestre 2025</td>
+                            <td>10/02/2025</td>
+                            <td>04/07/2025</td>
+                            <td><span class="badge badge-success">Activo</span></td>
+                            <td><button class="btn btn-secondary btn-demo-sm">Editar</button></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600;">2025-II</td>
+                            <td>Segundo Semestre 2025</td>
+                            <td>21/07/2025</td>
+                            <td>12/12/2025</td>
+                            <td><span class="badge" style="background: rgba(217,119,6,0.1); color: var(--warm);">Planificado</span></td>
+                            <td><button class="btn btn-secondary btn-demo-sm">Editar</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

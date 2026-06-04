@@ -1,0 +1,53 @@
+<div th:fragment="content">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Catálogo de Materias</h3>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" class="form-input" placeholder="Buscar materia..." style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
+                <button class="btn btn-primary">+ Nueva Materia</button>
+            </div>
+        </div>
+        <div style="padding: 2rem;">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre de Asignatura</th>
+                            <th>Área Académica</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="color: var(--text-muted); font-family: monospace;">MAT-01</td>
+                            <td style="font-weight: 600;">Matemáticas</td>
+                            <td>Ciencias Exactas</td>
+                            <td><span class="badge" style="background: rgba(45,90,135,0.1); color: var(--primary);">Básica</span></td>
+                            <td><span class="badge badge-success">Activo</span></td>
+                            <td><button class="btn btn-secondary btn-demo-sm">Detalles</button></td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--text-muted); font-family: monospace;">CIE-01</td>
+                            <td style="font-weight: 600;">Ciencias</td>
+                            <td>Ciencias Naturales</td>
+                            <td><span class="badge" style="background: rgba(45,90,135,0.1); color: var(--primary);">Básica</span></td>
+                            <td><span class="badge badge-success">Activo</span></td>
+                            <td><button class="btn btn-secondary btn-demo-sm">Detalles</button></td>
+                        </tr>
+                        <tr>
+                            <td style="color: var(--text-muted); font-family: monospace;">INF-10</td>
+                            <td style="font-weight: 600;">Desarrollo de Software</td>
+                            <td>Educación Técnica</td>
+                            <td><span class="badge" style="background: rgba(124,58,237,0.1); color: #7c3aed;">Especialidad</span></td>
+                            <td><span class="badge badge-success">Activo</span></td>
+                            <td><button class="btn btn-secondary btn-demo-sm">Detalles</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

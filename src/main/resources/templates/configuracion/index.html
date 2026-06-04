@@ -14,84 +14,25 @@
 
     <main layout:fragment="content" th:fragment="htmx-content">
         <style>
-            /* Category selector container styling */
-            .category-selector {
-                display: flex;
-                justify-content: center;
-                gap: 6px;
-                margin: 0 auto 1.75rem auto;
-                background: #ffffff;
-                padding: 6px;
-                border-radius: 9999px;
-                max-width: 650px;
-                border: 1px solid var(--border);
-                box-shadow: var(--shadow-sm);
-            }
-
-            .category-btn {
-                flex: 1;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                padding: 10px 20px;
-                font-size: 0.88rem;
-                font-weight: 600;
-                color: var(--text-secondary);
-                border: none;
-                background: transparent;
-                border-radius: 9999px;
-                cursor: pointer;
-                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                white-space: nowrap;
-            }
-
-            .category-btn:hover {
-                color: var(--primary);
-                background-color: var(--input-bg);
-            }
-
-            .category-btn.active {
-                color: white;
-                background: linear-gradient(135deg, var(--primary) 0%, #4a82b8 100%);
-                box-shadow: 0 4px 12px rgba(45, 90, 135, 0.25);
-            }
-
-            .category-btn svg {
-                width: 18px;
-                height: 18px;
-                transition: transform 0.2s;
-            }
-
-            .category-btn:hover svg {
-                transform: scale(1.1);
-            }
-
-            /* Sub-tabs styling */
             .config-tabs-container {
                 margin-bottom: 2rem;
-                background: rgba(255, 255, 255, 0.8);
-                backdrop-filter: blur(12px);
+                background: #ffffff;
                 border: 1px solid var(--border);
                 border-radius: 14px;
                 padding: 6px;
                 display: flex;
                 width: 100%;
                 box-shadow: var(--shadow-sm);
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
+                overflow: visible;
             }
-
             .config-tabs-container::-webkit-scrollbar {
                 display: none;
             }
-
             .config-tabs {
                 display: flex;
                 width: 100%;
                 gap: 6px;
             }
-
             .config-tab-btn {
                 flex: 1;
                 display: flex;
@@ -104,44 +45,27 @@
                 color: var(--text-secondary);
                 text-decoration: none;
                 border-radius: 10px;
-                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: all 0.25s ease;
                 cursor: pointer;
                 border: none;
                 background: transparent;
                 white-space: nowrap;
             }
-
             .config-tab-btn:hover {
                 color: var(--primary);
                 background-color: var(--input-bg);
             }
-
             .config-tab-btn.active {
                 color: white !important;
                 background-color: var(--primary) !important;
-                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.15);
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
             }
-
-            .config-tab-btn svg {
-                width: 18px;
-                height: 18px;
-                flex-shrink: 0;
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
             }
-
-            .config-tab-fade-in {
-                animation: configTabFadeIn 0.35s ease-out;
-            }
-
-            @keyframes configTabFadeIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(6px);
-                }
-
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
             }
 
             .grid-container {
@@ -167,100 +91,68 @@
             .premium-list-item:last-child {
                 border-bottom: none;
             }
+
+            /* Dropdown specifics */
+            .nav-dropdown {
+                flex: 1;
+                display: flex;
+                position: relative;
+            }
+            .config-tab-btn svg:first-child {
+                width: 18px;
+                height: 18px;
+            }
+            .config-tab-btn .chevron {
+                width: 16px;
+                height: 16px;
+            }
+            .nav-dropdown-panel {
+                top: calc(100% + 5px) !important;
+                min-width: 240px;
+                padding: 6px;
+            }
+            .nav-dropdown-item {
+                padding: 6px 10px;
+                gap: 8px;
+            }
+            .nav-dropdown-item.active {
+                background: rgba(45, 90, 135, 0.10);
+                color: var(--primary);
+            }
+            .nav-dropdown-item.active .item-title {
+                color: var(--primary);
+            }
+            .item-icon {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+            }
+            .item-icon svg {
+                width: 12px;
+                height: 12px;
+            }
+            .item-title {
+                font-size: 0.78rem;
+            }
+            .item-desc {
+                font-size: 0.65rem;
+            }
+            .nav-dropdown-divider {
+                margin: 3px 6px;
+            }
         </style>
 
         <div class="configuracion-container" x-data="{ 
             activeTab: 'institucion'
         }">
 
-            <!-- Estilos específicos para la nav-dropdown en configuración -->
-            <style>
-                .config-nav-container {
-                    display: flex;
-                    justify-content: center;
-                    gap: 8px;
-                    margin: 0 auto 1.5rem auto;
-                    /* Un poco más arriba reduciendo el margen inferior */
-                    background: #ffffff;
-                    padding: 4px;
-                    border-radius: 9999px;
-                    max-width: 90%;
-                    border: 1px solid var(--border);
-                    box-shadow: var(--shadow-sm);
-                }
-
-                .config-nav-container .nav-dropdown-trigger {
-                    padding: 6px 14px;
-                    font-size: 0.82rem;
-                    border-radius: 9999px;
-                }
-
-                .config-nav-container .nav-dropdown-trigger svg:first-child {
-                    width: 16px;
-                    height: 16px;
-                }
-
-                .config-nav-container .nav-dropdown-trigger .chevron {
-                    width: 14px;
-                    height: 14px;
-                }
-
-                .config-nav-container .nav-dropdown-trigger.active-dropdown {
-                    background: rgba(45, 90, 135, 0.08);
-                    color: var(--primary);
-                }
-
-                .config-nav-container .nav-dropdown-item.active {
-                    background: rgba(45, 90, 135, 0.10);
-                    color: var(--primary);
-                }
-
-                .config-nav-container .nav-dropdown-item.active .item-title {
-                    color: var(--primary);
-                }
-
-                /* Ajustes para hacer el panel y sus opciones más compactos */
-                .config-nav-container .nav-dropdown-panel {
-                    top: calc(100% + 2px) !important;
-                    min-width: 240px;
-                    padding: 6px;
-                }
-
-                .config-nav-container .nav-dropdown-item {
-                    padding: 6px 10px;
-                    gap: 8px;
-                }
-
-                .config-nav-container .item-icon {
-                    width: 24px;
-                    height: 24px;
-                    border-radius: 6px;
-                }
-
-                .config-nav-container .item-icon svg {
-                    width: 12px;
-                    height: 12px;
-                }
-
-                .config-nav-container .item-title {
-                    font-size: 0.78rem;
-                }
-
-                .config-nav-container .item-desc {
-                    font-size: 0.65rem;
-                }
-
-                .config-nav-container .nav-dropdown-divider {
-                    margin: 3px 6px;
-                }
-            </style>
-
-            <div class="config-nav-container">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
 
                 <!-- General -->
                 <div class="nav-dropdown" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
-                    <button class="nav-dropdown-trigger"
-                        :class="['institucion', 'ano-lectivo', 'periodos'].includes(activeTab) ? 'active-dropdown' : ''">
+                    <button class="config-tab-btn"
+                        :class="{'active': ['institucion', 'ano-lectivo', 'periodos'].includes(activeTab)}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -320,8 +212,8 @@
 
                 <!-- Estructura Académica -->
                 <div class="nav-dropdown" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
-                    <button class="nav-dropdown-trigger"
-                        :class="['niveles-educativos', 'materias-nivel', 'grupos-secciones', 'subgrupos-especialidades', 'asignacion-docente'].includes(activeTab) ? 'active-dropdown' : ''">
+                    <button class="config-tab-btn"
+                        :class="{'active': ['niveles-educativos', 'materias-nivel', 'grupos-secciones', 'subgrupos-especialidades', 'asignacion-docente'].includes(activeTab)}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -409,8 +301,8 @@
 
                 <!-- Horarios y Espacios -->
                 <div class="nav-dropdown" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
-                    <button class="nav-dropdown-trigger"
-                        :class="['aulas-espacios', 'bloques-horarios', 'horarios-grupo', 'feriados'].includes(activeTab) ? 'active-dropdown' : ''">
+                    <button class="config-tab-btn"
+                        :class="{'active': ['aulas-espacios', 'bloques-horarios', 'horarios-grupo', 'feriados'].includes(activeTab)}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -483,6 +375,7 @@
                     </div>
                 </div>
 
+                </div>
             </div>
 
             <!-- Content Area -->

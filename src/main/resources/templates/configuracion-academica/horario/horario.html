@@ -1,0 +1,71 @@
+<div th:fragment="content">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Matriz de Horarios</h3>
+            <button class="btn btn-primary">Asistente de Generación</button>
+        </div>
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; gap: 1rem; background: #fafafa; border-radius: 0 0 0 0;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Período</label>
+                <select class="form-input" style="width: 100%; border-radius: 8px; padding-left: 0.75rem;">
+                    <option>2025-I</option>
+                    <option>2024-II</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Nivel</label>
+                <select class="form-input" style="width: 100%; border-radius: 8px; padding-left: 0.75rem;">
+                    <option>Sétimo Año</option>
+                    <option>Octavo Año</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Grupo/Sección</label>
+                <select class="form-input" style="width: 100%; border-radius: 8px; padding-left: 0.75rem;">
+                    <option>7-1</option>
+                    <option>7-2</option>
+                </select>
+            </div>
+        </div>
+        <div style="padding: 2rem;">
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Asignaciones de materias y docentes para la Sección <strong>7-1</strong> en el período <strong>2025-I</strong>.</p>
+            
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Materia</th>
+                            <th>Docente Asignado</th>
+                            <th>Carga Horaria</th>
+                            <th>Aula Principal</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--primary);">Matemáticas</td>
+                            <td>Prof. Carlos Mendoza</td>
+                            <td>5 Lecciones / Sem</td>
+                            <td>Aula 12</td>
+                            <td><button class="btn btn-secondary btn-demo-sm">Modificar</button></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--primary);">Español</td>
+                            <td>Profa. Laura Quirós</td>
+                            <td>5 Lecciones / Sem</td>
+                            <td>Aula 12</td>
+                            <td><button class="btn btn-secondary btn-demo-sm">Modificar</button></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--primary);">Ciencias</td>
+                            <td>Prof. Andrés Castro</td>
+                            <td>4 Lecciones / Sem</td>
+                            <td>Laboratorio C1</td>
+                            <td><button class="btn btn-secondary btn-demo-sm">Modificar</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
