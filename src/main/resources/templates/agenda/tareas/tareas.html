@@ -1,0 +1,42 @@
+<div th:fragment="content" class="tab-pane">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Gestión de Tareas Pendientes</h3>
+            <button class="btn btn-primary">+ Nueva Tarea</button>
+        </div>
+        <div style="padding: 1.5rem;">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Estado</th>
+                            <th>Descripción de la Tarea</th>
+                            <th>Asignado a</th>
+                            <th>Fecha Límite</th>
+                            <th>Prioridad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.1); color: #b45309;">En Progreso</span></td>
+                            <td style="font-weight:600;">Revisar ensayos de Español de la sección 10-1</td>
+                            <td>Licda. María Pérez Castro</td>
+                            <td>29/05/2026</td>
+                            <td><span class="badge badge-danger">Alta</span></td>
+                            <td><button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;">Completar</button></td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge badge-success" style="background: rgba(34, 197, 94, 0.1); color: #15803d;">Completada</span></td>
+                            <td style="font-weight:600; text-decoration: line-through; color: var(--text-light);">Preparar material para la feria científica</td>
+                            <td>Prof. Carlos Vargas</td>
+                            <td>25/05/2026</td>
+                            <td><span class="badge badge-secondary">Media</span></td>
+                            <td><button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;">Ver</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -71,8 +71,8 @@
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'calendario' }" @click="activeTab = 'calendario'" hx-get="/agenda/calendario" hx-target="#agenda-content" hx-swap="innerHTML">
                         📅 Calendario
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'citas' }" @click="activeTab = 'citas'" hx-get="/agenda/citas" hx-target="#agenda-content" hx-swap="innerHTML">
-                        👥 Citas
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'tareas' }" @click="activeTab = 'tareas'" hx-get="/agenda/tareas" hx-target="#agenda-content" hx-swap="innerHTML">
+                        ✅ Tareas
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'salas' }" @click="activeTab = 'salas'" hx-get="/agenda/salas" hx-target="#agenda-content" hx-swap="innerHTML">
                         💻 Salas Virtuales

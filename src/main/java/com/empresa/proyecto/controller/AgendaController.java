@@ -13,9 +13,9 @@ public class AgendaController {
         return "agenda/calendario/calendario :: content";
     }
 
-    @GetMapping("/citas")
-    public String citas() {
-        return "agenda/citas/citas :: content";
+    @GetMapping("/tareas")
+    public String tareas() {
+        return "agenda/tareas/tareas :: content";
     }
 
     @GetMapping("/salas")
