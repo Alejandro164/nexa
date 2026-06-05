@@ -62,11 +62,6 @@ public class MenuController {
         return htmxRequest ? "seguridad/index :: htmx-content" : "seguridad/index";
     }
 
-    @GetMapping("/nube-nexa")
-    public String nubeNexa(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "nube/index :: htmx-content" : "nube/index";
-    }
-
     @GetMapping("/archivo-graduados")
     public String archivoGraduados(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "archivo/index :: htmx-content" : "archivo/index";
