@@ -538,6 +538,16 @@
                                 style="display: none; position: absolute; right: 8px; top: 36px; z-index: 100;"
                                 :class="{ 'show': activeContextMenu === $el.dataset.ctxId }">
                                 <button type="button" class="dropdown-item"
+                                    th:data-url="@{/nube-nexa/descargar-carpeta/{id}(id=${carpeta.id})}"
+                                    @click.prevent.stop="window.location.href=$el.dataset.url">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Descargar
+                                </button>
+                                <button type="button" class="dropdown-item"
                                     th:data-id="${carpeta.id}" th:data-nombre="${carpeta.nombre}"
                                     @click.prevent.stop="openRenameModal($el.dataset.id, $el.dataset.nombre)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

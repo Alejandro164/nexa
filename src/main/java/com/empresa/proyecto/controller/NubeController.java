@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -135,6 +136,50 @@ public class NubeController {
             }
         } catch (Exception e) {
             throw new RuntimeException("Error al descargar el archivo: " + e.getMessage());
+        }
+    }
+
+    // Descargar Carpeta como ZIP
+    @GetMapping("/descargar-carpeta/{id}")
+    public ResponseEntity<StreamingResponseBody> descargarCarpeta(@PathVariable Long id) {
+        NubeNodo carpeta = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Carpeta no encontrada"));
+
+        if (!carpeta.getTipo().name().equals("CARPETA")) {
+            throw new IllegalArgumentException("El nodo no es una carpeta");
+        }
+
+        StreamingResponseBody stream = out -> {
+            try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(out)) {
+                agregarNodoAZip(carpeta, carpeta.getNombre() + "/", zos);
+            }
+        };
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + carpeta.getNombre() + ".zip\"")
+                .contentType(org.springframework.http.MediaType.parseMediaType("application/zip"))
+                .body(stream);
+    }
+
+    private void agregarNodoAZip(NubeNodo nodo, String pathActual, java.util.zip.ZipOutputStream zos) throws java.io.IOException {
+        if (nodo.getTipo().name().equals("ARCHIVO")) {
+            Path filePath = Paths.get(nubeNodoService.getRutaRecursos()).resolve(nodo.getUrlArchivo());
+            if (java.nio.file.Files.exists(filePath)) {
+                zos.putNextEntry(new java.util.zip.ZipEntry(pathActual));
+                java.nio.file.Files.copy(filePath, zos);
+                zos.closeEntry();
+            }
+        } else if (nodo.getTipo().name().equals("CARPETA")) {
+            List<NubeNodo> hijos = nubeNodoService.obtenerNodosPorPadre(nodo.getId());
+            if (hijos == null || hijos.isEmpty()) {
+                zos.putNextEntry(new java.util.zip.ZipEntry(pathActual));
+                zos.closeEntry();
+            } else {
+                for (NubeNodo hijo : hijos) {
+                    String hijoPath = pathActual + hijo.getNombre() + (hijo.getTipo().name().equals("CARPETA") ? "/" : "");
+                    agregarNodoAZip(hijo, hijoPath, zos);
+                }
+            }
         }
     }
 
