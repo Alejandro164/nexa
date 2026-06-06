@@ -1,7 +1,6 @@
 <!-- Modal Preview Fragment -->
-<div th:fragment="modal">
-    <div class="modal-overlay" x-show="previewModalOpen" style="display: none; z-index: 1000;" :class="{ 'show-modal': previewModalOpen }">
-        <div class="modal-content" style="max-width: 90vw; width: 900px; max-height: 90vh; display: flex; flex-direction: column;" @click.outside="closePreviewModal()">
+<div th:fragment="modal" class="modal-overlay" x-show="previewModalOpen" style="display: none; z-index: 1000;" :class="{ 'show-modal': previewModalOpen }">
+    <div class="modal-content" style="max-width: 90vw; width: 900px; max-height: 90vh; display: flex; flex-direction: column;" @click.outside="closePreviewModal()">
             <div class="modal-header" style="flex-shrink: 0; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
                 <h3 style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 90%;" x-text="previewName">Vista Previa</h3>
                 <button @click="closePreviewModal()" class="close-btn" type="button">
@@ -63,7 +62,6 @@
                     </div>
                 </template>
 
-            </div>
         </div>
     </div>
 </div>

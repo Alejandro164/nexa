@@ -548,8 +548,12 @@
 
                         <!-- File Items -->
                         <div class="item-card file-card" th:each="archivo : ${archivos}" style="position: relative;">
-                            <a href="#" @click.prevent="openPreviewModal([[${archivo.id}]], '[[${archivo.nombre}]]', '[[${archivo.extension}]]')"
-                                style="text-decoration: none; color: inherit; display: block; width: 100%;">
+                            <a href="#" 
+                               th:data-id="${archivo.id}" 
+                               th:data-nombre="${archivo.nombre}" 
+                               th:data-ext="${archivo.extension}" 
+                               @click.prevent="openPreviewModal($el.getAttribute('data-id'), $el.getAttribute('data-nombre'), $el.getAttribute('data-ext'))"
+                               style="text-decoration: none; color: inherit; display: block; width: 100%;">
                                 <div class="item-icon">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5"
                                         stroke-linecap="round" stroke-linejoin="round">
