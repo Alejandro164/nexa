@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.header.writers.CacheControlHeadersWriter;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 
 @Configuration
@@ -49,41 +48,37 @@ public class SecurityConfig {
         requestCache.setMatchingRequestParameterName(null);
 
         http
-            .authenticationProvider(authenticationProvider())
-            .requestCache(cache -> cache.requestCache(requestCache))
-            // Headers: impedir que el browser cachee páginas protegidas
-            .headers(headers -> headers
-                .cacheControl(cache -> {}) // emite Cache-Control: no-cache, no-store, must-revalidate
-                .frameOptions(frame -> frame.deny())
-            )
-            .sessionManagement(session -> session
-                .sessionFixation().migrateSession()
-                .maximumSessions(1)
-                    .maxSessionsPreventsLogin(false)
-                    .expiredUrl("/login?expired")
-            )
-            .authorizeHttpRequests(auth -> auth
-                // Recursos públicos
-                .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
-                // Todo lo demás requiere autenticación
-                .anyRequest().authenticated()
-            )
-            .formLogin(form -> form
-                .loginPage("/login")          // Nuestra página de login personalizada
-                .loginProcessingUrl("/login") // Spring Security procesa el POST aquí
-                .defaultSuccessUrl("/", true) // Redirige al inicio tras login exitoso
-                .failureUrl("/login?error")   // Redirige al login con parámetro de error
-                .usernameParameter("email")   // Campo del formulario (acepta email/usuario/cédula)
-                .passwordParameter("password")
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout")
-                .invalidateHttpSession(true)
-                .deleteCookies("SESSION")
-                .permitAll()
-            );
+                .authenticationProvider(authenticationProvider())
+                .requestCache(cache -> cache.requestCache(requestCache))
+                // Headers: impedir que el browser cachee páginas protegidas
+                .headers(headers -> headers
+                        .cacheControl(cache -> {
+                        }) // emite Cache-Control: no-cache, no-store, must-revalidate
+                        .frameOptions(frame -> frame.deny()))
+                .sessionManagement(session -> session
+                        .sessionFixation().migrateSession()
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
+                        .expiredUrl("/login?expired"))
+                .authorizeHttpRequests(auth -> auth
+                        // Recursos públicos
+                        .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
+                        // Todo lo demás requiere autenticación
+                        .anyRequest().authenticated())
+                .formLogin(form -> form
+                        .loginPage("/login") // Nuestra página de login personalizada
+                        .loginProcessingUrl("/login") // Spring Security procesa el POST aquí
+                        .defaultSuccessUrl("/", true) // Redirige al inicio tras login exitoso
+                        .failureUrl("/login?error") // Redirige al login con parámetro de error
+                        .usernameParameter("email") // Campo del formulario (acepta email/usuario/cédula)
+                        .passwordParameter("password")
+                        .permitAll())
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("SESSION")
+                        .permitAll());
 
         return http.build();
     }
