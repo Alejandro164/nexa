@@ -114,4 +114,37 @@ public class NubeNodoService {
 
         return repository.save(nodoArchivo);
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void renombrarNodo(Long id, String nuevoNombre) {
+        NubeNodo nodo = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        nodo.setNombre(nuevoNombre);
+        repository.save(nodo);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void eliminarNodo(Long id) {
+        NubeNodo nodo = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        
+        eliminarFisicamente(nodo);
+        repository.delete(nodo);
+    }
+
+    private void eliminarFisicamente(NubeNodo nodo) {
+        if (nodo.getTipo() == TipoNodo.ARCHIVO && nodo.getUrlArchivo() != null) {
+            try {
+                Path rutaFisica = Paths.get(rutaRecursos).resolve(nodo.getUrlArchivo());
+                Files.deleteIfExists(rutaFisica);
+            } catch (IOException e) {
+                // Loguear pero no interrumpir la eliminación en BD si el archivo ya no existe
+                e.printStackTrace();
+            }
+        } else if (nodo.getTipo() == TipoNodo.CARPETA) {
+            for (NubeNodo hijo : nodo.getHijos()) {
+                eliminarFisicamente(hijo);
+            }
+        }
+    }
 }

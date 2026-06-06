@@ -137,4 +137,65 @@ public class NubeController {
             throw new RuntimeException("Error al descargar el archivo: " + e.getMessage());
         }
     }
+
+    // Previsualizar Archivo en el Navegador
+    @GetMapping("/ver/{id}")
+    public ResponseEntity<Resource> verArchivo(@PathVariable Long id) {
+        NubeNodo archivo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Archivo no encontrado"));
+
+        if (!archivo.getTipo().name().equals("ARCHIVO")) {
+            throw new IllegalArgumentException("El nodo no es un archivo");
+        }
+
+        try {
+            Path filePath = Paths.get(nubeNodoService.getRutaRecursos()).resolve(archivo.getUrlArchivo());
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists() || resource.isReadable()) {
+                String contentType = java.nio.file.Files.probeContentType(filePath);
+                if (contentType == null) {
+                    contentType = "application/octet-stream";
+                }
+
+                return ResponseEntity.ok()
+                        .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + archivo.getNombre() + "\"")
+                        .body(resource);
+            } else {
+                throw new RuntimeException("No se puede leer el archivo");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al ver el archivo: " + e.getMessage());
+        }
+    }
+
+    // Renombrar Archivo o Carpeta
+    @PostMapping("/renombrar")
+    public String renombrar(@RequestParam Long id, 
+                            @RequestParam String nuevoNombre, 
+                            @RequestParam(required = false) Long padreId, 
+                            Model model) {
+        nubeNodoService.renombrarNodo(id, nuevoNombre);
+        
+        if (padreId != null) {
+            return verCarpeta(padreId, model);
+        } else {
+            return nubeNexa(false, model).replace("nube/index", "nube/index :: nube-content-area");
+        }
+    }
+
+    // Eliminar Archivo o Carpeta
+    @PostMapping("/eliminar")
+    public String eliminar(@RequestParam Long id, 
+                           @RequestParam(required = false) Long padreId, 
+                           Model model) {
+        nubeNodoService.eliminarNodo(id);
+        
+        if (padreId != null) {
+            return verCarpeta(padreId, model);
+        } else {
+            return nubeNexa(false, model).replace("nube/index", "nube/index :: nube-content-area");
+        }
+    }
 }

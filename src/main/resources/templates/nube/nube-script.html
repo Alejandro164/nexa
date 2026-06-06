@@ -1,0 +1,147 @@
+<script th:fragment="script" type="text/javascript">
+function getNubeComponentData() {
+    return {
+        nuevoDropdownOpen: false,
+        folderModalOpen: false,
+        
+        activeContextMenu: null,
+
+        renameModalOpen: false,
+        deleteModalOpen: false,
+        shareModalOpen: false,
+
+        nodeId: null,
+        nodeName: '',
+        shareLink: '',
+        
+        previewModalOpen: false,
+        previewId: null,
+        previewName: '',
+        previewExtension: '',
+        previewType: '', // Ej. 'pdf', 'image', 'text', 'unsupported'
+
+        toggleNuevoDropdown() {
+            this.nuevoDropdownOpen = !this.nuevoDropdownOpen;
+        },
+
+        openFolderModal() {
+            this.folderModalOpen = true;
+            this.nuevoDropdownOpen = false;
+            setTimeout(() => {
+                let input = document.getElementById('newFolderInput');
+                if(input) input.focus();
+            }, 50);
+        },
+
+        closeFolderModal() {
+            this.folderModalOpen = false;
+        },
+
+        openPreviewModal(id, nombre, extension) {
+            this.previewId = id;
+            this.previewName = nombre;
+            
+            // Determinar si es nativo o no
+            let ext = (extension || '').replace('.', '').toLowerCase();
+            this.previewExtension = ext;
+            
+            if (['pdf'].includes(ext)) {
+                this.previewType = 'pdf';
+            } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) {
+                this.previewType = 'image';
+            } else if (['txt', 'csv', 'json', 'xml', 'md'].includes(ext)) {
+                this.previewType = 'text';
+            } else if (['mp4', 'webm'].includes(ext)) {
+                this.previewType = 'video';
+            } else if (['mp3', 'wav'].includes(ext)) {
+                this.previewType = 'audio';
+            } else {
+                this.previewType = 'unsupported';
+            }
+            
+            this.previewModalOpen = true;
+        },
+
+        closePreviewModal() {
+            this.previewModalOpen = false;
+            // Limpiar al cerrar para detener videos/audios si estuvieran en play
+            setTimeout(() => {
+                this.previewId = null;
+            }, 300);
+        },
+
+        toggleContextMenu(id) {
+            if (this.activeContextMenu === id) {
+                this.activeContextMenu = null;
+            } else {
+                this.activeContextMenu = id;
+            }
+        },
+
+        openRenameModal(id, nombre) {
+            this.nodeId = id;
+            this.nodeName = nombre;
+            this.renameModalOpen = true;
+            this.activeContextMenu = null;
+            setTimeout(() => {
+                let input = document.getElementById('renameInput');
+                if(input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 50);
+        },
+
+        closeRenameModal() {
+            this.renameModalOpen = false;
+        },
+
+        openDeleteModal(id, nombre) {
+            this.nodeId = id;
+            this.nodeName = nombre;
+            this.deleteModalOpen = true;
+            this.activeContextMenu = null;
+        },
+
+        closeDeleteModal() {
+            this.deleteModalOpen = false;
+        },
+
+        openShareModal(nombre) {
+            this.nodeName = nombre;
+            let randomId = Math.random().toString(36).substring(2, 10);
+            this.shareLink = window.location.origin + '/nube-nexa/compartido/' + randomId;
+            this.shareModalOpen = true;
+            this.activeContextMenu = null;
+        },
+
+        closeShareModal() {
+            this.shareModalOpen = false;
+        },
+
+        copiarEnlace() {
+            var copyText = document.getElementById("shareLinkInput");
+            if (copyText) {
+                copyText.select();
+                copyText.setSelectionRange(0, 99999);
+                navigator.clipboard.writeText(copyText.value);
+                
+                let btn = document.getElementById('btnCopiar');
+                if (btn) {
+                    let originalText = btn.innerText;
+                    btn.innerText = '¡Copiado!';
+                    setTimeout(() => { btn.innerText = originalText; }, 2000);
+                }
+            }
+        }
+    };
+}
+
+if (window.Alpine) {
+    window.Alpine.data('nubeComponent', getNubeComponentData);
+} else {
+    document.addEventListener('alpine:init', () => {
+        window.Alpine.data('nubeComponent', getNubeComponentData);
+    });
+}
+</script>
