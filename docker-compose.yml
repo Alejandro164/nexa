@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
@@ -22,6 +20,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: nexa_redis_dev
+    profiles: ["prod"]
     ports:
       - "6379:6379"
     volumes:
@@ -41,15 +40,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/nexa
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 1234
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DEVTOOLS_RESTART_ENABLED: true
+      SPRING_DEVTOOLS_RESTART_ENABLED: false
     ports:
       - "8082:8080" # App (host:container)
       - "5005:5005" # Debug remoto (IntelliJ / VS Code)
