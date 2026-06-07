@@ -56,6 +56,11 @@ public class UsuarioService {
                 .orElse(Collections.emptyList());
     }
 
+    @Transactional(readOnly = true)
+    public Usuario findByUsername(String username) {
+        return usuarioRepository.findByEmailWithInstituciones(username).orElse(null);
+    }
+
     @CacheEvict(value = "usuarios", allEntries = true)
     @Transactional(rollbackFor = Exception.class)
     public void evictAllCaches() {

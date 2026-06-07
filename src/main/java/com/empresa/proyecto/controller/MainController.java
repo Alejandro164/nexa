@@ -29,9 +29,33 @@ public class MainController {
     }
 
     @GetMapping("/")
-    public String index(Model model, HttpSession session) {
-        cargarDashboard(model, session);
-        return "inicio/inicio";
+    public String index(Model model, HttpServletRequest request, HttpSession session) {
+
+        if (session.getAttribute("institucionActivaId") != null) {
+            cargarDashboard(model, session);
+            return "inicio/inicio";
+        }
+
+        if (request.isUserInRole("ROLE_ADMIN")) {
+            model.addAttribute("instituciones", institucionService.obtenerTodasDTO());
+            return "inicio/lista-instituciones";
+        }
+
+        List<InstitucionDTO> instituciones = usuarioService.obtenerInstitucionesDelUsuarioActual();
+        if (instituciones.isEmpty()) {
+            model.addAttribute("instituciones", instituciones);
+            model.addAttribute("errorNoInstituciones", "No tienes instituciones asociadas.");
+            return "inicio/lista-instituciones";
+        } else if (instituciones.size() == 1) {
+            InstitucionDTO inst = instituciones.get(0);
+            session.setAttribute("institucionActivaId", inst.getId());
+            session.setAttribute("institucionActivaNombre", inst.getNombre());
+            cargarDashboard(model, session);
+            return "inicio/inicio";
+        } else {
+            model.addAttribute("instituciones", instituciones);
+            return "inicio/lista-instituciones";
+        }
     }
 
     @GetMapping("/inicio")
@@ -60,12 +84,11 @@ public class MainController {
     public String cambiarInstitucion(@RequestParam Long institucionId,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
+        System.out.println("Institucion ID: " + institucionId);
         institucionService.findById(institucionId).ifPresent(inst -> {
             session.setAttribute("institucionActivaId", institucionId);
             session.setAttribute("institucionActivaNombre", inst.getNombre());
         });
-        redirectAttributes.addFlashAttribute("successMsg",
-                "Institución cambiada exitosamente.");
         return "redirect:/inicio";
     }
 

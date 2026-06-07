@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <div th:if="${errorNoInstituciones != null}" th:text="${errorNoInstituciones}">No tienes instituciones</div>
+
+    <div th:each="inst : ${instituciones}">
+        <span th:text="${inst.nombre}">Nombre</span>
+        <form th:action="@{/inicio/cambiar-institucion}" method="post" style="display:inline">
+            <input type="hidden" name="institucionId" th:value="${inst.id}" />
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <button type="submit">Seleccionar</button>
+        </form>
+    </div>
+</body>
+
+</html>
