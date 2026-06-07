@@ -15,6 +15,116 @@
     <main layout:fragment="content" th:fragment="htmx-content">
 
         <style>
+            .institucion-selector {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 14px;
+                padding: 1rem 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .institucion-selector-info {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .institucion-selector-icon {
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                background: linear-gradient(135deg, #2d5a87, #60a5fa);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                flex-shrink: 0;
+            }
+
+            .institucion-selector-icon svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            .institucion-selector-label {
+                font-size: 0.75rem;
+                color: #94a3b8;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                font-weight: 600;
+            }
+
+            .institucion-selector-name {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #1e293b;
+            }
+
+            .institucion-selector-name.placeholder {
+                color: #94a3b8;
+                font-weight: 400;
+            }
+
+            .btn-switch-inst {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                font-weight: 500;
+                font-size: 0.85rem;
+                cursor: pointer;
+                border: 1px solid var(--border);
+                background: var(--input-bg);
+                color: var(--text-primary);
+                font-family: inherit;
+                transition: all 0.2s;
+            }
+
+            .btn-switch-inst:hover {
+                background: var(--border);
+                border-color: var(--text-light);
+            }
+        </style>
+
+        <!-- Selector de Institución -->
+        <div class="institucion-selector">
+            <div class="institucion-selector-info">
+                <div class="institucion-selector-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="institucion-selector-label">Institución Actual</div>
+                    <div class="institucion-selector-name"
+                         th:text="${institucionActivaNombre != null ? institucionActivaNombre : 'Sin institución seleccionada'}"
+                         th:classappend="${institucionActivaNombre == null ? 'placeholder' : ''}">
+                        Sin institución seleccionada
+                    </div>
+                </div>
+            </div>
+            <button class="btn-switch-inst"
+                    hx-get="/inicio/instituciones-modal"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    @click="document.getElementById('modal-container').classList.add('show')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <polyline points="7 23 3 19 7 15"></polyline>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+                Cambiar Institución
+            </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <style>
             .dash-stats {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

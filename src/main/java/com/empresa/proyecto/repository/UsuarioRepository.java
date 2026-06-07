@@ -30,5 +30,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
            "LOWER(u.nombre) LIKE %:filtro% OR " +
            "LOWER(u.email)  LIKE %:filtro%")
     List<Usuario> findByNombreOrEmail(@Param("filtro") String filtro);
+
+    @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.instituciones WHERE u.email = :email")
+    Optional<Usuario> findByEmailWithInstituciones(@Param("email") String email);
 }
 

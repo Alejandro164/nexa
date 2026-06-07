@@ -5,6 +5,9 @@ import java.util.List;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.empresa.proyecto.dto.InstitucionDTO;
 import com.empresa.proyecto.dto.UsuarioDTO;
@@ -12,6 +15,7 @@ import com.empresa.proyecto.service.InstitucionService;
 import com.empresa.proyecto.service.UsuarioService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class MainController {
@@ -25,21 +29,47 @@ public class MainController {
     }
 
     @GetMapping("/")
-    public String index(Model model) {
-        cargarDashboard(model);
+    public String index(Model model, HttpSession session) {
+        cargarDashboard(model, session);
         return "inicio/inicio";
     }
 
     @GetMapping("/inicio")
-    public String inicio(Model model, HttpServletRequest request) {
-        cargarDashboard(model);
+    public String inicio(Model model, HttpServletRequest request, HttpSession session) {
+        cargarDashboard(model, session);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "inicio/inicio :: htmx-content";
         }
         return "inicio/inicio";
     }
 
-    private void cargarDashboard(Model model) {
+    @GetMapping("/inicio/instituciones-modal")
+    public String institucionesModal(Model model, HttpServletRequest request) {
+
+        System.out.println("Hola mundo");
+        if (request.isUserInRole("ROLE_ADMIN")) {
+            System.out.println("Admin");
+            model.addAttribute("instituciones", institucionService.obtenerTodasDTO());
+        } else {
+            model.addAttribute("instituciones", usuarioService.obtenerInstitucionesDelUsuarioActual());
+        }
+        return "inicio/instituciones-modal :: modal-content";
+    }
+
+    @PostMapping("/inicio/cambiar-institucion")
+    public String cambiarInstitucion(@RequestParam Long institucionId,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        institucionService.findById(institucionId).ifPresent(inst -> {
+            session.setAttribute("institucionActivaId", institucionId);
+            session.setAttribute("institucionActivaNombre", inst.getNombre());
+        });
+        redirectAttributes.addFlashAttribute("successMsg",
+                "Institución cambiada exitosamente.");
+        return "redirect:/inicio";
+    }
+
+    private void cargarDashboard(Model model, HttpSession session) {
         List<UsuarioDTO> usuarios = usuarioService.obtenerTodosDTO();
         List<InstitucionDTO> instituciones = institucionService.obtenerTodasDTO();
 
@@ -73,5 +103,8 @@ public class MainController {
                         .sorted((a, b) -> b.getId().compareTo(a.getId()))
                         .limit(5)
                         .toList());
+
+        String institucionActivaNombre = (String) session.getAttribute("institucionActivaNombre");
+        model.addAttribute("institucionActivaNombre", institucionActivaNombre);
     }
 }

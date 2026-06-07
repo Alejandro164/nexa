@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <div th:fragment="modal-content">
+        <div class="modal-backdrop"
+             @click.self="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
+            <div class="modal-dialog" style="max-width: 480px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Cambiar de Institución</h3>
+                    <button type="button" class="close-btn"
+                            @click="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="modal-body" style="padding: 0;">
+                    <div style="padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--input-bg);">
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">
+                            Selecciona la institución con la que deseas trabajar
+                        </p>
+                    </div>
+
+                    <div th:if="${instituciones == null or instituciones.empty}" style="padding: 2rem 1.5rem; text-align: center; color: var(--text-secondary);">
+                        <p>No tienes instituciones asignadas.</p>
+                    </div>
+
+                    <div th:if="${not #lists.isEmpty(instituciones)}" style="max-height: 360px; overflow-y: auto;">
+                        <th:block th:each="inst : ${instituciones}">
+                            <form th:action="@{/inicio/cambiar-institucion}" method="post"
+                                  hx-post="/inicio/cambiar-institucion"
+                                  hx-target="#modal-container"
+                                  hx-swap="innerHTML"
+                                  @submit="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
+                                <input type="hidden" name="institucionId" th:value="${inst.id}" />
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                <button type="submit"
+                                        style="display: flex; align-items: center; gap: 1rem; width: 100%; padding: 1rem 1.5rem; border: none; border-bottom: 1px solid var(--border); background: none; cursor: pointer; text-align: left; font-family: inherit; transition: background 0.15s;"
+                                        onmouseover="this.style.background='var(--input-bg)'"
+                                        onmouseout="this.style.background='none'">
+                                    <div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #2d5a87, #60a5fa); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.9rem; flex-shrink: 0;">
+                                        <span th:text="${#strings.substring(inst.nombre, 0, 1)}">I</span>
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;" th:text="${inst.nombre}">Nombre</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-secondary);" th:text="${inst.codigo}">Código</div>
+                                    </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </button>
+                            </form>
+                        </th:block>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

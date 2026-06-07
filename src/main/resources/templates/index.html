@@ -1147,6 +1147,13 @@
 
     <th:block th:replace="~{layout/toast :: toast}" />
 
+    <div id="modal-container" class="modal-overlay"></div>
+
+    <style>
+        .modal-overlay { display: none; }
+        .modal-overlay.show { display: block; }
+    </style>
+
 </body>
 
 </html>
