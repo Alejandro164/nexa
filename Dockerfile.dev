@@ -1,27 +1,14 @@
-# =============================================
-# Dockerfile.dev — Hot Reload con Spring DevTools
-# =============================================
-# Monta el código fuente como volumen desde el host.
-# Spring DevTools detecta cambios en clases compiladas
-# y reinicia el contexto automáticamente.
-# IntelliJ: habilita "Build project automatically"
-# VSCode: usa la tarea "mvn compile" al guardar
-# =============================================
 FROM eclipse-temurin:17-jdk-jammy
 WORKDIR /app
 
-# Dependencias en caché separadas del código
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
-# El código fuente NO se copia; se monta como volumen en runtime
-# Ver docker-compose.dev.yml
-
 EXPOSE 8080
+EXPOSE 5005
 
-# Spring DevTools requiere fork=false para funcionar en contenedor
-ENTRYPOINT ["./mvnw", "spring-boot:run", \
+CMD ["./mvnw", "spring-boot:run", \
   "-Dspring-boot.run.profiles=dev", \
   "-Dspring-boot.run.fork=false", \
   "-Dspring-boot.run.jvmArguments=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"]
