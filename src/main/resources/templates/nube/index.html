@@ -417,7 +417,8 @@
                 <!-- Toolbar -->
                 <div class="nube-toolbar">
                     <div class="nube-breadcrumbs">
-                        <a hx-get="/nube-nexa" hx-target="#nube-content-area" hx-swap="outerHTML">Mi Unidad</a>
+                        <a hx-get="/nube-nexa" hx-target="#nube-content-area" hx-swap="outerHTML"
+                            @click="currentView = 'principal'">Mi Unidad</a>
 
                         <th:block th:if="${breadcrumbs != null}">
                             <th:block th:each="bc : ${breadcrumbs}">
@@ -433,14 +434,7 @@
                     </div>
 
                     <div class="nube-actions">
-                        <div class="nube-search">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                            <input type="text" placeholder="Buscar en Nube Nexa...">
-                        </div>
+
 
                         <!-- Dropdown Button Nuevo -->
                         <div class="dropdown-container" style="position: relative;"
@@ -493,9 +487,20 @@
                 </div>
 
                 <!-- Content Area -->
-                <div style="margin-top: 1.5rem;">
+                <div style="margin-top: 1.5rem;" x-show="currentView === 'principal'">
+
+                    <!-- Buscador -->
+                    <div class="nube-search" style="margin-bottom: 1.5rem; max-width: 400px; width: 100%;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" placeholder="Buscar en Nube Nexa...">
+                    </div>
 
                     <div class="nube-section-title" th:if="${!carpetas.isEmpty()}">Carpetas</div>
+
                     <div class="nube-grid" th:if="${!carpetas.isEmpty()}">
 
                         <!-- Folder Items -->
@@ -520,8 +525,7 @@
                                 </div>
                             </div>
                             <!-- Options Menu -->
-                            <div class="item-options"
-                                th:data-ctx-id="${'folder-' + carpeta.id}"
+                            <div class="item-options" th:data-ctx-id="${'folder-' + carpeta.id}"
                                 @click.prevent.stop="toggleContextMenu($el.dataset.ctxId)">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
@@ -530,8 +534,7 @@
                                     <circle cx="12" cy="19" r="1"></circle>
                                 </svg>
                             </div>
-                            <div class="dropdown-menu" 
-                                th:data-ctx-id="${'folder-' + carpeta.id}"
+                            <div class="dropdown-menu" th:data-ctx-id="${'folder-' + carpeta.id}"
                                 x-show="activeContextMenu === $el.dataset.ctxId"
                                 @click.outside="if(activeContextMenu === $el.dataset.ctxId) activeContextMenu = null"
                                 x-transition
@@ -539,7 +542,7 @@
                                 :class="{ 'show': activeContextMenu === $el.dataset.ctxId }">
                                 <button type="button" class="dropdown-item"
                                     th:data-url="@{/nube-nexa/descargar-carpeta/{id}(id=${carpeta.id})}"
-                                    @click.prevent.stop="window.location.href=$el.dataset.url">
+                                    @click.prevent.stop="activeContextMenu = null; window.location.href=$el.dataset.url">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                         <polyline points="7 10 12 15 17 10"></polyline>
@@ -547,8 +550,8 @@
                                     </svg>
                                     Descargar
                                 </button>
-                                <button type="button" class="dropdown-item"
-                                    th:data-id="${carpeta.id}" th:data-nombre="${carpeta.nombre}"
+                                <button type="button" class="dropdown-item" th:data-id="${carpeta.id}"
+                                    th:data-nombre="${carpeta.nombre}"
                                     @click.prevent.stop="openRenameModal($el.dataset.id, $el.dataset.nombre)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -556,8 +559,7 @@
                                     </svg>
                                     Cambiar nombre
                                 </button>
-                                <button type="button" class="dropdown-item"
-                                    th:data-nombre="${carpeta.nombre}"
+                                <button type="button" class="dropdown-item" th:data-nombre="${carpeta.nombre}"
                                     @click.prevent.stop="openShareModal($el.dataset.nombre)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <circle cx="18" cy="5" r="3"></circle>
@@ -572,11 +574,12 @@
                                     th:data-id="${carpeta.id}" th:data-nombre="${carpeta.nombre}"
                                     @click.prevent.stop="openDeleteModal($el.dataset.id, $el.dataset.nombre)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="#d93025" stroke-width="2">
-                                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                                        <rect x="1" y="3" width="22" height="5"></rect>
-                                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                        </path>
                                     </svg>
-                                    Archivar
+                                    Eliminar
                                 </button>
                             </div>
                         </div>
@@ -613,8 +616,7 @@
                             </a>
 
                             <!-- Options Menu -->
-                            <div class="item-options"
-                                th:data-ctx-id="${'file-' + archivo.id}"
+                            <div class="item-options" th:data-ctx-id="${'file-' + archivo.id}"
                                 @click.prevent.stop="toggleContextMenu($el.dataset.ctxId)">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
@@ -623,8 +625,7 @@
                                     <circle cx="12" cy="19" r="1"></circle>
                                 </svg>
                             </div>
-                            <div class="dropdown-menu" 
-                                th:data-ctx-id="${'file-' + archivo.id}"
+                            <div class="dropdown-menu" th:data-ctx-id="${'file-' + archivo.id}"
                                 x-show="activeContextMenu === $el.dataset.ctxId"
                                 @click.outside="if(activeContextMenu === $el.dataset.ctxId) activeContextMenu = null"
                                 x-transition
@@ -632,7 +633,7 @@
                                 :class="{ 'show': activeContextMenu === $el.dataset.ctxId }">
                                 <button type="button" class="dropdown-item"
                                     th:data-url="@{/nube-nexa/descargar/{id}(id=${archivo.id})}"
-                                    @click.prevent.stop="window.location.href=$el.dataset.url">
+                                    @click.prevent.stop="activeContextMenu = null; window.location.href=$el.dataset.url">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                         <polyline points="7 10 12 15 17 10"></polyline>
@@ -640,8 +641,8 @@
                                     </svg>
                                     Descargar
                                 </button>
-                                <button type="button" class="dropdown-item"
-                                    th:data-id="${archivo.id}" th:data-nombre="${archivo.nombre}"
+                                <button type="button" class="dropdown-item" th:data-id="${archivo.id}"
+                                    th:data-nombre="${archivo.nombre}"
                                     @click.prevent.stop="openRenameModal($el.dataset.id, $el.dataset.nombre)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -649,8 +650,7 @@
                                     </svg>
                                     Cambiar nombre
                                 </button>
-                                <button type="button" class="dropdown-item"
-                                    th:data-nombre="${archivo.nombre}"
+                                <button type="button" class="dropdown-item" th:data-nombre="${archivo.nombre}"
                                     @click.prevent.stop="openShareModal($el.dataset.nombre)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <circle cx="18" cy="5" r="3"></circle>
@@ -665,11 +665,12 @@
                                     th:data-id="${archivo.id}" th:data-nombre="${archivo.nombre}"
                                     @click.prevent.stop="openDeleteModal($el.dataset.id, $el.dataset.nombre)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="#d93025" stroke-width="2">
-                                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
-                                        <rect x="1" y="3" width="22" height="5"></rect>
-                                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                        </path>
                                     </svg>
-                                    Archivar
+                                    Eliminar
                                 </button>
                             </div>
                         </div>
@@ -689,6 +690,64 @@
                             organizar.</p>
                     </div>
 
+                </div>
+
+                <!-- Papelera Mock View -->
+                <div style="margin-top: 1.5rem;" x-show="currentView === 'papelera'" x-cloak>
+                    <div class="nube-section-title">Papelera (Visualización HTML/CSS)</div>
+                    <div class="nube-grid">
+                        <!-- File Item Mock -->
+                        <div class="item-card file-card" style="position: relative;">
+                            <div class="item-icon" style="background: rgba(26, 115, 232, 0.1);">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                            </div>
+                            <div class="item-details">
+                                <div class="item-name">documento_eliminado.pdf</div>
+                                <div class="item-meta">Eliminado: Hoy</div>
+                            </div>
+                            <!-- Options Menu -->
+                            <div class="item-options" @click.prevent.stop="toggleContextMenu('mock-trash-1')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </div>
+                            <div class="dropdown-menu" x-show="activeContextMenu === 'mock-trash-1'"
+                                @click.outside="if(activeContextMenu === 'mock-trash-1') activeContextMenu = null"
+                                x-transition
+                                style="display: none; position: absolute; right: 8px; top: 36px; z-index: 100;"
+                                :class="{ 'show': activeContextMenu === 'mock-trash-1' }">
+                                <button type="button" class="dropdown-item" style="color: #0d9488;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="1 4 1 10 7 10"></polyline>
+                                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                                    </svg>
+                                    Restaurar
+                                </button>
+                                <button type="button" class="dropdown-item" style="color: #d93025;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#d93025" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path
+                                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                        </path>
+                                    </svg>
+                                    Eliminar definitivamente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-secondary); text-align: center; margin-top: 2rem; font-size: 0.9rem;">
+                        Esta es una vista previa de la papelera usando solo HTML y CSS. Aquí aparecerán los documentos
+                        eliminados en el futuro.
+                    </p>
                 </div>
 
                 <!-- Modals -->
@@ -756,7 +815,7 @@
                     :class="{ 'show-modal': deleteModalOpen }">
                     <div class="modal-content" @click.outside="closeDeleteModal()">
                         <div class="modal-header">
-                            <h3>Archivar elemento</h3>
+                            <h3>Eliminar elemento</h3>
                             <button @click="closeDeleteModal()" class="close-btn" type="button">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -769,12 +828,13 @@
                             <input type="hidden" name="padreId" th:value="${carpetaActual?.id}">
                             <input type="hidden" name="id" :value="nodeId">
                             <div class="modal-body">
-                                <p>¿Estás seguro que deseas archivar "<strong x-text="nodeName"></strong>"? Esta acción puede deshacerse posteriormente si es necesario.</p>
+                                <p>¿Estás seguro que deseas eliminar "<strong x-text="nodeName"></strong>"? Esta acción
+                                    no puede deshacerse posteriormente.</p>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn-cancel" @click="closeDeleteModal()">Cancelar</button>
                                 <button type="submit" class="btn-create" style="background-color: #d93025;"
-                                    @click="deleteModalOpen = false">Archivar</button>
+                                    @click="deleteModalOpen = false">Eliminar</button>
                             </div>
                         </form>
                     </div>
@@ -808,6 +868,19 @@
 
                 <!-- Modal Preview inyectado desde archivo separado -->
                 <div th:replace="~{nube/modal-preview :: modal}"></div>
+
+                <!-- Floating Action Button for Papelera -->
+                <button class="fab-papelera" :class="{ 'active': currentView === 'papelera' }"
+                    @click="currentView = currentView === 'papelera' ? 'principal' : 'papelera'"
+                    style="position: fixed; bottom: 40px; right: 40px; width: 60px; height: 60px; border-radius: 50%; background-color: #d93025; color: white; border: none; box-shadow: 0 4px 12px rgba(217,48,37,0.4); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; transition: transform 0.2s, background-color 0.2s;"
+                    onmouseover="this.style.transform='scale(1.08)'; this.style.backgroundColor='#b3271f'"
+                    onmouseout="this.style.transform='scale(1)'; this.style.backgroundColor='#d93025'" title="Papelera">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
 
             </div>
     </main>

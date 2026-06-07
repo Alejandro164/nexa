@@ -30,7 +30,7 @@
                             <span th:if="${inst.activa}" class="badge badge-success">Activa</span>
                             <span th:unless="${inst.activa}" class="badge badge-secondary">Inactiva</span>
                         </td>
-                        <td style="padding: 12px; text-align: right;">
+                        <td style="padding: 12px; text-align: right;" x-data="{ modalOpen: false }">
                             <button class="btn btn-secondary btn-sm" 
                                     th:attr="hx-get=@{/instituciones/form/{id}(id=${inst.id})}" 
                                     hx-target="#modal-container" 
@@ -39,13 +39,36 @@
                                     style="padding: 6px 12px; margin-right: 4px;">
                                 Editar
                             </button>
-                            <button class="btn btn-danger btn-sm" 
-                                    th:attr="hx-delete=@{/instituciones/{id}(id=${inst.id})}" 
-                                    hx-target="#instituciones-list" 
-                                    hx-confirm="¿Está seguro de eliminar esta institución?"
+                            <button class="btn btn-destructive btn-sm" 
+                                    @click="modalOpen = true"
                                     style="padding: 6px 12px;">
                                 Eliminar
                             </button>
+
+                            <!-- Modal Confirmación de Eliminación Local -->
+                            <div x-show="modalOpen" class="modal-backdrop" style="display: none; text-align: left; position: fixed; z-index: 9999;" x-cloak>
+                                <div class="modal-dialog" style="max-width: 420px; border-top: 4px solid var(--error);" @click.outside="modalOpen = false">
+                                    <div class="modal-header">
+                                        <h3 class="modal-title" style="color: var(--error);">Eliminar Institución</h3>
+                                        <button type="button" class="close-btn" @click.stop="modalOpen = false">&times;</button>
+                                    </div>
+                                    <div class="modal-body" style="white-space: normal;">
+                                        <p style="font-size: 0.925rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem; text-align: left;">
+                                            ¿Estás seguro de que deseas eliminar permanentemente la institución <strong th:text="${inst.nombre}"></strong>? Esta acción no se puede deshacer.
+                                        </p>
+                                        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                                            <button type="button" class="btn btn-secondary" @click.stop="modalOpen = false">Cancelar</button>
+                                            <button type="button" class="btn btn-destructive" 
+                                                    th:attr="hx-delete=@{/instituciones/{id}(id=${inst.id})}" 
+                                                    hx-target="#instituciones-list"
+                                                    hx-on::after-request="showNotification('Institución eliminada con éxito')"
+                                                    @click="modalOpen = false">
+                                                Confirmar y Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
