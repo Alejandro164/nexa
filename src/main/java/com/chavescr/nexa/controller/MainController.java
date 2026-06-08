@@ -31,7 +31,7 @@ public class MainController {
     @GetMapping("/")
     public String index(Model model, HttpServletRequest request, HttpSession session) {
 
-        if (session.getAttribute("institucionActivaId") != null) {
+        if (session.getAttribute("SESSION_INSTITUCION_ID") != null) {
             cargarDashboard(model, session);
             return "inicio/inicio";
         }
@@ -48,8 +48,8 @@ public class MainController {
             return "inicio/lista-instituciones";
         } else if (instituciones.size() == 1) {
             InstitucionDTO inst = instituciones.get(0);
-            session.setAttribute("institucionActivaId", inst.getId());
-            session.setAttribute("institucionActivaNombre", inst.getNombre());
+            session.setAttribute("SESSION_INSTITUCION_ID", inst.getId());
+            session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
             cargarDashboard(model, session);
             return "inicio/inicio";
         } else {
@@ -86,8 +86,8 @@ public class MainController {
             RedirectAttributes redirectAttributes) {
         System.out.println("Institucion ID: " + institucionId);
         institucionService.findById(institucionId).ifPresent(inst -> {
-            session.setAttribute("institucionActivaId", institucionId);
-            session.setAttribute("institucionActivaNombre", inst.getNombre());
+            session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
+            session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
         });
         return "redirect:/inicio";
     }
@@ -127,7 +127,7 @@ public class MainController {
                         .limit(5)
                         .toList());
 
-        String institucionActivaNombre = (String) session.getAttribute("institucionActivaNombre");
+        String institucionActivaNombre = (String) session.getAttribute("SESSION_INSTITUCION_NOMBRE");
         model.addAttribute("institucionActivaNombre", institucionActivaNombre);
     }
 }
