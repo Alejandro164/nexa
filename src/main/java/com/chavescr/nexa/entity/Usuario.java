@@ -171,4 +171,10 @@ public class Usuario implements UserDetails {
     public void setInstituciones(Set<Institucion> instituciones) {
         this.instituciones = instituciones;
     }
+
+    @Override
+    public String toString() {
+        return "Usuario [id=" + id + ", nombre=" + nombre + ", email=" + email + ", usuario=" + usuario + ", cedula="
+                + cedula + ", activo=" + activo + ", roles=" + roles + ", instituciones=" + instituciones + "]";
+    }
 }

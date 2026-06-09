@@ -34,8 +34,7 @@ public class MainController {
     public String index(@AuthenticationPrincipal CustomUserDetails usuario, Model model,
             HttpServletRequest request, HttpSession session) {
 
-        System.out.println("Usuariosdfsdf : " + usuario.getUsername());
-        System.out.println("Es admin? " + request.isUserInRole("ROLE_ADMIN"));
+        session.setAttribute("SESSION_USUARIO_ID", usuario.getId());
 
         if (session.getAttribute("SESSION_INSTITUCION_ID") != null) {
             cargarDashboard(model, session);

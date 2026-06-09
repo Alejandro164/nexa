@@ -19,16 +19,20 @@ public class CustomUserDetails implements UserDetails, Serializable {
 
     private final Long id;
     private final String username;
+    private final String email;
     private final String password;
     private final String nombre;
+    private final String cedula;
     private final boolean enabled;
     private final Set<String> roles;
 
     public CustomUserDetails(Usuario usuario) {
         this.id = usuario.getId();
-        this.username = usuario.getEmail();
+        this.username = usuario.getUsuario(); // <-- Cambiado de getUsername() a getUsuario()
+        this.email = usuario.getEmail();
         this.password = usuario.getPassword();
         this.nombre = usuario.getNombre();
+        this.cedula = usuario.getCedula();
         this.enabled = usuario.getActivo();
         this.roles = usuario.getRoles().stream()
                 .map(r -> r.getNombre())
@@ -82,5 +86,13 @@ public class CustomUserDetails implements UserDetails, Serializable {
 
     public Set<String> getRoles() {
         return roles;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getCedula() {
+        return cedula;
     }
 }
