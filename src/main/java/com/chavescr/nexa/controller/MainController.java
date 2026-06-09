@@ -2,6 +2,7 @@ package com.chavescr.nexa.controller;
 
 import java.util.List;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.chavescr.nexa.dto.InstitucionDTO;
 import com.chavescr.nexa.dto.UsuarioDTO;
+import com.chavescr.nexa.security.CustomUserDetails;
 import com.chavescr.nexa.service.InstitucionService;
 import com.chavescr.nexa.service.UsuarioService;
 
@@ -29,7 +31,11 @@ public class MainController {
     }
 
     @GetMapping("/")
-    public String index(Model model, HttpServletRequest request, HttpSession session) {
+    public String index(@AuthenticationPrincipal CustomUserDetails usuario, Model model,
+            HttpServletRequest request, HttpSession session) {
+
+        System.out.println("Usuariosdfsdf : " + usuario.getUsername());
+        System.out.println("Es admin? " + request.isUserInRole("ROLE_ADMIN"));
 
         if (session.getAttribute("SESSION_INSTITUCION_ID") != null) {
             cargarDashboard(model, session);
@@ -84,7 +90,7 @@ public class MainController {
     public String cambiarInstitucion(@RequestParam Long institucionId,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
-        System.out.println("Institucion ID: " + institucionId);
+        System.out.println("Institucion 23423: " + institucionId);
         institucionService.findById(institucionId).ifPresent(inst -> {
             session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
             session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
