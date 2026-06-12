@@ -43,11 +43,26 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Color</label>
-                            <div class="color-field">
-                                <input type="color" name="color"
+                            <div class="academic-color-picker"
+                                 th:style="|--selected-color:${materia.color != null ? materia.color : '#2d5a87'}|">
+                                <input type="color" class="academic-native-color" name="color"
                                        th:value="${materia.color != null ? materia.color : '#2d5a87'}"
-                                       oninput="this.nextElementSibling.style.setProperty('--subject-color', this.value)">
-                                <span class="subject-chip subject-chip-preview"
+                                       oninput="actualizarColorAcademico(this.closest('.academic-color-picker'), this.value)">
+                                <button type="button" class="academic-color-trigger"
+                                        onclick="abrirSelectorColorAcademico(this)">
+                                    <span class="academic-color-swatch"></span>
+                                    <span class="academic-color-value"
+                                          th:text="${materia.color != null ? materia.color : '#2d5a87'}">#2d5a87</span>
+                                    <svg class="academic-color-icon" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path d="M12 22a9 9 0 1 0 0-18c-4.97 0-9 3.58-9 8 0 2.21 1.79 4 4 4h1.5a1.5 1.5 0 0 1 0 3H8a2 2 0 0 0 2 2h2z"></path>
+                                        <circle cx="7.5" cy="10.5" r=".5" fill="currentColor"></circle>
+                                        <circle cx="10.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                                        <circle cx="14.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                                        <circle cx="17" cy="11" r=".5" fill="currentColor"></circle>
+                                    </svg>
+                                </button>
+                                <span class="subject-chip subject-chip-preview academic-color-preview"
                                       th:style="|--subject-color:${materia.color != null ? materia.color : '#2d5a87'}|"
                                       th:text="${materia.nombre ?: 'Vista previa'}">Vista previa</span>
                             </div>
@@ -56,7 +71,12 @@
                     <input type="hidden" name="_activo" value="on">
                     <label class="academic-check">
                         <input type="checkbox" name="activo" th:checked="${materia.id == null or materia.activo}">
-                        Materia activa
+                        <span class="academic-check-control">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span>Materia activa</span>
                     </label>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>

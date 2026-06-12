@@ -38,7 +38,12 @@
                     <input type="hidden" name="_activo" value="on">
                     <label class="academic-check">
                         <input type="checkbox" name="activo" th:checked="${periodo.id == null or periodo.activo}">
-                        Período activo
+                        <span class="academic-check-control">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span>Período activo</span>
                     </label>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
