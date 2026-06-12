@@ -1,53 +1,64 @@
-<div th:fragment="content">
+<div th:fragment="content" id="materias-panel" xmlns:th="http://www.thymeleaf.org">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Catálogo de Materias</h3>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" class="form-input" placeholder="Buscar materia..." style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
-                <button class="btn btn-primary">+ Nueva Materia</button>
+            <div>
+                <h3 class="card-title">Catálogo de materias</h3>
+                <p class="academic-help">El color identifica la materia dentro del horario.</p>
             </div>
+            <button class="btn btn-primary"
+                    hx-get="/configuracion-academica/materias/form"
+                    hx-target="#modal-container"
+                    onclick="abrirModalAcademico()">+ Nueva materia</button>
         </div>
-        <div style="padding: 2rem;">
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Nombre de Asignatura</th>
-                            <th>Área Académica</th>
-                            <th>Tipo</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="color: var(--text-muted); font-family: monospace;">MAT-01</td>
-                            <td style="font-weight: 600;">Matemáticas</td>
-                            <td>Ciencias Exactas</td>
-                            <td><span class="badge" style="background: rgba(45,90,135,0.1); color: var(--primary);">Básica</span></td>
-                            <td><span class="badge badge-success">Activo</span></td>
-                            <td><button class="btn btn-secondary btn-demo-sm">Detalles</button></td>
-                        </tr>
-                        <tr>
-                            <td style="color: var(--text-muted); font-family: monospace;">CIE-01</td>
-                            <td style="font-weight: 600;">Ciencias</td>
-                            <td>Ciencias Naturales</td>
-                            <td><span class="badge" style="background: rgba(45,90,135,0.1); color: var(--primary);">Básica</span></td>
-                            <td><span class="badge badge-success">Activo</span></td>
-                            <td><button class="btn btn-secondary btn-demo-sm">Detalles</button></td>
-                        </tr>
-                        <tr>
-                            <td style="color: var(--text-muted); font-family: monospace;">INF-10</td>
-                            <td style="font-weight: 600;">Desarrollo de Software</td>
-                            <td>Educación Técnica</td>
-                            <td><span class="badge" style="background: rgba(124,58,237,0.1); color: #7c3aed;">Especialidad</span></td>
-                            <td><span class="badge badge-success">Activo</span></td>
-                            <td><button class="btn btn-secondary btn-demo-sm">Detalles</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Área</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${materias == null or materias.empty}">
+                        <td colspan="7" class="academic-empty">No hay materias registradas.</td>
+                    </tr>
+                    <tr th:each="materia : ${materias}">
+                        <td th:text="${materia.id}">1</td>
+                        <td><strong th:text="${materia.codigo}">MAT-01</strong></td>
+                        <td>
+                            <span class="subject-chip subject-chip-preview"
+                                  th:style="|--subject-color: ${materia.color}|"
+                                  th:text="${materia.nombre}">Matemáticas</span>
+                        </td>
+                        <td th:text="${materia.area}">Ciencias exactas</td>
+                        <td th:text="${materia.tipo}">Básica</td>
+                        <td>
+                            <span th:if="${materia.activo}" class="badge badge-success">Activa</span>
+                            <span th:unless="${materia.activo}" class="badge badge-secondary">Inactiva</span>
+                        </td>
+                        <td>
+                            <div class="academic-actions">
+                                <button class="btn btn-secondary btn-sm"
+                                        th:attr="hx-get=|/configuracion-academica/materias/form/${materia.id}|"
+                                        hx-target="#modal-container"
+                                        onclick="abrirModalAcademico()">Editar</button>
+                                <button type="button" class="btn btn-destructive btn-sm"
+                                        th:attr="data-delete-url=|/configuracion-academica/materias/${materia.id}|,
+                                                 data-delete-message=|¿Deseas eliminar la materia ${materia.nombre}? También se eliminarán sus lecciones asignadas.|"
+                                        data-delete-title="Eliminar materia"
+                                        data-delete-target="#materias-panel"
+                                        data-delete-swap="outerHTML"
+                                        onclick="abrirConfirmacionAcademica(this)">Eliminar</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

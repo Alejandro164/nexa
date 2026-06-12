@@ -1,43 +1,62 @@
-<div th:fragment="content">
+<div th:fragment="content" id="periodos-panel" xmlns:th="http://www.thymeleaf.org">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Gestión de Períodos Académicos</h3>
-            <button class="btn btn-primary">+ Nuevo Período</button>
-        </div>
-        <div style="padding: 2rem;">
-            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Define los ciclos lectivos para organizar la planificación académica e inscripciones.</p>
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Descripción</th>
-                            <th>Inicio</th>
-                            <th>Fin</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="font-weight: 600;">2025-I</td>
-                            <td>Primer Semestre 2025</td>
-                            <td>10/02/2025</td>
-                            <td>04/07/2025</td>
-                            <td><span class="badge badge-success">Activo</span></td>
-                            <td><button class="btn btn-secondary btn-demo-sm">Editar</button></td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: 600;">2025-II</td>
-                            <td>Segundo Semestre 2025</td>
-                            <td>21/07/2025</td>
-                            <td>12/12/2025</td>
-                            <td><span class="badge" style="background: rgba(217,119,6,0.1); color: var(--warm);">Planificado</span></td>
-                            <td><button class="btn btn-secondary btn-demo-sm">Editar</button></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div>
+                <h3 class="card-title">Períodos académicos</h3>
+                <p class="academic-help">Define las fechas de los ciclos lectivos de la institución.</p>
             </div>
+            <button class="btn btn-primary"
+                    hx-get="/configuracion-academica/periodos/form"
+                    hx-target="#modal-container"
+                    onclick="abrirModalAcademico()">
+                + Nuevo período
+            </button>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Fecha inicio</th>
+                        <th>Fecha fin</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${periodos == null or periodos.empty}">
+                        <td colspan="7" class="academic-empty">No hay períodos registrados.</td>
+                    </tr>
+                    <tr th:each="periodo : ${periodos}">
+                        <td th:text="${periodo.id}">1</td>
+                        <td><strong th:text="${periodo.codigo}">2026-I</strong></td>
+                        <td th:text="${periodo.descripcion}">Primer período</td>
+                        <td th:text="${#temporals.format(periodo.fechaInicio, 'dd/MM/yyyy')}">01/02/2026</td>
+                        <td th:text="${#temporals.format(periodo.fechaFin, 'dd/MM/yyyy')}">30/06/2026</td>
+                        <td>
+                            <span th:if="${periodo.activo}" class="badge badge-success">Activo</span>
+                            <span th:unless="${periodo.activo}" class="badge badge-secondary">Inactivo</span>
+                        </td>
+                        <td>
+                            <div class="academic-actions">
+                                <button class="btn btn-secondary btn-sm"
+                                        th:attr="hx-get=|/configuracion-academica/periodos/form/${periodo.id}|"
+                                        hx-target="#modal-container"
+                                        onclick="abrirModalAcademico()">Editar</button>
+                                <button type="button" class="btn btn-destructive btn-sm"
+                                        th:attr="data-delete-url=|/configuracion-academica/periodos/${periodo.id}|,
+                                                 data-delete-message=|¿Deseas eliminar el período ${periodo.codigo}? También se eliminarán sus lecciones asignadas.|"
+                                        data-delete-title="Eliminar período"
+                                        data-delete-target="#periodos-panel"
+                                        data-delete-swap="outerHTML"
+                                        onclick="abrirConfirmacionAcademica(this)">Eliminar</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

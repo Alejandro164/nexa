@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${periodo.id == null ? 'Registrar período' : 'Editar período'}">Período</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form hx-post="/configuracion-academica/periodos"
+                      hx-target="#periodos-panel"
+                      hx-swap="outerHTML">
+                    <input type="hidden" name="id" th:value="${periodo.id}">
+                    <div class="academic-form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Código</label>
+                            <input class="form-input" name="codigo" maxlength="30" required
+                                   th:value="${periodo.codigo}" placeholder="Ej. 2026-I">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Descripción</label>
+                            <input class="form-input" name="descripcion" maxlength="150" required
+                                   th:value="${periodo.descripcion}" placeholder="Ej. Primer semestre 2026">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha inicio</label>
+                            <input class="form-input" type="date" name="fechaInicio" required
+                                   th:value="${periodo.fechaInicio}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha fin</label>
+                            <input class="form-input" type="date" name="fechaFin" required
+                                   th:value="${periodo.fechaFin}">
+                        </div>
+                    </div>
+                    <input type="hidden" name="_activo" value="on">
+                    <label class="academic-check">
+                        <input type="checkbox" name="activo" th:checked="${periodo.id == null or periodo.activo}">
+                        Período activo
+                    </label>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar período</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

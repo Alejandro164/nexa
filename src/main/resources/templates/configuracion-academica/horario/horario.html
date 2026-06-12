@@ -1,356 +1,92 @@
-<div th:fragment="content">
-    <style>
-        .timetable-container {
-            display: flex;
-            gap: 1.5rem;
-            align-items: flex-start;
-        }
-        
-        /* Panel Izquierdo: Materias a Asignar */
-        .subjects-panel {
-            width: 280px;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.25rem;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .subject-drag-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
-            cursor: grab;
-            transition: all 0.2s;
-        }
-        .subject-drag-card:hover {
-            border-color: var(--primary);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            transform: translateY(-2px);
-        }
-        .subject-drag-card .subject-title {
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--text-main);
-            margin-bottom: 4px;
-        }
-        .subject-drag-card .teacher-select {
-            width: 100%;
-            font-size: 0.75rem;
-            padding: 6px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            margin-top: 6px;
-            background: #fff;
-            outline: none;
-        }
-        .subject-drag-card .teacher-select:focus {
-            border-color: var(--primary);
-        }
-        
-        /* Grid del Calendario (Horario) */
-        .timetable-grid {
-            flex: 1;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .tt-header {
-            display: grid;
-            grid-template-columns: 80px repeat(5, 1fr);
-            background: #f1f5f9;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .tt-header-cell {
-            padding: 0.75rem;
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            border-right: 1px solid var(--border);
-        }
-        .tt-header-cell:last-child { border-right: none; }
-        
-        .tt-row {
-            display: grid;
-            grid-template-columns: 80px repeat(5, 1fr);
-            border-bottom: 1px solid var(--border);
-        }
-        .tt-row:last-child { border-bottom: none; }
-        
-        .tt-time {
-            padding: 0.75rem 0.5rem;
-            text-align: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            background: #f8fafc;
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        
-        .tt-cell {
-            border-right: 1px solid var(--border);
-            min-height: 85px;
-            padding: 6px;
-            background: #ffffff;
-            transition: background 0.2s;
-        }
-        .tt-cell:last-child { border-right: none; }
-        .tt-cell:hover { background: #f8fafc; }
-        
-        /* Estado de las celdas */
-        .tt-slot-empty {
-            height: 100%;
-            border: 2px dashed #e2e8f0;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #94a3b8;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .tt-slot-empty:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: rgba(45,90,135,0.05);
-        }
-        
-        .tt-slot-filled {
-            height: 100%;
-            border-radius: 6px;
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            border-left: 4px solid transparent;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        
-        .tt-slot-filled.math { background: #eff6ff; border-left-color: #3b82f6; }
-        .tt-slot-filled.science { background: #f0fdf4; border-left-color: #22c55e; }
-        .tt-slot-filled.language { background: #fdf4ff; border-left-color: #d946ef; }
-        
-        .slot-title { font-weight: 700; font-size: 0.75rem; color: #1e293b; }
-        .slot-teacher { font-size: 0.65rem; color: #64748b; margin-top: 4px; font-weight: 500;}
-        
-        .slot-remove {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 4px;
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            cursor: pointer;
-            font-size: 0.7rem;
-            transition: all 0.2s;
-        }
-        .slot-remove:hover { background: #ef4444; color: white; }
-    </style>
-
+<div th:fragment="content" id="horario-panel" xmlns:th="http://www.thymeleaf.org">
     <div class="card">
-        <div class="card-header" style="border-bottom: none; padding-bottom: 0;">
-            <h3 class="card-title">Generador Visual de Horarios</h3>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary">Limpiar Calendario</button>
-                <button class="btn btn-primary">Guardar Horario</button>
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Horario general</h3>
+                <p class="academic-help">Selecciona un período y nivel; luego presiona una lección para asignarla.</p>
             </div>
-        </div>
-        
-        <!-- Filtros Superiores -->
-        <div style="padding: 1.5rem; display: flex; gap: 1.5rem; background: #ffffff;">
-            <div style="flex: 1;">
-                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Período Lectivo</label>
-                <select class="form-input" style="width: 100%; border-radius: 8px; margin-top: 6px; background: #f8fafc;">
-                    <option>2025-I</option>
-                    <option>2025-II</option>
-                </select>
-            </div>
-            <div style="flex: 1;">
-                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Nivel Educativo</label>
-                <select class="form-input" style="width: 100%; border-radius: 8px; margin-top: 6px; background: #f8fafc;">
-                    <option>Sétimo Año</option>
-                    <option>Octavo Año</option>
-                </select>
-            </div>
-            <div style="flex: 1;">
-                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Grupo / Sección</label>
-                <select class="form-input" style="width: 100%; border-radius: 8px; margin-top: 6px; background: #f8fafc;">
-                    <option>7-1</option>
-                    <option>7-2</option>
-                </select>
-            </div>
+            <span class="badge badge-primary" th:text="|${horario.size()} lecciones asignadas|">0 lecciones asignadas</span>
         </div>
 
-        <div style="padding: 0 1.5rem 1.5rem 1.5rem;">
-            <div class="timetable-container">
-                
-                <!-- Panel Izquierdo: Materias Pendientes -->
-                <div class="subjects-panel">
-                    <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-bottom: 1.2rem; display: flex; justify-content: space-between; align-items: center;">
-                        Asignaturas (7-1)
-                        <span class="badge" style="background: var(--primary); color: white;">12h rest.</span>
-                    </h4>
-                    
-                    <div class="subject-drag-card" style="border-left: 4px solid #3b82f6;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <div class="subject-title">Matemáticas</div>
-                            <span class="badge" style="font-size: 0.65rem;">3/5 lecc.</span>
-                        </div>
-                        <select class="teacher-select">
-                            <option>Prof. Carlos Mendoza</option>
-                            <option>Prof. Ana Rojas</option>
-                        </select>
-                    </div>
+        <form class="schedule-filters">
+            <div class="form-group">
+                <label class="form-label">Período</label>
+                <select class="form-input" name="periodoId"
+                        hx-get="/configuracion-academica/horario"
+                        hx-trigger="change"
+                        hx-target="#horario-panel"
+                        hx-swap="outerHTML"
+                        hx-include="closest form">
+                    <option value="" disabled hidden th:selected="${periodoSeleccionado == null}">
+                        Seleccione un período
+                    </option>
+                    <option th:each="periodo : ${periodosActivos}"
+                            th:value="${periodo.id}"
+                            th:selected="${periodo.id == periodoSeleccionado}"
+                            th:text="|${periodo.codigo} - ${periodo.descripcion}|">2026-I</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nivel / sección</label>
+                <select class="form-input" name="nivelId"
+                        hx-get="/configuracion-academica/horario"
+                        hx-trigger="change"
+                        hx-target="#horario-panel"
+                        hx-swap="outerHTML"
+                        hx-include="closest form">
+                    <option value="" disabled hidden th:selected="${nivelSeleccionado == null}">
+                        Seleccione un nivel / sección
+                    </option>
+                    <option th:each="nivel : ${nivelesActivos}"
+                            th:value="${nivel.id}"
+                            th:selected="${nivel.id == nivelSeleccionado}"
+                            th:text="${nivel.nombreCompleto}">Sétimo - A</option>
+                </select>
+            </div>
+        </form>
 
-                    <div class="subject-drag-card" style="border-left: 4px solid #22c55e;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <div class="subject-title">Ciencias</div>
-                            <span class="badge" style="font-size: 0.65rem; background: rgba(34,197,94,0.1); color: #16a34a;">4/4 lecc.</span>
-                        </div>
-                        <select class="teacher-select" disabled style="opacity: 0.7; background: #f1f5f9;">
-                            <option>Prof. Andrés Castro</option>
-                        </select>
-                        <div style="font-size: 0.7rem; font-weight: 600; color: #16a34a; margin-top: 6px; display: flex; align-items: center; gap: 4px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Completado
-                        </div>
-                    </div>
+        <div th:if="${periodosActivos.empty or nivelesActivos.empty}" class="academic-empty academic-empty-block">
+            Debes registrar al menos un período activo y un nivel activo para crear el horario.
+        </div>
 
-                    <div class="subject-drag-card" style="border-left: 4px solid #d946ef;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <div class="subject-title">Español</div>
-                            <span class="badge" style="font-size: 0.65rem;">0/5 lecc.</span>
-                        </div>
-                        <select class="teacher-select" style="border-color: #fca5a5;">
-                            <option value="">⚠️ Sin docente asignado</option>
-                            <option>Profa. Laura Quirós</option>
-                        </select>
-                    </div>
-                    
-                    <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 1.5rem; padding: 1rem; border: 2px dashed #cbd5e1; border-radius: 8px; font-weight: 500;">
-                        💡 Arrastra las asignaturas hacia el calendario para programarlas.
-                    </div>
-                </div>
+        <div th:unless="${periodosActivos.empty or nivelesActivos.empty}" class="schedule-scroll">
+            <div class="schedule-grid">
+                <div class="schedule-head schedule-hour">Lección</div>
+                <div class="schedule-head" th:each="dia : ${dias}"
+                     th:text="${#strings.capitalize(#strings.toLowerCase(dia))}">Lunes</div>
 
-                <!-- Grid Central: Calendario -->
-                <div class="timetable-grid">
-                    <div class="tt-header">
-                        <div class="tt-header-cell" style="background: transparent;">Hora</div>
-                        <div class="tt-header-cell">Lunes</div>
-                        <div class="tt-header-cell">Martes</div>
-                        <div class="tt-header-cell">Miércoles</div>
-                        <div class="tt-header-cell">Jueves</div>
-                        <div class="tt-header-cell">Viernes</div>
+                <th:block th:each="numero : ${lecciones}">
+                    <div class="schedule-hour">
+                        <strong th:text="|Lección ${numero}|">Lección 1</strong>
                     </div>
-                    
-                    <!-- Fila 1 -->
-                    <div class="tt-row">
-                        <div class="tt-time"><span>07:00</span><span style="color: #cbd5e1;">07:40</span></div>
-                        <div class="tt-cell">
-                            <div class="tt-slot-filled math">
-                                <div>
-                                    <div class="slot-title">Matemáticas</div>
-                                    <div class="slot-teacher">Carlos M.</div>
-                                </div>
-                                <div class="slot-remove">×</div>
-                            </div>
+                    <th:block th:each="dia : ${dias}"
+                              th:with="item=${horario.get(numero + '-' + dia)}">
+                        <button th:if="${item == null}" type="button" class="schedule-slot schedule-slot-empty"
+                                th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}|"
+                                hx-target="#modal-container"
+                                onclick="abrirModalAcademico()">
+                            <span>+ Asignar</span>
+                        </button>
+                        <div th:if="${item != null}" class="schedule-slot schedule-slot-filled"
+                             th:style="|--subject-color:${item.materia.color}|"
+                             th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}|"
+                             hx-target="#modal-container"
+                             onclick="abrirModalAcademico()">
+                            <strong th:text="${item.materia.nombre}">Matemáticas</strong>
+                            <span th:text="${item.docente.nombre}">Docente</span>
+                            <small th:text="|${#temporals.format(item.horaInicio, 'HH:mm')} - ${#temporals.format(item.horaFin, 'HH:mm')}|">07:00 - 07:40</small>
+                            <button type="button" class="schedule-remove" title="Eliminar asignación"
+                                    th:attr="data-delete-url=|/configuracion-academica/horario/${item.id}?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}|,
+                                             data-delete-message=|¿Deseas eliminar la lección de ${item.materia.nombre} del horario?|"
+                                    data-delete-title="Eliminar lección"
+                                    data-delete-target="#horario-panel"
+                                    data-delete-swap="outerHTML"
+                                    onclick="event.stopPropagation(); abrirConfirmacionAcademica(this)">×</button>
                         </div>
-                        <div class="tt-cell">
-                            <div class="tt-slot-empty">+ Asignar</div>
-                        </div>
-                        <div class="tt-cell">
-                            <div class="tt-slot-filled science">
-                                <div>
-                                    <div class="slot-title">Ciencias</div>
-                                    <div class="slot-teacher">Andrés C.</div>
-                                </div>
-                                <div class="slot-remove">×</div>
-                            </div>
-                        </div>
-                        <div class="tt-cell"><div class="tt-slot-empty">+ Asignar</div></div>
-                        <div class="tt-cell"><div class="tt-slot-empty">+ Asignar</div></div>
-                    </div>
-
-                    <!-- Fila 2 -->
-                    <div class="tt-row">
-                        <div class="tt-time"><span>07:40</span><span style="color: #cbd5e1;">08:20</span></div>
-                        <div class="tt-cell">
-                            <div class="tt-slot-filled math">
-                                <div>
-                                    <div class="slot-title">Matemáticas</div>
-                                    <div class="slot-teacher">Carlos M.</div>
-                                </div>
-                                <div class="slot-remove">×</div>
-                            </div>
-                        </div>
-                        <div class="tt-cell"><div class="tt-slot-empty">+ Asignar</div></div>
-                        <div class="tt-cell">
-                            <div class="tt-slot-filled science">
-                                <div>
-                                    <div class="slot-title">Ciencias</div>
-                                    <div class="slot-teacher">Andrés C.</div>
-                                </div>
-                                <div class="slot-remove">×</div>
-                            </div>
-                        </div>
-                        <div class="tt-cell"><div class="tt-slot-empty">+ Asignar</div></div>
-                        <div class="tt-cell"><div class="tt-slot-empty">+ Asignar</div></div>
-                    </div>
-
-                    <!-- RECREO -->
-                    <div class="tt-row" style="background: #f8fafc;">
-                        <div class="tt-time" style="background: transparent;"><span>08:20</span><span style="color: #cbd5e1;">08:40</span></div>
-                        <div style="grid-column: span 5; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: #94a3b8; letter-spacing: 4px;">
-                            ☕ R E C R E O
-                        </div>
-                    </div>
-
-                    <!-- Fila 3 -->
-                    <div class="tt-row">
-                        <div class="tt-time"><span>08:40</span><span style="color: #cbd5e1;">09:20</span></div>
-                        <div class="tt-cell"><div class="tt-slot-empty">+ Asignar</div></div>
-                        <div class="tt-cell">
-                            <div class="tt-slot-filled math">
-                                <div>
-                                    <div class="slot-title">Matemáticas</div>
-                                    <div class="slot-teacher">Carlos M.</div>
-                                </div>
-                                <div class="slot-remove">×</div>
-                            </div>
-                        </div>
-                        <div class="tt-cell"><div class="tt-slot-empty">+ Asignar</div></div>
-                        <div class="tt-cell">
-                            <div class="tt-slot-filled science">
-                                <div>
-                                    <div class="slot-title">Ciencias</div>
-                                    <div class="slot-teacher">Andrés C.</div>
-                                </div>
-                                <div class="slot-remove">×</div>
-                            </div>
-                        </div>
-                        <div class="tt-cell"><div class="tt-slot-empty">+ Asignar</div></div>
-                    </div>
-
-                </div>
+                    </th:block>
+                </th:block>
             </div>
         </div>
     </div>
+
 </div>

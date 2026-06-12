@@ -66,6 +66,238 @@
                 from { opacity: 0; transform: translateY(6px); }
                 to { opacity: 1; transform: translateY(0); }
             }
+            .academic-help {
+                color: var(--text-secondary);
+                font-size: 0.84rem;
+                margin-top: 0.3rem;
+            }
+            .academic-empty {
+                padding: 2rem !important;
+                text-align: center;
+                color: var(--text-secondary);
+            }
+            .academic-empty-block {
+                margin: 1.5rem;
+                border: 1px dashed var(--border);
+                border-radius: 10px;
+                background: var(--input-bg);
+            }
+            .academic-actions {
+                display: flex;
+                gap: 0.4rem;
+                white-space: nowrap;
+            }
+            .academic-form-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+            }
+            .academic-check {
+                display: flex;
+                align-items: center;
+                gap: 0.55rem;
+                margin-top: 0.4rem;
+                font-size: 0.88rem;
+                font-weight: 500;
+                cursor: pointer;
+            }
+            .academic-check input {
+                width: 17px;
+                height: 17px;
+            }
+            .subject-chip {
+                --subject-color: #2d5a87;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                padding: 0.3rem 0.65rem;
+                border-radius: 999px;
+                background: color-mix(in srgb, var(--subject-color) 14%, white);
+                color: color-mix(in srgb, var(--subject-color) 78%, black);
+                font-size: 0.8rem;
+                font-weight: 700;
+                border: 1px solid color-mix(in srgb, var(--subject-color) 25%, white);
+            }
+            .subject-chip::before {
+                content: "";
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--subject-color);
+            }
+            .subject-chip-preview::before {
+                display: none;
+            }
+            .color-preview {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                margin-right: 0.35rem;
+                border-radius: 4px;
+                vertical-align: middle;
+                border: 1px solid rgba(0, 0, 0, 0.12);
+            }
+            .color-field {
+                display: flex;
+                align-items: center;
+                gap: 0.8rem;
+            }
+            .color-field input[type="color"] {
+                width: 52px;
+                height: 40px;
+                padding: 3px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: white;
+            }
+            .schedule-filters {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+                padding: 1.25rem 1.5rem;
+                background: var(--input-bg);
+                border-bottom: 1px solid var(--border);
+            }
+            .schedule-filters .form-group {
+                margin: 0;
+            }
+            .schedule-scroll {
+                overflow-x: auto;
+                padding: 1.5rem;
+            }
+            .schedule-grid {
+                min-width: 920px;
+                display: grid;
+                grid-template-columns: 100px repeat(5, minmax(150px, 1fr));
+                border-top: 1px solid var(--border);
+                border-left: 1px solid var(--border);
+            }
+            .schedule-head,
+            .schedule-hour,
+            .schedule-slot {
+                border-right: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+            }
+            .schedule-head {
+                padding: 0.8rem;
+                text-align: center;
+                background: #f1f5f9;
+                font-size: 0.82rem;
+                font-weight: 700;
+            }
+            .schedule-hour {
+                min-height: 92px;
+                padding: 0.75rem 0.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                background: #f8fafc;
+                color: var(--text-secondary);
+                font-size: 0.76rem;
+            }
+            .schedule-head.schedule-hour {
+                min-height: auto;
+            }
+            .schedule-slot {
+                min-height: 92px;
+                padding: 0.55rem;
+                position: relative;
+                text-align: left;
+            }
+            button.schedule-slot {
+                width: 100%;
+                border-top: 0;
+                border-left: 0;
+                background: white;
+                font: inherit;
+                cursor: pointer;
+            }
+            .schedule-slot-empty {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--text-light);
+            }
+            .schedule-slot-empty:hover {
+                background: rgba(45, 90, 135, 0.05);
+                color: var(--primary);
+            }
+            .schedule-slot-filled {
+                --subject-color: #2d5a87;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 0.2rem;
+                padding-left: 0.8rem;
+                background: color-mix(in srgb, var(--subject-color) 10%, white);
+                border-left: 4px solid var(--subject-color);
+                cursor: pointer;
+            }
+            .schedule-slot-filled strong {
+                color: var(--text-primary);
+                font-size: 0.82rem;
+            }
+            .schedule-slot-filled span,
+            .schedule-slot-filled small {
+                color: var(--text-secondary);
+                font-size: 0.7rem;
+            }
+            .schedule-remove {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                width: 22px;
+                height: 22px;
+                border: 0;
+                border-radius: 5px;
+                background: rgba(15, 23, 42, 0.08);
+                color: var(--text-secondary);
+                cursor: pointer;
+            }
+            .schedule-remove:hover {
+                background: var(--error);
+                color: white;
+            }
+            .academic-delete-dialog {
+                max-width: 460px;
+                border-top: 4px solid var(--error);
+            }
+            .academic-delete-message {
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 1rem;
+                border: 1px solid #fecaca;
+                border-radius: 10px;
+                background: #fef2f2;
+                color: #7f1d1d;
+                line-height: 1.55;
+            }
+            .academic-delete-icon {
+                width: 30px;
+                height: 30px;
+                flex: 0 0 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                background: var(--error);
+                color: white;
+                font-weight: 800;
+            }
+            @media (max-width: 700px) {
+                .academic-form-grid,
+                .schedule-filters {
+                    grid-template-columns: 1fr;
+                }
+                .config-tabs-container {
+                    overflow-x: auto;
+                }
+                .config-tab-btn {
+                    min-width: 135px;
+                }
+            }
         </style>
 
         <div x-data="{ activeTab: 'periodos' }">
@@ -73,16 +305,17 @@
             <div class="config-tabs-container">
                 <div class="config-tabs">
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'periodos' }" @click="activeTab = 'periodos'">
-                        📅 Períodos
+                        Períodos
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'niveles' }" @click="activeTab = 'niveles'">
-                        🎓 Niveles
+                        Niveles
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'materias' }" @click="activeTab = 'materias'">
-                        📚 Materias
+                        Materias
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'horario' }" @click="activeTab = 'horario'">
-                        ⏱️ Horario
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'horario' }"
+                            @click="activeTab = 'horario'; recargarHorarioAcademico()">
+                        Horario
                     </button>
                 </div>
             </div>
@@ -108,6 +341,90 @@
             </div>
 
         </div>
+        <div th:replace="~{configuracion-academica/components/confirmar-eliminacion :: modal}"></div>
+        <script>
+            window.academicDeleteRequest = null;
+
+            function abrirModalAcademico() {
+                document.getElementById('modal-container').classList.add('show');
+            }
+
+            function cerrarModalAcademico() {
+                var modal = document.getElementById('modal-container');
+                modal.classList.remove('show');
+                modal.innerHTML = '';
+            }
+
+            function recargarHorarioAcademico() {
+                var panel = document.getElementById('horario-panel');
+                var periodo = panel ? panel.querySelector('[name="periodoId"]') : null;
+                var nivel = panel ? panel.querySelector('[name="nivelId"]') : null;
+                var parametros = new URLSearchParams();
+
+                if (periodo && periodo.value) {
+                    parametros.set('periodoId', periodo.value);
+                }
+                if (nivel && nivel.value) {
+                    parametros.set('nivelId', nivel.value);
+                }
+
+                var url = '/configuracion-academica/horario';
+                if (parametros.toString()) {
+                    url += '?' + parametros.toString();
+                }
+                htmx.ajax('GET', url, {target: '#horario-panel', swap: 'outerHTML'});
+            }
+
+            function abrirConfirmacionAcademica(trigger) {
+                window.academicDeleteRequest = {
+                    url: trigger.dataset.deleteUrl,
+                    target: trigger.dataset.deleteTarget,
+                    swap: trigger.dataset.deleteSwap || 'outerHTML'
+                };
+
+                document.getElementById('academic-delete-title').textContent =
+                    trigger.dataset.deleteTitle || 'Confirmar eliminación';
+                document.getElementById('academic-delete-message').textContent =
+                    trigger.dataset.deleteMessage || '¿Deseas eliminar este registro?';
+                document.getElementById('academic-delete-modal').style.display = 'flex';
+            }
+
+            function cerrarConfirmacionAcademica() {
+                var modal = document.getElementById('academic-delete-modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                window.academicDeleteRequest = null;
+            }
+
+            function confirmarEliminacionAcademica() {
+                var request = window.academicDeleteRequest;
+                if (!request || !request.url || !request.target) {
+                    cerrarConfirmacionAcademica();
+                    return;
+                }
+
+                htmx.ajax('DELETE', request.url, {
+                    target: request.target,
+                    swap: request.swap
+                }).then(function () {
+                    cerrarConfirmacionAcademica();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Registro eliminado correctamente');
+                    }
+                });
+            }
+
+            if (!window.academicoEventsRegistrados) {
+                document.addEventListener('academicoGuardado', function (event) {
+                    cerrarModalAcademico();
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje);
+                    }
+                });
+                window.academicoEventsRegistrados = true;
+            }
+        </script>
     </main>
 </body>
 </html>

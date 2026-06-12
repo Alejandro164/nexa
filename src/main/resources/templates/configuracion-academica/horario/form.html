@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" th:text="${leccion.id == null ? 'Asignar lección' : 'Editar lección'}">Lección</h3>
+                    <p class="academic-help"
+                       th:text="|${#strings.capitalize(#strings.toLowerCase(leccion.dia))}, lección ${leccion.numeroLeccion}|">Lunes</p>
+                </div>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div th:if="${materias.empty or docentes.empty}" class="academic-empty academic-empty-block">
+                    Debes tener materias activas y usuarios activos asociados a la institución.
+                </div>
+                <form th:unless="${materias.empty or docentes.empty}"
+                      hx-post="/configuracion-academica/horario"
+                      hx-target="#horario-panel"
+                      hx-swap="outerHTML">
+                    <input type="hidden" name="id" th:value="${leccion.id}">
+                    <input type="hidden" name="periodoId" th:value="${periodoId}">
+                    <input type="hidden" name="nivelId" th:value="${nivelId}">
+                    <input type="hidden" name="dia" th:value="${leccion.dia}">
+                    <input type="hidden" name="numeroLeccion" th:value="${leccion.numeroLeccion}">
+
+                    <div class="form-group">
+                        <label class="form-label">Materia</label>
+                        <select class="form-input" name="materiaId" required>
+                            <option value="">Seleccione una materia</option>
+                            <option th:each="materia : ${materias}"
+                                    th:value="${materia.id}"
+                                    th:selected="${leccion.materia != null and leccion.materia.id == materia.id}"
+                                    th:text="|${materia.codigo} - ${materia.nombre}|">Materia</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Profesor</label>
+                        <select class="form-input" name="docenteId" required>
+                            <option value="">Seleccione un profesor</option>
+                            <option th:each="docente : ${docentes}"
+                                    th:value="${docente.id}"
+                                    th:selected="${leccion.docente != null and leccion.docente.id == docente.id}"
+                                    th:text="${docente.nombre}">Profesor</option>
+                        </select>
+                    </div>
+                    <div class="academic-form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Hora inicio</label>
+                            <input class="form-input" type="time" name="horaInicio" required
+                                   th:value="${leccion.horaInicio}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Hora fin</label>
+                            <input class="form-input" type="time" name="horaFin" required
+                                   th:value="${leccion.horaFin}">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar asignación</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
