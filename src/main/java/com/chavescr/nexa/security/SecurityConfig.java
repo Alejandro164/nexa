@@ -2,9 +2,6 @@ package com.chavescr.nexa.security;
 
 import java.io.IOException;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +13,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -46,6 +47,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // Cache de solicitudes: ignorar /login para que no redirija al login
         // tras hacer logout y volver con el botón atrás
@@ -61,10 +67,11 @@ public class SecurityConfig {
                         }) // emite Cache-Control: no-cache, no-store, must-revalidate
                         .frameOptions(frame -> frame.deny()))
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, exception) ->
-                                redirectToLogin(request, response)))
+                        .authenticationEntryPoint((request, response, exception) -> redirectToLogin(request, response)))
                 .sessionManagement(session -> session
-                        .sessionFixation().migrateSession())
+                        .sessionFixation().migrateSession()
+                        .maximumSessions(1))
+
                 .authorizeHttpRequests(auth -> auth
                         // Recursos públicos
                         .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
