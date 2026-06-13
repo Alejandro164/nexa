@@ -1,5 +1,10 @@
 package com.chavescr.nexa.security;
 
+import java.io.IOException;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,7 +15,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 
 @Configuration
@@ -56,13 +60,11 @@ public class SecurityConfig {
                         .cacheControl(cache -> {
                         }) // emite Cache-Control: no-cache, no-store, must-revalidate
                         .frameOptions(frame -> frame.deny()))
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, exception) ->
+                                redirectToLogin(request, response)))
                 .sessionManagement(session -> session
-                        .sessionFixation().migrateSession()
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(false)
-                        .expiredUrl("/login?expired"))
+                        .sessionFixation().migrateSession())
                 .authorizeHttpRequests(auth -> auth
                         // Recursos públicos
                         .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
@@ -80,9 +82,24 @@ public class SecurityConfig {
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")
                         .invalidateHttpSession(true)
-                        .deleteCookies("SESSION")
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID", "SESSION", "XSRF-TOKEN")
                         .permitAll());
 
         return http.build();
+    }
+
+    private static void redirectToLogin(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String loginUrl = request.getContextPath() + "/login?expired";
+
+        if ("true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
+            response.setHeader("HX-Redirect", loginUrl);
+            response.setHeader("Cache-Control", "no-store");
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
+
+        response.sendRedirect(loginUrl);
     }
 }

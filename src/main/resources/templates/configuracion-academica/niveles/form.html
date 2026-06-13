@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop">
+        <div class="modal-dialog" style="max-width: 560px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${nivel.id == null ? 'Registrar nivel' : 'Editar nivel'}">Nivel</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form hx-post="/configuracion-academica/niveles"
+                      hx-target="#niveles-panel"
+                      hx-swap="outerHTML">
+                    <input type="hidden" name="id" th:value="${nivel.id}">
+                    <div class="academic-form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Grado</label>
+                            <select class="form-input" name="grado" required>
+                                <option value="" disabled hidden th:selected="${nivel.grado == null or nivel.grado.isBlank()}">
+                                    Seleccione un grado
+                                </option>
+                                <option value="Primer grado" th:selected="${nivel.grado == 'Primer grado'}">Primer grado</option>
+                                <option value="Segundo grado" th:selected="${nivel.grado == 'Segundo grado'}">Segundo grado</option>
+                                <option value="Tercer grado" th:selected="${nivel.grado == 'Tercer grado'}">Tercer grado</option>
+                                <option value="Cuarto grado" th:selected="${nivel.grado == 'Cuarto grado'}">Cuarto grado</option>
+                                <option value="Quinto grado" th:selected="${nivel.grado == 'Quinto grado'}">Quinto grado</option>
+                                <option value="Sexto grado" th:selected="${nivel.grado == 'Sexto grado'}">Sexto grado</option>
+                                <option value="Sétimo grado" th:selected="${nivel.grado == 'Sétimo grado'}">Sétimo grado</option>
+                                <option value="Octavo grado" th:selected="${nivel.grado == 'Octavo grado'}">Octavo grado</option>
+                                <option value="Noveno grado" th:selected="${nivel.grado == 'Noveno grado'}">Noveno grado</option>
+                                <option value="Décimo grado" th:selected="${nivel.grado == 'Décimo grado'}">Décimo grado</option>
+                                <option value="Undécimo grado" th:selected="${nivel.grado == 'Undécimo grado'}">Undécimo grado</option>
+                                <option value="Duodécimo grado" th:selected="${nivel.grado == 'Duodécimo grado'}">Duodécimo grado</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Sección</label>
+                            <input class="form-input" name="seccion" maxlength="20" required
+                                   th:value="${nivel.seccion}" placeholder="Ej. A">
+                        </div>
+                    </div>
+                    <input type="hidden" name="_activo" value="on">
+                    <label class="academic-check">
+                        <input type="checkbox" name="activo" th:checked="${nivel.id == null or nivel.activo}">
+                        <span class="academic-check-control">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span>Nivel activo</span>
+                    </label>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar nivel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

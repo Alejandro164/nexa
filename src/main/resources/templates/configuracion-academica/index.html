@@ -66,6 +66,538 @@
                 from { opacity: 0; transform: translateY(6px); }
                 to { opacity: 1; transform: translateY(0); }
             }
+            @keyframes academicModalBackdropIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes academicModalDialogIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(18px) scale(0.97);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+            @keyframes academicModalBackdropOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+            @keyframes academicModalDialogOut {
+                from {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateY(12px) scale(0.98);
+                }
+            }
+            #modal-container.show .modal-backdrop,
+            #academic-delete-modal.modal-visible {
+                animation: academicModalBackdropIn 180ms ease-out both;
+            }
+            #modal-container.show .modal-dialog,
+            #academic-delete-modal.modal-visible .modal-dialog {
+                animation: academicModalDialogIn 240ms cubic-bezier(.22, 1, .36, 1) both;
+            }
+            #modal-container.modal-closing .modal-backdrop,
+            #academic-delete-modal.modal-closing {
+                animation: academicModalBackdropOut 180ms ease-in both;
+            }
+            #modal-container.modal-closing .modal-dialog,
+            #academic-delete-modal.modal-closing .modal-dialog {
+                animation: academicModalDialogOut 180ms ease-in both;
+            }
+            .academic-help {
+                color: var(--text-secondary);
+                font-size: 0.84rem;
+                margin-top: 0.3rem;
+            }
+            .academic-empty {
+                padding: 2rem !important;
+                text-align: center;
+                color: var(--text-secondary);
+            }
+            .academic-empty-block {
+                margin: 1.5rem;
+                border: 1px dashed var(--border);
+                border-radius: 10px;
+                background: var(--input-bg);
+            }
+            .academic-actions {
+                display: flex;
+                gap: 0.4rem;
+                white-space: nowrap;
+            }
+            .academic-form-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+            }
+            .academic-native-select {
+                position: absolute !important;
+                width: 1px !important;
+                height: 1px !important;
+                padding: 0 !important;
+                margin: -1px !important;
+                overflow: hidden !important;
+                clip: rect(0, 0, 0, 0) !important;
+                white-space: nowrap !important;
+                border: 0 !important;
+            }
+            .academic-select {
+                position: relative;
+                width: 100%;
+            }
+            .academic-select-trigger {
+                width: 100%;
+                min-height: 38px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                padding: 0.5rem 10px 0.5rem 0.75rem;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--surface-solid);
+                color: var(--text-primary);
+                font-family: inherit;
+                font-size: 0.875rem;
+                text-align: left;
+                cursor: pointer;
+                transition: border-color 0.2s, box-shadow 0.2s;
+            }
+            .academic-select-trigger:hover {
+                border-color: #cbd5e1;
+            }
+            .academic-select.open .academic-select-trigger,
+            .academic-select-trigger:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
+                outline: none;
+            }
+            .academic-select-placeholder {
+                color: var(--text-light);
+            }
+            .academic-select-arrow {
+                width: 16px;
+                height: 16px;
+                flex: 0 0 16px;
+                color: var(--text-secondary);
+                transition: transform 0.2s;
+            }
+            .academic-select.open .academic-select-arrow {
+                transform: rotate(180deg);
+            }
+            .academic-select-options {
+                position: absolute;
+                z-index: 10020;
+                top: calc(100% + 6px);
+                left: 0;
+                right: 0;
+                max-height: 240px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: #cbd5e1 #ffffff;
+                padding: 0.35rem;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background: white;
+                box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+                visibility: hidden;
+                opacity: 0;
+                transform: translateY(-7px) scale(0.98);
+                transform-origin: top center;
+                pointer-events: none;
+                transition:
+                    opacity 150ms ease,
+                    transform 180ms cubic-bezier(.22, 1, .36, 1),
+                    visibility 0s linear 180ms;
+            }
+            .academic-select-options::-webkit-scrollbar {
+                width: 12px;
+            }
+            .academic-select-options::-webkit-scrollbar-track {
+                background: #ffffff;
+            }
+            .academic-select-options::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                background-clip: padding-box;
+                border-left: 3px solid transparent;
+                border-right: 5px solid transparent;
+                border-radius: 999px;
+            }
+            .academic-select-options::-webkit-scrollbar-thumb:hover {
+                background-color: #94a3b8;
+            }
+            .academic-select.open .academic-select-options {
+                visibility: visible;
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                pointer-events: auto;
+                transition-delay: 0s;
+            }
+            .academic-select-option {
+                width: 100%;
+                padding: 0.6rem 0.7rem;
+                border: 0;
+                border-radius: 7px;
+                background: transparent;
+                color: var(--text-primary);
+                font-family: inherit;
+                font-size: 0.84rem;
+                text-align: left;
+                cursor: pointer;
+            }
+            .academic-select-option:hover,
+            .academic-select-option:focus {
+                background: var(--input-bg);
+                color: var(--primary);
+                outline: none;
+            }
+            .academic-select-option.selected {
+                background: rgba(45, 90, 135, 0.1);
+                color: var(--primary);
+                font-weight: 700;
+            }
+            .academic-check {
+                display: flex;
+                align-items: center;
+                gap: 0.55rem;
+                margin-top: 0.4rem;
+                font-size: 0.88rem;
+                font-weight: 500;
+                cursor: pointer;
+                user-select: none;
+            }
+            .academic-check input {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                opacity: 0;
+                pointer-events: none;
+            }
+            .academic-check-control {
+                width: 20px;
+                height: 20px;
+                flex: 0 0 20px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 6px;
+                background: white;
+                color: white;
+                transition: background 0.18s, border-color 0.18s, box-shadow 0.18s;
+            }
+            .academic-check-control svg {
+                width: 13px;
+                height: 13px;
+                opacity: 0;
+                transform: scale(0.7);
+                transition: opacity 0.18s, transform 0.18s;
+            }
+            .academic-check:hover .academic-check-control {
+                border-color: var(--primary);
+            }
+            .academic-check input:checked + .academic-check-control {
+                border-color: var(--primary);
+                background: var(--primary);
+                box-shadow: 0 2px 6px rgba(45, 90, 135, 0.25);
+            }
+            .academic-check input:checked + .academic-check-control svg {
+                opacity: 1;
+                transform: scale(1);
+            }
+            .academic-check input:focus-visible + .academic-check-control {
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.16);
+            }
+            .subject-chip {
+                --subject-color: #2d5a87;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+                padding: 0.3rem 0.65rem;
+                border-radius: 999px;
+                background: color-mix(in srgb, var(--subject-color) 14%, white);
+                color: color-mix(in srgb, var(--subject-color) 78%, black);
+                font-size: 0.8rem;
+                font-weight: 700;
+                border: 1px solid color-mix(in srgb, var(--subject-color) 25%, white);
+            }
+            .subject-chip::before {
+                content: "";
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--subject-color);
+            }
+            .subject-chip-preview::before {
+                display: none;
+            }
+            .color-preview {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                margin-right: 0.35rem;
+                border-radius: 4px;
+                vertical-align: middle;
+                border: 1px solid rgba(0, 0, 0, 0.12);
+            }
+            .academic-color-picker {
+                --selected-color: #2d5a87;
+                position: relative;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            .academic-color-trigger {
+                min-width: 145px;
+                min-height: 38px;
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+                padding: 0.45rem 0.75rem;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: white;
+                color: var(--text-primary);
+                font-family: inherit;
+                cursor: pointer;
+                transition:
+                    border-color 0.18s,
+                    box-shadow 0.18s,
+                    transform 0.18s;
+            }
+            .academic-color-trigger:hover,
+            .academic-color-trigger:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
+                outline: none;
+            }
+            .academic-color-picker.color-opening .academic-color-trigger {
+                transform: translateY(-1px) scale(1.015);
+            }
+            .academic-color-picker.color-selected .academic-color-trigger {
+                animation: academicColorSelected 260ms cubic-bezier(.22, 1, .36, 1);
+            }
+            .academic-color-swatch {
+                width: 20px;
+                height: 20px;
+                flex: 0 0 20px;
+                border-radius: 5px;
+                background: var(--selected-color);
+                box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+                transition: background-color 180ms ease, transform 180ms ease;
+            }
+            .academic-color-picker.color-opening .academic-color-swatch {
+                transform: scale(1.12);
+            }
+            .academic-color-value {
+                flex: 1;
+                font-size: 0.82rem;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+            .academic-color-icon {
+                width: 17px;
+                height: 17px;
+                flex: 0 0 17px;
+                color: var(--text-secondary);
+            }
+            .academic-native-color {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                opacity: 0;
+                pointer-events: none;
+            }
+            .academic-color-preview {
+                white-space: nowrap;
+                transition:
+                    background-color 180ms ease,
+                    color 180ms ease,
+                    border-color 180ms ease,
+                    transform 180ms ease;
+            }
+            .academic-color-picker.color-selected .academic-color-preview {
+                transform: scale(1.04);
+            }
+            @keyframes academicColorSelected {
+                0% { transform: scale(1); }
+                45% { transform: scale(1.025); }
+                100% { transform: scale(1); }
+            }
+            .schedule-filters {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+                padding: 1.25rem 1.5rem;
+                background: var(--input-bg);
+                border-bottom: 1px solid var(--border);
+            }
+            .schedule-filters .form-group {
+                margin: 0;
+            }
+            .schedule-scroll {
+                overflow-x: auto;
+                padding: 1.5rem;
+            }
+            .schedule-grid {
+                min-width: 920px;
+                display: grid;
+                grid-template-columns: 100px repeat(5, minmax(150px, 1fr));
+                border-top: 1px solid var(--border);
+                border-left: 1px solid var(--border);
+            }
+            .schedule-head,
+            .schedule-hour,
+            .schedule-slot {
+                border-right: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+            }
+            .schedule-head {
+                padding: 0.8rem;
+                text-align: center;
+                background: #f1f5f9;
+                font-size: 0.82rem;
+                font-weight: 700;
+            }
+            .schedule-hour {
+                min-height: 92px;
+                padding: 0.75rem 0.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                background: #f8fafc;
+                color: var(--text-secondary);
+                font-size: 0.76rem;
+            }
+            .schedule-head.schedule-hour {
+                min-height: auto;
+            }
+            .schedule-slot {
+                min-height: 92px;
+                padding: 0.55rem;
+                position: relative;
+                text-align: left;
+            }
+            button.schedule-slot {
+                width: 100%;
+                border-top: 0;
+                border-left: 0;
+                background: white;
+                font: inherit;
+                cursor: pointer;
+            }
+            .schedule-slot-empty {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--text-light);
+            }
+            .schedule-slot-empty:hover {
+                background: rgba(45, 90, 135, 0.05);
+                color: var(--primary);
+            }
+            .schedule-slot-filled {
+                --subject-color: #2d5a87;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 0.2rem;
+                padding-left: 0.8rem;
+                background: color-mix(in srgb, var(--subject-color) 10%, white);
+                border-left: 4px solid var(--subject-color);
+                cursor: pointer;
+            }
+            .schedule-slot-filled strong {
+                color: var(--text-primary);
+                font-size: 0.82rem;
+            }
+            .schedule-slot-filled span,
+            .schedule-slot-filled small {
+                color: var(--text-secondary);
+                font-size: 0.7rem;
+            }
+            .schedule-remove {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                width: 22px;
+                height: 22px;
+                border: 0;
+                border-radius: 5px;
+                background: rgba(15, 23, 42, 0.08);
+                color: var(--text-secondary);
+                cursor: pointer;
+            }
+            .schedule-remove:hover {
+                background: var(--error);
+                color: white;
+            }
+            .academic-delete-dialog {
+                max-width: 460px;
+                border-top: 4px solid var(--error);
+            }
+            .academic-delete-message {
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                padding: 1rem;
+                border: 1px solid #fecaca;
+                border-radius: 10px;
+                background: #fef2f2;
+                color: #7f1d1d;
+                line-height: 1.55;
+            }
+            .academic-delete-icon {
+                width: 30px;
+                height: 30px;
+                flex: 0 0 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                background: var(--error);
+                color: white;
+                font-weight: 800;
+            }
+            @media (max-width: 700px) {
+                .academic-form-grid,
+                .schedule-filters {
+                    grid-template-columns: 1fr;
+                }
+                .config-tabs-container {
+                    overflow-x: auto;
+                }
+                .config-tab-btn {
+                    min-width: 135px;
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                #modal-container.show .modal-backdrop,
+                #modal-container.show .modal-dialog,
+                #modal-container.modal-closing .modal-backdrop,
+                #modal-container.modal-closing .modal-dialog,
+                #academic-delete-modal.modal-visible,
+                #academic-delete-modal.modal-visible .modal-dialog,
+                #academic-delete-modal.modal-closing,
+                #academic-delete-modal.modal-closing .modal-dialog {
+                    animation: none;
+                }
+                .academic-select-options,
+                .academic-color-trigger,
+                .academic-color-swatch,
+                .academic-color-preview {
+                    transition: none;
+                    animation: none !important;
+                }
+            }
         </style>
 
         <div x-data="{ activeTab: 'periodos' }">
@@ -73,16 +605,17 @@
             <div class="config-tabs-container">
                 <div class="config-tabs">
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'periodos' }" @click="activeTab = 'periodos'">
-                        📅 Períodos
+                        Períodos
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'niveles' }" @click="activeTab = 'niveles'">
-                        🎓 Niveles
+                        Niveles
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'materias' }" @click="activeTab = 'materias'">
-                        📚 Materias
+                        Materias
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'horario' }" @click="activeTab = 'horario'">
-                        ⏱️ Horario
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'horario' }"
+                            @click="activeTab = 'horario'; recargarHorarioAcademico()">
+                        Horario
                     </button>
                 </div>
             </div>
@@ -108,6 +641,248 @@
             </div>
 
         </div>
+        <div th:replace="~{configuracion-academica/components/confirmar-eliminacion :: modal}"></div>
+        <script>
+            window.academicDeleteRequest = null;
+
+            function abrirModalAcademico() {
+                var modal = document.getElementById('modal-container');
+                modal.classList.remove('modal-closing');
+                modal.classList.add('show');
+            }
+
+            function cerrarModalAcademico() {
+                var modal = document.getElementById('modal-container');
+                if (!modal || !modal.classList.contains('show')) {
+                    return;
+                }
+                modal.classList.add('modal-closing');
+                window.setTimeout(function () {
+                    modal.classList.remove('show', 'modal-closing');
+                    modal.innerHTML = '';
+                }, 180);
+            }
+
+            function recargarHorarioAcademico() {
+                var panel = document.getElementById('horario-panel');
+                var periodo = panel ? panel.querySelector('[name="periodoId"]') : null;
+                var nivel = panel ? panel.querySelector('[name="nivelId"]') : null;
+                var parametros = new URLSearchParams();
+
+                if (periodo && periodo.value) {
+                    parametros.set('periodoId', periodo.value);
+                }
+                if (nivel && nivel.value) {
+                    parametros.set('nivelId', nivel.value);
+                }
+
+                var url = '/configuracion-academica/horario';
+                if (parametros.toString()) {
+                    url += '?' + parametros.toString();
+                }
+                htmx.ajax('GET', url, {target: '#horario-panel', swap: 'outerHTML'});
+            }
+
+            function cerrarSelectoresAcademicos(excepto) {
+                document.querySelectorAll('.academic-select.open').forEach(function (select) {
+                    if (select !== excepto) {
+                        select.classList.remove('open');
+                        select.querySelector('.academic-select-trigger').setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
+            function abrirSelectorColorAcademico(trigger) {
+                var picker = trigger.closest('.academic-color-picker');
+                cerrarSelectoresAcademicos();
+                picker.classList.add('color-opening');
+                window.setTimeout(function () {
+                    picker.classList.remove('color-opening');
+                }, 180);
+                picker.querySelector('input[type="color"]').click();
+            }
+
+            function actualizarColorAcademico(picker, color) {
+                if (!picker || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+                    return;
+                }
+                color = color.toLowerCase();
+                picker.style.setProperty('--selected-color', color);
+                picker.querySelector('input[name="color"]').value = color;
+                picker.querySelector('.academic-color-value').textContent = color;
+                picker.querySelector('.academic-color-preview')
+                    .style.setProperty('--subject-color', color);
+                picker.classList.remove('color-selected');
+                void picker.offsetWidth;
+                picker.classList.add('color-selected');
+                window.setTimeout(function () {
+                    picker.classList.remove('color-selected');
+                }, 260);
+            }
+
+            function inicializarSelectoresColorAcademicos(root) {
+                var scope = root || document;
+                scope.querySelectorAll('.academic-color-picker').forEach(function (picker) {
+                    actualizarColorAcademico(picker, picker.querySelector('input[name="color"]').value);
+                });
+            }
+
+            function inicializarSelectoresAcademicos(root) {
+                var scope = root || document;
+                scope.querySelectorAll('select.form-input:not([data-academic-select])').forEach(function (nativeSelect) {
+                    nativeSelect.dataset.academicSelect = 'true';
+                    nativeSelect.classList.add('academic-native-select');
+
+                    var component = document.createElement('div');
+                    component.className = 'academic-select';
+
+                    var trigger = document.createElement('button');
+                    trigger.type = 'button';
+                    trigger.className = 'academic-select-trigger';
+                    trigger.setAttribute('aria-haspopup', 'listbox');
+                    trigger.setAttribute('aria-expanded', 'false');
+
+                    var label = document.createElement('span');
+                    var arrow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    arrow.setAttribute('class', 'academic-select-arrow');
+                    arrow.setAttribute('viewBox', '0 0 24 24');
+                    arrow.setAttribute('fill', 'none');
+                    arrow.setAttribute('stroke', 'currentColor');
+                    arrow.setAttribute('stroke-width', '2');
+                    arrow.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+                    trigger.append(label, arrow);
+
+                    var options = document.createElement('div');
+                    options.className = 'academic-select-options';
+                    options.setAttribute('role', 'listbox');
+
+                    function actualizarSeleccion() {
+                        var selected = nativeSelect.options[nativeSelect.selectedIndex];
+                        label.textContent = selected ? selected.textContent.trim() : '';
+                        label.classList.toggle('academic-select-placeholder', !selected || !selected.value);
+                        options.querySelectorAll('.academic-select-option').forEach(function (option) {
+                            option.classList.toggle('selected', option.dataset.value === nativeSelect.value);
+                            option.setAttribute('aria-selected', String(option.dataset.value === nativeSelect.value));
+                        });
+                    }
+
+                    Array.from(nativeSelect.options).forEach(function (nativeOption) {
+                        if (nativeOption.hidden || nativeOption.disabled || !nativeOption.value) {
+                            return;
+                        }
+                        var option = document.createElement('button');
+                        option.type = 'button';
+                        option.className = 'academic-select-option';
+                        option.dataset.value = nativeOption.value;
+                        option.textContent = nativeOption.textContent.trim();
+                        option.setAttribute('role', 'option');
+                        option.addEventListener('click', function () {
+                            nativeSelect.value = option.dataset.value;
+                            actualizarSeleccion();
+                            component.classList.remove('open');
+                            trigger.setAttribute('aria-expanded', 'false');
+                            nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                        options.appendChild(option);
+                    });
+
+                    trigger.addEventListener('click', function () {
+                        var abrir = !component.classList.contains('open');
+                        cerrarSelectoresAcademicos(component);
+                        component.classList.toggle('open', abrir);
+                        trigger.setAttribute('aria-expanded', String(abrir));
+                    });
+
+                    nativeSelect.addEventListener('change', actualizarSeleccion);
+                    nativeSelect.parentNode.insertBefore(component, nativeSelect);
+                    component.append(nativeSelect, trigger, options);
+                    actualizarSeleccion();
+                });
+            }
+
+            if (!window.academicSelectEventsRegistered) {
+                document.addEventListener('click', function (event) {
+                    if (!event.target.closest('.academic-select')) {
+                        cerrarSelectoresAcademicos();
+                    }
+                });
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        cerrarSelectoresAcademicos();
+                    }
+                });
+                document.addEventListener('DOMContentLoaded', function () {
+                    inicializarSelectoresAcademicos(document);
+                    inicializarSelectoresColorAcademicos(document);
+                });
+                document.addEventListener('htmx:load', function (event) {
+                    inicializarSelectoresAcademicos(event.detail.elt);
+                    inicializarSelectoresColorAcademicos(event.detail.elt);
+                });
+                window.academicSelectEventsRegistered = true;
+            }
+            inicializarSelectoresAcademicos(document);
+            inicializarSelectoresColorAcademicos(document);
+
+            function abrirConfirmacionAcademica(trigger) {
+                window.academicDeleteRequest = {
+                    url: trigger.dataset.deleteUrl,
+                    target: trigger.dataset.deleteTarget,
+                    swap: trigger.dataset.deleteSwap || 'outerHTML'
+                };
+
+                document.getElementById('academic-delete-title').textContent =
+                    trigger.dataset.deleteTitle || 'Confirmar eliminación';
+                document.getElementById('academic-delete-message').textContent =
+                    trigger.dataset.deleteMessage || '¿Deseas eliminar este registro?';
+                var modal = document.getElementById('academic-delete-modal');
+                modal.style.display = 'flex';
+                modal.classList.remove('modal-visible', 'modal-closing');
+                void modal.offsetWidth;
+                modal.classList.add('modal-visible');
+            }
+
+            function cerrarConfirmacionAcademica() {
+                var modal = document.getElementById('academic-delete-modal');
+                if (modal && modal.style.display !== 'none') {
+                    modal.classList.remove('modal-visible');
+                    modal.classList.add('modal-closing');
+                    window.setTimeout(function () {
+                        modal.style.display = 'none';
+                        modal.classList.remove('modal-closing');
+                    }, 180);
+                }
+                window.academicDeleteRequest = null;
+            }
+
+            function confirmarEliminacionAcademica() {
+                var request = window.academicDeleteRequest;
+                if (!request || !request.url || !request.target) {
+                    cerrarConfirmacionAcademica();
+                    return;
+                }
+
+                htmx.ajax('DELETE', request.url, {
+                    target: request.target,
+                    swap: request.swap
+                }).then(function () {
+                    cerrarConfirmacionAcademica();
+                    if (typeof showNotification === 'function') {
+                        showNotification('Registro eliminado correctamente');
+                    }
+                });
+            }
+
+            if (!window.academicoEventsRegistrados) {
+                document.addEventListener('academicoGuardado', function (event) {
+                    cerrarModalAcademico();
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje);
+                    }
+                });
+                window.academicoEventsRegistrados = true;
+            }
+        </script>
     </main>
 </body>
 </html>

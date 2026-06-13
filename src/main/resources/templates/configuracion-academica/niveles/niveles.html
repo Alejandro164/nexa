@@ -1,62 +1,56 @@
-<div th:fragment="content">
-    <style>
-        .level-card {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            transition: all 0.2s;
-            background: #fff;
-        }
-        .level-card:hover {
-            border-color: var(--primary);
-            box-shadow: var(--shadow-sm);
-        }
-    </style>
+<div th:fragment="content" id="niveles-panel" xmlns:th="http://www.thymeleaf.org">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Estructura de Niveles Educativos</h3>
-            <button class="btn btn-primary">+ Agregar Nivel</button>
-        </div>
-        <div style="padding: 2rem;">
-            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Organiza los grados académicos impartidos en la institución.</p>
-            
-            <div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
-                <div class="level-card">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                        <h4 style="font-weight: 600; color: var(--text-primary); font-size: 1.1rem;">Sétimo Año</h4>
-                        <span class="badge badge-success">Activo</span>
-                    </div>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Tercer Ciclo de Educación General Básica.</p>
-                    <div style="display: flex; gap: 1rem; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
-                        <span><strong style="color: var(--text-main);">12</strong> Materias</span>
-                        <span><strong style="color: var(--text-main);">4</strong> Grupos</span>
-                    </div>
-                </div>
-                
-                <div class="level-card">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                        <h4 style="font-weight: 600; color: var(--text-primary); font-size: 1.1rem;">Octavo Año</h4>
-                        <span class="badge badge-success">Activo</span>
-                    </div>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Tercer Ciclo de Educación General Básica.</p>
-                    <div style="display: flex; gap: 1rem; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
-                        <span><strong style="color: var(--text-main);">12</strong> Materias</span>
-                        <span><strong style="color: var(--text-main);">3</strong> Grupos</span>
-                    </div>
-                </div>
-
-                <div class="level-card">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                        <h4 style="font-weight: 600; color: var(--text-primary); font-size: 1.1rem;">Undécimo Año</h4>
-                        <span class="badge badge-success">Activo</span>
-                    </div>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Educación Diversificada (Bachillerato).</p>
-                    <div style="display: flex; gap: 1rem; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
-                        <span><strong style="color: var(--text-main);">14</strong> Materias</span>
-                        <span><strong style="color: var(--text-main);">2</strong> Grupos</span>
-                    </div>
-                </div>
+            <div>
+                <h3 class="card-title">Niveles y secciones</h3>
+                <p class="academic-help">Administra los grupos que recibirán materias y horarios.</p>
             </div>
+            <button class="btn btn-primary"
+                    hx-get="/configuracion-academica/niveles/form"
+                    hx-target="#modal-container"
+                    onclick="abrirModalAcademico()">+ Nuevo nivel</button>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Grado</th>
+                        <th>Sección</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${niveles == null or niveles.empty}">
+                        <td colspan="5" class="academic-empty">No hay niveles registrados.</td>
+                    </tr>
+                    <tr th:each="nivel : ${niveles}">
+                        <td th:text="${nivel.id}">1</td>
+                        <td><strong th:text="${nivel.grado}">Sétimo</strong></td>
+                        <td th:text="${nivel.seccion}">A</td>
+                        <td>
+                            <span th:if="${nivel.activo}" class="badge badge-success">Activo</span>
+                            <span th:unless="${nivel.activo}" class="badge badge-secondary">Inactivo</span>
+                        </td>
+                        <td>
+                            <div class="academic-actions">
+                                <button class="btn btn-secondary btn-sm"
+                                        th:attr="hx-get=|/configuracion-academica/niveles/form/${nivel.id}|"
+                                        hx-target="#modal-container"
+                                        onclick="abrirModalAcademico()">Editar</button>
+                                <button type="button" class="btn btn-destructive btn-sm"
+                                        th:attr="data-delete-url=|/configuracion-academica/niveles/${nivel.id}|,
+                                                 data-delete-message=|¿Deseas eliminar ${nivel.grado} - ${nivel.seccion}? También se eliminarán sus lecciones asignadas.|"
+                                        data-delete-title="Eliminar nivel"
+                                        data-delete-target="#niveles-panel"
+                                        data-delete-swap="outerHTML"
+                                        onclick="abrirConfirmacionAcademica(this)">Eliminar</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
