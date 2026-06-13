@@ -381,6 +381,11 @@
             opacity: 0.85;
         }
 
+        .btn-login:disabled {
+            cursor: wait;
+            opacity: 0.72;
+        }
+
         /* ── Support button ── */
         .btn-support {
             display: inline-flex;
@@ -606,9 +611,10 @@
                     <span th:text="${logoutMsg}"></span>
                 </div>
 
-                <form id="login-form" th:action="@{/login}" method="post" autocomplete="on">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-
+                <form id="login-form"
+                    th:action="@{/login}"
+                    method="post"
+                    autocomplete="on">
                     <div class="form-group">
                         <label for="email">Correo electrónico</label>
                         <div class="input-wrap">
@@ -653,8 +659,10 @@
                         </div>
                     </div>
 
-                    <button id="btn-iniciar-sesion" type="submit" class="btn-login">
-                        Iniciar Sesión
+                    <button id="btn-iniciar-sesion"
+                        type="submit"
+                        class="btn-login">
+                        <span id="login-button-text">Iniciar Sesión</span>
                     </button>
                 </form>
 
@@ -694,6 +702,21 @@
         </div>
 
     </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function (event) {
+            if (this.dataset.submitting === 'true') {
+                event.preventDefault();
+                return;
+            }
+
+            this.dataset.submitting = 'true';
+            var button = document.getElementById('btn-iniciar-sesion');
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
+            document.getElementById('login-button-text').textContent = 'Iniciando sesión...';
+        });
+    </script>
 
 </body>
 

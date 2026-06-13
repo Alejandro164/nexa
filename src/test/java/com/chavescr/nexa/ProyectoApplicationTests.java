@@ -11,6 +11,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
@@ -21,14 +23,32 @@ import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.service.ConfiguracionAcademicaService;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @SpringBootTest
+@AutoConfigureMockMvc
 class ProyectoApplicationTests {
 
 	@Autowired
 	private SpringTemplateEngine templateEngine;
 
+	@Autowired
+	private MockMvc mockMvc;
+
 	@Test
 	void contextLoads() {
+	}
+
+	@Test
+	void expiredHtmxRequestRedirectsTheWholePageToLogin() throws Exception {
+		mockMvc.perform(get("/configuracion-academica/periodos/form")
+						.header("HX-Request", "true"))
+				.andExpect(status().isOk())
+				.andExpect(header().string("HX-Redirect", "/login?expired"))
+				.andExpect(content().string(""));
 	}
 
 	@Test
