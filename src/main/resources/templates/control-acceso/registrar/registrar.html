@@ -1,0 +1,57 @@
+<div th:fragment="content">
+    <div class="card form-visita" style="margin:0 auto;">
+        <div class="card-header">
+            <h3 class="card-title">Nueva Visita</h3>
+        </div>
+        <div style="padding: 2rem;">
+            <form th:action="@{/control-de-acceso/registrar}" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nombre del Visitante *</label>
+                        <input type="text" name="nombreVisitante" class="form-input" style="padding-left:0.75rem;"
+                            required placeholder="Nombre completo">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Identificación (Cédula)</label>
+                        <input type="text" name="identificacion" class="form-input" style="padding-left:0.75rem;"
+                            placeholder="Ej: 1-1234-0567">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Motivo de la Visita *</label>
+                    <input type="text" name="motivo" class="form-input" style="padding-left:0.75rem;"
+                        required placeholder="Ej: Reunión, entregar documentos, etc.">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Tipo de Persona a Visitar *</label>
+                        <select name="tipoDestinatario" class="form-input" style="padding-left:0.75rem;" required>
+                            <option value="DIRECTORA">Directora</option>
+                            <option value="DOCENTE" selected>Docente</option>
+                            <option value="ADMINISTRATIVO">Administrativo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nombre de la Persona *</label>
+                        <input type="text" name="personaAVisitar" class="form-input" style="padding-left:0.75rem;"
+                            required placeholder="Nombre de la persona a visitar">
+                    </div>
+                </div>
+                <div class="form-group" style="display:flex; align-items:center; gap:0.75rem;">
+                    <input type="checkbox" name="tieneCita" id="tieneCita" value="true" style="width:18px; height:18px;">
+                    <label for="tieneCita" style="font-weight:500; font-size:0.9rem;">¿Tiene cita previa?</label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Observaciones</label>
+                    <textarea name="observaciones" class="form-input" style="padding-left:0.75rem; min-height:80px; resize:vertical;"
+                        placeholder="Información adicional relevante..."></textarea>
+                </div>
+                <div style="margin-top:1.5rem;">
+                    <button type="submit" class="btn btn-primary" style="width:100%; padding:0.85rem; font-size:0.95rem;">
+                        Registrar Visita
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,93 @@
+<div th:fragment="content" class="tab-pane">
+    <div id="tabla-asistencia-container" th:fragment="tabla-asistencia">
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#d1fae5; color:#059669;">👥</div>
+                <div>
+                    <div class="stat-value" th:text="${asistenciaPresentes != null ? asistenciaPresentes : 0}">0</div>
+                    <div class="stat-label">Presentes Ahora</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#dbeafe; color:#2563eb;">📥</div>
+                <div>
+                    <div class="stat-value" th:text="${asistenciaTotalRegistros != null ? asistenciaTotalRegistros : 0}">0</div>
+                    <div class="stat-label">Registros Hoy</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title">Registrar Entrada / Salida</h3>
+            </div>
+            <div style="padding: 1.5rem;">
+                <form th:action="@{/control-de-acceso/asistencia/registrar}" method="post" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2; min-width:200px; margin-bottom:0;">
+                        <label class="form-label">Funcionario</label>
+                        <select name="usuarioId" class="form-input" style="padding-left:0.75rem;" required>
+                            <option value="">Seleccionar funcionario...</option>
+                            <option th:each="u : ${usuarios}" th:value="${u.id}" th:text="${u.nombre + ' (' + u.email + ')'}">Nombre</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:150px; margin-bottom:0;">
+                        <label class="form-label">Tipo</label>
+                        <select name="tipo" class="form-input" style="padding-left:0.75rem;" required>
+                            <option value="ENTRADA">Entrada</option>
+                            <option value="SALIDA">Salida</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:2; min-width:200px; margin-bottom:0;">
+                        <label class="form-label">Observaciones</label>
+                        <input type="text" name="observaciones" class="form-input" style="padding-left:0.75rem;"
+                            placeholder="Opcional">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="padding:0.5rem 1.5rem; height:42px;">
+                        Registrar
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Registro de Asistencia de Hoy</h3>
+            </div>
+            <div style="padding: 0 1.5rem 1.5rem 1.5rem;">
+                <div th:if="${asistencias != null && !asistencias.empty}">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Funcionario</th>
+                                    <th>Tipo</th>
+                                    <th>Hora</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="a : ${asistencias}">
+                                    <td style="font-weight:600;">
+                                        <span th:text="${a.usuario.nombre}">Nombre</span>
+                                        <br>
+                                        <span style="font-size:0.75rem; color:var(--text-secondary);" th:text="${a.usuario.email}">email</span>
+                                    </td>
+                                    <td>
+                                        <span th:if="${a.tipo.toString() == 'ENTRADA'}" class="badge badge-success">Entrada</span>
+                                        <span th:if="${a.tipo.toString() == 'SALIDA'}" class="badge badge-secondary">Salida</span>
+                                    </td>
+                                    <td style="font-size:0.85rem;" th:text="${#temporals.format(a.fechaHora, 'HH:mm')}">Hora</td>
+                                    <td th:text="${a.observaciones != null ? a.observaciones : '—'}">Obs</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div th:if="${asistencias == null || asistencias.empty}" class="empty-state">
+                    <h4 style="color:var(--text-secondary);">No hay registros de asistencia hoy</h4>
+                    <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.25rem;">Los fichajes de entrada y salida aparecerán aquí.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

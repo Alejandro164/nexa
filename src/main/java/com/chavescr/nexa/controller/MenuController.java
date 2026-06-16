@@ -66,4 +66,5 @@ public class MenuController {
     public String archivoGraduados(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "archivo/index :: htmx-content" : "archivo/index";
     }
+
 }

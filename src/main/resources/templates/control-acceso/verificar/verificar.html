@@ -1,0 +1,91 @@
+<div th:fragment="content">
+    <div class="search-card">
+        <h3>¿Tiene cita esta persona?</h3>
+        <p>Ingresá el nombre o número de identificación para verificar si tiene una cita registrada.</p>
+        <div class="search-input-group">
+            <input type="text" x-model="filtro" placeholder="Nombre o cédula del visitante..."
+                @keydown.enter="buscar()">
+            <button @click="buscar()" :disabled="buscando">
+                <span x-show="!buscando">🔍 Buscar</span>
+                <span x-show="buscando" x-cloak>Buscando...</span>
+            </button>
+        </div>
+        <div id="resultados-busqueda" style="margin-top:1.5rem;">
+            <div th:if="${resultados != null && !resultados.empty}" th:each="v : ${resultados}" class="resultado-visita" style="background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.1);">
+                <div class="visita-avatar" style="background: rgba(96,165,250,0.2); color: #93c5fd;"
+                    th:text="${#strings.substring(v.nombreVisitante, 0, 1).toUpperCase()}">V</div>
+                <div class="visita-info">
+                    <h4 style="color:white;" th:text="${v.nombreVisitante}">Nombre</h4>
+                    <p style="color:#94a3b8;">
+                        <span th:if="${v.identificacion != null}" th:text="'Céd: ' + ${v.identificacion} + ' · '"></span>
+                        <span th:text="${'Ver a: ' + v.personaAVisitar}"></span>
+                        <span th:text="' (' + ${v.tipoDestinatario} + ')'"></span>
+                    </p>
+                    <p style="color:#94a3b8; font-size:0.75rem;">
+                        <span th:if="${v.tieneCita}">✅ Tiene cita</span>
+                        <span th:unless="${v.tieneCita}">⚠️ Sin cita previa</span>
+                        <span th:text="' · Estado: ' + ${v.estado}"></span>
+                    </p>
+                </div>
+                <div class="visita-acciones">
+                    <form th:if="${v.estado.toString() == 'PENDIENTE'}" th:action="@{/control-de-acceso/autorizar}" method="post" style="margin:0;">
+                        <input type="hidden" name="visitaId" th:value="${v.id}" />
+                        <button type="submit" class="btn-accion btn-autorizar">Autorizar</button>
+                    </form>
+                    <form th:if="${v.estado.toString() == 'AUTORIZADA'}" th:action="@{/control-de-acceso/salida}" method="post" style="margin:0;">
+                        <input type="hidden" name="visitaId" th:value="${v.id}" />
+                        <button type="submit" class="btn-accion btn-salida">Registrar Salida</button>
+                    </form>
+                </div>
+            </div>
+            <div th:if="${resultados == null || resultados.empty}" class="sin-resultados" style="color:#94a3b8;">
+                <p th:if="${filtro != null}">No se encontraron visitas para "<span th:text="${filtro}"></span>".</p>
+                <p th:unless="${filtro != null}">Ingresá un nombre o cédula para buscar.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem;">
+        <div class="card-header">
+            <h3 class="card-title">Visitas Pendientes de Hoy</h3>
+        </div>
+        <div style="padding:1rem 1.5rem;">
+            <div th:if="${visitas != null && !visitas.empty}">
+                <div th:each="v : ${visitas}" th:if="${v.estado.toString() == 'PENDIENTE' or v.estado.toString() == 'AUTORIZADA'}" class="resultado-visita">
+                    <div class="visita-avatar" style="background: #dbeafe; color: #2563eb;"
+                        th:text="${#strings.substring(v.nombreVisitante, 0, 1).toUpperCase()}">V</div>
+                    <div class="visita-info">
+                        <h4 th:text="${v.nombreVisitante}">Nombre</h4>
+                        <p>
+                            <span th:if="${v.identificacion != null}" th:text="'Céd: ' + ${v.identificacion} + ' · '"></span>
+                            <span th:text="${'Ver a: ' + v.personaAVisitar + ' (' + v.tipoDestinatario + ')'}"></span>
+                        </p>
+                        <p style="font-size:0.75rem;">
+                            <span th:if="${v.tieneCita}">✅ Con cita</span>
+                            <span th:unless="${v.tieneCita}">⚠️ Sin cita</span>
+                            <span th:text="' · ' + ${#temporals.format(v.fechaRegistro, 'HH:mm')}"></span>
+                            <span th:text="' · ' + ${v.estado}"></span>
+                        </p>
+                    </div>
+                    <div class="visita-acciones">
+                        <form th:if="${v.estado.toString() == 'PENDIENTE'}" th:action="@{/control-de-acceso/autorizar}" method="post" style="margin:0;">
+                            <input type="hidden" name="visitaId" th:value="${v.id}" />
+                            <button type="submit" class="btn-accion btn-autorizar">Autorizar</button>
+                        </form>
+                        <form th:if="${v.estado.toString() == 'PENDIENTE'}" th:action="@{/control-de-acceso/denegar}" method="post" style="margin:0;">
+                            <input type="hidden" name="visitaId" th:value="${v.id}" />
+                            <button type="submit" class="btn-accion btn-denegar">Denegar</button>
+                        </form>
+                        <form th:if="${v.estado.toString() == 'AUTORIZADA'}" th:action="@{/control-de-acceso/salida}" method="post" style="margin:0;">
+                            <input type="hidden" name="visitaId" th:value="${v.id}" />
+                            <button type="submit" class="btn-accion btn-salida">Salida</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${visitas == null || visitas.empty}" class="sin-resultados">
+                <p>No hay visitas pendientes para hoy.</p>
+            </div>
+        </div>
+    </div>
+</div>
