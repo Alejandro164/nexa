@@ -11,7 +11,7 @@
     <th:block layout:fragment="page-title">Control de Acceso</th:block>
     <th:block layout:fragment="page-subtitle">Verifica citas, autoriza ingresos y registra visitas en tiempo real</th:block>
 
-    <main layout:fragment="content" th:fragment="htmx-content" x-data="controlAcceso()" x-init="init()">
+    <main layout:fragment="content" th:fragment="htmx-content">
         <style>
             .config-tabs-container {
                 margin-bottom: 2rem;
@@ -261,6 +261,8 @@
             }
         </style>
 
+        <div x-data="{ activeTab: 'verificar' }">
+
         <!-- Menú Horizontal -->
         <div class="config-tabs-container">
             <div class="config-tabs">
@@ -270,10 +272,10 @@
                 <button class="config-tab-btn" :class="{ 'active': activeTab === 'registrar' }" @click="activeTab = 'registrar'">
                     📝 Registrar Visita
                 </button>
-                <button class="config-tab-btn" :class="{ 'active': activeTab === 'historial' }" @click="activeTab = 'historial'">
+                <button class="config-tab-btn" :class="{ 'active': activeTab === 'historial' }" @click="activeTab = 'historial'; htmx.ajax('GET', '/control-de-acceso/historial', { target: '#tabla-historial-container', swap: 'outerHTML' })">
                     📋 Historial del Día
                 </button>
-                <button class="config-tab-btn" :class="{ 'active': activeTab === 'asistencia' }" @click="activeTab = 'asistencia'">
+                <button class="config-tab-btn" :class="{ 'active': activeTab === 'asistencia' }" @click="activeTab = 'asistencia'; htmx.ajax('GET', '/control-de-acceso/asistencia/refresh', { target: '#tabla-asistencia-container', swap: 'outerHTML' })">
                     🕐 Asistencia Personal
                 </button>
             </div>
@@ -296,45 +298,9 @@
             <div th:replace="~{control-acceso/asistencia/asistencia :: content}"></div>
         </div>
 
-    </main>
+        </div>
 
-    <th:block layout:fragment="head-extra">
-        <script>
-            function controlAcceso() {
-                return {
-                    activeTab: 'verificar',
-                    filtro: '',
-                    buscando: false,
-                    init() {
-                        this.$watch('activeTab', function(val) {
-                            if (val === 'historial') {
-                                htmx.ajax('GET', '/control-de-acceso/historial', {
-                                    target: '#tabla-historial-container',
-                                    swap: 'outerHTML'
-                                });
-                            }
-                            if (val === 'asistencia') {
-                                htmx.ajax('GET', '/control-de-acceso/asistencia/refresh', {
-                                    target: '#tabla-asistencia-container',
-                                    swap: 'outerHTML'
-                                });
-                            }
-                        });
-                    },
-                    buscar() {
-                        if (!this.filtro.trim()) return;
-                        this.buscando = true;
-                        const params = new URLSearchParams({ filtro: this.filtro });
-                        htmx.ajax('GET', '/control-de-acceso/buscar?' + params.toString(), {
-                            target: '#resultados-busqueda',
-                            swap: 'innerHTML'
-                        });
-                        this.buscando = false;
-                    }
-                };
-            }
-        </script>
-    </th:block>
+    </main>
 
 </body>
 

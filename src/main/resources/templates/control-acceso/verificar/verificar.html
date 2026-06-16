@@ -1,4 +1,4 @@
-<div th:fragment="content">
+<div th:fragment="content" x-data="{ filtro: '', buscando: false, buscar() { if (!this.filtro.trim()) return; this.buscando = true; const params = new URLSearchParams({ filtro: this.filtro }); htmx.ajax('GET', '/control-de-acceso/buscar?' + params.toString(), { target: '#resultados-busqueda', swap: 'innerHTML' }); this.buscando = false; } }">
     <div class="search-card">
         <h3>¿Tiene cita esta persona?</h3>
         <p>Ingresá el nombre o número de identificación para verificar si tiene una cita registrada.</p>
