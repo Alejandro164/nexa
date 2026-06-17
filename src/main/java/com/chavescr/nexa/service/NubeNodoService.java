@@ -11,14 +11,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.NubeNodo;
 import com.chavescr.nexa.entity.TipoNodo;
+import com.chavescr.nexa.repository.InstitucionRepository;
 import com.chavescr.nexa.repository.NubeNodoRepository;
 
 @Service
@@ -27,8 +28,13 @@ public class NubeNodoService {
     @Value("${ruta.recursos}")
     private String rutaRecursos;
 
-    @Autowired
-    private NubeNodoRepository repository;
+    private final NubeNodoRepository repository;
+    private final InstitucionRepository institucionRepository;
+
+    public NubeNodoService(NubeNodoRepository repository, InstitucionRepository institucionRepository) {
+        this.repository = repository;
+        this.institucionRepository = institucionRepository;
+    }
 
     public String getRutaRecursos() {
         return rutaRecursos;
@@ -78,14 +84,18 @@ public class NubeNodoService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public NubeNodo subirArchivo(MultipartFile archivo, Long padreId) throws IOException {
+    public NubeNodo subirArchivo(MultipartFile archivo, Long padreId, Long institucionId) throws IOException {
         if (archivo == null || archivo.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío o es nulo");
         }
 
-        Path directorioBase = Paths.get(rutaRecursos);
-        if (!Files.exists(directorioBase)) {
-            Files.createDirectories(directorioBase);
+        Institucion institucion = institucionRepository.findById(institucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+        String codigoInstitucion = sanitizarNombreCarpeta(institucion.getCodigo());
+
+        Path directorioDestino = Paths.get(rutaRecursos, codigoInstitucion, "nube-nexa");
+        if (!Files.exists(directorioDestino)) {
+            Files.createDirectories(directorioDestino);
         }
 
         String nombreOriginal = archivo.getOriginalFilename();
@@ -95,16 +105,18 @@ public class NubeNodoService {
         }
 
         String nombreArchivoUnico = UUID.randomUUID().toString() + "_" + nombreOriginal;
-        Path rutaDestino = directorioBase.resolve(nombreArchivoUnico);
+        Path rutaDestino = directorioDestino.resolve(nombreArchivoUnico);
 
         Files.copy(archivo.getInputStream(), rutaDestino, StandardCopyOption.REPLACE_EXISTING);
+
+        String rutaRelativa = codigoInstitucion + "/nube-nexa/" + nombreArchivoUnico;
 
         NubeNodo nodoArchivo = new NubeNodo();
         nodoArchivo.setNombre(nombreOriginal);
         nodoArchivo.setTipo(TipoNodo.ARCHIVO);
         nodoArchivo.setExtension(extension);
         nodoArchivo.setTamanoBytes(archivo.getSize());
-        nodoArchivo.setUrlArchivo(nombreArchivoUnico);
+        nodoArchivo.setUrlArchivo(rutaRelativa);
 
         if (padreId != null) {
             NubeNodo padre = repository.findById(padreId)
@@ -113,6 +125,13 @@ public class NubeNodoService {
         }
 
         return repository.save(nodoArchivo);
+    }
+
+    private String sanitizarNombreCarpeta(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            return "institucion";
+        }
+        return nombre.trim().replaceAll("[^a-zA-Z0-9_\\-]", "_");
     }
 
     @Transactional(rollbackFor = Exception.class)
