@@ -1035,9 +1035,11 @@
                     </div>
                 </div>
 
+                <!-- Modal Enviar Documento -->
+                <div th:replace="~{nube/modal-enviar :: modal}"></div>
+
                 <!-- Modal Preview inyectado directamente desde fragments -->
                 <div th:replace="~{fragments/preview-archivo :: modal}"></div>
-
                 <!-- Floating Action Button for Papelera -->
                 <button class="fab-papelera" :class="{ 'active': currentView === 'papelera' }"
                     @click="currentView = currentView === 'papelera' ? 'principal' : 'papelera'"

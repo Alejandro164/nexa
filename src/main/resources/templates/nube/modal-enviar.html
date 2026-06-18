@@ -1,0 +1,110 @@
+<div th:fragment="modal" class="modal-overlay" x-show="sendModalOpen" style="display: none; z-index: 1010;"
+    :class="{ 'show-modal': sendModalOpen }">
+    <div class="modal-content" @click.outside="closeSendModal()">
+        <div class="modal-header">
+            <h3>Enviar Documento</h3>
+            <button @click="closeSendModal()" class="close-btn" type="button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" style="padding-top: 10px;">
+            <p style="margin-bottom: 1.5rem; color: #64748b; font-size: 0.95rem;">
+                Enviando: <strong style="color: #0f172a;" x-text="previewName"></strong>
+            </p>
+            
+            <!-- Método de Envío (Radio Cards) -->
+            <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.95rem;">Medio de Envío</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem;">
+                <!-- Tarjeta WhatsApp -->
+                <label style="cursor: pointer; position: relative;">
+                    <input type="radio" x-model="sendMethod" value="whatsapp" style="position: absolute; opacity: 0; width: 0; height: 0;">
+                    <div style="padding: 12px; border: 2px solid; border-radius: 8px; display: flex; align-items: center; gap: 10px; transition: all 0.2s;"
+                         :style="sendMethod === 'whatsapp' ? 'border-color: #25D366; background-color: #f0fdf4;' : 'border-color: #e2e8f0; background-color: white;'"
+                         onmouseover="if(this.closest('label').querySelector('input').checked === false) this.style.borderColor='#cbd5e1'" 
+                         onmouseout="if(this.closest('label').querySelector('input').checked === false) this.style.borderColor='#e2e8f0'">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"
+                             :style="sendMethod === 'whatsapp' ? 'background-color: #25D366; color: white;' : 'background-color: #f1f5f9; color: #64748b;'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                            </svg>
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <span style="display: block; font-weight: 600; font-size: 0.95rem; color: #0f172a;">WhatsApp</span>
+                        </div>
+                        <!-- Círculo de Radio simulado -->
+                        <div style="width: 18px; height: 18px; border-radius: 50%; border: 2px solid; flex-shrink: 0; transition: all 0.2s;"
+                             :style="sendMethod === 'whatsapp' ? 'border-color: #25D366; background-color: #25D366; box-shadow: inset 0 0 0 3px #f0fdf4;' : 'border-color: #cbd5e1; background-color: white;'">
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Tarjeta Email -->
+                <label style="cursor: pointer; position: relative;">
+                    <input type="radio" x-model="sendMethod" value="email" style="position: absolute; opacity: 0; width: 0; height: 0;">
+                    <div style="padding: 12px; border: 2px solid; border-radius: 8px; display: flex; align-items: center; gap: 10px; transition: all 0.2s;"
+                         :style="sendMethod === 'email' ? 'border-color: #3b82f6; background-color: #eff6ff;' : 'border-color: #e2e8f0; background-color: white;'"
+                         onmouseover="if(this.closest('label').querySelector('input').checked === false) this.style.borderColor='#cbd5e1'" 
+                         onmouseout="if(this.closest('label').querySelector('input').checked === false) this.style.borderColor='#e2e8f0'">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: all 0.2s;"
+                             :style="sendMethod === 'email' ? 'background-color: #3b82f6; color: white;' : 'background-color: #f1f5f9; color: #64748b;'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <span style="display: block; font-weight: 600; font-size: 0.95rem; color: #0f172a;">Correo</span>
+                        </div>
+                        <!-- Círculo de Radio simulado -->
+                        <div style="width: 18px; height: 18px; border-radius: 50%; border: 2px solid; flex-shrink: 0; transition: all 0.2s;"
+                             :style="sendMethod === 'email' ? 'border-color: #3b82f6; background-color: #3b82f6; box-shadow: inset 0 0 0 3px #eff6ff;' : 'border-color: #cbd5e1; background-color: white;'">
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Opciones de Destino -->
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.95rem;">Destinatario</label>
+                <div style="display: flex; gap: 16px; margin-bottom: 12px;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.95rem;">
+                        <input type="radio" x-model="sendType" value="system" style="accent-color: #2563eb;">
+                        Contacto del Sistema
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.95rem;">
+                        <input type="radio" x-model="sendType" value="manual" style="accent-color: #2563eb;">
+                        Ingresar Manual
+                    </label>
+                </div>
+                
+                <!-- Select Sistema -->
+                <select x-show="sendType === 'system'" x-model="sendDestination" class="modal-input" style="width: 100%; appearance: auto; background: white;">
+                    <option value="" disabled selected>-- Selecciona un contacto --</option>
+                    <option value="usuario1">Juan Pérez - Depto. Legal</option>
+                    <option value="usuario2">María Gómez - Recursos Humanos</option>
+                    <option value="usuario3">Carlos Rodríguez - Director</option>
+                </select>
+
+                <!-- Input Manual -->
+                <input x-show="sendType === 'manual'" x-model="sendDestination" type="text" class="modal-input"
+                    :placeholder="sendMethod === 'whatsapp' ? '+506 8888 8888' : 'ejemplo@correo.com'"
+                    style="width: 100%;">
+            </div>
+        </div>
+        <div class="modal-footer" style="padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+            <button class="btn-cancel" type="button" @click="closeSendModal()">Cancelar</button>
+            <button class="btn-create" type="button" @click="executeSendDocument()"
+                style="display: flex; align-items: center; gap: 6px;"
+                :style="sendMethod === 'whatsapp' ? 'background-color: #25D366; color: white; border: none;' : 'background-color: #2563eb; color: white; border: none;'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                Enviar Ahora
+            </button>
+        </div>
+    </div>
+</div>

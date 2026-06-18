@@ -1,41 +1,52 @@
 <div th:fragment="modal" x-show="previewModalOpen" x-cloak
      style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 1000; display: flex; align-items: center; justify-content: center;">
 
-    <div style="background: white; border-radius: 12px; width: 100%; max-width: 90vw; box-shadow: 0 4px 24px rgba(0,0,0,0.2); display: flex; flex-direction: column; max-height: 90vh;"
+    <div style="background: white; width: 100vw; height: 100vh; display: flex; flex-direction: column;"
          @click.outside="closePreviewModal()">
 
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;">
-            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 90%;"
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;"
                 x-text="previewName">Vista Previa</h3>
-            <button @click="closePreviewModal()" type="button"
-                    style="background: none; border: none; cursor: pointer; color: #64748b; border-radius: 50%; padding: 4px; display: flex; align-items: center; transition: background 0.2s;"
-                    onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button @click="openSendModal()" type="button"
+                        style="background-color: #2563eb; border: none; cursor: pointer; color: white; border-radius: 6px; padding: 8px 16px; display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: 0.9rem; transition: background-color 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"
+                        onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Enviar Documento
+                </button>
+                <div style="width: 1px; height: 24px; background-color: #e2e8f0; margin: 0 4px;"></div>
+                <button @click="closePreviewModal()" type="button"
+                        style="background: none; border: none; cursor: pointer; color: #64748b; border-radius: 50%; padding: 6px; display: flex; align-items: center; transition: all 0.2s;"
+                        onmouseover="this.style.background='#f1f5f9'; this.style.color='#0f172a'" onmouseout="this.style.background='none'; this.style.color='#64748b'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
         </div>
 
-        <div style="flex-grow: 1; overflow: hidden; display: flex; justify-content: center; align-items: center; padding: 1rem 0 0 0; min-height: 400px; background-color: #f8fafc; border-radius: 0 0 12px 12px;">
+        <div style="flex-grow: 1; overflow: hidden; display: flex; justify-content: center; align-items: center; background-color: #f8fafc;">
 
             <template x-if="['pdf', 'text'].includes(previewType) && previewId">
                 <iframe :src="'/archivos/ver/' + previewId"
-                        style="width: 100%; height: 70vh; border: none; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);"></iframe>
+                        style="width: 100%; height: 100%; border: none; background: white;"></iframe>
             </template>
 
             <template x-if="previewType === 'office' && previewId">
                 <iframe :src="'/archivos/preview/' + previewId"
-                        style="width: 100%; height: 70vh; border: none; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);"></iframe>
+                        style="width: 100%; height: 100%; border: none; background: white;"></iframe>
             </template>
 
             <template x-if="previewType === 'image' && previewId">
                 <img :src="'/archivos/ver/' + previewId"
-                     style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+                     style="max-width: 100%; max-height: 100%; object-fit: contain;">
             </template>
 
             <template x-if="previewType === 'video' && previewId">
                 <video :src="'/archivos/ver/' + previewId" controls
-                       style="max-width: 100%; max-height: 70vh; border-radius: 8px; width: 100%; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); background: black;"></video>
+                       style="max-width: 100%; max-height: 100%; width: 100%; height: 100%; background: black;"></video>
             </template>
 
             <template x-if="previewType === 'audio' && previewId">

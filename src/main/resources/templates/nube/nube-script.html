@@ -22,6 +22,11 @@ function getNubeComponentData() {
         previewType: '',
         _closeTimer: null,
 
+        sendModalOpen: false,
+        sendMethod: 'whatsapp', // 'whatsapp' o 'email'
+        sendType: 'system', // 'system' o 'manual'
+        sendDestination: '',
+
         toggleNuevoDropdown() {
             this.nuevoDropdownOpen = !this.nuevoDropdownOpen;
         },
@@ -141,6 +146,33 @@ function getNubeComponentData() {
                     setTimeout(() => { btn.innerText = originalText; }, 2000);
                 }
             }
+        },
+
+        openSendModal() {
+            if (!this.previewId) return;
+            this.sendModalOpen = true;
+            this.sendMethod = 'whatsapp';
+            this.sendType = 'system';
+            this.sendDestination = '';
+        },
+
+        closeSendModal() {
+            this.sendModalOpen = false;
+        },
+
+        executeSendDocument() {
+            // Aquí iría la llamada AJAX a tus servicios propios backend
+            console.log("Enviando documento...", {
+                id: this.previewId,
+                metodo: this.sendMethod,
+                tipoContacto: this.sendType,
+                destino: this.sendDestination
+            });
+            
+            // Simulación de éxito
+            alert(`Documento enviado exitosamente por ${this.sendMethod === 'whatsapp' ? 'WhatsApp' : 'Correo'}`);
+            this.closeSendModal();
+            // Opcional: closePreviewModal() si quieres que se cierre todo
         }
     };
 }
