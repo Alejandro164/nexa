@@ -19,18 +19,17 @@ import com.chavescr.nexa.entity.TareaProyecto;
 import com.chavescr.nexa.service.ParticipacionService;
 import com.chavescr.nexa.service.ProyectoService;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Controller
 @RequestMapping("/agenda")
 public class AgendaController {
 
-    private final ParticipacionService participacionService;
-    private final ProyectoService proyectoService;
+    @Autowired
+    private ParticipacionService participacionService;
 
-    public AgendaController(ParticipacionService participacionService,
-                            ProyectoService proyectoService) {
-        this.participacionService = participacionService;
-        this.proyectoService = proyectoService;
-    }
+    @Autowired
+    private ProyectoService proyectoService;
 
     // ─── CALENDARIO / TAREAS / ACTIVIDAD / RECORDATORIOS ───────
 

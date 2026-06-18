@@ -29,6 +29,8 @@ docker compose up    # Dev env: app on :8082, DB on :5433, debug on :5005
 - Alpine.js state in each page goes in `layout:fragment="head-extra"` as a `<script>`.
 - CSRF token is sent automatically via `htmx:configRequest` listener in `index.html`. Uses meta tags `_csrf` and `_csrf_header`.
 - Session expiry with HTMX: `SecurityConfig.redirectToLogin()` sends `HX-Redirect` header so the full browser follows it, not just the HTMX fragment.
+- **Template directories mirror controller names**: controller `CursoController` with `@RequestMapping("/curso")` → templates go in `templates/curso/`.
+- **Module structure**: `index.html` (shell + decorator + module CSS/JS), `formulario.html` (modal). Each horizontal tab gets its own subfolder with its HTML fragment and JS. Sub-modules with secondary menus get their own subfolder with fragments (main, table, form). JS goes inline in the fragment or in `head-extra`, NEVER in a separate `.js` file outside the templates folder.
 
 ## Database & Entities
 
@@ -44,7 +46,7 @@ docker compose up    # Dev env: app on :8082, DB on :5433, debug on :5005
 
 ## Code conventions (must follow when editing)
 
-- **Constructor injection** preferred. Some old services (`NubeNodoService`) still use `@Autowired` on fields — do NOT replicate that pattern.
+- **Controllers**: `@Autowired` on fields. Services: constructor injection preferred. Some old services (`NubeNodoService`) still use `@Autowired` on fields — do NOT replicate that pattern in new services, but it's fine for controllers.
 - Services: `@Service` + `@Transactional` at class level. Write methods: `@Transactional(rollbackFor = Exception.class)`. Read methods: `@Transactional(readOnly = true, rollbackFor = Exception.class)`.
 - DTOs only when needed: mass-assignment risk, different create/edit validations, or need to flatten relationships. Otherwise bind directly to entity.
 - Template directories mirror controller names: controller `CursoController` with `@RequestMapping("/curso")` → templates go in `templates/curso/`.

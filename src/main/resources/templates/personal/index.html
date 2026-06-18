@@ -88,6 +88,11 @@
                             hx-get="/personal/presencia" hx-target="#personal-content" hx-swap="innerHTML">
                         👤 Estado de Presencia
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'regimen' }"
+                            @click="activeTab = 'regimen'"
+                            hx-get="/personal/regimen" hx-target="#personal-content" hx-swap="innerHTML">
+                        ⚖️ Régimen Disciplinario
+                    </button>
                 </div>
             </div>
 
