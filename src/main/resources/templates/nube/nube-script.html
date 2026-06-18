@@ -19,7 +19,8 @@ function getNubeComponentData() {
         previewId: null,
         previewName: '',
         previewExtension: '',
-        previewType: '', // Ej. 'pdf', 'image', 'text', 'unsupported'
+        previewType: '',
+        _closeTimer: null,
 
         toggleNuevoDropdown() {
             this.nuevoDropdownOpen = !this.nuevoDropdownOpen;
@@ -39,15 +40,20 @@ function getNubeComponentData() {
         },
 
         openPreviewModal(id, nombre, extension) {
+            if (this._closeTimer) {
+                clearTimeout(this._closeTimer);
+                this._closeTimer = null;
+            }
             this.previewId = id;
             this.previewName = nombre;
             
-            // Determinar si es nativo o no
             let ext = (extension || '').replace('.', '').toLowerCase();
             this.previewExtension = ext;
             
             if (['pdf'].includes(ext)) {
                 this.previewType = 'pdf';
+            } else if (['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt', 'odt', 'ods', 'odp'].includes(ext)) {
+                this.previewType = 'office';
             } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) {
                 this.previewType = 'image';
             } else if (['txt', 'csv', 'json', 'xml', 'md'].includes(ext)) {
@@ -60,14 +66,15 @@ function getNubeComponentData() {
                 this.previewType = 'unsupported';
             }
             
+            console.log('[NubePreview] abriendo:', { id: this.previewId, nombre: this.previewName, ext: ext, type: this.previewType });
             this.previewModalOpen = true;
         },
 
         closePreviewModal() {
             this.previewModalOpen = false;
-            // Limpiar al cerrar para detener videos/audios si estuvieran en play
-            setTimeout(() => {
+            this._closeTimer = setTimeout(() => {
                 this.previewId = null;
+                this._closeTimer = null;
             }, 300);
         },
 

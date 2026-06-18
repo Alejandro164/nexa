@@ -9,8 +9,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,15 +28,23 @@ import com.chavescr.nexa.repository.NubeNodoRepository;
 @Service
 public class NubeNodoService {
 
+    private static final Logger log = LoggerFactory.getLogger(NubeNodoService.class);
+    private static final Set<String> FORMATOS_OFFICE = Set.of(
+            "DOCX", "DOC", "XLSX", "XLS", "PPTX", "PPT", "ODT", "ODS", "ODP");
+
     @Value("${ruta.recursos}")
     private String rutaRecursos;
 
     private final NubeNodoRepository repository;
     private final InstitucionRepository institucionRepository;
+    private final DocumentConversionService conversionService;
 
-    public NubeNodoService(NubeNodoRepository repository, InstitucionRepository institucionRepository) {
+    public NubeNodoService(NubeNodoRepository repository,
+            InstitucionRepository institucionRepository,
+            DocumentConversionService conversionService) {
         this.repository = repository;
         this.institucionRepository = institucionRepository;
+        this.conversionService = conversionService;
     }
 
     public String getRutaRecursos() {
@@ -134,6 +145,55 @@ public class NubeNodoService {
         return nombre.trim().replaceAll("[^a-zA-Z0-9_\\-]", "_");
     }
 
+    public boolean generarPreview(Long nodoId) {
+        NubeNodo nodo = repository.findById(nodoId).orElse(null);
+        if (nodo == null || nodo.getTipo() != TipoNodo.ARCHIVO) {
+            return false;
+        }
+
+        if (nodo.getUrlPrevisualizacion() != null) {
+            Path previewPath = Paths.get(rutaRecursos).resolve(nodo.getUrlPrevisualizacion());
+            if (Files.exists(previewPath)) {
+                return true;
+            }
+        }
+
+        String ext = nodo.getExtension();
+        if (ext == null || !FORMATOS_OFFICE.contains(ext.toUpperCase())) {
+            return false;
+        }
+
+        Path archivoOriginal = Paths.get(rutaRecursos).resolve(nodo.getUrlArchivo());
+        if (!Files.exists(archivoOriginal)) {
+            log.warn("Archivo original no encontrado para preview del nodo {}: {}", nodoId,
+                    nodo.getUrlArchivo());
+            return false;
+        }
+
+        String rutaRelativaPreview = generarRutaPreview(nodo.getUrlArchivo());
+        Path rutaSalidaPreview = Paths.get(rutaRecursos).resolve(rutaRelativaPreview);
+
+        Path resultado = conversionService.convertirAPdf(archivoOriginal, rutaSalidaPreview);
+        if (resultado != null) {
+            nodo.setUrlPrevisualizacion(rutaRelativaPreview);
+            repository.save(nodo);
+            log.info("Preview generado para nodo {}: {}", nodoId, rutaRelativaPreview);
+            return true;
+        }
+
+        log.warn("No se pudo generar preview para nodo {} (ext: {}). El usuario podrá descargar el original.",
+                nodoId, ext);
+        return false;
+    }
+
+    private String generarRutaPreview(String urlArchivo) {
+        int lastDot = urlArchivo.lastIndexOf('.');
+        if (lastDot > 0) {
+            return urlArchivo.substring(0, lastDot) + "_preview.pdf";
+        }
+        return urlArchivo + "_preview.pdf";
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public void renombrarNodo(Long id, String nuevoNombre) {
         NubeNodo nodo = repository.findById(id)
@@ -157,8 +217,15 @@ public class NubeNodoService {
                 Path rutaFisica = Paths.get(rutaRecursos).resolve(nodo.getUrlArchivo());
                 Files.deleteIfExists(rutaFisica);
             } catch (IOException e) {
-                // Loguear pero no interrumpir la eliminación en BD si el archivo ya no existe
                 e.printStackTrace();
+            }
+            if (nodo.getUrlPrevisualizacion() != null) {
+                try {
+                    Path rutaPreview = Paths.get(rutaRecursos).resolve(nodo.getUrlPrevisualizacion());
+                    Files.deleteIfExists(rutaPreview);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         } else if (nodo.getTipo() == TipoNodo.CARPETA) {
             for (NubeNodo hijo : nodo.getHijos()) {

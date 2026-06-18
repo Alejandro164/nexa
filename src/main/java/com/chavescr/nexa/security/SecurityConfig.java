@@ -65,7 +65,7 @@ public class SecurityConfig {
                 .headers(headers -> headers
                         .cacheControl(cache -> {
                         }) // emite Cache-Control: no-cache, no-store, must-revalidate
-                        .frameOptions(frame -> frame.deny()))
+                        .frameOptions(frame -> frame.sameOrigin()))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, exception) -> redirectToLogin(request, response)))
                 .sessionManagement(session -> session

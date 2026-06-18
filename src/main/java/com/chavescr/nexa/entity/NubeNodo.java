@@ -36,6 +36,7 @@ public class NubeNodo {
 
     // Optional fields for ARCHIVO
     private String urlArchivo;
+    private String urlPrevisualizacion;
     private Long tamanoBytes;
     private String extension;
 
@@ -88,6 +89,14 @@ public class NubeNodo {
 
     public void setUrlArchivo(String urlArchivo) {
         this.urlArchivo = urlArchivo;
+    }
+
+    public String getUrlPrevisualizacion() {
+        return urlPrevisualizacion;
+    }
+
+    public void setUrlPrevisualizacion(String urlPrevisualizacion) {
+        this.urlPrevisualizacion = urlPrevisualizacion;
     }
 
     public Long getTamanoBytes() {
