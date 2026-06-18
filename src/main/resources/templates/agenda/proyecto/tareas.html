@@ -1,0 +1,34 @@
+<div th:fragment="tabla-tareas">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-weight:600;font-size:0.85rem;color:#475569;">Tareas Asignadas</span>
+        <button class="btn-sm btn-primary" th:onclick="'abrirFormTarea(' + ${miembroId} + ',' + ${proyectoId} + ',null)'">+ Nueva</button>
+    </div>
+    <div th:if="${tareas == null or tareas.empty}" style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.85rem;">Sin tareas.</div>
+    <div th:each="t : ${tareas}">
+        <div class="tarea-row">
+            <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="estado-badge"
+                          th:classappend="${t.estado.name() == 'PENDIENTE' ? 'estado-pendiente' : (t.estado.name() == 'EN_PROGRESO' ? 'estado-en-progreso' : (t.estado.name() == 'COMPLETADA' ? 'estado-completada' : 'estado-vencida'))}"
+                          th:text="${t.estado.name()}">PENDIENTE</span>
+                    <strong style="font-size:0.85rem;" th:text="${t.titulo}">Título</strong>
+                    <span th:if="${t.calificacion != null}" style="font-size:0.8rem;color:#64748b;" th:text="'Nota: '+${t.calificacion}+'/100'">Nota</span>
+                </div>
+                <div style="font-size:0.78rem;color:#94a3b8;margin-top:3px;" th:text="'Límite: '+${#temporals.format(t.fechaLimite, 'dd/MM/yyyy')}">Límite</div>
+            </div>
+            <div style="display:flex;gap:5px;align-items:center;">
+                <select class="form-select" style="font-size:0.75rem;padding:3px 6px;width:auto;"
+                        th:onchange="'cambiarEstadoTarea(' + ${t.id} + ',' + ${t.proyecto.id} + ',' + ${t.miembro.id} + ',this.value)'">
+                    <option value="PENDIENTE" th:selected="${t.estado.name() == 'PENDIENTE'}">Pendiente</option>
+                    <option value="EN_PROGRESO" th:selected="${t.estado.name() == 'EN_PROGRESO'}">En progreso</option>
+                    <option value="COMPLETADA" th:selected="${t.estado.name() == 'COMPLETADA'}">Completada</option>
+                    <option value="VENCIDA" th:selected="${t.estado.name() == 'VENCIDA'}">Vencida</option>
+                </select>
+                <button class="btn-sm btn-ghost" style="font-size:0.75rem;" th:onclick="'abrirFormTarea(' + ${t.miembro.id} + ',' + ${t.proyecto.id} + ',' + ${t.id} + ')'">✏️</button>
+                <button class="btn-sm btn-danger-ghost" style="font-size:0.75rem;" th:onclick="'eliminarTarea(' + ${t.id} + ',' + ${t.proyecto.id} + ',' + ${t.miembro.id} + ')'">🗑️</button>
+            </div>
+        </div>
+        <div th:attr="id='tarea-form-container-'+${t.miembro.id}" style="margin:6px 0;"></div>
+    </div>
+    <div th:if="${tareas == null or tareas.empty}" th:attr="id='tarea-form-container-'+${miembroId}"></div>
+</div>

@@ -1,0 +1,62 @@
+<div th:fragment="contenido">
+    <div style="margin-bottom:1rem;padding:1rem 1.5rem;background:#fff;border:1px solid var(--border);border-radius:12px;">
+        <h3 style="margin:0 0 6px 0;font-size:1.1rem;" th:text="${dashboard.proyectoNombre}">Proyecto</h3>
+        <p style="margin:0;font-size:0.85rem;color:#64748b;" th:text="${dashboard.objetivo}">Objetivo</p>
+        <div style="display:flex;gap:20px;margin-top:8px;font-size:0.8rem;color:#94a3b8;">
+            <span th:text="'📅 ' + ${#temporals.format(dashboard.fechaInicio, 'dd/MM/yyyy')} + ' → ' + ${#temporals.format(dashboard.fechaFin, 'dd/MM/yyyy')}">Fechas</span>
+            <span th:text="'Estado: ' + (${dashboard.estado} == 'EN_CURSO' ? 'En Curso' : (${dashboard.estado} == 'COMPLETADO' ? 'Completado' : 'Cancelado'))">Estado</span>
+        </div>
+    </div>
+
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value" th:text="${dashboard.totalTareas}">0</div>
+            <div class="stat-label">Tareas Totales</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#16a34a;" th:text="${dashboard.tasaCumplimientoGlobal + '%'}">0%</div>
+            <div class="stat-label">Cumplimiento</div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="background:#16a34a;" th:attr="style='width:'+${dashboard.tasaCumplimientoGlobal}+'%;background:#16a34a;'"></div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#2563eb;" th:text="${dashboard.tasaEficiencia + '%'}">0%</div>
+            <div class="stat-label">Eficiencia (a tiempo)</div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="background:#2563eb;" th:attr="style='width:'+${dashboard.tasaEficiencia}+'%;background:#2563eb;'"></div></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#7c3aed;" th:text="${dashboard.promedioGeneral != null ? dashboard.promedioGeneral : '—'}">—</div>
+            <div class="stat-label">Promedio General</div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.5rem;">
+        <div class="stat-card" style="border-left:4px solid #16a34a;"><div class="stat-value" style="color:#16a34a;" th:text="${dashboard.tareasATiempo}">0</div><div class="stat-label">A Tiempo</div></div>
+        <div class="stat-card" style="border-left:4px solid #ef4444;"><div class="stat-value" style="color:#ef4444;" th:text="${dashboard.tareasTarde}">0</div><div class="stat-label">Tarde / Vencidas</div></div>
+    </div>
+
+    <div class="proyecto-card">
+        <div class="proyecto-card-header"><h3 class="proyecto-card-title">Rendimiento Individual</h3></div>
+        <table class="proyecto-table">
+            <thead><tr><th>Miembro</th><th>Rol</th><th>Tareas</th><th>✔</th><th>🔄</th><th>⏳</th><th>✘</th><th>Cumpl.</th><th>Prom.</th></tr></thead>
+            <tbody>
+                <tr th:if="${dashboard.miembros == null or dashboard.miembros.empty}"><td colspan="9" class="proyecto-empty">Sin datos.</td></tr>
+                <tr th:each="m : ${dashboard.miembros}">
+                    <td><div class="miembro-nombre" th:text="${m.nombre}">Nombre</div><div class="miembro-email" th:text="${m.email}">email</div></td>
+                    <td><span class="rol-badge" th:classappend="${m.rol == 'LIDER' ? 'rol-lider' : 'rol-miembro'}" th:text="${m.rol == 'LIDER' ? 'Líder' : 'Miembro'}">Rol</span></td>
+                    <td th:text="${m.totalTareas}">0</td>
+                    <td style="color:#16a34a;" th:text="${m.completadas}">0</td>
+                    <td style="color:#2563eb;" th:text="${m.enProgreso}">0</td>
+                    <td style="color:#d97706;" th:text="${m.pendientes}">0</td>
+                    <td style="color:#ef4444;" th:text="${m.vencidas}">0</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span th:text="${m.tasaCumplimiento + '%'}">0%</span>
+                            <div class="progress-bar-bg" style="flex:1;min-width:50px;"><div class="progress-bar-fill" th:attr="style='width:'+${m.tasaCumplimiento}+'%;' + (${m.tasaCumplimiento} >= 70 ? 'background:#16a34a;' : (${m.tasaCumplimiento} >= 40 ? 'background:#d97706;' : 'background:#ef4444;'))"></div></div>
+                        </div>
+                    </td>
+                    <td th:text="${m.promedioCalificacion != null ? m.promedioCalificacion : '—'}">—</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

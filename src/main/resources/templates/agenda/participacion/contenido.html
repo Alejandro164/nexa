@@ -1,0 +1,101 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        .part-table { width: 100%; border-collapse: collapse; }
+        .part-table th { text-align: left; padding: 0.7rem 1rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; background: #f8fafc; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .part-table td { padding: 0.75rem 1rem; font-size: 0.85rem; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .part-table tr:hover td { background: #f8fafc; }
+        .part-empty { text-align: center; padding: 3rem !important; color: #94a3b8; font-style: italic; }
+        .avatar-circle { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: #fff; margin-right: 10px; flex-shrink: 0; }
+        .user-cell { display: flex; align-items: center; }
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-weight: 600; color: #0f172a; }
+        .user-email { font-size: 0.78rem; color: #94a3b8; }
+        .rol-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+        .rol-admin { background: #fce7f3; color: #9d174d; }
+        .rol-editor { background: #e0e7ff; color: #3730a3; }
+        .rol-user { background: #e0f2fe; color: #075985; }
+        .tasa-bar { display: flex; align-items: center; gap: 8px; }
+        .tasa-num { font-weight: 700; font-size: 0.85rem; min-width: 36px; }
+        .mini-bar { flex: 1; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; min-width: 50px; }
+        .mini-bar-fill { height: 100%; border-radius: 3px; }
+        .filters-bar { display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+        .filter-input { padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; outline: none; }
+        .filter-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(45,90,135,0.1); }
+        .filter-select { padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.85rem; outline: none; background: #fff; }
+        .filter-select:focus { border-color: var(--primary); }
+        .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+        .card-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; background: transparent; color: var(--primary); }
+        .btn-sm:hover { background: var(--input-bg); }
+        .stat-value-sm { font-size: 1rem; font-weight: 700; }
+    </style>
+
+    <div id="part-content">
+        <form class="filters-bar"
+              hx-get="/agenda/participacion"
+              hx-target="#part-content"
+              hx-swap="outerHTML"
+              hx-trigger="submit, change from:.filter-select delay:200ms, input from:.filter-input delay:400ms">
+            <input class="filter-input" type="text" name="filtro" th:value="${filtro}" placeholder="🔍 Buscar por nombre o email..." style="flex:1;min-width:200px;">
+            <select class="filter-select" name="rol">
+                <option value="" th:selected="${rolSel == null or rolSel == ''}">Todos los roles</option>
+                <option value="ROLE_ADMIN" th:selected="${rolSel == 'ROLE_ADMIN'}">Admin</option>
+                <option value="ROLE_EDITOR" th:selected="${rolSel == 'ROLE_EDITOR'}">Editor</option>
+                <option value="ROLE_USER" th:selected="${rolSel == 'ROLE_USER'}">Usuario</option>
+            </select>
+            <select class="filter-select" name="estado">
+                <option value="" th:selected="${estadoSel == null or estadoSel == ''}">Cualquier rendimiento</option>
+                <option value="alto" th:selected="${estadoSel == 'alto'}">Alto (&ge;70%)</option>
+                <option value="medio" th:selected="${estadoSel == 'medio'}">Medio (40-69%)</option>
+                <option value="bajo" th:selected="${estadoSel == 'bajo'}">Bajo (&lt;40%)</option>
+            </select>
+        </form>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Participantes <span style="font-weight:400;color:#94a3b8;font-size:0.85rem;" th:text="'(' + ${participantes != null ? #lists.size(participantes) : 0} + ')'">(0)</span></h3>
+            </div>
+            <table class="part-table">
+                <thead>
+                    <tr><th>Persona</th><th>Rol</th><th>Tareas</th><th>Cumplimiento</th><th>Promedio</th><th>Proyectos</th><th></th></tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${participantes == null or participantes.empty}"><td colspan="7" class="part-empty">No se encontraron participantes.</td></tr>
+                    <tr th:each="p : ${participantes}">
+                        <td>
+                            <div class="user-cell">
+                                <div class="avatar-circle" th:style="'background:' + (${p.rol} == 'ADMIN' ? '#9d174d' : (${p.rol} == 'EDITOR' ? '#3730a3' : '#2563eb'))" th:text="${#strings.substring(p.nombre, 0, 1)}">N</div>
+                                <div class="user-info">
+                                    <span class="user-name" th:text="${p.nombre}">Nombre</span>
+                                    <span class="user-email" th:text="${p.email}">email</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="rol-badge"
+                                  th:classappend="${p.rol} == 'ADMIN' ? 'rol-admin' : (${p.rol} == 'EDITOR' ? 'rol-editor' : 'rol-user')"
+                                  th:text="${p.rol}">ROL</span>
+                        </td>
+                        <td><span class="stat-value-sm" th:text="${p.completadas} + '/' + ${p.totalTareas}">0/0</span></td>
+                        <td>
+                            <div class="tasa-bar">
+                                <span class="tasa-num" th:style="'color:' + (${p.tasaCumplimiento} >= 70 ? '#16a34a' : (${p.tasaCumplimiento} >= 40 ? '#d97706' : '#ef4444'))" th:text="${p.tasaCumplimiento} + '%'">0%</span>
+                                <div class="mini-bar"><div class="mini-bar-fill" th:attr="style='width:'+${p.tasaCumplimiento}+'%;' + (${p.tasaCumplimiento} >= 70 ? 'background:#16a34a;' : (${p.tasaCumplimiento} >= 40 ? 'background:#d97706;' : 'background:#ef4444;'))"></div></div>
+                            </div>
+                        </td>
+                        <td th:text="${p.promedioCalificacion != null ? p.promedioCalificacion : '—'}">—</td>
+                        <td th:text="${p.proyectosCount}">0</td>
+                        <td>
+                            <button class="btn-sm"
+                                    th:attr="hx-get=|/agenda/participacion/detalle/${p.usuarioId}|"
+                                    hx-target="#detalle-container" hx-swap="innerHTML">📋</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="detalle-container" style="margin-top: 1rem;"></div>
+    </div>
+</div>

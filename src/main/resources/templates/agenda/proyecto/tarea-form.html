@@ -1,0 +1,33 @@
+<div th:fragment="form-content">
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:8px;">
+        <form th:attr="hx-post=|/agenda/proyectos/miembros/${miembroId}/tareas|"
+              th:attr="hx-target="'#tareas-'+${miembroId}" hx-swap="innerHTML"
+              style="display:flex;flex-direction:column;gap:10px;"
+              @submit="document.getElementById('tarea-form-container-' + miembroId).innerHTML = ''">
+            <input type="hidden" name="id" th:value="${tarea.id}">
+            <input type="hidden" name="proyectoId" th:value="${proyectoId}">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Título *</label>
+                <input class="form-input" type="text" name="titulo" maxlength="200" required th:value="${tarea.titulo}" placeholder="Nombre de la tarea" style="font-size:0.85rem;padding:7px 10px;">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Descripción</label>
+                <textarea class="form-textarea" name="descripcion" maxlength="1000" style="font-size:0.85rem;padding:7px 10px;min-height:50px;" th:text="${tarea.descripcion}" placeholder="Detalles..."></textarea>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <div class="form-group" style="flex:1;margin-bottom:0;">
+                    <label class="form-label">Fecha Límite *</label>
+                    <input class="form-input" type="date" name="fechaLimite" required th:value="${tarea.fechaLimite}" style="font-size:0.85rem;padding:7px 10px;">
+                </div>
+                <div class="form-group" style="flex:1;margin-bottom:0;">
+                    <label class="form-label">Calificación</label>
+                    <input class="form-input" type="number" name="calificacion" min="0" max="100" th:value="${tarea.calificacion}" style="font-size:0.85rem;padding:7px 10px;" placeholder="0-100">
+                </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
+                <button type="button" class="btn-secondary btn-sm" th:onclick="'document.getElementById(\'tarea-form-container-'+${miembroId}+'\').innerHTML=\'\''">Cancelar</button>
+                <button type="submit" class="btn-primary btn-sm"><span th:text="${tarea.id == null ? 'Crear' : 'Actualizar'}">Crear</span></button>
+            </div>
+        </form>
+    </div>
+</div>
