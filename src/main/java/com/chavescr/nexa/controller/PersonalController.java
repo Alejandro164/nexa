@@ -48,19 +48,47 @@ public class PersonalController {
     // ─── RÉGIMEN DISCIPLINARIO ──────────────────────────────────
 
     @GetMapping("/regimen")
-    public String regimen(@RequestParam(required = false) String tipo,
-                          Model model, HttpSession session) {
+    public String regimen(Model model, HttpSession session) {
         Long institucionId = institucionId(session);
         if (institucionId == null) return "redirect:/";
-        if (tipo != null && !tipo.isBlank()) {
-            model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
-                    RegimenDisciplinario.TipoRegimen.valueOf(tipo)));
-        } else {
-            model.addAttribute("registros", regimenService.listarTodos(institucionId));
-        }
-        model.addAttribute("tipoActivo", tipo != null ? tipo : "TODOS");
+        model.addAttribute("registros", regimenService.listarTodos(institucionId));
         model.addAttribute("funcionarios", regimenService.listarFuncionarios(institucionId));
-        return "personal/regimen/regimen :: content";
+        return "personal/regimen/index :: content";
+    }
+
+    @GetMapping("/regimen/todos")
+    public String regimenTodos(Model model, HttpSession session) {
+        Long institucionId = institucionId(session);
+        if (institucionId == null) return "redirect:/";
+        model.addAttribute("registros", regimenService.listarTodos(institucionId));
+        return "personal/regimen/todos/todos :: content";
+    }
+
+    @GetMapping("/regimen/llamadas")
+    public String regimenLlamadas(Model model, HttpSession session) {
+        Long institucionId = institucionId(session);
+        if (institucionId == null) return "redirect:/";
+        model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
+                RegimenDisciplinario.TipoRegimen.LLAMADA_ATENCION));
+        return "personal/regimen/llamadas/llamadas :: content";
+    }
+
+    @GetMapping("/regimen/amonestaciones")
+    public String regimenAmonestaciones(Model model, HttpSession session) {
+        Long institucionId = institucionId(session);
+        if (institucionId == null) return "redirect:/";
+        model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
+                RegimenDisciplinario.TipoRegimen.AMONESTACION));
+        return "personal/regimen/amonestaciones/amonestaciones :: content";
+    }
+
+    @GetMapping("/regimen/procesos")
+    public String regimenProcesos(Model model, HttpSession session) {
+        Long institucionId = institucionId(session);
+        if (institucionId == null) return "redirect:/";
+        model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
+                RegimenDisciplinario.TipoRegimen.PROCESO_DISCIPLINARIO));
+        return "personal/regimen/procesos/procesos :: content";
     }
 
     @GetMapping("/regimen/form")
@@ -87,7 +115,7 @@ public class PersonalController {
         model.addAttribute("registros", regimenService.listarTodos(institucionId));
         model.addAttribute("tipoActivo", "TODOS");
         model.addAttribute("funcionarios", regimenService.listarFuncionarios(institucionId));
-        return "personal/regimen/regimen :: content";
+        return "personal/regimen/todos/todos :: content";
     }
 
     @DeleteMapping("/regimen/{id}")
@@ -95,9 +123,7 @@ public class PersonalController {
         Long institucionId = requerirInstitucion(session);
         regimenService.eliminar(institucionId, id);
         model.addAttribute("registros", regimenService.listarTodos(institucionId));
-        model.addAttribute("tipoActivo", "TODOS");
-        model.addAttribute("funcionarios", regimenService.listarFuncionarios(institucionId));
-        return "personal/regimen/regimen :: content";
+        return "personal/regimen/todos/todos :: content";
     }
 
     @PutMapping("/regimen/{id}/estado")
@@ -107,9 +133,7 @@ public class PersonalController {
         Long institucionId = requerirInstitucion(session);
         regimenService.cambiarEstado(institucionId, id, RegimenDisciplinario.EstadoRegimen.valueOf(estado));
         model.addAttribute("registros", regimenService.listarTodos(institucionId));
-        model.addAttribute("tipoActivo", "TODOS");
-        model.addAttribute("funcionarios", regimenService.listarFuncionarios(institucionId));
-        return "personal/regimen/tabla :: tabla";
+        return "personal/regimen/todos/todos :: content";
     }
 
     // ─── HELPERS ───────────────────────────────────────────────

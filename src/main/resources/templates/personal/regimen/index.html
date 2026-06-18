@@ -63,19 +63,19 @@
     <div class="reg-tabs">
         <button class="reg-tab" :class="{ 'active': subTab === 'TODOS' }"
                 @click="subTab = 'TODOS'"
-                hx-get="/personal/regimen" hx-target="#regimen-content" hx-swap="innerHTML">📋 Todos</button>
+                hx-get="/personal/regimen/todos" hx-target="#regimen-content" hx-swap="innerHTML">📋 Todos</button>
         <button class="reg-tab" :class="{ 'active': subTab === 'LLAMADA_ATENCION' }"
                 @click="subTab = 'LLAMADA_ATENCION'"
-                hx-get="/personal/regimen?tipo=LLAMADA_ATENCION" hx-target="#regimen-content" hx-swap="innerHTML">🟡 Llamadas</button>
+                hx-get="/personal/regimen/llamadas" hx-target="#regimen-content" hx-swap="innerHTML">🟡 Llamadas</button>
         <button class="reg-tab" :class="{ 'active': subTab === 'AMONESTACION' }"
                 @click="subTab = 'AMONESTACION'"
-                hx-get="/personal/regimen?tipo=AMONESTACION" hx-target="#regimen-content" hx-swap="innerHTML">🔴 Amonestaciones</button>
+                hx-get="/personal/regimen/amonestaciones" hx-target="#regimen-content" hx-swap="innerHTML">🔴 Amonestaciones</button>
         <button class="reg-tab" :class="{ 'active': subTab === 'PROCESO_DISCIPLINARIO' }"
                 @click="subTab = 'PROCESO_DISCIPLINARIO'"
-                hx-get="/personal/regimen?tipo=PROCESO_DISCIPLINARIO" hx-target="#regimen-content" hx-swap="innerHTML">⚖️ Procesos</button>
+                hx-get="/personal/regimen/procesos" hx-target="#regimen-content" hx-swap="innerHTML">⚖️ Procesos</button>
     </div>
 
-    <div id="regimen-content" th:replace="~{personal/regimen/tabla :: tabla}"></div>
+    <div id="regimen-content" th:replace="~{personal/regimen/todos/todos :: content}"></div>
 
     <div id="modal-container" x-show="modalOpen" x-cloak style="display: none;"
          @close-modal.window="modalOpen = false" @keydown.escape.window="modalOpen = false"></div>

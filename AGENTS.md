@@ -31,6 +31,19 @@ docker compose up    # Dev env: app on :8082, DB on :5433, debug on :5005
 - Session expiry with HTMX: `SecurityConfig.redirectToLogin()` sends `HX-Redirect` header so the full browser follows it, not just the HTMX fragment.
 - **Template directories mirror controller names**: controller `CursoController` with `@RequestMapping("/curso")` → templates go in `templates/curso/`.
 - **Module structure**: `index.html` (shell + decorator + module CSS/JS), `formulario.html` (modal). Each horizontal tab gets its own subfolder with its HTML fragment and JS. Sub-modules with secondary menus get their own subfolder with fragments (main, table, form). JS goes inline in the fragment or in `head-extra`, NEVER in a separate `.js` file outside the templates folder.
+  - **Recursive pattern**: a sub-module follows the SAME structure as the parent module. The menu file lives at the sub-module root (`index.html` with `x-data` + sub-tabs). Each sub-tab option gets its own subfolder with its view fragment. Example:
+    ```
+    personal/regimen/
+    ├── index.html           ← menú secundario + Alpine.js + modal container
+    ├── formulario.html      ← modal compartido
+    ├── todos/
+    │   └── todos.html       ← th:fragment="content"
+    ├── llamadas/
+    │   └── llamadas.html
+    └── amonestaciones/
+        └── amonestaciones.html
+    ```
+- **JavaScript**: siempre inline dentro del mismo HTML que lo usa. Si es JS del módulo completo va en `layout:fragment="head-extra"` del `index.html`. Si es JS de un tab o sub-módulo va DENTRO de su fragmento (`<script>` o `x-data`). Nunca crear archivos `.js` separados.
 
 ## Database & Entities
 
