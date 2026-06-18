@@ -102,17 +102,16 @@
                         hx-swap="innerHTML">
                         📋 Actividad Institucional
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'participacion' }"
-                        @click="activeTab = 'participacion'" hx-get="/agenda/participacion" hx-target="#agenda-content"
-                        hx-swap="innerHTML">
-                        👥 Participación
-                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'proyectos' }"
                         @click="activeTab = 'proyectos'" hx-get="/agenda/proyectos" hx-target="#agenda-content"
                         hx-swap="innerHTML">
                         📁 Proyectos
                     </button>
-
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'participacion' }"
+                        @click="activeTab = 'participacion'" hx-get="/agenda/participacion" hx-target="#agenda-content"
+                        hx-swap="innerHTML">
+                        👥 Participación
+                    </button>
                 </div>
             </div>
 
