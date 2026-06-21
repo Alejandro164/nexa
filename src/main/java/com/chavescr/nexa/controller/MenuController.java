@@ -22,6 +22,11 @@ public class MenuController {
         return htmxRequest ? "academico/index :: htmx-content" : "academico/index";
     }
 
+    @GetMapping("/coordinacion-academica")
+    public String coordinacionAcademica(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+        return htmxRequest ? "coordinacion-academica/index :: htmx-content" : "coordinacion-academica/index";
+    }
+
     @GetMapping("/comedor")
     public String comedor(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "comedor/index :: htmx-content" : "comedor/index";
