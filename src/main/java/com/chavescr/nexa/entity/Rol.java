@@ -22,7 +22,7 @@ public class Rol {
     private Long id;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String nombre; // e.g. ROLE_ADMIN, ROLE_USER
+    private String nombre; // e.g. ROLE_ADMIN, ROLE_DIRECTOR, ROLE_DOCENTE
 
     @ManyToMany(mappedBy = "roles")
     private Set<Usuario> usuarios = new HashSet<>();

@@ -27,7 +27,7 @@
             <div class="d-flex flex-wrap gap-1">
                 <span th:each="rol : ${usuario.roles}"
                       class="badge"
-                      th:classappend="${rol.nombre == 'ROLE_ADMIN' ? 'badge-primary' : (rol.nombre == 'ROLE_EDITOR' ? 'badge-info' : 'badge-secondary')}"
+                      th:classappend="${rol.nombre == 'ROLE_ADMIN' ? 'badge-primary' : (rol.nombre == 'ROLE_DIRECTOR' ? 'badge-info' : 'badge-secondary')}"
                       th:text="${rol.nombre.replace('ROLE_', '')}"></span>
             </div>
         </td>
