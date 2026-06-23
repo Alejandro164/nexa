@@ -63,11 +63,50 @@
                 from { opacity: 0; transform: translateY(6px); }
                 to { opacity: 1; transform: translateY(0); }
             }
+            .academic-delete-dialog { max-width: 460px; border-top: 4px solid var(--error); }
+            .academic-delete-message { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border: 1px solid #fecaca; border-radius: 10px; background: #fef2f2; color: #7f1d1d; line-height: 1.55; }
+            .academic-delete-icon { width: 30px; height: 30px; flex: 0 0 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--error); color: white; font-weight: 800; }
+            .academic-help { color: var(--text-secondary); font-size: 0.84rem; margin-top: 0.3rem; }
+            .btn-destructive { padding: 9px 18px; background: var(--error); color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+            .btn-destructive:hover { opacity: 0.9; }
+            @keyframes academicModalBackdropIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes academicModalDialogIn {
+                from { opacity: 0; transform: translateY(18px) scale(0.97); }
+                to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+            @keyframes academicModalBackdropOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+            @keyframes academicModalDialogOut {
+                from { opacity: 1; transform: translateY(0) scale(1); }
+                to { opacity: 0; transform: translateY(12px) scale(0.98); }
+            }
+            #academic-delete-modal.modal-visible {
+                animation: academicModalBackdropIn 180ms ease-out both;
+            }
+            #academic-delete-modal.modal-visible .modal-dialog {
+                animation: academicModalDialogIn 240ms cubic-bezier(.22, 1, .36, 1) both;
+            }
+            #academic-delete-modal.modal-closing {
+                animation: academicModalBackdropOut 180ms ease-in both;
+            }
+            #academic-delete-modal.modal-closing .modal-dialog {
+                animation: academicModalDialogOut 180ms ease-in both;
+            }
         </style>
 
-        <div x-data="{ activeTab: 'asistencia' }">
+        <div x-data="{ activeTab: 'directorio' }">
             <div class="config-tabs-container">
                 <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'directorio' }"
+                            @click="activeTab = 'directorio'"
+                            hx-get="/personal/directorio" hx-target="#personal-content" hx-swap="innerHTML">
+                        👥 Directorio
+                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'asistencia' }"
                             @click="activeTab = 'asistencia'"
                             hx-get="/personal/asistencia" hx-target="#personal-content" hx-swap="innerHTML">
@@ -96,9 +135,47 @@
                 </div>
             </div>
 
-            <div id="personal-content" class="tab-pane" hx-get="/personal/asistencia" hx-trigger="load" hx-swap="innerHTML">
+            <div id="personal-content" class="tab-pane" hx-get="/personal/directorio" hx-trigger="load" hx-swap="innerHTML">
             </div>
         </div>
+
+        <div th:replace="~{configuracion-academica/components/confirmar-eliminacion :: modal}"></div>
+
+        <script>
+            function abrirConfirmacionAcademica(trigger) {
+                window.academicDeleteRequest = {
+                    url: trigger.dataset.deleteUrl,
+                    target: trigger.dataset.deleteTarget,
+                    swap: trigger.dataset.deleteSwap || 'innerHTML'
+                };
+                document.getElementById('academic-delete-title').textContent =
+                    trigger.dataset.deleteTitle || 'Confirmar eliminación';
+                document.getElementById('academic-delete-message').textContent =
+                    trigger.dataset.deleteMessage || '¿Deseas eliminar este registro?';
+                var modal = document.getElementById('academic-delete-modal');
+                modal.style.display = 'flex';
+                void modal.offsetWidth;
+                modal.classList.add('modal-visible');
+            }
+            function cerrarConfirmacionAcademica() {
+                var modal = document.getElementById('academic-delete-modal');
+                if (modal && modal.style.display !== 'none') {
+                    modal.classList.remove('modal-visible');
+                    modal.classList.add('modal-closing');
+                    setTimeout(function () {
+                        modal.style.display = 'none';
+                        modal.classList.remove('modal-closing');
+                    }, 180);
+                }
+                window.academicDeleteRequest = null;
+            }
+            function confirmarEliminacionAcademica() {
+                var req = window.academicDeleteRequest;
+                if (!req || !req.url || !req.target) { cerrarConfirmacionAcademica(); return; }
+                htmx.ajax('DELETE', req.url, { target: req.target, swap: req.swap })
+                    .then(function () { cerrarConfirmacionAcademica(); });
+            }
+        </script>
     </main>
 
 </body>

@@ -1,5 +1,7 @@
 package com.chavescr.nexa.controller;
 
+import java.util.List;
+
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.RegimenDisciplinario;
+import com.chavescr.nexa.entity.Usuario;
+import com.chavescr.nexa.service.PersonalService;
 import com.chavescr.nexa.service.RegimenDisciplinarioService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +28,9 @@ public class PersonalController {
 
     @Autowired
     private RegimenDisciplinarioService regimenService;
+
+    @Autowired
+    private PersonalService personalService;
 
     @GetMapping("/asistencia")
     public String asistencia() {
@@ -43,6 +50,80 @@ public class PersonalController {
     @GetMapping("/presencia")
     public String presencia() {
         return "personal/presencia/presencia :: content";
+    }
+
+    // ─── DIRECTORIO DE PERSONAL ────────────────────────────────
+
+    @GetMapping("/directorio")
+    public String directorio(Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("personal", personalService.listarTodos(institucionId));
+        return "personal/directorio/directorio :: content";
+    }
+
+    @GetMapping("/directorio/lista")
+    public String directorioLista(Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("personal", personalService.listarTodos(institucionId));
+        return "personal/directorio/lista :: content";
+    }
+
+    @GetMapping("/directorio/form")
+    public String directorioFormCrear(Model model) {
+        model.addAttribute("usuario", new Usuario());
+        model.addAttribute("roles", personalService.listarRoles());
+        return "personal/directorio/formulario :: form-content";
+    }
+
+    @GetMapping("/directorio/form/{id}")
+    public String directorioFormEditar(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("usuario", personalService.obtenerPorId(institucionId, id));
+        model.addAttribute("roles", personalService.listarRoles());
+        return "personal/directorio/formulario :: form-content";
+    }
+
+    @PostMapping("/directorio")
+    public String directorioGuardar(
+            @RequestParam(required = false) Long id,
+            @RequestParam String nombre,
+            @RequestParam String email,
+            @RequestParam String usuario,
+            @RequestParam(required = false) String cedula,
+            @RequestParam(required = false) String password,
+            @RequestParam(defaultValue = "false") boolean activo,
+            @RequestParam(required = false) List<Long> rolIds,
+            Model model, HttpSession session,
+            jakarta.servlet.http.HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        try {
+            personalService.guardar(institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
+            model.addAttribute("personal", personalService.listarTodos(institucionId));
+            return "personal/directorio/lista :: content";
+        } catch (Exception e) {
+            response.setHeader("HX-Retarget", "#dir-modal-container");
+            response.setHeader("HX-Reswap", "innerHTML");
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id));
+            model.addAttribute("roles", personalService.listarRoles());
+            return "personal/directorio/formulario :: form-content";
+        }
+    }
+
+    @DeleteMapping("/directorio/{id}")
+    public String directorioEliminar(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        personalService.eliminar(institucionId, id);
+        model.addAttribute("personal", personalService.listarTodos(institucionId));
+        return "personal/directorio/lista :: content";
+    }
+
+    @PutMapping("/directorio/{id}/activo")
+    public String directorioToggleActivo(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        personalService.toggleActivo(institucionId, id);
+        model.addAttribute("personal", personalService.listarTodos(institucionId));
+        return "personal/directorio/lista :: content";
     }
 
     // ─── RÉGIMEN DISCIPLINARIO ──────────────────────────────────
