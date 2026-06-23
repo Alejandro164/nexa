@@ -16,19 +16,19 @@ import com.chavescr.nexa.security.CustomUserDetails;
 import com.chavescr.nexa.service.InstitucionService;
 import com.chavescr.nexa.service.UsuarioService;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class MainController {
 
-    private final UsuarioService usuarioService;
-    private final InstitucionService institucionService;
+    @Autowired
+    private UsuarioService usuarioService;
 
-    public MainController(UsuarioService usuarioService, InstitucionService institucionService) {
-        this.usuarioService = usuarioService;
-        this.institucionService = institucionService;
-    }
+    @Autowired
+    private InstitucionService institucionService;
 
     @GetMapping("/")
     public String index(@AuthenticationPrincipal CustomUserDetails usuario, Model model,

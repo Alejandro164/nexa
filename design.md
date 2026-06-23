@@ -107,7 +107,7 @@ com.chavescr.nexa/
 ### 3.3 Services
 
 - Anotados `@Service` + `@Transactional` a nivel de clase.
-- Constructor injection (sin `@Autowired`).
+- `@Autowired` en campos para inyección de dependencias en Controllers. Services mantienen constructor injection.
 - Lanzan `BusinessException` para violaciones de reglas, `ResourceNotFoundException` para 404.
 - CRUD estándar por entidad:
   - `listarTodos()`, `obtenerPorId(Long id)`, `buscarPorNombre(String filtro)`
@@ -186,15 +186,29 @@ templates/
 │   ├── inicio.html
 │   ├── lista-instituciones.html
 │   └── instituciones-modal.html
-├── {dominio}/               # Una carpeta por controlador
-│   ├── index.html           # Vista principal (decorada, listado, modales)
-│   └── formulario.html      # Modal crear/editar (cuando aplica)
+├── {modulo}/                # Una carpeta por módulo/controlador
+│   ├── index.html           # Shell: decorador + tabs + CSS global del módulo
+│   ├── formulario.html      # Modal crear/editar (cuando aplica)
+│   ├── tab1/                # Cada opción del menú horizontal tiene su carpeta
+│   │   └── tab1.html        # Fragmento th:fragment="content" + JS propio
+│   ├── tab2/
+│   │   └── tab2.html
+│   └── submodulo/           # Sub-módulos con menú secundario
+│       ├── submodulo.html   # Fragmento con sub-tabs + JS del sub-módulo
+│       ├── tabla.html       # Fragmento de tabla (recargable vía HTMX)
+│       └── formulario.html  # Modal del sub-módulo
 └── fragments/               # Fragmentos reusables
     ├── tabla-usuarios.html
     └── tabla-centros.html
 ```
 
-**Regla**: Cada controlador = una carpeta en `templates/`. Si el controlador tiene sub-rutas, se crean sub-carpetas.
+**Reglas de organización:**
+- Cada módulo = una carpeta en `templates/` (nombrada igual que la ruta del controlador).
+- `index.html` es el shell decorado con `layout:decorate`. Contiene el CSS específico del módulo en `<style>` y el JS del módulo (funciones Alpine globales del módulo) en `layout:fragment="head-extra"`.
+- Si el módulo tiene menú horizontal primario (tabs), cada opción del menú tiene su propia sub-carpeta con su HTML y su JS. El JS específico de cada tab va DENTRO del fragmento (en `<script>` o en el `x-data`), NO en el `index.html`.
+- Si un tab tiene sub-tabs (menú secundario), el fragmento raíz contiene el `x-data` con las funciones CRUD y los sub-tabs. Las funciones van dentro del mismo `x-data` (ver §4.9.2).
+- Tablas recargables vía HTMX van en archivos separados (ej: `tabla.html` con `th:fragment="tabla"`).
+- Modales (crear/editar) van en `formulario.html` con `th:fragment="form-content"`.
 
 ### 4.2 Patrón decorador
 
@@ -283,6 +297,195 @@ function listaFiltrable() {
 - Variables CSS en `:root` dentro del decorador `index.html`.
 - CSS específico por página: archivo en `static/css/` cargado con `<link>` en `layout:fragment="head-extra"`.
 - Clases utilitarias: `d-flex`, `gap-{1-4}`, `text-muted`, `text-sm`, `font-medium`, etc.
+
+### 4.9 Configuración de menús horizontales (tabs y sub-tabs)
+
+El proyecto usa dos niveles de menú horizontal con HTMX + Alpine.js. Ambos siguen el mismo mecanismo: Alpine.js maneja el estado visual (`activeTab`/`subTab`) y HTMX carga el contenido bajo demanda.
+
+#### 4.9.1 Menú horizontal primario (Nivel 1 — Tabs de página)
+
+Es el menú de pestañas principal dentro del `<main>` de una página decorada. Se usa en `personal/index.html`, `agenda/index.html` y `configuracion-academica/index.html`.
+
+**Estructura obligatoria:**
+
+```html
+<!-- 1. CONTENEDOR Alpine con estado activeTab -->
+<div x-data="{ activeTab: 'tab1' }">
+
+    <!-- 2. CONTENEDOR CSS de tabs -->
+    <div class="config-tabs-container">
+        <div class="config-tabs">
+
+            <!-- 3. CADA BOTÓN sigue este patrón exacto -->
+            <button class="config-tab-btn"
+                    :class="{ 'active': activeTab === 'tab1' }"
+                    @click="activeTab = 'tab1'"
+                    hx-get="/modulo/tab1"
+                    hx-target="#modulo-content"
+                    hx-swap="innerHTML">
+                🏷️ Nombre Tab
+            </button>
+            <!-- ... más tabs ... -->
+        </div>
+    </div>
+
+    <!-- 4. CONTENEDOR de contenido HTMX -->
+    <div id="modulo-content" class="tab-pane"
+         hx-get="/modulo/tab1"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+    </div>
+</div>
+```
+
+**CSS requerido (copiar tal cual):**
+```css
+.config-tabs-container {
+    margin-bottom: 2rem;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 6px;
+    display: flex;
+    width: 100%;
+    box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+}
+.config-tabs {
+    display: flex;
+    width: 100%;
+    gap: 6px;
+}
+.config-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    white-space: nowrap;
+}
+.config-tab-btn:hover {
+    color: var(--primary);
+    background-color: var(--input-bg);
+}
+.config-tab-btn.active {
+    color: white !important;
+    background-color: var(--primary) !important;
+    box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+}
+.tab-pane {
+    animation: fadeIn 0.35s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+```
+
+**Reglas del menú primario:**
+- El `activeTab` default es el primer tab.
+- El `hx-trigger="load"` en el contenedor carga el contenido del primer tab al abrir la página.
+- Cada tab tiene su propio endpoint en el controller que devuelve `"carpeta/archivo :: content"`.
+- El `hx-target` es siempre el `id` del contenedor de contenido.
+- El `hx-swap` es siempre `"innerHTML"`.
+- Alpine.js solo controla la clase `.active` visual; HTMX controla la carga del contenido.
+
+#### 4.9.2 Menú horizontal secundario (Nivel 2 — Sub-tabs dentro de un fragmento)
+
+Es un sub-menú que aparece dentro de un fragmento cargado por un tab primario. El caso de referencia es `personal/regimen/regimen.html`. Se usa cuando un tab primario necesita segregar contenido en sub-categorías.
+
+**Estructura obligatoria:**
+
+```html
+<!-- 1. El fragmento raíz contiene x-data con subTab + funciones -->
+<div th:fragment="content" class="tab-pane"
+     x-data="{ subTab: 'TODOS', modalOpen: false,
+         abrirForm(id) { ... },
+         eliminar(id) { ... }
+     }">
+
+    <!-- 2. Sub-tabs con Alpine + HTMX -->
+    <div class="reg-tabs">
+        <button class="reg-tab"
+                :class="{ 'active': subTab === 'TODOS' }"
+                @click="subTab = 'TODOS'"
+                hx-get="/modulo/submodulo?tipo=TODOS"
+                hx-target="#sub-content"
+                hx-swap="innerHTML">📋 Todos</button>
+        <button class="reg-tab"
+                :class="{ 'active': subTab === 'TIPO_A' }"
+                @click="subTab = 'TIPO_A'"
+                hx-get="/modulo/submodulo?tipo=TIPO_A"
+                hx-target="#sub-content"
+                hx-swap="innerHTML">🟡 Tipo A</button>
+        <!-- ... más sub-tabs ... -->
+    </div>
+
+    <!-- 3. Contenedor del contenido de sub-tabs -->
+    <div id="sub-content" th:replace="~{modulo/submodulo/tabla :: tabla}"></div>
+
+    <!-- 4. Modal container compartido -->
+    <div id="modal-container" x-show="modalOpen" x-cloak style="display: none;"
+         @close-modal.window="modalOpen = false"
+         @keydown.escape.window="modalOpen = false"></div>
+</div>
+```
+
+**CSS para sub-tabs (copiar tal cual, ajustar prefijo):**
+```css
+.reg-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.25rem;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+}
+.reg-tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-radius: 7px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.reg-tab:hover {
+    color: var(--primary);
+    background: var(--input-bg);
+}
+.reg-tab.active {
+    color: #fff;
+    background: var(--primary);
+}
+```
+
+**Reglas del menú secundario:**
+- El `subTab` default es `'TODOS'` (o el primer valor lógico).
+- Las funciones CRUD (`abrirForm`, `eliminar`, `cambiarEstado`) van DENTRO del mismo `x-data` del fragmento, NO en `<script>` separado ni en `Alpine.data()`.
+- El contenido inicial se carga con `th:replace` (renderizado servidor en la primera carga).
+- Los sub-tabs subsecuentes cargan vía HTMX (`hx-get` con query param `?tipo=`).
+- El modal container usa `x-show="modalOpen"` y se controla con `@close-modal.window`.
+- El `hx-target` del sub-tab apunta al contenedor `#sub-content`.
+- La tabla fragment (`tabla.html`) lleva `th:fragment="tabla"`.
+
+**⚠️ Error común a evitar:** NO anidar dos `x-data` en el fragmento secundario. Si el `x-data` está en el `th:fragment`, los sub-tabs deben estar directamente dentro (sin otro `x-data` intermedio), porque un `x-data` anidado rompe el acceso a las funciones y propiedades del scope padre.
 
 ---
 
@@ -419,15 +622,34 @@ session.getAttribute("SESSION_USUARIO_ROL");
 
 ### 9.5 Injection
 
-Siempre usar constructor injection. No usar `@Autowired` en campos.
+**Controllers**: usar `@Autowired` en campos. No usar constructor injection.
 
 ```java
-private final MiRepository repository;
-private final MiService service;
+@Controller
+@RequestMapping("/modulo")
+public class ModuloController {
 
-public MiController(MiRepository repository, MiService service) {
-    this.repository = repository;
-    this.service = service;
+    @Autowired
+    private MiService service;
+
+    // métodos...
+}
+```
+
+**Services**: constructor injection con `private final`. Sin `@Autowired` en campos.
+
+```java
+@Service
+@Transactional
+public class MiService {
+
+    private final MiRepository repository;
+    private final OtroService otroService;
+
+    public MiService(MiRepository repository, OtroService otroService) {
+        this.repository = repository;
+        this.otroService = otroService;
+    }
 }
 ```
 

@@ -1,0 +1,39 @@
+<div th:fragment="contenido">
+    <div class="proyecto-card" style="margin-bottom:1.5rem;">
+        <div class="proyecto-card-header">
+            <div>
+                <h3 class="proyecto-card-title" th:text="'Miembros de: ' + ${proyecto.nombre}">Miembros</h3>
+                <p style="font-size:0.85rem;color:#64748b;margin:4px 0 0 0;" th:text="${proyecto.objetivo}">Objetivo</p>
+            </div>
+        </div>
+        <div style="padding:1rem 1.5rem;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;align-items:center;">
+            <select class="form-select" style="max-width:250px;" th:attr="id='select-usuario-'+${proyecto.id}">
+                <option value="" disabled selected>-- Agregar usuario --</option>
+                <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}" th:text="${u.nombre + ' (' + u.email + ')'}">Usuario</option>
+            </select>
+            <select class="form-select" style="max-width:120px;" th:attr="id='select-rol-'+${proyecto.id}">
+                <option value="MIEMBRO">Miembro</option>
+                <option value="LIDER">Líder</option>
+            </select>
+            <button class="btn-primary btn-sm" th:onclick="'agregarMiembro(' + ${proyecto.id} + ')'" th:if="${usuariosDisponibles != null and !usuariosDisponibles.empty}">+ Agregar</button>
+            <span th:if="${usuariosDisponibles == null or usuariosDisponibles.empty}" style="color:#94a3b8;font-size:0.85rem;">Todos ya son miembros.</span>
+        </div>
+        <div style="padding:1rem 1.5rem;">
+            <div th:if="${miembros == null or miembros.empty}" style="text-align:center;padding:2rem;color:#94a3b8;">No hay miembros. Agrega usuarios.</div>
+            <div th:each="m : ${miembros}" style="margin-bottom:1rem;">
+                <div class="miembro-row">
+                    <div class="miembro-info">
+                        <span class="miembro-nombre" th:text="${m.usuario.nombre}">Nombre</span>
+                        <span class="miembro-email" th:text="${m.usuario.email}">email</span>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span class="rol-badge" th:classappend="${m.rol.name() == 'LIDER' ? 'rol-lider' : 'rol-miembro'}" th:text="${m.rol.name() == 'LIDER' ? 'Líder' : 'Miembro'}">Miembro</span>
+                        <button class="btn-sm btn-ghost" th:onclick="'cargarTareas(' + ${m.id} + ',' + ${proyecto.id} + ')'">📋</button>
+                        <button class="btn-sm btn-danger-ghost" th:onclick="'eliminarMiembro(' + ${proyecto.id} + ',' + ${m.id} + ')'">✕</button>
+                    </div>
+                </div>
+                <div class="tareas-container" th:attr="id='tareas-'+${m.id}" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+</div>

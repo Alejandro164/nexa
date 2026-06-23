@@ -9,7 +9,8 @@
 <body>
 
     <th:block layout:fragment="page-title">Agenda y Actividades</th:block>
-    <th:block layout:fragment="page-subtitle">Organiza tu calendario de clases, programa citas de atención a padres y gestiona aulas virtuales</th:block>
+    <th:block layout:fragment="page-subtitle">Organiza tu calendario de clases, programa citas de atención a padres y
+        gestiona aulas virtuales</th:block>
 
     <main layout:fragment="content" th:fragment="htmx-content">
         <style>
@@ -24,11 +25,13 @@
                 box-shadow: var(--shadow-sm);
                 overflow-x: auto;
             }
+
             .config-tabs {
                 display: flex;
                 width: 100%;
                 gap: 6px;
             }
+
             .config-tab-btn {
                 flex: 1;
                 display: flex;
@@ -47,38 +50,67 @@
                 background: transparent;
                 white-space: nowrap;
             }
+
             .config-tab-btn:hover {
                 color: var(--primary);
                 background-color: var(--input-bg);
             }
+
             .config-tab-btn.active {
                 color: white !important;
                 background-color: var(--primary) !important;
                 box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
             }
+
             .tab-pane {
                 animation: fadeIn 0.35s ease-out;
             }
+
             @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(6px); }
-                to { opacity: 1; transform: translateY(0); }
+                from {
+                    opacity: 0;
+                    transform: translateY(6px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
         </style>
 
         <div x-data="{ activeTab: 'calendario' }">
             <div class="config-tabs-container">
                 <div class="config-tabs">
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'calendario' }" @click="activeTab = 'calendario'" hx-get="/agenda/calendario" hx-target="#agenda-content" hx-swap="innerHTML">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'calendario' }"
+                        @click="activeTab = 'calendario'" hx-get="/agenda/calendario" hx-target="#agenda-content"
+                        hx-swap="innerHTML">
                         📅 Calendario
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'tareas' }" @click="activeTab = 'tareas'" hx-get="/agenda/tareas" hx-target="#agenda-content" hx-swap="innerHTML">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'tareas' }"
+                        @click="activeTab = 'tareas'" hx-get="/agenda/tareas" hx-target="#agenda-content"
+                        hx-swap="innerHTML">
                         ✅ Tareas
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'salas' }" @click="activeTab = 'salas'" hx-get="/agenda/salas" hx-target="#agenda-content" hx-swap="innerHTML">
-                        💻 Salas Virtuales
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'recordatorios' }" @click="activeTab = 'recordatorios'" hx-get="/agenda/recordatorios" hx-target="#agenda-content" hx-swap="innerHTML">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'recordatorios' }"
+                        @click="activeTab = 'recordatorios'" hx-get="/agenda/recordatorios" hx-target="#agenda-content"
+                        hx-swap="innerHTML">
                         ⏰ Recordatorios
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'actividad' }"
+                        @click="activeTab = 'actividad'" hx-get="/agenda/actividad" hx-target="#agenda-content"
+                        hx-swap="innerHTML">
+                        📋 Actividad Institucional
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'proyectos' }"
+                        @click="activeTab = 'proyectos'" hx-get="/agenda/proyectos" hx-target="#agenda-content"
+                        hx-swap="innerHTML">
+                        📁 Proyectos
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'participacion' }"
+                        @click="activeTab = 'participacion'" hx-get="/agenda/participacion" hx-target="#agenda-content"
+                        hx-swap="innerHTML">
+                        👥 Participación
                     </button>
                 </div>
             </div>

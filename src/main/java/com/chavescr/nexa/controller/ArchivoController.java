@@ -20,20 +20,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.chavescr.nexa.entity.NubeNodo;
 import com.chavescr.nexa.service.NubeNodoService;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import jakarta.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/archivos")
 public class ArchivoController {
 
-    private final NubeNodoService nubeNodoService;
+    @Autowired
+    private NubeNodoService nubeNodoService;
 
     private static final Set<String> FORMATOS_OFFICE = Set.of(
             "DOCX", "DOC", "XLSX", "XLS", "PPTX", "PPT", "ODT", "ODS", "ODP");
-
-    public ArchivoController(NubeNodoService nubeNodoService) {
-        this.nubeNodoService = nubeNodoService;
-    }
 
     @GetMapping("/preview/{id}")
     public ResponseEntity<Resource> previewArchivo(@PathVariable Long id, HttpSession session) {

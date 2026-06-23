@@ -9,7 +9,7 @@
 <body>
 
     <th:block layout:fragment="page-title">Canal de Comunicación</th:block>
-    <th:block layout:fragment="page-subtitle">Comunícate con docentes, estudiantes y padres mediante mensajes internos, anuncios y notificaciones globales</th:block>
+    <th:block layout:fragment="page-subtitle">Comunícate con docentes, estudiantes y padres mediante mensajes internos, circulares y notificaciones globales</th:block>
 
     <main layout:fragment="content" th:fragment="htmx-content">
         <style>
@@ -82,8 +82,8 @@
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'mensajes' }" @click="activeTab = 'mensajes'">
                         💬 Mensajes
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'anuncios' }" @click="activeTab = 'anuncios'">
-                        📢 Anuncios
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'circulares' }" @click="activeTab = 'circulares'">
+                        📋 Circulares
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'notificaciones' }" @click="activeTab = 'notificaciones'">
                         🔔 Notificaciones
@@ -114,12 +114,12 @@
                 </div>
             </div>
 
-            <!-- Anuncios -->
-            <div x-show="activeTab === 'anuncios'" class="tab-pane" x-cloak>
+            <!-- Circulares -->
+            <div x-show="activeTab === 'circulares'" class="tab-pane" x-cloak>
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title font-medium">Anuncios Generales e Institucionales</h3>
-                        <button class="btn btn-primary">+ Publicar Anuncio</button>
+                        <h3 class="card-title font-medium">Circulares Generales e Institucionales</h3>
+                        <button class="btn btn-primary">+ Publicar Circular</button>
                     </div>
                     <div style="padding: 2rem;">
                         <div style="border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px;">

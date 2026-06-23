@@ -5,6 +5,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -29,11 +30,8 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping("/nube-nexa")
 public class NubeController {
 
-    private final NubeNodoService nubeNodoService;
-
-    public NubeController(NubeNodoService nubeNodoService) {
-        this.nubeNodoService = nubeNodoService;
-    }
+    @Autowired
+    private NubeNodoService nubeNodoService;
 
     // Vista Principal (Raíz)
     @GetMapping

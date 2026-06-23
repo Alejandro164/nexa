@@ -1,4 +1,23 @@
-<div th:fragment="content" class="tab-pane">
+<div th:fragment="content" class="tab-pane" x-data="{
+    showDisponibilidad: false,
+    dispFecha: '',
+    dispHoraInicio: '08:00',
+    dispHoraFin: '12:00',
+    dispMotivo: '',
+    dispRepetir: 'no',
+    dispDiaCompleto: false,
+    initFecha() {
+        const hoy = new Date();
+        this.dispFecha = hoy.toISOString().split('T')[0];
+    },
+    guardarDisponibilidad() {
+        // Aquí iría la lógica de guardado vía HTMX
+        this.showDisponibilidad = false;
+        this.dispMotivo = '';
+        this.dispDiaCompleto = false;
+        this.dispRepetir = 'no';
+    }
+}">
     <style>
         /* Modern Calendar Styles */
         .cal-wrapper {
@@ -6,6 +25,7 @@
             gap: 1.5rem;
             min-height: 750px;
         }
+
         /* Sidebar for filters & mini-cal */
         .cal-sidebar {
             width: 280px;
@@ -14,6 +34,7 @@
             gap: 1.5rem;
             flex-shrink: 0;
         }
+
         /* Main Calendar Area */
         .cal-main {
             flex: 1;
@@ -25,6 +46,7 @@
             flex-direction: column;
             overflow: hidden;
         }
+
         /* Toolbar */
         .cal-toolbar {
             display: flex;
@@ -36,6 +58,7 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
+
         /* Header */
         .cal-header-row {
             display: grid;
@@ -43,6 +66,7 @@
             border-bottom: 1px solid var(--border);
             background: #fcfcfc;
         }
+
         .cal-header-cell {
             padding: 1rem;
             text-align: right;
@@ -50,15 +74,18 @@
             font-weight: 600;
             color: var(--text-secondary);
         }
+
         /* Grid */
         .cal-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             grid-auto-rows: minmax(120px, 1fr);
             flex: 1;
-            background: var(--border); /* for 1px gaps */
+            background: var(--border);
+            /* for 1px gaps */
             gap: 1px;
         }
+
         .cal-cell {
             background: #ffffff;
             padding: 0.5rem;
@@ -69,15 +96,19 @@
             position: relative;
             overflow: hidden;
         }
+
         .cal-cell:hover {
             background: #f8fafc;
         }
+
         .cal-cell.other-month {
             background: #fafafa;
         }
+
         .cal-cell.other-month .cal-date {
             color: #cbd5e1;
         }
+
         .cal-date {
             font-size: 0.9rem;
             font-weight: 600;
@@ -94,12 +125,13 @@
             align-self: flex-end;
             transition: all 0.2s;
         }
+
         .cal-cell.today .cal-date {
             background: var(--primary);
             color: #ffffff;
             box-shadow: 0 4px 10px rgba(45, 90, 135, 0.3);
         }
-        
+
         /* Events */
         .cal-events-container {
             display: flex;
@@ -108,10 +140,11 @@
             overflow-y: auto;
             max-height: calc(100% - 35px);
         }
+
         .cal-events-container::-webkit-scrollbar {
             display: none;
         }
-        
+
         .cal-event {
             font-size: 0.75rem;
             padding: 5px 8px;
@@ -128,47 +161,74 @@
             border: 1px solid transparent;
             position: relative;
         }
+
         .cal-event:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             filter: brightness(0.95);
             z-index: 10;
         }
+
         .event-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
         }
-        
+
         /* Event Types */
         .event-tarea {
             background: rgba(13, 148, 136, 0.1);
             color: #0f766e;
             border-color: rgba(13, 148, 136, 0.2);
         }
-        .event-tarea .event-dot { background: #0d9488; }
-        
+
+        .event-tarea .event-dot {
+            background: #0d9488;
+        }
+
         .event-sala {
             background: rgba(139, 92, 246, 0.1);
             color: #6d28d9;
             border-color: rgba(139, 92, 246, 0.2);
         }
-        .event-sala .event-dot { background: #8b5cf6; }
+
+        .event-sala .event-dot {
+            background: #8b5cf6;
+        }
 
         .event-recordatorio {
             background: rgba(245, 158, 11, 0.1);
             color: #b45309;
             border-color: rgba(245, 158, 11, 0.2);
         }
-        .event-recordatorio .event-dot { background: #f59e0b; }
-        
+
+        .event-recordatorio .event-dot {
+            background: #f59e0b;
+        }
+
         .event-general {
             background: rgba(45, 90, 135, 0.1);
             color: var(--primary);
             border-color: rgba(45, 90, 135, 0.2);
         }
-        .event-general .event-dot { background: var(--primary); }
+
+        .event-general .event-dot {
+            background: var(--primary);
+        }
+
+        /* No Disponible — distinctive red/coral with diagonal stripe pattern */
+        .event-nodisponible {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 25%, rgba(239, 68, 68, 0.14) 25%, rgba(239, 68, 68, 0.14) 50%, rgba(239, 68, 68, 0.08) 50%, rgba(239, 68, 68, 0.08) 75%, rgba(239, 68, 68, 0.14) 75%);
+            background-size: 8px 8px;
+            color: #b91c1c;
+            border-color: rgba(239, 68, 68, 0.3);
+            font-style: italic;
+        }
+
+        .event-nodisponible .event-dot {
+            background: #ef4444;
+        }
 
         /* Buttons & Toolbar */
         .btn-group {
@@ -177,6 +237,7 @@
             border-radius: 8px;
             padding: 4px;
         }
+
         .btn-group button {
             border: none;
             background: transparent;
@@ -188,13 +249,15 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
         .btn-group button:hover:not(.active) {
             color: var(--text-primary);
         }
+
         .btn-group button.active {
             background: #ffffff;
             color: var(--primary);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
         }
 
         /* Filter checkboxes */
@@ -207,9 +270,11 @@
             cursor: pointer;
             transition: background 0.2s;
         }
+
         .filter-item:hover {
             background: var(--input-bg);
         }
+
         .filter-checkbox {
             appearance: none;
             width: 20px;
@@ -221,31 +286,56 @@
             transition: all 0.2s ease;
             outline: none;
         }
+
         .filter-checkbox:checked {
             border-color: transparent;
             transform: scale(1.05);
         }
+
         .filter-checkbox::after {
             content: '';
             position: absolute;
-            top: 2px; left: 6px;
-            width: 4px; height: 9px;
+            top: 2px;
+            left: 6px;
+            width: 4px;
+            height: 9px;
             border: solid white;
             border-width: 0 2px 2px 0;
             transform: rotate(45deg);
             opacity: 0;
             transition: opacity 0.2s;
         }
+
         .filter-checkbox:checked::after {
             opacity: 1;
         }
 
         /* Checkbox colors */
-        .check-tarea:checked { background: #0d9488; box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3); }
-        .check-sala:checked { background: #8b5cf6; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); }
-        .check-recordatorio:checked { background: #f59e0b; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
-        .check-general:checked { background: var(--primary); box-shadow: 0 2px 8px rgba(45, 90, 135, 0.3); }
-        
+        .check-tarea:checked {
+            background: #0d9488;
+            box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+        }
+
+        .check-sala:checked {
+            background: #8b5cf6;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+
+        .check-recordatorio:checked {
+            background: #f59e0b;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .check-general:checked {
+            background: var(--primary);
+            box-shadow: 0 2px 8px rgba(45, 90, 135, 0.3);
+        }
+
+        .check-nodisponible:checked {
+            background: #ef4444;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
         .btn-icon {
             display: inline-flex;
             align-items: center;
@@ -259,66 +349,432 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
+
         .btn-icon:hover {
             background: var(--input-bg);
             color: var(--primary);
             border-color: var(--primary);
             transform: translateY(-1px);
         }
+
+        /* ── Disponibilidad Button ────────────────── */
+        .btn-disponibilidad {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 12px;
+            border: 2px dashed #fca5a5;
+            background: linear-gradient(135deg, #fff5f5 0%, #fef2f2 100%);
+            color: #dc2626;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .btn-disponibilidad:hover {
+            border-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .btn-disponibilidad:active {
+            transform: translateY(0);
+        }
+
+        /* ── Modal de Disponibilidad ────────────── */
+        .disp-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: dispFadeIn 0.2s ease;
+        }
+
+        @keyframes dispFadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .disp-modal {
+            background: #ffffff;
+            border-radius: 20px;
+            width: 440px;
+            max-width: 92vw;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04);
+            animation: dispSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            overflow: hidden;
+        }
+
+        @keyframes dispSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .disp-modal-header {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #fee2e2;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+        }
+
+        .disp-modal-header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+            flex-shrink: 0;
+        }
+
+        .disp-modal-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .disp-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .disp-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .disp-input {
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: #0f172a;
+            background: #fafbfc;
+            transition: all 0.2s;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .disp-input:focus {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+            background: #ffffff;
+        }
+
+        .disp-time-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .disp-time-row .disp-field {
+            flex: 1;
+        }
+
+        .disp-time-sep {
+            padding-bottom: 12px;
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Quick time pills */
+        .disp-quick-times {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .disp-pill {
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1.5px solid #e2e8f0;
+            background: #fafbfc;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .disp-pill:hover {
+            border-color: #fca5a5;
+            background: #fff5f5;
+            color: #dc2626;
+        }
+
+        .disp-pill.active-pill {
+            border-color: #ef4444;
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* Day complete toggle */
+        .disp-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .disp-toggle-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .disp-toggle-sublabel {
+            font-size: 0.78rem;
+            color: #94a3b8;
+            margin-top: 1px;
+        }
+
+        .disp-toggle {
+            width: 44px;
+            height: 24px;
+            border-radius: 12px;
+            background: #cbd5e1;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.25s;
+            flex-shrink: 0;
+        }
+
+        .disp-toggle.on {
+            background: #ef4444;
+        }
+
+        .disp-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .disp-toggle.on::after {
+            transform: translateX(20px);
+        }
+
+        .disp-modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #fafbfc;
+        }
+
+        .disp-btn-cancel {
+            padding: 9px 20px;
+            border-radius: 10px;
+            border: 1.5px solid #e2e8f0;
+            background: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .disp-btn-cancel:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+        }
+
+        .disp-btn-save {
+            padding: 9px 24px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+        }
+
+        .disp-btn-save:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .disp-btn-save:active {
+            transform: translateY(0);
+        }
     </style>
 
     <div class="cal-wrapper">
         <!-- Sidebar -->
         <div class="cal-sidebar">
-            <button class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1rem; border-radius: 12px; box-shadow: 0 8px 20px rgba(45,90,135,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <button class="btn btn-primary"
+                style="width: 100%; padding: 14px; font-size: 1rem; border-radius: 12px; box-shadow: 0 8px 20px rgba(45,90,135,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
                 Crear Nuevo Evento
             </button>
-            
+
+            <!-- Botón Marcar No Disponible -->
+            <button class="btn-disponibilidad" @click="showDisponibilidad = true; initFecha()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                </svg>
+                Marcar No Disponible
+            </button>
+
             <!-- Mini Calendar Placeholder -->
             <div class="card" style="padding: 1.25rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.25rem;">
                     <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Mayo 2026</span>
                     <div style="display:flex; gap: 4px;">
-                        <button class="btn-icon" style="width:26px; height:26px; border:none; background:transparent;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                        <button class="btn-icon" style="width:26px; height:26px; border:none; background:transparent;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                        <button class="btn-icon"
+                            style="width:26px; height:26px; border:none; background:transparent;"><svg width="14"
+                                height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg></button>
+                        <button class="btn-icon"
+                            style="width:26px; height:26px; border:none; background:transparent;"><svg width="14"
+                                height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg></button>
                     </div>
                 </div>
-                <div style="display:grid; grid-template-columns: repeat(7, 1fr); text-align:center; font-size: 0.75rem; gap:6px;">
-                    <div style="color:var(--text-light); font-weight:700;">L</div><div style="color:var(--text-light); font-weight:700;">M</div><div style="color:var(--text-light); font-weight:700;">M</div><div style="color:var(--text-light); font-weight:700;">J</div><div style="color:var(--text-light); font-weight:700;">V</div><div style="color:var(--text-light); font-weight:700;">S</div><div style="color:var(--text-light); font-weight:700;">D</div>
-                    
-                    <div style="color:var(--text-light); padding:4px;">27</div><div style="color:var(--text-light); padding:4px;">28</div><div style="color:var(--text-light); padding:4px;">29</div><div style="color:var(--text-light); padding:4px;">30</div>
-                    <div style="padding:4px; font-weight:500;">1</div><div style="padding:4px; font-weight:500;">2</div><div style="padding:4px; font-weight:500;">3</div>
-                    
-                    <div style="padding:4px; font-weight:500;">4</div><div style="padding:4px; font-weight:500;">5</div><div style="padding:4px; font-weight:500;">6</div><div style="padding:4px; font-weight:500;">7</div><div style="padding:4px; font-weight:500;">8</div><div style="padding:4px; font-weight:500;">9</div><div style="padding:4px; font-weight:500;">10</div>
-                    
-                    <div style="padding:4px; font-weight:500;">11</div><div style="padding:4px; font-weight:500;">12</div><div style="padding:4px; font-weight:500;">13</div><div style="padding:4px; font-weight:500;">14</div><div style="padding:4px; font-weight:500;">15</div><div style="padding:4px; font-weight:500;">16</div><div style="padding:4px; font-weight:500;">17</div>
-                    
-                    <div style="padding:4px; font-weight:500;">18</div><div style="padding:4px; font-weight:500;">19</div><div style="padding:4px; font-weight:500;">20</div><div style="padding:4px; font-weight:500;">21</div><div style="padding:4px; font-weight:500;">22</div><div style="padding:4px; font-weight:500;">23</div><div style="padding:4px; font-weight:500;">24</div>
-                    
-                    <div style="padding:4px; font-weight:500;">25</div><div style="padding:4px; font-weight:500;">26</div><div style="padding:4px; font-weight:500;">27</div><div style="padding:4px; font-weight:500;">28</div><div style="background:var(--primary); color:white; border-radius:50%; font-weight:700; width: 24px; height: 24px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(45,90,135,0.4);">29</div><div style="padding:4px; font-weight:500;">30</div><div style="padding:4px; font-weight:500;">31</div>
+                <div
+                    style="display:grid; grid-template-columns: repeat(7, 1fr); text-align:center; font-size: 0.75rem; gap:6px;">
+                    <div style="color:var(--text-light); font-weight:700;">L</div>
+                    <div style="color:var(--text-light); font-weight:700;">M</div>
+                    <div style="color:var(--text-light); font-weight:700;">M</div>
+                    <div style="color:var(--text-light); font-weight:700;">J</div>
+                    <div style="color:var(--text-light); font-weight:700;">V</div>
+                    <div style="color:var(--text-light); font-weight:700;">S</div>
+                    <div style="color:var(--text-light); font-weight:700;">D</div>
+
+                    <div style="color:var(--text-light); padding:4px;">27</div>
+                    <div style="color:var(--text-light); padding:4px;">28</div>
+                    <div style="color:var(--text-light); padding:4px;">29</div>
+                    <div style="color:var(--text-light); padding:4px;">30</div>
+                    <div style="padding:4px; font-weight:500;">1</div>
+                    <div style="padding:4px; font-weight:500;">2</div>
+                    <div style="padding:4px; font-weight:500;">3</div>
+
+                    <div style="padding:4px; font-weight:500;">4</div>
+                    <div style="padding:4px; font-weight:500;">5</div>
+                    <div style="padding:4px; font-weight:500;">6</div>
+                    <div style="padding:4px; font-weight:500;">7</div>
+                    <div style="padding:4px; font-weight:500;">8</div>
+                    <div style="padding:4px; font-weight:500;">9</div>
+                    <div style="padding:4px; font-weight:500;">10</div>
+
+                    <div style="padding:4px; font-weight:500;">11</div>
+                    <div style="padding:4px; font-weight:500;">12</div>
+                    <div style="padding:4px; font-weight:500;">13</div>
+                    <div style="padding:4px; font-weight:500;">14</div>
+                    <div style="padding:4px; font-weight:500;">15</div>
+                    <div style="padding:4px; font-weight:500;">16</div>
+                    <div style="padding:4px; font-weight:500;">17</div>
+
+                    <div style="padding:4px; font-weight:500;">18</div>
+                    <div style="padding:4px; font-weight:500;">19</div>
+                    <div style="padding:4px; font-weight:500;">20</div>
+                    <div style="padding:4px; font-weight:500;">21</div>
+                    <div style="padding:4px; font-weight:500;">22</div>
+                    <div style="padding:4px; font-weight:500;">23</div>
+                    <div style="padding:4px; font-weight:500;">24</div>
+
+                    <div style="padding:4px; font-weight:500;">25</div>
+                    <div style="padding:4px; font-weight:500;">26</div>
+                    <div style="padding:4px; font-weight:500;">27</div>
+                    <div style="padding:4px; font-weight:500;">28</div>
+                    <div
+                        style="background:var(--primary); color:white; border-radius:50%; font-weight:700; width: 24px; height: 24px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(45,90,135,0.4);">
+                        29</div>
+                    <div style="padding:4px; font-weight:500;">30</div>
+                    <div style="padding:4px; font-weight:500;">31</div>
                 </div>
             </div>
 
             <!-- Filters -->
             <div class="card" style="padding: 1.25rem;">
-                <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">Mis Calendarios</h4>
+                <h4
+                    style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">
+                    Mis Calendarios</h4>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label class="filter-item">
                         <input type="checkbox" class="filter-checkbox check-tarea" checked>
-                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">✅ Tareas Pendientes</span>
+                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">✅ Tareas
+                            Pendientes</span>
                     </label>
                     <label class="filter-item">
                         <input type="checkbox" class="filter-checkbox check-sala" checked>
-                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">💻 Salas Virtuales</span>
+                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">💻 Salas
+                            Virtuales</span>
                     </label>
                     <label class="filter-item">
                         <input type="checkbox" class="filter-checkbox check-recordatorio" checked>
-                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">⏰ Recordatorios</span>
+                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">⏰
+                            Recordatorios</span>
                     </label>
-                    <label class="filter-item" style="margin-top: 8px; border-top: 1px dashed var(--border); border-radius: 0; padding-top: 14px;">
+                    <label class="filter-item"
+                        style="margin-top: 8px; border-top: 1px dashed var(--border); border-radius: 0; padding-top: 14px;">
                         <input type="checkbox" class="filter-checkbox check-general" checked>
-                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">📅 Eventos Institucionales</span>
+                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">📅 Eventos
+                            Institucionales</span>
+                    </label>
+                    <label class="filter-item">
+                        <input type="checkbox" class="filter-checkbox check-nodisponible" checked>
+                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">🚫 No
+                            Disponible</span>
                     </label>
                 </div>
             </div>
@@ -330,13 +786,22 @@
             <div class="cal-toolbar">
                 <div style="display: flex; align-items: center; gap: 1.25rem;">
                     <div style="display: flex; gap: 6px;">
-                        <button class="btn-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                        <button class="btn-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                        <button class="btn-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg></button>
+                        <button class="btn-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg></button>
                     </div>
-                    <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.5px;">Mayo 2026</h2>
-                    <button class="btn btn-secondary" style="padding: 6px 16px; border-radius: 8px; font-weight: 600;">Hoy</button>
+                    <h2
+                        style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.5px;">
+                        Mayo 2026</h2>
+                    <button class="btn btn-secondary"
+                        style="padding: 6px 16px; border-radius: 8px; font-weight: 600;">Hoy</button>
                 </div>
-                
+
                 <div class="btn-group">
                     <button>Día</button>
                     <button>Semana</button>
@@ -366,7 +831,9 @@
                 <div class="cal-cell">
                     <span class="cal-date">1</span>
                     <div class="cal-events-container">
-                        <div class="cal-event event-general" title="Día del Trabajador"><div class="event-dot"></div>Día del Trabajador</div>
+                        <div class="cal-event event-general" title="Día del Trabajador">
+                            <div class="event-dot"></div>Día del Trabajador
+                        </div>
                     </div>
                 </div>
                 <div class="cal-cell"><span class="cal-date">2</span></div>
@@ -377,15 +844,28 @@
                 <div class="cal-cell">
                     <span class="cal-date">5</span>
                     <div class="cal-events-container">
-                        <div class="cal-event event-sala" title="08:00 AM - Clase Matemáticas 10-1"><div class="event-dot"></div>08:00 Clase Mate</div>
-                        <div class="cal-event event-tarea" title="10:30 AM - Revisar ensayos de Español"><div class="event-dot"></div>10:30 Revisar ensayos</div>
+                        <div class="cal-event event-sala" title="08:00 AM - Clase Matemáticas 10-1">
+                            <div class="event-dot"></div>08:00 Clase Mate
+                        </div>
+                        <div class="cal-event event-tarea" title="10:30 AM - Revisar ensayos de Español">
+                            <div class="event-dot"></div>10:30 Revisar ensayos
+                        </div>
                     </div>
                 </div>
-                <div class="cal-cell"><span class="cal-date">6</span></div>
+                <div class="cal-cell">
+                    <span class="cal-date">6</span>
+                    <div class="cal-events-container">
+                        <div class="cal-event event-nodisponible" title="No disponible — Cita médica 10:00-12:00">
+                            <div class="event-dot"></div>🚫 10:00-12:00 Cita médica
+                        </div>
+                    </div>
+                </div>
                 <div class="cal-cell">
                     <span class="cal-date">7</span>
                     <div class="cal-events-container">
-                        <div class="cal-event event-recordatorio" title="Subir notas del primer trimestre al sistema"><div class="event-dot"></div>Subir notas</div>
+                        <div class="cal-event event-recordatorio" title="Subir notas del primer trimestre al sistema">
+                            <div class="event-dot"></div>Subir notas
+                        </div>
                     </div>
                 </div>
                 <div class="cal-cell"><span class="cal-date">8</span></div>
@@ -398,14 +878,18 @@
                 <div class="cal-cell">
                     <span class="cal-date">13</span>
                     <div class="cal-events-container">
-                        <div class="cal-event event-general" title="09:00 AM - Reunión General de Docentes"><div class="event-dot"></div>09:00 Reunión Docentes</div>
+                        <div class="cal-event event-general" title="09:00 AM - Reunión General de Docentes">
+                            <div class="event-dot"></div>09:00 Reunión Docentes
+                        </div>
                     </div>
                 </div>
                 <div class="cal-cell"><span class="cal-date">14</span></div>
                 <div class="cal-cell">
                     <span class="cal-date">15</span>
                     <div class="cal-events-container">
-                        <div class="cal-event event-sala" title="09:00 AM - Ciencias Naturales 8-2"><div class="event-dot"></div>09:00 Ciencias Naturales</div>
+                        <div class="cal-event event-sala" title="09:00 AM - Ciencias Naturales 8-2">
+                            <div class="event-dot"></div>09:00 Ciencias Naturales
+                        </div>
                     </div>
                 </div>
                 <div class="cal-cell"><span class="cal-date">16</span></div>
@@ -413,11 +897,21 @@
 
                 <!-- Week 4 -->
                 <div class="cal-cell"><span class="cal-date">18</span></div>
-                <div class="cal-cell"><span class="cal-date">19</span></div>
+                <div class="cal-cell">
+                    <span class="cal-date">19</span>
+                    <div class="cal-events-container">
+                        <div class="cal-event event-nodisponible"
+                            title="No disponible — Todo el día — Asuntos personales">
+                            <div class="event-dot"></div>🚫 Día completo
+                        </div>
+                    </div>
+                </div>
                 <div class="cal-cell">
                     <span class="cal-date">20</span>
                     <div class="cal-events-container">
-                        <div class="cal-event event-tarea" title="07:00 AM - Preparar material de clase"><div class="event-dot"></div>07:00 Preparar material</div>
+                        <div class="cal-event event-tarea" title="07:00 AM - Preparar material de clase">
+                            <div class="event-dot"></div>07:00 Preparar material
+                        </div>
                     </div>
                 </div>
                 <div class="cal-cell"><span class="cal-date">21</span></div>
@@ -432,15 +926,24 @@
                 <div class="cal-cell">
                     <span class="cal-date">28</span>
                     <div class="cal-events-container">
-                        <div class="cal-event event-recordatorio" title="Revisar exámenes de reposición antes de las 5:00 PM"><div class="event-dot"></div>Revisar Exámenes</div>
+                        <div class="cal-event event-recordatorio"
+                            title="Revisar exámenes de reposición antes de las 5:00 PM">
+                            <div class="event-dot"></div>Revisar Exámenes
+                        </div>
                     </div>
                 </div>
                 <div class="cal-cell today">
                     <span class="cal-date">29</span>
                     <div class="cal-events-container">
-                        <div class="cal-event event-tarea" title="08:30 AM - Calificar proyectos finales"><div class="event-dot"></div>08:30 Calificar proyectos</div>
-                        <div class="cal-event event-sala" title="13:00 PM - Inglés Conversacional (Sala B)"><div class="event-dot"></div>13:00 Inglés Conversacional</div>
-                        <div class="cal-event event-general" title="15:30 PM - Entrega de Proyectos"><div class="event-dot"></div>15:30 Entrega Proyectos</div>
+                        <div class="cal-event event-tarea" title="08:30 AM - Calificar proyectos finales">
+                            <div class="event-dot"></div>08:30 Calificar proyectos
+                        </div>
+                        <div class="cal-event event-sala" title="13:00 PM - Inglés Conversacional (Sala B)">
+                            <div class="event-dot"></div>13:00 Inglés Conversacional
+                        </div>
+                        <div class="cal-event event-general" title="15:30 PM - Entrega de Proyectos">
+                            <div class="event-dot"></div>15:30 Entrega Proyectos
+                        </div>
                     </div>
                 </div>
                 <div class="cal-cell"><span class="cal-date">30</span></div>
@@ -448,4 +951,6 @@
             </div>
         </div>
     </div>
+
+    <th:block th:replace="~{agenda/calendario/modal-disponibilidad :: modal}"></th:block>
 </div>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Coordinación Académica — Nexa</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Coordinación Académica</th:block>
+    <th:block layout:fragment="page-subtitle">Gestiona el calendario de exámenes, cuidadores y distribución de aulas</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar {
+                display: none;
+            }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'calendario' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'calendario' }" @click="activeTab = 'calendario'">
+                        📅 Calendario de Exámenes
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'cuidadores' }" @click="activeTab = 'cuidadores'">
+                        👥 Asignación de Cuidadores
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'aulas' }" @click="activeTab = 'aulas'">
+                        🏫 Distribución de Aulas
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendario de Exámenes -->
+            <div x-show="activeTab === 'calendario'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Fechas de Pruebas y Exámenes</h3>
+                        <button class="btn btn-primary">+ Programar Examen</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha y Hora</th>
+                                        <th>Materia</th>
+                                        <th>Nivel / Grupos</th>
+                                        <th>Tipo de Prueba</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">12/06/2026 - 08:00 AM</td>
+                                        <td>Matemáticas</td>
+                                        <td>Séptimo (7-1, 7-2)</td>
+                                        <td>I Parcial</td>
+                                        <td><span class="badge badge-primary">Programado</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">15/06/2026 - 10:00 AM</td>
+                                        <td>Ciencias</td>
+                                        <td>Octavo (8-1, 8-3)</td>
+                                        <td>II Parcial</td>
+                                        <td><span class="badge badge-success">Confirmado</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asignación de Cuidadores -->
+            <div x-show="activeTab === 'cuidadores'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Asignación de Docentes Cuidadores</h3>
+                        <select class="form-input" style="max-width: 250px;">
+                            <option>Examen: Matemáticas (12/06)</option>
+                            <option>Examen: Ciencias (15/06)</option>
+                        </select>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">Asigne los docentes responsables de supervisar la aplicación de las pruebas.</p>
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Docente Cuidador</th>
+                                        <th>Aula Asignada</th>
+                                        <th>Grupo a Cuidar</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Prof. Carlos Fernández</td>
+                                        <td>Pabellón A - Aula 3</td>
+                                        <td>7-1</td>
+                                        <td><button class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem;">Reasignar</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Prof. María Salas</td>
+                                        <td>Pabellón A - Aula 4</td>
+                                        <td>7-2</td>
+                                        <td><button class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem;">Reasignar</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distribución de Aulas -->
+            <div x-show="activeTab === 'aulas'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Distribución Física para Exámenes</h3>
+                    </div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <h4 style="color: var(--text-secondary); margin-bottom: 0.5rem;">Mapa de Aulas y Aforos</h4>
+                        <p style="font-size:0.85rem; color: var(--text-light); margin-bottom: 1.5rem;">Configure la distribución de pupitres y capacidad máxima para las pruebas.</p>
+                        <button class="btn btn-primary" style="margin: 0 auto;">Ver Mapa de Pabellones</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

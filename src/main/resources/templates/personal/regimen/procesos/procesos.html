@@ -1,0 +1,33 @@
+<div th:fragment="content">
+    <div class="reg-card">
+        <div class="reg-card-header">
+            <h3 class="reg-card-title" th:text="'Procesos Disciplinarios (' + ${registros != null ? #lists.size(registros) : 0} + ')'">Procesos (0)</h3>
+            <button class="btn-primary" @click="abrirForm(null)" style="font-size:0.85rem;padding:8px 16px;">+ Nuevo</button>
+        </div>
+        <table class="reg-table reg-tabla">
+            <thead><tr><th>Funcionario</th><th>Fecha</th><th>Motivo</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                <tr th:if="${registros == null or registros.empty}"><td colspan="5" class="reg-empty">No hay procesos disciplinarios.</td></tr>
+                <tr th:each="r : ${registros}">
+                    <td><strong th:text="${r.funcionario.nombre}" style="color:#0f172a;">Nombre</strong></td>
+                    <td th:text="${#temporals.format(r.fecha, 'dd/MM/yyyy')}">01/01</td>
+                    <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" th:text="${r.motivo}">Motivo</td>
+                    <td><span class="badge-xs" th:classappend="${r.estado.name() == 'PENDIENTE' ? 'badge-pendiente' : (r.estado.name() == 'EN_PROCESO' ? 'badge-enproceso' : (r.estado.name() == 'RESUELTO' ? 'badge-resuelto' : 'badge-apelado'))}" th:text="${r.estado.name() == 'PENDIENTE' ? 'Pendiente' : (r.estado.name() == 'EN_PROCESO' ? 'En proceso' : (r.estado.name() == 'RESUELTO' ? 'Resuelto' : 'Apelado'))}">Estado</span></td>
+                    <td>
+                        <div class="actions-cell">
+                            <select class="form-select" style="font-size:0.7rem;padding:3px 6px;width:auto;" th:onchange="'cambiarEstado(' + ${r.id} + ',this.value)'">
+                                <option value="">⚙</option>
+                                <option value="PENDIENTE" th:selected="${r.estado.name() == 'PENDIENTE'}">Pendiente</option>
+                                <option value="EN_PROCESO" th:selected="${r.estado.name() == 'EN_PROCESO'}">En proceso</option>
+                                <option value="RESUELTO" th:selected="${r.estado.name() == 'RESUELTO'}">Resuelto</option>
+                                <option value="APELADO" th:selected="${r.estado.name() == 'APELADO'}">Apelado</option>
+                            </select>
+                            <button class="btn-xs btn-ghost" th:onclick="'abrirForm(' + ${r.id} + ')'">✏️</button>
+                            <button class="btn-xs btn-danger-ghost" th:onclick="'eliminar(' + ${r.id} + ')'">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

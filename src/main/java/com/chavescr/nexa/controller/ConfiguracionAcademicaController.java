@@ -19,6 +19,8 @@ import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.service.ConfiguracionAcademicaService;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -27,11 +29,8 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping("/configuracion-academica")
 public class ConfiguracionAcademicaController {
 
-    private final ConfiguracionAcademicaService service;
-
-    public ConfiguracionAcademicaController(ConfiguracionAcademicaService service) {
-        this.service = service;
-    }
+    @Autowired
+    private ConfiguracionAcademicaService service;
 
     @GetMapping
     public String configuracionAcademica(Model model, HttpServletRequest request, HttpSession session) {
