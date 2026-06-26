@@ -82,7 +82,7 @@
     <div>
         <div class="proyecto-tabs">
             <button class="proyecto-tab" :class="{ 'active': activeTab === 'proyectos' }" @click="activeTab = 'proyectos'">📁 Proyectos</button>
-            <button class="proyecto-tab" :class="{ 'active': activeTab === 'dashboard' }" @click="activeTab = 'dashboard'">📊 Eficiencia</button>
+            <button class="proyecto-tab" id="btn-tab-eficiencia" :class="{ 'active': activeTab === 'dashboard' }" @click="activeTab = 'dashboard'">📊 Eficiencia</button>
         </div>
 
         <div class="proyecto-panel" x-show="activeTab === 'proyectos'" x-cloak>
@@ -98,7 +98,7 @@
         </div>
 
         <div class="proyecto-panel" x-show="activeTab === 'dashboard'" x-cloak>
-            <div class="select-group">
+            <div id="proyectos-select-group" class="select-group">
                 <select x-model="dashboardProyectoId" class="form-input"
                         onchange="if(this.value){htmx.ajax('GET','/agenda/proyectos/'+this.value+'/dashboard',{target:'#dashboard-container',swap:'innerHTML'});htmx.ajax('GET','/agenda/proyectos/'+this.value+'/miembros',{target:'#miembros-container',swap:'innerHTML'});}">
                     <option value="">-- Selecciona un proyecto --</option>
@@ -110,50 +110,6 @@
         </div>
     </div>
 
-    <script>
-    function proyectoComponente() {
-        return {
-            filtro: '', dashboardProyectoId: '', activeTab: 'proyectos',
-
-            buscarProyectos() {
-                htmx.ajax('GET', '/agenda/proyectos/buscar?' + new URLSearchParams({filtro: this.filtro}), { target: '#tabla-proyectos-container', swap: 'innerHTML' });
-            },
-            verMiembros(id) {
-                this.activeTab = 'dashboard';
-                this.dashboardProyectoId = String(id);
-                htmx.ajax('GET', '/agenda/proyectos/' + id + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
-                htmx.ajax('GET', '/agenda/proyectos/' + id + '/miembros', { target: '#miembros-container', swap: 'innerHTML' });
-            },
-            agregarMiembro(id) {
-                const sel = document.getElementById('select-usuario-' + id);
-                if (!sel || !sel.value) return;
-                const rol = document.getElementById('select-rol-' + id);
-                htmx.ajax('POST', '/agenda/proyectos/' + id + '/miembros', { target: '#miembros-container', swap: 'innerHTML', values: new URLSearchParams({ usuarioId: sel.value, rol: rol ? rol.value : 'MIEMBRO' }) });
-            },
-            eliminarMiembro(proyectoId, miembroId) {
-                if (!confirm('¿Quitar este miembro?')) return;
-                htmx.ajax('DELETE', '/agenda/proyectos/' + proyectoId + '/miembros/' + miembroId, { target: '#miembros-container', swap: 'innerHTML' });
-            },
-            abrirFormTarea(miembroId, proyectoId, tareaId) {
-                const url = tareaId ? '/agenda/proyectos/miembros/' + miembroId + '/tareas/form/' + tareaId + '?proyectoId=' + proyectoId : '/agenda/proyectos/miembros/' + miembroId + '/tareas/form?proyectoId=' + proyectoId;
-                htmx.ajax('GET', url, { target: '#tarea-form-container-' + miembroId, swap: 'innerHTML' });
-            },
-            cambiarEstadoTarea(tareaId, proyectoId, miembroId, nuevoEstado) {
-                htmx.ajax('PUT', '/agenda/proyectos/tareas/' + tareaId + '/estado?' + new URLSearchParams({proyectoId, estado: nuevoEstado}), { target: '#none' })
-                    .then(() => this.cargarTareas(miembroId, proyectoId));
-            },
-            eliminarTarea(tareaId, proyectoId, miembroId) {
-                if (!confirm('¿Eliminar esta tarea?')) return;
-                htmx.ajax('DELETE', '/agenda/proyectos/tareas/' + tareaId + '?' + new URLSearchParams({proyectoId, miembroId}), { target: '#tareas-' + miembroId, swap: 'innerHTML' });
-            },
-            cargarTareas(miembroId, proyectoId) {
-                const c = document.getElementById('tareas-' + miembroId);
-                if (c) { const v = c.style.display !== 'none'; if (v) { c.style.display = 'none'; return; } c.style.display = 'block'; }
-                htmx.ajax('GET', '/agenda/proyectos/miembros/' + miembroId + '/tareas?' + new URLSearchParams({proyectoId}), { target: '#tareas-' + miembroId, swap: 'innerHTML' });
-            }
-        };
-    }
-    </script>
 </div>
 
 <th:block th:fragment="tabla-proyectos">
@@ -224,6 +180,15 @@
             </tr>
         </tbody>
     </table>
+
+    <!-- OOB: sincroniza el select de Eficiencia cuando cambia la lista de proyectos -->
+    <div id="proyectos-select-group" hx-swap-oob="true" class="select-group">
+        <select x-model="dashboardProyectoId" class="form-input"
+                onchange="if(this.value){htmx.ajax('GET','/agenda/proyectos/'+this.value+'/dashboard',{target:'#dashboard-container',swap:'innerHTML'});htmx.ajax('GET','/agenda/proyectos/'+this.value+'/miembros',{target:'#miembros-container',swap:'innerHTML'});}">
+            <option value="">-- Selecciona un proyecto --</option>
+            <option th:each="p : ${proyectos}" th:value="${p.id}" th:text="${p.nombre}">Proyecto</option>
+        </select>
+    </div>
 </th:block>
 
 </body>

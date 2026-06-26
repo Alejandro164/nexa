@@ -364,6 +364,106 @@ if (document.readyState === 'loading') {
 
 document.addEventListener('htmx:afterSettle', initComponentes);
 
+// ── Funciones globales de Proyectos (llamadas via onclick en contenido HTMX) ─
+
+function agregarMiembro(id) {
+    var sel = document.getElementById('select-usuario-' + id);
+    if (!sel || !sel.value) return;
+    htmx.ajax('POST', '/agenda/proyectos/' + id + '/miembros', {
+        target: '#miembros-container', swap: 'innerHTML',
+        values: { usuarioId: sel.value, rol: 'MIEMBRO' }
+    }).then(function () {
+        htmx.ajax('GET', '/agenda/proyectos/' + id + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
+        htmx.ajax('GET', '/agenda/proyectos/buscar?filtro=', { target: '#tabla-proyectos-container', swap: 'innerHTML' });
+    });
+}
+
+function eliminarMiembro(proyectoId, miembroId) {
+    if (!confirm('¿Quitar este miembro?')) return;
+    htmx.ajax('DELETE', '/agenda/proyectos/' + proyectoId + '/miembros/' + miembroId, {
+        target: '#miembros-container', swap: 'innerHTML'
+    }).then(function () {
+        htmx.ajax('GET', '/agenda/proyectos/' + proyectoId + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
+        htmx.ajax('GET', '/agenda/proyectos/buscar?filtro=', { target: '#tabla-proyectos-container', swap: 'innerHTML' });
+    });
+}
+
+function abrirFormTarea(miembroId, proyectoId, tareaId) {
+    var url = tareaId
+        ? '/agenda/proyectos/miembros/' + miembroId + '/tareas/form/' + tareaId + '?proyectoId=' + proyectoId
+        : '/agenda/proyectos/miembros/' + miembroId + '/tareas/form?proyectoId=' + proyectoId;
+    htmx.ajax('GET', url, { target: '#tarea-form-container-' + miembroId, swap: 'innerHTML' });
+}
+
+function cambiarEstadoTarea(tareaId, proyectoId, miembroId, nuevoEstado) {
+    htmx.ajax('PUT', '/agenda/proyectos/tareas/' + tareaId + '/estado?' + new URLSearchParams({ proyectoId: proyectoId, estado: nuevoEstado }), { target: '#none' })
+        .then(function () { cargarTareas(miembroId, proyectoId); });
+}
+
+function eliminarTarea(tareaId, proyectoId, miembroId) {
+    if (!confirm('¿Eliminar esta tarea?')) return;
+    htmx.ajax('DELETE', '/agenda/proyectos/tareas/' + tareaId + '?' + new URLSearchParams({ proyectoId: proyectoId, miembroId: miembroId }), { target: '#tareas-' + miembroId, swap: 'innerHTML' });
+}
+
+function cargarTareas(miembroId, proyectoId) {
+    var c = document.getElementById('tareas-' + miembroId);
+    if (c) { if (c.style.display !== 'none') { c.style.display = 'none'; return; } c.style.display = 'block'; }
+    htmx.ajax('GET', '/agenda/proyectos/miembros/' + miembroId + '/tareas?' + new URLSearchParams({ proyectoId: proyectoId }), { target: '#tareas-' + miembroId, swap: 'innerHTML' });
+}
+
+// ── Componente Alpine: Proyectos ─────────────────────────────────────────────
+
+function proyectoComponente() {
+    return {
+        filtro: '', dashboardProyectoId: '', activeTab: 'proyectos',
+
+        buscarProyectos() {
+            htmx.ajax('GET', '/agenda/proyectos/buscar?' + new URLSearchParams({ filtro: this.filtro }), { target: '#tabla-proyectos-container', swap: 'innerHTML' });
+        },
+        verMiembros(id) {
+            this.dashboardProyectoId = String(id);
+            document.getElementById('btn-tab-eficiencia')?.click();
+            this.$nextTick(() => {
+                var wrap = this.$el.querySelector('.academic-select');
+                if (wrap && wrap._academicSync) wrap._academicSync();
+            });
+            htmx.ajax('GET', '/agenda/proyectos/' + id + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
+            htmx.ajax('GET', '/agenda/proyectos/' + id + '/miembros', { target: '#miembros-container', swap: 'innerHTML' });
+        }
+    };
+}
+
+// ── Posicionamiento inteligente de dropdowns ─────────────────────────────────
+
+function posicionarDropdown(trigger, panel, gap) {
+    gap = gap || 6;
+    var rect = trigger.getBoundingClientRect();
+    var maxH = parseInt(window.getComputedStyle(panel).maxHeight) || 240;
+    var spaceBelow = window.innerHeight - rect.bottom - gap;
+    var spaceAbove = rect.top - gap;
+
+    panel.style.width = rect.width + 'px';
+    panel.style.left  = rect.left + 'px';
+    panel.style.right = 'auto';
+
+    if (spaceBelow >= maxH) {
+        // Cabe completo abajo
+        panel.style.top       = (rect.bottom + gap) + 'px';
+        panel.style.bottom    = 'auto';
+        panel.style.maxHeight = maxH + 'px';
+    } else if (spaceAbove >= spaceBelow) {
+        // Más espacio arriba → mostrar arriba, capeado al maxH original
+        panel.style.top       = 'auto';
+        panel.style.bottom    = (window.innerHeight - rect.top + gap) + 'px';
+        panel.style.maxHeight = Math.min(maxH, Math.max(spaceAbove, 80)) + 'px';
+    } else {
+        // Más espacio abajo pero no cabe completo → mostrar abajo recortado
+        panel.style.top       = (rect.bottom + gap) + 'px';
+        panel.style.bottom    = 'auto';
+        panel.style.maxHeight = Math.min(maxH, Math.max(spaceBelow, 80)) + 'px';
+    }
+}
+
 // ── Modal global (#modal-container) ──────────────────────────────────────────
 
 function abrirModalAcademico() {
@@ -509,10 +609,7 @@ function inicializarSelectoresAcademicos(root) {
             var open = !wrap.classList.contains('open');
             cerrarSelectoresAcademicos(wrap);
             if (open) {
-                var rect = trigger.getBoundingClientRect();
-                opts.style.top   = (rect.bottom + 6) + 'px';
-                opts.style.left  = rect.left + 'px';
-                opts.style.width = rect.width + 'px';
+                posicionarDropdown(trigger, opts, 6);
                 opts.classList.add('is-open');
             } else {
                 opts.classList.remove('is-open');
@@ -529,6 +626,7 @@ function inicializarSelectoresAcademicos(root) {
         opts.style.right = 'auto';
         document.body.appendChild(opts);
         wrap._academicPanel = opts;
+        wrap._academicSync  = sync;
         sync();
     });
 }

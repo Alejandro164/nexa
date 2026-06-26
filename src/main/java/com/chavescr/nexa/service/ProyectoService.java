@@ -254,7 +254,11 @@ public class ProyectoService {
             Map<String, Object> rm = new LinkedHashMap<>();
             rm.put("miembroId", miembro.getId());
             rm.put("nombre", miembro.getUsuario().getNombre());
+            rm.put("email", miembro.getUsuario().getEmail());
             rm.put("rol", miembro.getRol().name());
+            String rolUsuario = miembro.getUsuario().getRoles().isEmpty() ? "Sin rol"
+                    : miembro.getUsuario().getRoles().iterator().next().getNombre().replace("ROLE_", "");
+            rm.put("rolUsuario", rolUsuario);
             rm.put("totalTareas", tareas.size());
             rm.put("completadas", completadas);
             rm.put("enProgreso", enProgreso);

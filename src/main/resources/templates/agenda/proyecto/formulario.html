@@ -60,10 +60,7 @@
                                  });
                              },
                              openDropdown() {
-                                 const r = this.$refs.trigger.getBoundingClientRect();
-                                 this.$refs.panel.style.top   = (r.bottom + 4) + 'px';
-                                 this.$refs.panel.style.left  = r.left + 'px';
-                                 this.$refs.panel.style.width = r.width + 'px';
+                                 posicionarDropdown(this.$refs.trigger, this.$refs.panel, 4);
                                  this.open = true;
                              },
                              toggle(id) {

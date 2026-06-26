@@ -42,7 +42,7 @@
                 <tr th:if="${dashboard.miembros == null or dashboard.miembros.empty}"><td colspan="9" class="proyecto-empty">Sin datos.</td></tr>
                 <tr th:each="m : ${dashboard.miembros}">
                     <td><div class="miembro-nombre" th:text="${m.nombre}">Nombre</div><div class="miembro-email" th:text="${m.email}">email</div></td>
-                    <td><span class="rol-badge" th:classappend="${m.rol == 'LIDER' ? 'rol-lider' : 'rol-miembro'}" th:text="${m.rol == 'LIDER' ? 'Líder' : 'Miembro'}">Rol</span></td>
+                    <td><span class="badge-xs badge-docente" th:text="${m.rolUsuario}">Rol</span></td>
                     <td th:text="${m.totalTareas}">0</td>
                     <td style="color:#16a34a;" th:text="${m.completadas}">0</td>
                     <td style="color:#2563eb;" th:text="${m.enProgreso}">0</td>

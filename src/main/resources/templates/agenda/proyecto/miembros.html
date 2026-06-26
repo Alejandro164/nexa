@@ -7,18 +7,17 @@
             </div>
         </div>
         <div style="padding:1rem 1.5rem;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;align-items:center;">
-            <select class="form-select" style="max-width:250px;" th:attr="id='select-usuario-'+${proyecto.id}">
-                <option value="" disabled selected>-- Agregar usuario --</option>
-                <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}" th:text="${u.nombre + ' (' + u.email + ')'}">Usuario</option>
-            </select>
-            <select class="form-select" style="max-width:120px;" th:attr="id='select-rol-'+${proyecto.id}">
-                <option value="MIEMBRO">Miembro</option>
-                <option value="LIDER">Líder</option>
-            </select>
+            <div style="flex:1;min-width:0;">
+                <select class="form-input" th:attr="id='select-usuario-'+${proyecto.id}">
+                    <option value="">-- Agregar usuario --</option>
+                    <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}" th:text="${u.nombre + ' — ' + (u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', ''))}">Usuario</option>
+                </select>
+            </div>
             <button class="btn-primary btn-sm"
+                    style="white-space:nowrap;flex-shrink:0;"
                     th:if="${usuariosDisponibles != null and !usuariosDisponibles.empty}"
                     th:attr="data-id=${proyecto.id}"
-                    onclick="agregarMiembro(+this.dataset.id)">+ Agregar</button>
+                    onclick="agregarMiembro(+this.dataset.id)">Agregar Miembro</button>
             <span th:if="${usuariosDisponibles == null or usuariosDisponibles.empty}" style="color:#94a3b8;font-size:0.85rem;">Todos ya son miembros.</span>
         </div>
         <div style="padding:1rem 1.5rem;">
@@ -30,7 +29,6 @@
                         <span class="miembro-email" th:text="${m.usuario.email}">email</span>
                     </div>
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <span class="rol-badge" th:classappend="${m.rol.name() == 'LIDER' ? 'rol-lider' : 'rol-miembro'}" th:text="${m.rol.name() == 'LIDER' ? 'Líder' : 'Miembro'}">Miembro</span>
                         <button class="btn-sm btn-ghost"
                                 th:attr="data-mid=${m.id},data-pid=${proyecto.id}"
                                 onclick="cargarTareas(+this.dataset.mid, +this.dataset.pid)">📋</button>
