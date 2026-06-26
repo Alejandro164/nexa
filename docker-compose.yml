@@ -10,6 +10,8 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
+      # Script de seed: se ejecuta automáticamente la primera vez (volumen vacío)
+      - ./docker/init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
