@@ -157,7 +157,7 @@ public class ConfiguracionAcademicaService {
 
     @Transactional(readOnly = true)
     public List<Usuario> listarDocentes(Long institucionId) {
-        return usuarioRepository.findActivosByInstitucionId(institucionId);
+        return usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, "ROLE_DOCENTE");
     }
 
     @Transactional(readOnly = true)

@@ -15,7 +15,10 @@
                 <option value="MIEMBRO">Miembro</option>
                 <option value="LIDER">Líder</option>
             </select>
-            <button class="btn-primary btn-sm" th:onclick="'agregarMiembro(' + ${proyecto.id} + ')'" th:if="${usuariosDisponibles != null and !usuariosDisponibles.empty}">+ Agregar</button>
+            <button class="btn-primary btn-sm"
+                    th:if="${usuariosDisponibles != null and !usuariosDisponibles.empty}"
+                    th:attr="data-id=${proyecto.id}"
+                    onclick="agregarMiembro(+this.dataset.id)">+ Agregar</button>
             <span th:if="${usuariosDisponibles == null or usuariosDisponibles.empty}" style="color:#94a3b8;font-size:0.85rem;">Todos ya son miembros.</span>
         </div>
         <div style="padding:1rem 1.5rem;">
@@ -28,8 +31,12 @@
                     </div>
                     <div style="display:flex;gap:8px;align-items:center;">
                         <span class="rol-badge" th:classappend="${m.rol.name() == 'LIDER' ? 'rol-lider' : 'rol-miembro'}" th:text="${m.rol.name() == 'LIDER' ? 'Líder' : 'Miembro'}">Miembro</span>
-                        <button class="btn-sm btn-ghost" th:onclick="'cargarTareas(' + ${m.id} + ',' + ${proyecto.id} + ')'">📋</button>
-                        <button class="btn-sm btn-danger-ghost" th:onclick="'eliminarMiembro(' + ${proyecto.id} + ',' + ${m.id} + ')'">✕</button>
+                        <button class="btn-sm btn-ghost"
+                                th:attr="data-mid=${m.id},data-pid=${proyecto.id}"
+                                onclick="cargarTareas(+this.dataset.mid, +this.dataset.pid)">📋</button>
+                        <button class="btn-sm btn-danger-ghost"
+                                th:attr="data-pid=${proyecto.id},data-mid=${m.id}"
+                                onclick="eliminarMiembro(+this.dataset.pid, +this.dataset.mid)">✕</button>
                     </div>
                 </div>
                 <div class="tareas-container" th:attr="id='tareas-'+${m.id}" style="display:none;"></div>

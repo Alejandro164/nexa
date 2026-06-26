@@ -104,6 +104,26 @@ public class ProyectoService {
     }
 
     @Transactional(readOnly = true)
+    public List<Usuario> listarPersonalActivo(Long institucionId) {
+        return usuarioRepository.findActivosByInstitucionId(institucionId);
+    }
+
+    public void sincronizarMiembrosFormulario(Long institucionId, Long proyectoId, List<Long> usuarioIds) {
+        if (usuarioIds == null || usuarioIds.isEmpty()) return;
+        for (Long uid : usuarioIds) {
+            if (!miembroRepository.existsByProyectoIdAndUsuarioId(proyectoId, uid)) {
+                agregarMiembro(institucionId, proyectoId, uid, "MIEMBRO");
+            }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> listarIdsMiembros(Long proyectoId) {
+        return listarMiembros(proyectoId).stream()
+                .map(m -> m.getUsuario().getId()).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<MiembroProyecto> listarMiembros(Long proyectoId) {
         return miembroRepository.findByProyectoIdOrderByFechaAsignacionDesc(proyectoId);
     }

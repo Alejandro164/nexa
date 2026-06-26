@@ -363,3 +363,193 @@ if (document.readyState === 'loading') {
 }
 
 document.addEventListener('htmx:afterSettle', initComponentes);
+
+// ── Modal global (#modal-container) ──────────────────────────────────────────
+
+function abrirModalAcademico() {
+    var modal = document.getElementById('modal-container');
+    if (!modal) return;
+    modal.classList.remove('modal-closing');
+    modal.classList.add('show');
+}
+
+function cerrarModalAcademico() {
+    var modal = document.getElementById('modal-container');
+    if (!modal || !modal.classList.contains('show')) return;
+    modal.classList.add('modal-closing');
+    setTimeout(function () {
+        modal.classList.remove('show', 'modal-closing');
+        modal.innerHTML = '';
+    }, 180);
+}
+
+// Close modal on backdrop click or Escape
+if (!window._modalGlobalEventsRegistered) {
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') cerrarModalAcademico();
+    });
+    document.addEventListener('click', function (e) {
+        var modal = document.getElementById('modal-container');
+        if (modal && modal.classList.contains('show') && e.target === modal) {
+            cerrarModalAcademico();
+        }
+    });
+    window._modalGlobalEventsRegistered = true;
+}
+
+// ── Delete confirmation modal ─────────────────────────────────────────────────
+
+function abrirConfirmacionAcademica(trigger) {
+    window.academicDeleteRequest = {
+        url: trigger.dataset.deleteUrl,
+        target: trigger.dataset.deleteTarget,
+        swap: trigger.dataset.deleteSwap || 'innerHTML'
+    };
+    document.getElementById('academic-delete-title').textContent =
+        trigger.dataset.deleteTitle || 'Confirmar eliminación';
+    document.getElementById('academic-delete-message').textContent =
+        trigger.dataset.deleteMessage || '¿Deseas eliminar este registro?';
+    var modal = document.getElementById('academic-delete-modal');
+    modal.style.display = 'flex';
+    void modal.offsetWidth;
+    modal.classList.add('modal-visible');
+}
+
+function cerrarConfirmacionAcademica() {
+    var modal = document.getElementById('academic-delete-modal');
+    if (modal && modal.style.display !== 'none') {
+        modal.classList.remove('modal-visible');
+        modal.classList.add('modal-closing');
+        setTimeout(function () {
+            modal.style.display = 'none';
+            modal.classList.remove('modal-closing');
+        }, 180);
+    }
+    window.academicDeleteRequest = null;
+}
+
+function confirmarEliminacionAcademica() {
+    var req = window.academicDeleteRequest;
+    if (!req || !req.url || !req.target) { cerrarConfirmacionAcademica(); return; }
+    htmx.ajax('DELETE', req.url, { target: req.target, swap: req.swap })
+        .then(function () { cerrarConfirmacionAcademica(); });
+}
+
+// ── Custom Select (academic-select) ──────────────────────────────────────────
+
+function cerrarSelectoresAcademicos(excepto) {
+    document.querySelectorAll('.academic-select.open').forEach(function (s) {
+        if (s !== excepto) {
+            s.classList.remove('open');
+            var t = s.querySelector('.academic-select-trigger');
+            if (t) t.setAttribute('aria-expanded', 'false');
+            var panel = s._academicPanel;
+            if (panel) panel.classList.remove('is-open');
+        }
+    });
+}
+
+function inicializarSelectoresAcademicos(root) {
+    (root || document).querySelectorAll('select.form-input:not([data-academic-select])').forEach(function (native) {
+        native.dataset.academicSelect = 'true';
+        native.classList.add('academic-native-select');
+
+        var wrap = document.createElement('div');
+        wrap.className = 'academic-select';
+
+        var trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'academic-select-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        var label = document.createElement('span');
+        var arrow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        arrow.setAttribute('class', 'academic-select-arrow');
+        arrow.setAttribute('viewBox', '0 0 24 24');
+        arrow.setAttribute('fill', 'none');
+        arrow.setAttribute('stroke', 'currentColor');
+        arrow.setAttribute('stroke-width', '2');
+        arrow.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+        trigger.append(label, arrow);
+
+        var opts = document.createElement('div');
+        opts.className = 'academic-select-options';
+        opts.setAttribute('role', 'listbox');
+
+        function sync() {
+            var sel = native.options[native.selectedIndex];
+            label.textContent = sel ? sel.textContent.trim() : '';
+            label.classList.toggle('academic-select-placeholder', !sel || !sel.value);
+            opts.querySelectorAll('.academic-select-option').forEach(function (o) {
+                o.classList.toggle('selected', o.dataset.value === native.value);
+            });
+        }
+
+        Array.from(native.options).forEach(function (o) {
+            if (o.hidden || o.disabled || !o.value) return;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'academic-select-option';
+            btn.dataset.value = o.value;
+            btn.textContent = o.textContent.trim();
+            btn.setAttribute('role', 'option');
+            btn.addEventListener('click', function () {
+                native.value = btn.dataset.value;
+                sync();
+                wrap.classList.remove('open');
+                trigger.setAttribute('aria-expanded', 'false');
+                opts.classList.remove('is-open');
+                native.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            opts.appendChild(btn);
+        });
+
+        trigger.addEventListener('click', function () {
+            var open = !wrap.classList.contains('open');
+            cerrarSelectoresAcademicos(wrap);
+            if (open) {
+                var rect = trigger.getBoundingClientRect();
+                opts.style.top   = (rect.bottom + 6) + 'px';
+                opts.style.left  = rect.left + 'px';
+                opts.style.width = rect.width + 'px';
+                opts.classList.add('is-open');
+            } else {
+                opts.classList.remove('is-open');
+            }
+            wrap.classList.toggle('open', open);
+            trigger.setAttribute('aria-expanded', String(open));
+        });
+
+        native.addEventListener('change', sync);
+        native.parentNode.insertBefore(wrap, native);
+        wrap.append(native, trigger);
+        // Teleport opts to body (escapes overflow/modal constraints)
+        opts.style.position = 'fixed';
+        opts.style.right = 'auto';
+        document.body.appendChild(opts);
+        wrap._academicPanel = opts;
+        sync();
+    });
+}
+
+if (!window.academicSelectEventsRegistered) {
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.academic-select') && !e.target.closest('.academic-select-options')) {
+            cerrarSelectoresAcademicos();
+        }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') cerrarSelectoresAcademicos();
+    });
+    document.addEventListener('htmx:load', function (e) {
+        inicializarSelectoresAcademicos(e.detail.elt);
+    });
+    window.academicSelectEventsRegistered = true;
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { inicializarSelectoresAcademicos(document); });
+} else {
+    inicializarSelectoresAcademicos(document);
+}

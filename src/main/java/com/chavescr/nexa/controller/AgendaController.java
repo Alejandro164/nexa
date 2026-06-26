@@ -88,8 +88,11 @@ public class AgendaController {
     }
 
     @GetMapping("/proyectos/form")
-    public String proyectoFormCrear(Model model) {
+    public String proyectoFormCrear(Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("proyecto", new Proyecto());
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        model.addAttribute("miembrosIds", java.util.List.of());
         return "agenda/proyecto/formulario :: form-content";
     }
 
@@ -97,13 +100,18 @@ public class AgendaController {
     public String proyectoFormEditar(@PathVariable Long id, Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         model.addAttribute("proyecto", proyectoService.obtenerProyecto(institucionId, id));
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        model.addAttribute("miembrosIds", proyectoService.listarIdsMiembros(id));
         return "agenda/proyecto/formulario :: form-content";
     }
 
     @PostMapping("/proyectos")
-    public String proyectoGuardar(@ModelAttribute Proyecto datos, Model model, HttpSession session) {
+    public String proyectoGuardar(@ModelAttribute Proyecto datos,
+            @RequestParam(required = false) java.util.List<Long> miembroIds,
+            Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        proyectoService.guardarProyecto(institucionId, datos);
+        Proyecto guardado = proyectoService.guardarProyecto(institucionId, datos);
+        proyectoService.sincronizarMiembrosFormulario(institucionId, guardado.getId(), miembroIds);
         model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
         return "agenda/proyecto/contenido :: tabla-proyectos";
     }
