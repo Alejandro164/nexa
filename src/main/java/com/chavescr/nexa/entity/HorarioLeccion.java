@@ -11,13 +11,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "horario_lecciones", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_horario_periodo_nivel_dia_leccion",
-                columnNames = {"periodo_id", "nivel_id", "dia", "numero_leccion"})
-})
+@Table(name = "horario_lecciones")
 public class HorarioLeccion {
 
     @Id

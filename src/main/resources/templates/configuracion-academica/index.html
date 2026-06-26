@@ -480,6 +480,22 @@
             .schedule-head.schedule-hour {
                 min-height: auto;
             }
+            .schedule-break {
+                grid-column: 1 / -1;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 0 14px;
+                min-height: 28px;
+                background: #f1f5f9;
+                border-right: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+                font-size: 0.7rem;
+                font-weight: 700;
+                color: #94a3b8;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+            }
             .schedule-slot {
                 min-height: 92px;
                 padding: 0.55rem;
@@ -523,6 +539,68 @@
             .schedule-slot-filled small {
                 color: var(--text-secondary);
                 font-size: 0.7rem;
+            }
+            .schedule-slot-multi {
+                display: flex;
+                gap: 3px;
+                padding: 3px;
+                align-items: stretch;
+            }
+            .schedule-slot-item {
+                --subject-color: #2d5a87;
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 2px;
+                padding: 5px 6px 5px 8px;
+                border-radius: 6px;
+                border-left: 3px solid var(--subject-color);
+                background: color-mix(in srgb, var(--subject-color) 10%, white);
+                cursor: pointer;
+                position: relative;
+                overflow: hidden;
+            }
+            .schedule-slot-item:hover {
+                filter: brightness(0.96);
+            }
+            .schedule-slot-item strong {
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: var(--text-primary);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .schedule-slot-item span,
+            .schedule-slot-item small {
+                font-size: 0.65rem;
+                color: var(--text-secondary);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .schedule-slot-add {
+                flex-shrink: 0;
+                width: 22px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px dashed #cbd5e1;
+                border-radius: 6px;
+                background: transparent;
+                color: #94a3b8;
+                cursor: pointer;
+                font-size: 1.1rem;
+                line-height: 1;
+                padding: 0;
+                transition: all 0.15s;
+            }
+            .schedule-slot-add:hover {
+                border-color: var(--primary);
+                color: var(--primary);
+                background: rgba(45, 90, 135, 0.05);
             }
             .schedule-remove {
                 position: absolute;

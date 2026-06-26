@@ -11,7 +11,7 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
     List<HorarioLeccion> findByInstitucionIdAndPeriodoIdAndNivelIdOrderByNumeroLeccionAsc(
             Long institucionId, Long periodoId, Long nivelId);
 
-    Optional<HorarioLeccion> findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
+    List<HorarioLeccion> findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccionOrderByIdAsc(
             Long institucionId, Long periodoId, Long nivelId, String dia, Integer numeroLeccion);
 
     Optional<HorarioLeccion> findByIdAndInstitucionId(Long id, Long institucionId);
