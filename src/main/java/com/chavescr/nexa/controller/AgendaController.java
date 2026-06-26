@@ -39,8 +39,99 @@ public class AgendaController {
     }
 
     @GetMapping("/tareas")
-    public String tareas() {
+    public String tareas(Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
         return "agenda/tareas/tareas :: content";
+    }
+
+    @GetMapping("/tareas/lista")
+    public String tareasLista(Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
+        return "agenda/tareas/tareas :: tabla-tareas";
+    }
+
+    @GetMapping("/tareas/form")
+    public String tareaFormCrear(Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaProyecto());
+        model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        return "agenda/tareas/formulario :: form-content";
+    }
+
+    @GetMapping("/tareas/form/{id}")
+    public String tareaFormEditar(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("tarea", proyectoService.obtenerTareaInstitucion(institucionId, id));
+        model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        return "agenda/tareas/formulario :: form-content";
+    }
+
+    @GetMapping("/tareas/miembros")
+    public String tareasMiembrosDeProyecto(Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        return "agenda/tareas/miembros-options :: options";
+    }
+
+    @PostMapping("/tareas")
+    public String tareaGuardar(
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String asignarA,
+            @RequestParam String titulo,
+            @RequestParam(required = false) String descripcion,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fechaLimite,
+            @RequestParam(required = false) com.chavescr.nexa.entity.TareaProyecto.EstadoTarea estado,
+            @RequestParam(required = false) com.chavescr.nexa.entity.TareaProyecto.PrioridadTarea prioridad,
+            Model model, HttpSession session,
+            jakarta.servlet.http.HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        try {
+            Long proyectoId = null;
+            Long usuarioId = null;
+            if (asignarA != null && !asignarA.isBlank()) {
+                if (asignarA.startsWith("p_")) proyectoId = Long.parseLong(asignarA.substring(2));
+                else if (asignarA.startsWith("u_")) usuarioId = Long.parseLong(asignarA.substring(2));
+            }
+            proyectoService.guardarTareaGeneral(institucionId, id, proyectoId, usuarioId,
+                    titulo, descripcion, fechaLimite, estado, prioridad);
+            model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
+            return "agenda/tareas/tareas :: tabla-tareas";
+        } catch (Exception e) {
+            response.setHeader("HX-Retarget", "#tareas-modal-container");
+            response.setHeader("HX-Reswap", "innerHTML");
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaProyecto());
+            model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
+            model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+            return "agenda/tareas/formulario :: form-content";
+        }
+    }
+
+    @DeleteMapping("/tareas/{id}")
+    public String tareaEliminar(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        proyectoService.eliminarTareaGeneral(institucionId, id);
+        model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
+        return "agenda/tareas/tareas :: tabla-tareas";
+    }
+
+    @PutMapping("/tareas/{id}/estado")
+    public String tareaEstado(@PathVariable Long id,
+            @RequestParam com.chavescr.nexa.entity.TareaProyecto.EstadoTarea estado,
+            Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        com.chavescr.nexa.entity.TareaProyecto t = proyectoService.obtenerTareaInstitucion(institucionId, id);
+        t.setEstado(estado);
+        if (estado == com.chavescr.nexa.entity.TareaProyecto.EstadoTarea.COMPLETADA)
+            t.setFechaCompletada(java.time.LocalDateTime.now());
+        else t.setFechaCompletada(null);
+        proyectoService.cambiarEstadoTarea(t.getProyecto().getId(), id, estado);
+        model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
+        return "agenda/tareas/tareas :: tabla-tareas";
     }
 
     @GetMapping("/actividad")

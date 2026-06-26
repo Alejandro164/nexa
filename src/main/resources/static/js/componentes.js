@@ -433,6 +433,88 @@ function proyectoComponente() {
     };
 }
 
+function toggleTipoAsignacion(tipo) {
+    var wrapP = document.getElementById('wrap-asig-proyecto');
+    var wrapU = document.getElementById('wrap-asig-personal');
+    var selP  = document.getElementById('asig-proyecto');
+    var selU  = document.getElementById('asig-personal');
+    if (!wrapP || !wrapU) return;
+
+    function resetAcademicSelect(sel) {
+        if (!sel) return;
+        sel.value = '';
+        var wrap = sel.closest('.academic-select');
+        if (wrap) {
+            wrap.classList.remove('open');
+            if (wrap._academicSync) wrap._academicSync();
+            if (wrap._academicPanel) wrap._academicPanel.classList.remove('is-open');
+        }
+    }
+
+    if (tipo === 'p') {
+        wrapP.style.display = '';
+        if (selP) selP.disabled = false;
+        wrapU.style.display = 'none';
+        if (selU) { selU.disabled = true; resetAcademicSelect(selU); }
+    } else {
+        wrapU.style.display = '';
+        if (selU) selU.disabled = false;
+        wrapP.style.display = 'none';
+        if (selP) { selP.disabled = true; resetAcademicSelect(selP); }
+    }
+}
+
+function abrirTareasModal() {
+    var el = document.getElementById('tareas-modal-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarTareasModal() {
+    var el = document.getElementById('tareas-modal-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+    }, 180);
+}
+
+function _desmontarAcademicSelect(sel) {
+    if (!sel || !sel.classList.contains('academic-native-select')) return;
+    var wrap = sel.parentElement;
+    if (!wrap || !wrap.classList.contains('academic-select')) return;
+    if (wrap._academicPanel) wrap._academicPanel.remove();
+    wrap.parentNode.insertBefore(sel, wrap);
+    wrap.remove();
+    sel.classList.remove('academic-native-select');
+    delete sel.dataset.academicSelect;
+}
+
+function cargarMiembrosFormTarea(proyectoId) {
+    var sel = document.getElementById('form-tarea-miembro');
+    if (!sel) return;
+
+    _desmontarAcademicSelect(sel);
+
+    if (!proyectoId) {
+        sel.innerHTML = '<option value="">-- Seleccionar miembro --</option>';
+        inicializarSelectoresAcademicos(sel.parentNode);
+        return;
+    }
+
+    htmx.ajax('GET', '/agenda/tareas/miembros', {
+        target: '#form-tarea-miembro', swap: 'innerHTML'
+    }).then(function () {
+        inicializarSelectoresAcademicos(sel.parentNode);
+    });
+}
+
 // ── Posicionamiento inteligente de dropdowns ─────────────────────────────────
 
 function posicionarDropdown(trigger, panel, gap) {
