@@ -25,7 +25,9 @@
                 </div>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
-                <button type="button" class="btn-secondary btn-sm" th:onclick="'document.getElementById(\'tarea-form-container-'+${miembroId}+'\').innerHTML=\'\''">Cancelar</button>
+                <button type="button" class="btn-secondary btn-sm"
+                        th:attr="data-mid=${miembroId}"
+                        onclick="document.getElementById('tarea-form-container-'+this.dataset.mid).innerHTML=''">Cancelar</button>
                 <button type="submit" class="btn-primary btn-sm"><span th:text="${tarea.id == null ? 'Crear' : 'Actualizar'}">Crear</span></button>
             </div>
         </form>

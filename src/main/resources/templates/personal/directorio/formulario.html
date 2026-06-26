@@ -1,0 +1,145 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" @click.self="$dispatch('close-modal')">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${usuario.id == null ? 'Agregar Funcionario' : 'Editar Funcionario'}">Funcionario</h3>
+                <button type="button" class="close-btn" @click="$dispatch('close-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form th:action="@{/personal/directorio}" method="post"
+                      hx-post="/personal/directorio"
+                      hx-target="#dir-content" hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
+                    <input type="hidden" name="id" th:value="${usuario.id}">
+
+                    <div th:if="${error}" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:0.84rem;margin-bottom:0.9rem;"
+                         th:text="${error}"></div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2;">
+                            <label class="form-label">Nombre completo *</label>
+                            <input class="form-input" type="text" name="nombre" required maxlength="100"
+                                   th:value="${usuario.nombre}" placeholder="Ej. María González">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label">Cédula</label>
+                            <input class="form-input" type="text" name="cedula" maxlength="30"
+                                   th:value="${usuario.cedula}" placeholder="1-2345-6789">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Correo electrónico *</label>
+                        <input class="form-input" type="email" name="email" required maxlength="150"
+                               th:value="${usuario.email}" placeholder="correo@institución.com">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Nombre de usuario *</label>
+                            <input class="form-input" type="text" name="usuario" required maxlength="60"
+                                   th:value="${usuario.usuario}" placeholder="maria.gonzalez">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"
+                                   th:text="${usuario.id == null ? 'Contraseña *' : 'Contraseña'}">Contraseña</label>
+                            <input class="form-input" type="password" name="password"
+                                   th:required="${usuario.id == null}"
+                                   th:placeholder="${usuario.id == null ? 'Contraseña inicial' : 'Dejar vacío para no cambiar'}">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="position:relative;"
+                         x-data="{
+                             open: false,
+                             selected: [],
+                             names: {},
+                             init() {
+                                 this.selected = (this.$el.dataset.preselected || '')
+                                     .split(',').map(Number).filter(Boolean);
+                                 this.$nextTick(() => {
+                                     if (this.$refs.panel) {
+                                         this.$refs.panel.querySelectorAll('[data-rol-id]').forEach(o => {
+                                             this.names[+o.dataset.rolId] = o.dataset.rolName;
+                                         });
+                                     }
+                                 });
+                             },
+                             openDropdown() {
+                                 const r = this.$refs.trigger.getBoundingClientRect();
+                                 this.$refs.panel.style.top   = (r.bottom + 4) + 'px';
+                                 this.$refs.panel.style.left  = r.left + 'px';
+                                 this.$refs.panel.style.width = r.width + 'px';
+                                 this.open = true;
+                             },
+                             toggle(id) {
+                                 this.selected = this.selected.includes(id)
+                                     ? this.selected.filter(x => x !== id)
+                                     : [...this.selected, id];
+                             },
+                             label() {
+                                 if (!this.selected.length) return 'Seleccionar roles...';
+                                 const n = this.selected.map(id => this.names[id]).filter(Boolean);
+                                 return n.length === 1 ? n[0] : n[0] + ' + ' + (n.length - 1) + ' más';
+                             }
+                         }"
+                         x-init="init()"
+                         th:data-preselected="${#strings.listJoin(usuario.roles.![id], ',')}"
+                         @click.window="if (open && !$el.contains($event.target) && (!$refs.panel || !$refs.panel.contains($event.target))) open = false"
+                         @keydown.escape.window="open = false">
+
+                        <label class="form-label">Roles</label>
+
+                        <template x-for="id in selected" :key="id">
+                            <input type="hidden" name="rolIds" :value="id">
+                        </template>
+
+                        <button type="button" class="multiselect-trigger"
+                                x-ref="trigger"
+                                @click="open ? open = false : openDropdown()"
+                                :aria-expanded="open.toString()">
+                            <span x-text="label()">Seleccionar roles...</span>
+                            <svg class="multiselect-arrow" :class="{'rotated': open}"
+                                 xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+
+                        <template x-teleport="body">
+                            <div class="multiselect-panel" x-ref="panel"
+                                 :class="{'ms-open': open}"
+                                 @click="const o = $event.target.closest('[data-rol-id]'); if (o) toggle(+o.dataset.rolId)">
+                                <div th:each="rol : ${roles}"
+                                     class="multiselect-option"
+                                     th:attr="data-rol-id=${rol.id},data-rol-name=${rol.nombre.replace('ROLE_', '')}"
+                                     :class="{'ms-selected': selected.includes(+$el.dataset.rolId)}">
+                                    <svg class="multiselect-check"
+                                         xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span th:text="${rol.nombre.replace('ROLE_', '')}">ROL</span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="form-group" style="display:flex;align-items:center;gap:10px;margin-top:0.5rem;">
+                        <input type="checkbox" id="activo-check" name="activo" value="true"
+                               th:checked="${usuario.activo == null or usuario.activo}"
+                               style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;">
+                        <label for="activo-check" class="form-label" style="margin:0;cursor:pointer;">Funcionario activo</label>
+                    </div>
+
+                    <div class="modal-footer" style="margin:1rem -1.5rem -1.5rem;">
+                        <button type="button" class="btn-secondary" @click="$dispatch('close-modal')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -5,7 +5,7 @@
                 <h3 class="card-title">Horario general</h3>
                 <p class="academic-help">Selecciona un período y nivel; luego presiona una lección para asignarla.</p>
             </div>
-            <span class="badge badge-primary" th:text="|${horario.size()} lecciones asignadas|">0 lecciones asignadas</span>
+            <span class="badge badge-primary" th:text="|${totalLecciones} lecciones asignadas|">0 lecciones asignadas</span>
         </div>
 
         <form class="schedule-filters">
@@ -55,35 +55,64 @@
                 <div class="schedule-head" th:each="dia : ${dias}"
                      th:text="${#strings.capitalize(#strings.toLowerCase(dia))}">Lunes</div>
 
-                <th:block th:each="numero : ${lecciones}">
+                <th:block th:each="numero, numStat : ${lecciones}">
                     <div class="schedule-hour">
                         <strong th:text="|Lección ${numero}|">Lección 1</strong>
                     </div>
                     <th:block th:each="dia : ${dias}"
-                              th:with="item=${horario.get(numero + '-' + dia)}">
-                        <button th:if="${item == null}" type="button" class="schedule-slot schedule-slot-empty"
+                              th:with="items=${horario.get(numero + '-' + dia)}">
+
+                        <!-- Slot vacío -->
+                        <button th:if="${items == null or items.empty}"
+                                type="button" class="schedule-slot schedule-slot-empty"
                                 th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}|"
                                 hx-target="#modal-container"
                                 onclick="abrirModalAcademico()">
                             <span>+ Asignar</span>
                         </button>
-                        <div th:if="${item != null}" class="schedule-slot schedule-slot-filled"
-                             th:style="|--subject-color:${item.materia.color}|"
-                             th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}|"
-                             hx-target="#modal-container"
-                             onclick="abrirModalAcademico()">
-                            <strong th:text="${item.materia.nombre}">Matemáticas</strong>
-                            <span th:text="${item.docente.nombre}">Docente</span>
-                            <small th:text="|${#temporals.format(item.horaInicio, 'HH:mm')} - ${#temporals.format(item.horaFin, 'HH:mm')}|">07:00 - 07:40</small>
-                            <button type="button" class="schedule-remove" title="Eliminar asignación"
-                                    th:attr="data-delete-url=|/configuracion-academica/horario/${item.id}?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}|,
-                                             data-delete-message=|¿Deseas eliminar la lección de ${item.materia.nombre} del horario?|"
-                                    data-delete-title="Eliminar lección"
-                                    data-delete-target="#horario-panel"
-                                    data-delete-swap="outerHTML"
-                                    onclick="event.stopPropagation(); abrirConfirmacionAcademica(this)">×</button>
+
+                        <!-- Slot con 1 a 3 materias -->
+                        <div th:if="${items != null and !items.empty}"
+                             class="schedule-slot schedule-slot-multi">
+
+                            <div th:each="item : ${items}"
+                                 class="schedule-slot-item"
+                                 th:style="|--subject-color:${item.materia.color}|"
+                                 th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}&amp;id=${item.id}|"
+                                 hx-target="#modal-container"
+                                 onclick="abrirModalAcademico()">
+                                <strong th:text="${item.materia.nombre}">Matemáticas</strong>
+                                <span th:text="${item.docente.nombre}">Docente</span>
+                                <small th:text="|${#temporals.format(item.horaInicio, 'HH:mm')} - ${#temporals.format(item.horaFin, 'HH:mm')}|">07:00 - 07:40</small>
+                                <button type="button" class="schedule-remove" title="Eliminar asignación"
+                                        th:attr="data-delete-url=|/configuracion-academica/horario/${item.id}?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}|,
+                                                 data-delete-message=|¿Deseas eliminar la lección de ${item.materia.nombre} del horario?|"
+                                        data-delete-title="Eliminar lección"
+                                        data-delete-target="#horario-panel"
+                                        data-delete-swap="outerHTML"
+                                        onclick="event.stopPropagation(); abrirConfirmacionAcademica(this)">×</button>
+                            </div>
+
+                            <!-- Botón agregar materia (solo si hay menos de 3) -->
+                            <button th:if="${items.size() < 3}"
+                                    type="button" class="schedule-slot-add"
+                                    th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}|"
+                                    hx-target="#modal-container"
+                                    onclick="abrirModalAcademico()"
+                                    title="Agregar otra materia">+</button>
                         </div>
+
                     </th:block>
+
+                    <div th:if="${numero % 2 == 0 and !numStat.last}" class="schedule-break">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                            <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+                        </svg>
+                        Receso
+                    </div>
                 </th:block>
             </div>
         </div>

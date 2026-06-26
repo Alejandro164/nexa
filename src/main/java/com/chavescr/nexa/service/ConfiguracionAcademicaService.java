@@ -1,6 +1,7 @@
 package com.chavescr.nexa.service;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,27 +157,25 @@ public class ConfiguracionAcademicaService {
 
     @Transactional(readOnly = true)
     public List<Usuario> listarDocentes(Long institucionId) {
-        return usuarioRepository.findActivosByInstitucionId(institucionId);
+        return usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, "ROLE_DOCENTE");
     }
 
     @Transactional(readOnly = true)
-    public Map<String, HorarioLeccion> obtenerHorario(Long institucionId, Long periodoId, Long nivelId) {
-        Map<String, HorarioLeccion> horario = new LinkedHashMap<>();
-        if (periodoId == null || nivelId == null) {
-            return horario;
-        }
+    public Map<String, List<HorarioLeccion>> obtenerHorario(Long institucionId, Long periodoId, Long nivelId) {
+        Map<String, List<HorarioLeccion>> horario = new LinkedHashMap<>();
+        if (periodoId == null || nivelId == null) return horario;
         horarioRepository.findByInstitucionIdAndPeriodoIdAndNivelIdOrderByNumeroLeccionAsc(
                 institucionId, periodoId, nivelId)
-                .forEach(leccion -> horario.put(clave(leccion.getDia(), leccion.getNumeroLeccion()), leccion));
+                .forEach(l -> horario
+                        .computeIfAbsent(clave(l.getDia(), l.getNumeroLeccion()), k -> new ArrayList<>())
+                        .add(l));
         return horario;
     }
 
     @Transactional(readOnly = true)
-    public HorarioLeccion obtenerLeccion(Long institucionId, Long periodoId, Long nivelId,
-            String dia, Integer numeroLeccion) {
-        return horarioRepository.findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
-                institucionId, periodoId, nivelId, dia, numeroLeccion)
-                .orElseGet(HorarioLeccion::new);
+    public HorarioLeccion obtenerLeccionPorId(Long institucionId, Long id) {
+        return horarioRepository.findByIdAndInstitucionId(id, institucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Lección no encontrada"));
     }
 
     public HorarioLeccion guardarLeccion(Long institucionId, Long id, Long periodoId, Long nivelId,
@@ -191,10 +190,20 @@ public class ConfiguracionAcademicaService {
 
         HorarioLeccion leccion;
         if (id != null) {
-            leccion = horarioRepository.findByIdAndInstitucionId(id, institucionId)
-                    .orElseThrow(() -> new IllegalArgumentException("Lección no encontrada"));
+            leccion = obtenerLeccionPorId(institucionId, id);
         } else {
-            leccion = obtenerLeccion(institucionId, periodoId, nivelId, dia, numeroLeccion);
+            List<HorarioLeccion> existentes = horarioRepository
+                    .findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccionOrderByIdAsc(
+                            institucionId, periodoId, nivelId, dia, numeroLeccion);
+            if (existentes.size() >= 3) {
+                throw new IllegalArgumentException("No se pueden asignar más de 3 materias por lección");
+            }
+            boolean yaAsignada = existentes.stream()
+                    .anyMatch(e -> e.getMateria().getId().equals(materiaId));
+            if (yaAsignada) {
+                throw new IllegalArgumentException("Esta materia ya está asignada en esta lección");
+            }
+            leccion = new HorarioLeccion();
         }
 
         leccion.setInstitucion(obtenerInstitucion(institucionId));

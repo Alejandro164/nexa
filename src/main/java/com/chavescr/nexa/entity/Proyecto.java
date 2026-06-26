@@ -45,7 +45,7 @@ public class Proyecto {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 15)
-    private EstadoProyecto estado = EstadoProyecto.EN_CURSO;
+    private EstadoProyecto estado = EstadoProyecto.ABIERTO;
 
     @Column(nullable = false)
     private Boolean activo = true;
@@ -64,7 +64,7 @@ public class Proyecto {
     private List<TareaProyecto> tareas = new ArrayList<>();
 
     public enum EstadoProyecto {
-        EN_CURSO, COMPLETADO, CANCELADO
+        ABIERTO, EN_PROGRESO, PENDIENTE, EN_REVISION, COMPLETADO, CERRADO
     }
 
     @PrePersist

@@ -148,10 +148,14 @@ public class ConfiguracionAcademicaController {
             @RequestParam Long nivelId,
             @RequestParam String dia,
             @RequestParam Integer numeroLeccion,
+            @RequestParam(required = false) Long id,
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        HorarioLeccion leccion = service.obtenerLeccion(institucionId, periodoId, nivelId, dia, numeroLeccion);
-        if (leccion.getHoraInicio() == null) {
+        HorarioLeccion leccion;
+        if (id != null) {
+            leccion = service.obtenerLeccionPorId(institucionId, id);
+        } else {
+            leccion = new HorarioLeccion();
             LocalTime inicio = LocalTime.of(7, 0).plusMinutes((long) (numeroLeccion - 1) * 50);
             leccion.setHoraInicio(inicio);
             leccion.setHoraFin(inicio.plusMinutes(40));
@@ -212,13 +216,16 @@ public class ConfiguracionAcademicaController {
         if (nivelId == null && !niveles.isEmpty()) {
             nivelId = niveles.get(0).getId();
         }
+        var horario = service.obtenerHorario(institucionId, periodoId, nivelId);
+        int totalLecciones = horario.values().stream().mapToInt(java.util.List::size).sum();
         model.addAttribute("periodosActivos", periodos);
         model.addAttribute("nivelesActivos", niveles);
         model.addAttribute("periodoSeleccionado", periodoId);
         model.addAttribute("nivelSeleccionado", nivelId);
         model.addAttribute("dias", ConfiguracionAcademicaService.DIAS);
         model.addAttribute("lecciones", ConfiguracionAcademicaService.LECCIONES);
-        model.addAttribute("horario", service.obtenerHorario(institucionId, periodoId, nivelId));
+        model.addAttribute("horario", horario);
+        model.addAttribute("totalLecciones", totalLecciones);
     }
 
     private Long institucionId(HttpSession session) {

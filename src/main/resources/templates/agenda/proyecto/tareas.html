@@ -1,7 +1,9 @@
 <div th:fragment="tabla-tareas">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-weight:600;font-size:0.85rem;color:#475569;">Tareas Asignadas</span>
-        <button class="btn-sm btn-primary" th:onclick="'abrirFormTarea(' + ${miembroId} + ',' + ${proyectoId} + ',null)'">+ Nueva</button>
+        <button class="btn-sm btn-primary"
+                th:attr="data-mid=${miembroId},data-pid=${proyectoId}"
+                onclick="abrirFormTarea(+this.dataset.mid, +this.dataset.pid, null)">+ Nueva</button>
     </div>
     <div th:if="${tareas == null or tareas.empty}" style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.85rem;">Sin tareas.</div>
     <div th:each="t : ${tareas}">
@@ -18,14 +20,19 @@
             </div>
             <div style="display:flex;gap:5px;align-items:center;">
                 <select class="form-select" style="font-size:0.75rem;padding:3px 6px;width:auto;"
-                        th:onchange="'cambiarEstadoTarea(' + ${t.id} + ',' + ${t.proyecto.id} + ',' + ${t.miembro.id} + ',this.value)'">
+                        th:attr="data-tid=${t.id},data-pid=${t.proyecto.id},data-mid=${t.miembro.id}"
+                        onchange="cambiarEstadoTarea(+this.dataset.tid, +this.dataset.pid, +this.dataset.mid, this.value)">
                     <option value="PENDIENTE" th:selected="${t.estado.name() == 'PENDIENTE'}">Pendiente</option>
                     <option value="EN_PROGRESO" th:selected="${t.estado.name() == 'EN_PROGRESO'}">En progreso</option>
                     <option value="COMPLETADA" th:selected="${t.estado.name() == 'COMPLETADA'}">Completada</option>
                     <option value="VENCIDA" th:selected="${t.estado.name() == 'VENCIDA'}">Vencida</option>
                 </select>
-                <button class="btn-sm btn-ghost" style="font-size:0.75rem;" th:onclick="'abrirFormTarea(' + ${t.miembro.id} + ',' + ${t.proyecto.id} + ',' + ${t.id} + ')'">✏️</button>
-                <button class="btn-sm btn-danger-ghost" style="font-size:0.75rem;" th:onclick="'eliminarTarea(' + ${t.id} + ',' + ${t.proyecto.id} + ',' + ${t.miembro.id} + ')'">🗑️</button>
+                <button class="btn-sm btn-ghost" style="font-size:0.75rem;"
+                        th:attr="data-mid=${t.miembro.id},data-pid=${t.proyecto.id},data-tid=${t.id}"
+                        onclick="abrirFormTarea(+this.dataset.mid, +this.dataset.pid, +this.dataset.tid)">✏️</button>
+                <button class="btn-sm btn-danger-ghost" style="font-size:0.75rem;"
+                        th:attr="data-tid=${t.id},data-pid=${t.proyecto.id},data-mid=${t.miembro.id}"
+                        onclick="eliminarTarea(+this.dataset.tid, +this.dataset.pid, +this.dataset.mid)">🗑️</button>
             </div>
         </div>
         <div th:attr="id='tarea-form-container-'+${t.miembro.id}" style="margin:6px 0;"></div>

@@ -41,8 +41,8 @@
             <select class="filter-select" name="rol">
                 <option value="" th:selected="${rolSel == null or rolSel == ''}">Todos los roles</option>
                 <option value="ROLE_ADMIN" th:selected="${rolSel == 'ROLE_ADMIN'}">Admin</option>
-                <option value="ROLE_EDITOR" th:selected="${rolSel == 'ROLE_EDITOR'}">Editor</option>
-                <option value="ROLE_USER" th:selected="${rolSel == 'ROLE_USER'}">Usuario</option>
+                <option value="ROLE_DIRECTOR" th:selected="${rolSel == 'ROLE_DIRECTOR'}">Director</option>
+                <option value="ROLE_DOCENTE" th:selected="${rolSel == 'ROLE_DOCENTE'}">Docente</option>
             </select>
             <select class="filter-select" name="estado">
                 <option value="" th:selected="${estadoSel == null or estadoSel == ''}">Cualquier rendimiento</option>

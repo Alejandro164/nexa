@@ -1,13 +1,14 @@
 <div th:fragment="form-content">
-    <div class="modal-backdrop" @click.self="$dispatch('close-modal')">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
         <div class="modal-dialog">
             <div class="modal-header">
                 <h3 class="modal-title" th:text="${proyecto.id == null ? 'Nuevo Proyecto' : 'Editar Proyecto'}">Nuevo Proyecto</h3>
-                <button type="button" class="close-btn" @click="$dispatch('close-modal')">&times;</button>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
             </div>
             <div class="modal-body">
                 <form th:action="@{/agenda/proyectos}" method="post" hx-post="/agenda/proyectos"
-                      hx-target="#tabla-proyectos-container" hx-swap="innerHTML" @submit="$dispatch('close-modal')">
+                      hx-target="#tabla-proyectos-container" hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()">
                     <input type="hidden" name="id" th:value="${proyecto.id}">
                     <div class="form-group">
                         <label class="form-label">Nombre *</label>
@@ -31,16 +32,97 @@
                             <input class="form-input" type="date" name="fechaFin" required th:value="${proyecto.fechaFin}">
                         </div>
                     </div>
-                    <div class="form-group" th:if="${proyecto.id != null}">
+                    <div class="form-group">
                         <label class="form-label">Estado</label>
-                        <select class="form-select" name="estado">
-                            <option value="EN_CURSO" th:selected="${proyecto.estado.name() == 'EN_CURSO'}">En Curso</option>
-                            <option value="COMPLETADO" th:selected="${proyecto.estado.name() == 'COMPLETADO'}">Completado</option>
-                            <option value="CANCELADO" th:selected="${proyecto.estado.name() == 'CANCELADO'}">Cancelado</option>
+                        <select class="form-input" name="estado">
+                            <option value="ABIERTO"     th:selected="${proyecto.estado == null or proyecto.estado.name() == 'ABIERTO'}">Abierto</option>
+                            <option value="EN_PROGRESO" th:selected="${proyecto.estado != null and proyecto.estado.name() == 'EN_PROGRESO'}">En Progreso</option>
+                            <option value="PENDIENTE"   th:selected="${proyecto.estado != null and proyecto.estado.name() == 'PENDIENTE'}">Pendiente</option>
+                            <option value="EN_REVISION" th:selected="${proyecto.estado != null and proyecto.estado.name() == 'EN_REVISION'}">En Revisión</option>
+                            <option value="COMPLETADO"  th:selected="${proyecto.estado != null and proyecto.estado.name() == 'COMPLETADO'}">Completado</option>
+                            <option value="CERRADO"     th:selected="${proyecto.estado != null and proyecto.estado.name() == 'CERRADO'}">Cerrado</option>
                         </select>
                     </div>
+                    <div class="form-group"
+                         x-data="{
+                             open: false,
+                             selected: [],
+                             names: {},
+                             init() {
+                                 this.selected = (this.$el.dataset.preselected || '')
+                                     .split(',').map(Number).filter(Boolean);
+                                 this.$nextTick(() => {
+                                     if (this.$refs.panel) {
+                                         this.$refs.panel.querySelectorAll('[data-uid]').forEach(o => {
+                                             this.names[+o.dataset.uid] = o.dataset.uname;
+                                         });
+                                     }
+                                 });
+                             },
+                             openDropdown() {
+                                 const r = this.$refs.trigger.getBoundingClientRect();
+                                 this.$refs.panel.style.top   = (r.bottom + 4) + 'px';
+                                 this.$refs.panel.style.left  = r.left + 'px';
+                                 this.$refs.panel.style.width = r.width + 'px';
+                                 this.open = true;
+                             },
+                             toggle(id) {
+                                 this.selected = this.selected.includes(id)
+                                     ? this.selected.filter(x => x !== id)
+                                     : [...this.selected, id];
+                             },
+                             label() {
+                                 if (!this.selected.length) return 'Seleccionar personal...';
+                                 const n = this.selected.map(id => this.names[id]).filter(Boolean);
+                                 return n.length === 1 ? n[0] : n[0] + ' + ' + (n.length - 1) + ' más';
+                             }
+                         }"
+                         x-init="init()"
+                         th:data-preselected="${#strings.listJoin(miembrosIds, ',')}"
+                         @click.window="if (open && !$el.contains($event.target) && (!$refs.panel || !$refs.panel.contains($event.target))) open = false"
+                         @keydown.escape.window="open = false">
+
+                        <label class="form-label">Personal asignado</label>
+
+                        <template x-for="id in selected" :key="id">
+                            <input type="hidden" name="miembroIds" :value="id">
+                        </template>
+
+                        <button type="button" class="multiselect-trigger"
+                                x-ref="trigger"
+                                @click="open ? open = false : openDropdown()"
+                                :aria-expanded="open.toString()">
+                            <span x-text="label()">Seleccionar personal...</span>
+                            <svg class="multiselect-arrow" :class="{'rotated': open}"
+                                 xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+
+                        <template x-teleport="body">
+                            <div class="multiselect-panel" x-ref="panel"
+                                 :class="{'ms-open': open}"
+                                 @click="const o = $event.target.closest('[data-uid]'); if (o) toggle(+o.dataset.uid)">
+                                <div th:each="u : ${personal}"
+                                     class="multiselect-option"
+                                     th:attr="data-uid=${u.id},data-uname=${u.nombre + ' — ' + (u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', ''))}"
+                                     :class="{'ms-selected': selected.includes(+$el.dataset.uid)}">
+                                    <svg class="multiselect-check"
+                                         xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    <span th:text="${u.nombre + ' — ' + (u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', ''))}"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
                     <div class="modal-footer" style="margin:0 -1.5rem -1.5rem;">
-                        <button type="button" class="btn-secondary" @click="$dispatch('close-modal')">Cancelar</button>
+                        <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
                         <button type="submit" class="btn-primary">Guardar Proyecto</button>
                     </div>
                 </form>

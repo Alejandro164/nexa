@@ -1,4 +1,9 @@
-<div th:fragment="content" x-data="proyectoComponente()" xmlns:th="http://www.thymeleaf.org">
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="content" x-data="proyectoComponente()"
+     @ver-miembros.window="verMiembros($event.detail.id)">
     <style>
         .proyecto-tabs { display: flex; gap: 6px; margin-bottom: 1.5rem; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 5px; }
         .proyecto-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); border-radius: 8px; cursor: pointer; border: none; background: transparent; transition: all 0.2s; white-space: nowrap; }
@@ -15,12 +20,12 @@
         .proyecto-table tr:hover td { background: #f8fafc; }
         .proyecto-empty { text-align: center; padding: 3rem !important; color: #94a3b8; font-style: italic; }
         .badge-estado { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-        .badge-en-curso { background: #dbeafe; color: #1e40af; }
-        .badge-completado { background: #dcfce7; color: #166534; }
-        .badge-cancelado { background: #fee2e2; color: #991b1b; }
-        .badge-activo { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-        .badge-activo.on { background: #dcfce7; color: #166534; }
-        .badge-activo.off { background: #fee2e2; color: #991b1b; }
+        .badge-abierto     { background: #f1f5f9; color: #475569; }
+        .badge-en-progreso { background: #dbeafe; color: #1e40af; }
+        .badge-pendiente   { background: #fef3c7; color: #92400e; }
+        .badge-en-revision { background: #f3e8ff; color: #6b21a8; }
+        .badge-completado  { background: #ccfbf1; color: #0f766e; }
+        .badge-cerrado     { background: #dcfce7; color: #166534; }
         .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
         .btn-ghost { background: transparent; color: var(--primary); }
         .btn-ghost:hover { background: var(--input-bg); }
@@ -68,11 +73,10 @@
         .stat-label { font-size: 0.8rem; color: #64748b; margin-top: 4px; font-weight: 500; }
         .progress-bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; margin-top: 8px; overflow: hidden; }
         .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
-        .select-group { margin-bottom: 1.5rem; }
-        .select-group select { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; min-width: 280px; outline: none; }
-        .select-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(45,90,135,0.1); }
+        .select-group { margin-bottom: 1.5rem; max-width: 380px; }
         .form-row { display: flex; gap: 12px; }
         .form-row .form-group { flex: 1; }
+        .personal-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; background: #f1f5f9; color: #475569; }
     </style>
 
     <div>
@@ -84,52 +88,40 @@
         <div class="proyecto-panel" x-show="activeTab === 'proyectos'" x-cloak>
             <div class="search-box">
                 <input class="search-input" type="text" placeholder="Buscar proyectos..." x-model="filtro" @input.debounce.300ms="buscarProyectos()">
-                <button class="btn-primary" @click="abrirFormModal()" style="white-space: nowrap;">+ Nuevo Proyecto</button>
+                <button class="btn-primary"
+                        hx-get="/agenda/proyectos/form"
+                        hx-target="#modal-container" hx-swap="innerHTML"
+                        onclick="abrirModalAcademico()"
+                        style="white-space: nowrap;">+ Nuevo Proyecto</button>
             </div>
-            <div id="tabla-proyectos-container" class="proyecto-card" th:replace="~{agenda/proyecto/contenido :: tabla-proyectos}"></div>
+            <div id="tabla-proyectos-container" class="proyecto-card" th:insert="~{agenda/proyecto/contenido :: tabla-proyectos}"></div>
         </div>
 
         <div class="proyecto-panel" x-show="activeTab === 'dashboard'" x-cloak>
             <div class="select-group">
-                <select x-model="dashboardProyectoId" @change="cargarDashboard()">
-                    <option value="" disabled selected>-- Selecciona un proyecto --</option>
+                <select x-model="dashboardProyectoId" class="form-input"
+                        onchange="if(this.value){htmx.ajax('GET','/agenda/proyectos/'+this.value+'/dashboard',{target:'#dashboard-container',swap:'innerHTML'});htmx.ajax('GET','/agenda/proyectos/'+this.value+'/miembros',{target:'#miembros-container',swap:'innerHTML'});}">
+                    <option value="">-- Selecciona un proyecto --</option>
                     <option th:each="p : ${proyectos}" th:value="${p.id}" th:text="${p.nombre}">Proyecto</option>
                 </select>
             </div>
             <div id="dashboard-container"></div>
+            <div id="miembros-container" style="margin-top: 1.5rem;"></div>
         </div>
     </div>
-
-    <div id="modal-container" x-show="modalOpen" x-cloak style="display: none;"
-         @close-modal.window="modalOpen = false" @keydown.escape.window="modalOpen = false"></div>
-
-    <div id="miembros-container" style="margin-top: 1.5rem;"></div>
 
     <script>
     function proyectoComponente() {
         return {
-            filtro: '', modalOpen: false, dashboardProyectoId: '', activeTab: 'proyectos',
+            filtro: '', dashboardProyectoId: '', activeTab: 'proyectos',
 
             buscarProyectos() {
                 htmx.ajax('GET', '/agenda/proyectos/buscar?' + new URLSearchParams({filtro: this.filtro}), { target: '#tabla-proyectos-container', swap: 'innerHTML' });
             },
-            abrirFormModal(proyectoId) {
-                this.modalOpen = true;
-                htmx.ajax('GET', proyectoId ? '/agenda/proyectos/form/' + proyectoId : '/agenda/proyectos/form', { target: '#modal-container', swap: 'innerHTML' });
-            },
-            cerrarModal() { this.modalOpen = false; document.getElementById('modal-container').innerHTML = ''; },
-            toggleProyecto(id) {
-                htmx.ajax('PUT', '/agenda/proyectos/' + id + '/toggle', { target: '#tabla-proyectos-container', swap: 'innerHTML' });
-            },
-            eliminarProyecto(id, nombre) {
-                if (!confirm('¿Eliminar "' + (nombre||'') + '"? Se perderán miembros y tareas.')) return;
-                htmx.ajax('DELETE', '/agenda/proyectos/' + id, { target: '#tabla-proyectos-container', swap: 'innerHTML' });
-            },
-            cargarDashboard() {
-                if (!this.dashboardProyectoId) return;
-                htmx.ajax('GET', '/agenda/proyectos/' + this.dashboardProyectoId + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
-            },
             verMiembros(id) {
+                this.activeTab = 'dashboard';
+                this.dashboardProyectoId = String(id);
+                htmx.ajax('GET', '/agenda/proyectos/' + id + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
                 htmx.ajax('GET', '/agenda/proyectos/' + id + '/miembros', { target: '#miembros-container', swap: 'innerHTML' });
             },
             agregarMiembro(id) {
@@ -162,39 +154,77 @@
         };
     }
     </script>
-
-    <th:block th:fragment="tabla-proyectos">
-        <div class="proyecto-card-header">
-            <h3 class="proyecto-card-title">Proyectos <span style="font-weight:400;color:#94a3b8;font-size:0.85rem;" th:text="'(' + ${proyectos != null ? #lists.size(proyectos) : 0} + ')'">(0)</span></h3>
-        </div>
-        <table class="proyecto-table">
-            <thead>
-                <tr><th>Proyecto</th><th>Objetivo</th><th>Fechas</th><th>Estado</th><th style="text-align:right;">Acciones</th></tr>
-            </thead>
-            <tbody>
-                <tr th:if="${proyectos == null or proyectos.empty}"><td colspan="5" class="proyecto-empty">No hay proyectos. Crea el primero.</td></tr>
-                <tr th:each="p : ${proyectos}">
-                    <td><strong th:text="${p.nombre}" style="color:#0f172a;">Nombre</strong></td>
-                    <td><span th:text="${p.objetivo}" style="color:#64748b; max-width:220px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Objetivo</span></td>
-                    <td style="font-size:0.8rem; color:#64748b;">
-                        <span th:text="${#temporals.format(p.fechaInicio, 'dd/MM/yy')}">01/01</span> →
-                        <span th:text="${#temporals.format(p.fechaFin, 'dd/MM/yy')}">31/12</span>
-                    </td>
-                    <td>
-                        <span class="badge-estado"
-                              th:classappend="${p.estado.name() == 'EN_CURSO' ? 'badge-en-curso' : (p.estado.name() == 'COMPLETADO' ? 'badge-completado' : 'badge-cancelado')}"
-                              th:text="${p.estado.name() == 'EN_CURSO' ? 'En curso' : (p.estado.name() == 'COMPLETADO' ? 'Completado' : 'Cancelado')}">En curso</span>
-                    </td>
-                    <td>
-                        <div class="actions-cell">
-                            <button class="btn-sm btn-ghost" @click="verMiembros(${p.id})" th:attr="onclick=null">👤</button>
-                            <button class="btn-sm btn-ghost" @click="abrirFormModal(${p.id})" th:attr="onclick=null">✏️</button>
-                            <button class="btn-sm btn-ghost" @click="toggleProyecto(${p.id})" th:attr="onclick=null" th:text="${p.activo} ? '🔒' : '🔓'">🔒</button>
-                            <button class="btn-sm btn-danger-ghost" @click="eliminarProyecto(${p.id}, '${p.nombre}')" th:attr="onclick=null">🗑️</button>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </th:block>
 </div>
+
+<th:block th:fragment="tabla-proyectos">
+    <div class="proyecto-card-header">
+        <h3 class="proyecto-card-title">Proyectos
+            <span style="font-weight:400;color:#94a3b8;font-size:0.85rem;"
+                  th:text="'(' + ${proyectos != null ? #lists.size(proyectos) : 0} + ')'">
+                (0)
+            </span>
+        </h3>
+    </div>
+    <table class="proyecto-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Objetivo</th>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+                <th>Personal Asignado</th>
+                <th>Estado</th>
+                <th style="text-align:right;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:if="${proyectos == null or proyectos.empty}">
+                <td colspan="7" class="proyecto-empty">No hay proyectos. Crea el primero.</td>
+            </tr>
+            <tr th:each="p : ${proyectos}">
+                <td><strong th:text="${p.nombre}" style="color:#0f172a;">Nombre</strong></td>
+                <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    <span th:text="${p.objetivo}" style="color:#64748b;">Objetivo</span>
+                </td>
+                <td th:text="${#temporals.format(p.fechaInicio, 'dd/MM/yyyy')}" style="font-size:0.85rem; color:#64748b; white-space:nowrap;">01/01/2026</td>
+                <td th:text="${#temporals.format(p.fechaFin, 'dd/MM/yyyy')}" style="font-size:0.85rem; color:#64748b; white-space:nowrap;">31/12/2026</td>
+                <td>
+                    <span class="personal-badge">
+                        👤 <span th:text="${p.miembros.size()}">0</span>
+                    </span>
+                </td>
+                <td>
+                    <span class="badge-estado"
+                          th:classappend="${'badge-' + p.estado.name().toLowerCase().replace('_','-')}"
+                          th:text="${p.estado.name() == 'ABIERTO' ? 'Abierto' :
+                                    (p.estado.name() == 'EN_PROGRESO' ? 'En Progreso' :
+                                    (p.estado.name() == 'PENDIENTE' ? 'Pendiente' :
+                                    (p.estado.name() == 'EN_REVISION' ? 'En Revisión' :
+                                    (p.estado.name() == 'COMPLETADO' ? 'Completado' : 'Cerrado'))))}">
+                        Abierto
+                    </span>
+                </td>
+                <td>
+                    <div class="actions-cell">
+                        <button class="btn-sm btn-ghost"
+                                th:attr="data-id=${p.id}"
+                                onclick="window.dispatchEvent(new CustomEvent('ver-miembros',{detail:{id:+this.dataset.id}}))">👤</button>
+                        <button class="btn-sm btn-ghost"
+                                th:attr="hx-get='/agenda/proyectos/form/' + ${p.id}"
+                                hx-target="#modal-container" hx-swap="innerHTML"
+                                onclick="abrirModalAcademico()">✏️</button>
+                        <button class="btn-sm btn-danger-ghost"
+                                onclick="abrirConfirmacionAcademica(this)"
+                                th:attr="data-delete-url='/agenda/proyectos/' + ${p.id},
+                                         data-delete-target='#tabla-proyectos-container',
+                                         data-delete-title='Eliminar proyecto',
+                                         data-delete-message='¿Deseas eliminar el proyecto ' + ${p.nombre} + '? Se perderán todos sus miembros y tareas.'">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</th:block>
+
+</body>
+</html>
