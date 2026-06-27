@@ -5,7 +5,7 @@
                 <h3 class="card-title">Catálogo de materias</h3>
                 <p class="academic-help">El color identifica la materia dentro del horario.</p>
             </div>
-            <button class="btn btn-primary"
+            <button class="btn-primary"
                     hx-get="/configuracion-academica/materias/form"
                     hx-target="#modal-container"
                     onclick="abrirModalAcademico()">+ Nueva materia</button>
@@ -14,7 +14,6 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Código</th>
                         <th>Nombre</th>
                         <th>Área</th>
@@ -25,10 +24,9 @@
                 </thead>
                 <tbody>
                     <tr th:if="${materias == null or materias.empty}">
-                        <td colspan="7" class="academic-empty">No hay materias registradas.</td>
+                        <td colspan="6" class="table-empty">No hay materias registradas.</td>
                     </tr>
                     <tr th:each="materia : ${materias}">
-                        <td th:text="${materia.id}">1</td>
                         <td><strong th:text="${materia.codigo}">MAT-01</strong></td>
                         <td>
                             <span class="subject-chip subject-chip-preview"
@@ -42,18 +40,20 @@
                             <span th:unless="${materia.activo}" class="badge badge-secondary">Inactiva</span>
                         </td>
                         <td>
-                            <div class="academic-actions">
-                                <button class="btn btn-secondary btn-sm"
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost"
                                         th:attr="hx-get=|/configuracion-academica/materias/form/${materia.id}|"
                                         hx-target="#modal-container"
-                                        onclick="abrirModalAcademico()">Editar</button>
-                                <button type="button" class="btn btn-destructive btn-sm"
+                                        onclick="abrirModalAcademico()"
+                                        title="Editar">✏️</button>
+                                <button type="button" class="btn-xs btn-danger-ghost"
                                         th:attr="data-delete-url=|/configuracion-academica/materias/${materia.id}|,
                                                  data-delete-message=|¿Deseas eliminar la materia ${materia.nombre}? También se eliminarán sus lecciones asignadas.|"
                                         data-delete-title="Eliminar materia"
                                         data-delete-target="#materias-panel"
                                         data-delete-swap="outerHTML"
-                                        onclick="abrirConfirmacionAcademica(this)">Eliminar</button>
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        title="Eliminar">🗑️</button>
                             </div>
                         </td>
                     </tr>

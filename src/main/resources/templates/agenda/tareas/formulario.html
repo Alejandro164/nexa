@@ -15,9 +15,7 @@
                       hx-on:htmx:after-request="if(event.detail.successful) cerrarTareasModal()">
                     <input type="hidden" name="id" th:value="${tarea.id}">
 
-                    <div th:if="${error}"
-                         style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:0.84rem;margin-bottom:1rem;"
-                         th:text="${error}"></div>
+                    <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
 
                     <div class="form-group">
                         <label class="form-label">Título *</label>
@@ -100,9 +98,9 @@
                         </select>
                     </div>
 
-                    <div class="tarea-modal-footer">
-                        <button type="button" class="btn-secondary-t" onclick="cerrarTareasModal()">Cancelar</button>
-                        <button type="submit" class="btn-primary-t">Guardar</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarTareasModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
                     </div>
                 </form>
             </div>

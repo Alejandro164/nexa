@@ -669,7 +669,7 @@ function inicializarSelectoresAcademicos(root) {
         }
 
         Array.from(native.options).forEach(function (o) {
-            if (o.hidden || o.disabled || !o.value) return;
+            if (o.hidden || o.disabled) return;
             var btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'academic-select-option';
@@ -722,6 +722,7 @@ if (!window.academicSelectEventsRegistered) {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') cerrarSelectoresAcademicos();
     });
+    window.addEventListener('scroll', cerrarSelectoresAcademicos, true);
     document.addEventListener('htmx:load', function (e) {
         inicializarSelectoresAcademicos(e.detail.elt);
     });
