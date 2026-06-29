@@ -850,6 +850,7 @@
     color: var(--text-main);
     font-size: 0.875rem;
     font-weight: 500;
+    font-family: inherit;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1391,11 +1392,26 @@
 .estado-completada  { background:#dcfce7;color:#166534; }
 .estado-vencida     { background:#fee2e2;color:#991b1b; }
 
+/* ── Dropdown de perfil (topbar) ────────────────────────────── */
+.dropdown-enter         { transition: opacity 150ms ease-out, transform 150ms cubic-bezier(.22,1,.36,1); }
+.dropdown-enter-start   { opacity: 0; transform: scale(0.95) translateY(-6px); }
+.dropdown-enter-end     { opacity: 1; transform: scale(1)    translateY(0);     }
+.dropdown-leave         { transition: opacity 100ms ease-in,  transform 100ms ease-in; }
+.dropdown-leave-start   { opacity: 1; transform: scale(1)    translateY(0);     }
+.dropdown-leave-end     { opacity: 0; transform: scale(0.95) translateY(-6px); }
+
+.chevron-icon { transition: transform 0.2s ease; }
+.chevron-rotated { transform: rotate(180deg); }
+
 /* ── Participación ───────────────────────────────────────────── */
 .filters-bar { display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap;align-items:center; }
 
 /* El wrapper .academic-select no debe expandirse a 100% dentro de la barra de filtros */
 .filters-bar .academic-select { width: auto; min-width: 180px; }
+
+/* El wrapper .academic-select dentro del selector de tamaño de página necesita ancho explícito
+   para que posicionarDropdown calcule rect.width correctamente */
+.size-select-wrapper .academic-select { width: 160px; min-width: 160px; }
 
 .filter-input {
     padding: 7px 12px;

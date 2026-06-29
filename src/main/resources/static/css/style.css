@@ -244,6 +244,7 @@ body {
     box-shadow: var(--shadow);
 }
 
+
 .card-header {
     padding: 1.5rem;
     border-bottom: 1px solid var(--border);
@@ -253,6 +254,7 @@ body {
     flex-wrap: wrap;
     gap: 1rem;
 }
+
 
 .card-title {
     font-size: 1.25rem;

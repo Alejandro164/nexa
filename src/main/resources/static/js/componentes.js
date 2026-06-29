@@ -519,8 +519,8 @@ function cargarMiembrosFormTarea(proyectoId) {
 
 function posicionarDropdown(trigger, panel, gap) {
     gap = gap || 6;
-    var rect = trigger.getBoundingClientRect();
-    var maxH = parseInt(window.getComputedStyle(panel).maxHeight) || 240;
+    var rect       = trigger.getBoundingClientRect();
+    var maxH       = parseInt(window.getComputedStyle(panel).maxHeight) || 240;
     var spaceBelow = window.innerHeight - rect.bottom - gap;
     var spaceAbove = rect.top - gap;
 
@@ -529,17 +529,14 @@ function posicionarDropdown(trigger, panel, gap) {
     panel.style.right = 'auto';
 
     if (spaceBelow >= maxH) {
-        // Cabe completo abajo
         panel.style.top       = (rect.bottom + gap) + 'px';
         panel.style.bottom    = 'auto';
         panel.style.maxHeight = maxH + 'px';
     } else if (spaceAbove >= spaceBelow) {
-        // Más espacio arriba → mostrar arriba, capeado al maxH original
         panel.style.top       = 'auto';
         panel.style.bottom    = (window.innerHeight - rect.top + gap) + 'px';
         panel.style.maxHeight = Math.min(maxH, Math.max(spaceAbove, 80)) + 'px';
     } else {
-        // Más espacio abajo pero no cabe completo → mostrar abajo recortado
         panel.style.top       = (rect.bottom + gap) + 'px';
         panel.style.bottom    = 'auto';
         panel.style.maxHeight = Math.min(maxH, Math.max(spaceBelow, 80)) + 'px';
@@ -722,7 +719,12 @@ if (!window.academicSelectEventsRegistered) {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') cerrarSelectoresAcademicos();
     });
-    window.addEventListener('scroll', cerrarSelectoresAcademicos, true);
+    window.addEventListener('scroll', function (e) {
+        // No cerrar si el scroll ocurre dentro del panel de opciones
+        if (e.target && typeof e.target.closest === 'function' &&
+            e.target.closest('.academic-select-options')) return;
+        cerrarSelectoresAcademicos();
+    }, true);
     document.addEventListener('htmx:load', function (e) {
         inicializarSelectoresAcademicos(e.detail.elt);
     });
