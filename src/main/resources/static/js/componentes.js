@@ -485,6 +485,48 @@ function cerrarTareasModal() {
     }, 180);
 }
 
+function abrirRecordatoriosModal() {
+    var el = document.getElementById('recordatorios-modal-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarRecordatoriosModal() {
+    var el = document.getElementById('recordatorios-modal-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+    }, 180);
+}
+
+function abrirActividadModal() {
+    var el = document.getElementById('actividad-modal-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarActividadModal() {
+    var el = document.getElementById('actividad-modal-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+    }, 180);
+}
+
 function _desmontarAcademicSelect(sel) {
     if (!sel || !sel.classList.contains('academic-native-select')) return;
     var wrap = sel.parentElement;

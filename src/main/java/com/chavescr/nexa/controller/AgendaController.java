@@ -15,9 +15,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.chavescr.nexa.entity.Proyecto;
+import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.TareaProyecto;
+import com.chavescr.nexa.service.ActividadInstitucionalService;
 import com.chavescr.nexa.service.ParticipacionService;
 import com.chavescr.nexa.service.ProyectoService;
+import com.chavescr.nexa.service.RecordatorioService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -30,6 +33,12 @@ public class AgendaController {
 
     @Autowired
     private ProyectoService proyectoService;
+
+    @Autowired
+    private RecordatorioService recordatorioService;
+
+    @Autowired
+    private ActividadInstitucionalService actividadInstitucionalService;
 
     // ─── CALENDARIO / TAREAS / ACTIVIDAD / RECORDATORIOS ───────
 
@@ -135,13 +144,95 @@ public class AgendaController {
     }
 
     @GetMapping("/actividad")
-    public String actividad() {
+    public String actividad(@RequestParam(required = false) Integer mes,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String filtro,
+            Model model) {
+        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(mes, categoria, filtro));
+        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias());
+        model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
+        model.addAttribute("mesSel", mes);
+        model.addAttribute("categoriaSel", categoria);
+        model.addAttribute("filtro", filtro);
         return "agenda/actividad/actividad :: content";
     }
 
+    @GetMapping("/actividad/detalle/{id}")
+    public String actividadDetalle(@PathVariable String id, Model model) {
+        model.addAttribute("evento", actividadInstitucionalService.obtenerEvento(id).orElse(null));
+        return "agenda/actividad/actividad :: detalle-modal";
+    }
+
     @GetMapping("/recordatorios")
-    public String recordatorios() {
+    public String recordatorios(Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        Long usuarioId = requerirUsuario(session);
+        model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(institucionId, usuarioId));
         return "agenda/recordatorio/recordatorios :: content";
+    }
+
+    @GetMapping("/recordatorios/form")
+    public String recordatorioFormCrear(Model model) {
+        model.addAttribute("recordatorio", new Recordatorio());
+        return "agenda/recordatorio/formulario :: form-content";
+    }
+
+    @GetMapping("/recordatorios/form/{id}")
+    public String recordatorioFormEditar(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        Long usuarioId = requerirUsuario(session);
+        model.addAttribute("recordatorio", recordatorioService.obtenerRecordatorio(institucionId, usuarioId, id));
+        return "agenda/recordatorio/formulario :: form-content";
+    }
+
+    @PostMapping("/recordatorios")
+    public String recordatorioGuardar(
+            @RequestParam(required = false) Long id,
+            @RequestParam String titulo,
+            @RequestParam(required = false) String descripcion,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime fechaLimite,
+            @RequestParam(required = false) Recordatorio.EstadoRecordatorio estado,
+            Model model, HttpSession session,
+            jakarta.servlet.http.HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        Long usuarioId = requerirUsuario(session);
+        try {
+            recordatorioService.guardarRecordatorio(institucionId, usuarioId, id, titulo, descripcion, fechaLimite, estado);
+            model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(institucionId, usuarioId));
+            return "agenda/recordatorio/recordatorios :: tabla-recordatorios";
+        } catch (Exception e) {
+            response.setHeader("HX-Retarget", "#recordatorios-modal-container");
+            response.setHeader("HX-Reswap", "innerHTML");
+            model.addAttribute("error", e.getMessage());
+            Recordatorio recordatorio = new Recordatorio();
+            recordatorio.setId(id);
+            recordatorio.setTitulo(titulo);
+            recordatorio.setDescripcion(descripcion);
+            recordatorio.setFechaLimite(fechaLimite);
+            recordatorio.setEstado(estado);
+            model.addAttribute("recordatorio", recordatorio);
+            return "agenda/recordatorio/formulario :: form-content";
+        }
+    }
+
+    @DeleteMapping("/recordatorios/{id}")
+    public String recordatorioEliminar(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        Long usuarioId = requerirUsuario(session);
+        recordatorioService.eliminarRecordatorio(institucionId, usuarioId, id);
+        model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(institucionId, usuarioId));
+        return "agenda/recordatorio/recordatorios :: tabla-recordatorios";
+    }
+
+    @PutMapping("/recordatorios/{id}/estado")
+    public String recordatorioEstado(@PathVariable Long id,
+            @RequestParam Recordatorio.EstadoRecordatorio estado,
+            Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        Long usuarioId = requerirUsuario(session);
+        recordatorioService.cambiarEstadoRecordatorio(institucionId, usuarioId, id, estado);
+        model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(institucionId, usuarioId));
+        return "agenda/recordatorio/recordatorios :: tabla-recordatorios";
     }
 
     // ─── PARTICIPACIÓN ─────────────────────────────────────────
@@ -338,6 +429,12 @@ public class AgendaController {
     private Long requerirInstitucion(HttpSession session) {
         Long id = institucionId(session);
         if (id == null) throw new IllegalArgumentException("No hay institución seleccionada");
+        return id;
+    }
+
+    private Long requerirUsuario(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        if (id == null) throw new IllegalArgumentException("No hay usuario en sesión");
         return id;
     }
 }

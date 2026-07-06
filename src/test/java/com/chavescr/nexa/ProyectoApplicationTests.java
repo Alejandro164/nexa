@@ -7,19 +7,23 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
+import org.thymeleaf.TemplateSpec;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
+import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.service.ConfiguracionAcademicaService;
 
@@ -130,5 +134,115 @@ class ProyectoApplicationTests {
 		assertTrue(horarioRenderizado.contains("schedule-slot schedule-slot-filled"));
 		assertFalse(horarioRenderizado.contains(
 				"periodoId=1&amp;amp;nivelId=1"));
+	}
+
+	@Test
+	void recordatorioTemplatesRenderYReflejanEstado() {
+		Recordatorio pendiente = new Recordatorio();
+		pendiente.setId(1L);
+		pendiente.setTitulo("Revisión de exámenes de reposición");
+		pendiente.setDescripcion("Revisar notas pendientes");
+		pendiente.setFechaLimite(LocalDate.of(2026, 7, 6).atTime(17, 0));
+		pendiente.setEstado(Recordatorio.EstadoRecordatorio.PENDIENTE);
+
+		Context context = new Context();
+		context.setVariable("recordatorios", List.of(pendiente));
+		context.setVariable("recordatorio", new Recordatorio());
+		context.setVariable("error", null);
+
+		String contenido = templateEngine.process("agenda/recordatorio/recordatorios", context);
+		assertTrue(contenido.contains("Revisión de exámenes de reposición"));
+		assertTrue(contenido.contains("tarea-badge-pendiente"));
+		assertTrue(contenido.contains("/agenda/recordatorios/1/estado?estado=COMPLETADO"));
+
+		pendiente.setEstado(Recordatorio.EstadoRecordatorio.COMPLETADO);
+		context.setVariable("recordatorios", List.of(pendiente));
+		String contenidoCompletado = templateEngine.process("agenda/recordatorio/recordatorios", context);
+		assertTrue(contenidoCompletado.contains("tarea-badge-completada"));
+		assertTrue(contenidoCompletado.contains("/agenda/recordatorios/1/estado?estado=PENDIENTE"));
+	}
+
+	@Test
+	void expiredHtmxRequestOnRecordatoriosRedirectsToLogin() throws Exception {
+		mockMvc.perform(get("/agenda/recordatorios/form")
+						.header("HX-Request", "true"))
+				.andExpect(status().isOk())
+				.andExpect(header().string("HX-Redirect", "/login?expired"))
+				.andExpect(content().string(""));
+	}
+
+	@Test
+	void actividadInstitucionalTablaRenderaEventosDelMep() {
+		EventoMepDTO destacado = new EventoMepDTO();
+		destacado.setId("3");
+		destacado.setTitulo("Inicio de curso lectivo para Colegios Científicos Costarricenses.");
+		destacado.setDescripcion("Inicio del ciclo lectivo 2026.");
+		destacado.setLink("https://www.mep.go.cr");
+		destacado.setFechaInicio(LocalDate.of(2026, 2, 2));
+		destacado.setFechaFin(LocalDate.of(2026, 2, 2));
+		destacado.setNombreCategoria("Periodos Lectivos");
+		destacado.setDestacado("1");
+
+		EventoMepDTO enRango = new EventoMepDTO();
+		enRango.setId("1");
+		enRango.setTitulo("Matrícula de estudiantes repetidores.");
+		enRango.setFechaInicio(LocalDate.of(2026, 1, 5));
+		enRango.setFechaFin(LocalDate.of(2026, 1, 29));
+		enRango.setNombreCategoria("Periodo de Matrícula");
+		enRango.setDestacado("0");
+
+		Context context = new Context();
+		context.setVariable("eventos", List.of(destacado, enRango));
+
+		String html = templateEngine.process(
+				new TemplateSpec("agenda/actividad/actividad", Set.of("eventos-tabla"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+
+		assertTrue(html.contains("Inicio de curso lectivo para Colegios Científicos Costarricenses."));
+		assertTrue(html.contains("Periodos Lectivos"));
+		assertTrue(html.contains("Destacado"));
+		assertTrue(html.contains("02/02/2026"));
+		assertTrue(html.contains("05/01/2026 – 29/01/2026"));
+		assertTrue(html.contains("Ver detalles"));
+
+		context.setVariable("eventos", List.of());
+		String htmlVacio = templateEngine.process(
+				new TemplateSpec("agenda/actividad/actividad", Set.of("eventos-tabla"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+		assertTrue(htmlVacio.contains("No se encontraron actividades institucionales"));
+	}
+
+	@Test
+	void actividadInstitucionalModalRenderaDetalleCompleto() {
+		EventoMepDTO evento = new EventoMepDTO();
+		evento.setId("3");
+		evento.setTitulo("Inicio de curso lectivo para Colegios Científicos Costarricenses.");
+		evento.setDescripcion("Inicio del ciclo lectivo 2026.");
+		evento.setLink("https://www.mep.go.cr");
+		evento.setFechaInicio(LocalDate.of(2026, 2, 2));
+		evento.setFechaFin(LocalDate.of(2026, 2, 2));
+		evento.setNombreCategoria("Periodos Lectivos");
+		evento.setSubcategorias(List.of("Colegios Científicos Costarricenses", " "));
+		evento.setDestacado("1");
+
+		Context context = new Context();
+		context.setVariable("evento", evento);
+
+		String html = templateEngine.process(
+				new TemplateSpec("agenda/actividad/actividad", Set.of("detalle-modal"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+
+		assertTrue(html.contains("Inicio de curso lectivo para Colegios Científicos Costarricenses."));
+		assertTrue(html.contains("Inicio del ciclo lectivo 2026."));
+		assertTrue(html.contains("Colegios Científicos Costarricenses"));
+		assertTrue(html.contains("https://www.mep.go.cr"));
+		assertTrue(html.contains("Destacado"));
+
+		context.setVariable("evento", null);
+		String htmlNoEncontrado = templateEngine.process(
+				new TemplateSpec("agenda/actividad/actividad", Set.of("detalle-modal"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+		assertTrue(htmlNoEncontrado.contains("Actividad no encontrada"));
+		assertTrue(htmlNoEncontrado.contains("No se encontró información"));
 	}
 }

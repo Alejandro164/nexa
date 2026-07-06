@@ -1,17 +1,80 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
 <div th:fragment="content" class="tab-pane">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Recordatorios y Tareas Personales</h3>
-            <button class="btn btn-primary">+ Nuevo Recordatorio</button>
+
+    <div class="module-card">
+        <div class="module-card-header">
+            <h3 class="module-card-title">Recordatorios y Tareas Personales
+                <span style="font-weight:400;color:#94a3b8;font-size:0.85rem;"
+                      th:text="'(' + ${recordatorios != null ? #lists.size(recordatorios) : 0} + ')'"></span>
+            </h3>
+            <button class="btn-primary"
+                    hx-get="/agenda/recordatorios/form"
+                    hx-target="#recordatorios-modal-container" hx-swap="innerHTML"
+                    onclick="abrirRecordatoriosModal()">+ Nuevo Recordatorio</button>
         </div>
-        <div style="padding: 2rem;">
-            <div class="premium-list-item">
-                <div>
-                    <h4 style="font-weight:600;">Revisión de exámenes de reposición</h4>
-                    <p style="font-size:0.85rem; color:var(--text-secondary);">Fecha límite: Hoy 5:00 PM</p>
-                </div>
-                <span class="badge badge-danger">Pendiente</span>
-            </div>
-        </div>
+        <div id="recordatorios-tabla-container" class="table-container" th:insert="~{agenda/recordatorio/recordatorios :: tabla-recordatorios}"></div>
     </div>
+
+    <div id="recordatorios-modal-container" style="display:none;"></div>
 </div>
+
+<th:block th:fragment="tabla-recordatorios">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Fecha Límite</th>
+                <th>Estado</th>
+                <th style="text-align:right;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:if="${recordatorios == null or recordatorios.empty}">
+                <td colspan="4" class="table-empty">No hay recordatorios registrados.</td>
+            </tr>
+            <tr th:each="r : ${recordatorios}">
+                <td>
+                    <strong th:text="${r.titulo}" style="color:#0f172a;">Título</strong>
+                    <p th:if="${r.descripcion}" th:text="${r.descripcion}" style="font-size:0.8rem;color:#64748b;margin:2px 0 0;"></p>
+                </td>
+                <td style="white-space:nowrap;"
+                    th:text="${#temporals.format(r.fechaLimite,'dd/MM/yyyy HH:mm')}"
+                    th:style="${r.fechaLimite.isBefore(#temporals.createNow()) and r.estado.name() != 'COMPLETADO'} ? 'color:#ef4444;font-size:0.85rem;white-space:nowrap;font-weight:600;' : 'color:#64748b;font-size:0.85rem;white-space:nowrap;'">
+                </td>
+                <td>
+                    <span class="tarea-chip"
+                          th:classappend="${r.estado.name() == 'COMPLETADO' ? 'tarea-badge-completada' : 'tarea-badge-pendiente'}"
+                          th:text="${r.estado.name() == 'COMPLETADO' ? 'Completado' : 'Pendiente'}">
+                    </span>
+                </td>
+                <td>
+                    <div class="table-actions">
+                        <button class="btn-xs btn-ghost"
+                                th:attr="hx-put='/agenda/recordatorios/' + ${r.id} + '/estado?estado=' + ${r.estado.name() == 'COMPLETADO' ? 'PENDIENTE' : 'COMPLETADO'}"
+                                hx-target="#recordatorios-tabla-container" hx-swap="innerHTML"
+                                th:title="${r.estado.name() == 'COMPLETADO' ? 'Marcar como pendiente' : 'Marcar como completado'}">
+                            <span th:text="${r.estado.name() == 'COMPLETADO' ? '↩️' : '✅'}"></span>
+                        </button>
+                        <button class="btn-xs btn-ghost"
+                                th:attr="hx-get='/agenda/recordatorios/form/' + ${r.id}"
+                                hx-target="#recordatorios-modal-container" hx-swap="innerHTML"
+                                onclick="abrirRecordatoriosModal()" title="Editar">✏️</button>
+                        <button class="btn-xs btn-danger-ghost"
+                                onclick="abrirConfirmacionAcademica(this)"
+                                th:attr="data-delete-url='/agenda/recordatorios/' + ${r.id},
+                                         data-delete-target='#recordatorios-tabla-container',
+                                         data-delete-title='Eliminar recordatorio',
+                                         data-delete-message='¿Deseas eliminar el recordatorio ' + ${r.titulo} + '? Esta acción no se puede deshacer.'"
+                                title="Eliminar">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</th:block>
+
+</body>
+</html>

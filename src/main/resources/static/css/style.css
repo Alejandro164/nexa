@@ -387,6 +387,7 @@ body {
 .modal-dialog {
     background-color: var(--surface-solid);
     border-radius: var(--radius);
+    overflow: hidden;
     width: 100%;
     max-width: 500px;
     box-shadow: var(--shadow-lg);

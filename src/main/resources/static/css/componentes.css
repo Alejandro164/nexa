@@ -1324,13 +1324,21 @@
 
 /* ── Animaciones de modales de módulos ───────────────────────── */
 #dir-modal-container.dir-modal-visible .modal-backdrop,
-#tareas-modal-container.dir-modal-visible .modal-backdrop { animation: academicModalBackdropIn 180ms ease-out both; }
+#tareas-modal-container.dir-modal-visible .modal-backdrop,
+#recordatorios-modal-container.dir-modal-visible .modal-backdrop,
+#actividad-modal-container.dir-modal-visible .modal-backdrop { animation: academicModalBackdropIn 180ms ease-out both; }
 #dir-modal-container.dir-modal-visible .modal-dialog,
-#tareas-modal-container.dir-modal-visible .modal-dialog   { animation: academicModalDialogIn 240ms cubic-bezier(.22,1,.36,1) both; }
+#tareas-modal-container.dir-modal-visible .modal-dialog,
+#recordatorios-modal-container.dir-modal-visible .modal-dialog,
+#actividad-modal-container.dir-modal-visible .modal-dialog   { animation: academicModalDialogIn 240ms cubic-bezier(.22,1,.36,1) both; }
 #dir-modal-container.dir-modal-closing .modal-backdrop,
-#tareas-modal-container.dir-modal-closing .modal-backdrop { animation: academicModalBackdropOut 180ms ease-in both; }
+#tareas-modal-container.dir-modal-closing .modal-backdrop,
+#recordatorios-modal-container.dir-modal-closing .modal-backdrop,
+#actividad-modal-container.dir-modal-closing .modal-backdrop { animation: academicModalBackdropOut 180ms ease-in both; }
 #dir-modal-container.dir-modal-closing .modal-dialog,
-#tareas-modal-container.dir-modal-closing .modal-dialog   { animation: academicModalDialogOut 180ms ease-in both; }
+#tareas-modal-container.dir-modal-closing .modal-dialog,
+#recordatorios-modal-container.dir-modal-closing .modal-dialog,
+#actividad-modal-container.dir-modal-closing .modal-dialog   { animation: academicModalDialogOut 180ms ease-in both; }
 
 /* ── Etiquetas de roles y estado de usuario ──────────────────── */
 .badge-xs { display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.68rem;font-weight:600;text-transform:uppercase;margin:1px; }
