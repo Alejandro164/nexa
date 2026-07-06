@@ -1,23 +1,4 @@
-<div th:fragment="content" class="tab-pane" x-data="{
-    showDisponibilidad: false,
-    dispFecha: '',
-    dispHoraInicio: '08:00',
-    dispHoraFin: '12:00',
-    dispMotivo: '',
-    dispRepetir: 'no',
-    dispDiaCompleto: false,
-    initFecha() {
-        const hoy = new Date();
-        this.dispFecha = hoy.toISOString().split('T')[0];
-    },
-    guardarDisponibilidad() {
-        // Aquí iría la lógica de guardado vía HTMX
-        this.showDisponibilidad = false;
-        this.dispMotivo = '';
-        this.dispDiaCompleto = false;
-        this.dispRepetir = 'no';
-    }
-}">
+<div th:fragment="content" id="calendario-content" class="tab-pane">
     <style>
         /* Modern Calendar Styles */
         .cal-wrapper {
@@ -76,11 +57,73 @@
         }
 
         /* Grid */
-        .cal-grid {
+        .cal-mes-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .cal-semana-bloque {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Banda de eventos de varios días (estilo Outlook/Teams) */
+        .cal-bandas-wrapper {
+            overflow: hidden;
+            transition: max-height 0.25s ease;
+        }
+
+        .cal-bandas-row {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            grid-auto-rows: minmax(120px, 1fr);
-            flex: 1;
+            gap: 2px;
+            padding: 3px 2px 0;
+        }
+
+        .cal-banda {
+            background: var(--primary);
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 600;
+            line-height: 16px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: filter 0.2s;
+            min-width: 0;
+        }
+
+        .cal-banda:hover {
+            filter: brightness(0.92);
+        }
+
+        .cal-banda-mas {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 0 2px 2px;
+            background: none;
+            border: none;
+            display: block;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .cal-banda-mas:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        .cal-dias-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-auto-rows: 132px;
             background: var(--border);
             /* for 1px gaps */
             gap: 1px;
@@ -163,7 +206,6 @@
         }
 
         .cal-event:hover {
-            transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             filter: brightness(0.95);
             z-index: 10;
@@ -176,6 +218,13 @@
             flex-shrink: 0;
         }
 
+        .cal-event-mas {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            padding: 2px 8px;
+        }
+
         /* Event Types */
         .event-tarea {
             background: rgba(13, 148, 136, 0.1);
@@ -185,16 +234,6 @@
 
         .event-tarea .event-dot {
             background: #0d9488;
-        }
-
-        .event-sala {
-            background: rgba(139, 92, 246, 0.1);
-            color: #6d28d9;
-            border-color: rgba(139, 92, 246, 0.2);
-        }
-
-        .event-sala .event-dot {
-            background: #8b5cf6;
         }
 
         .event-recordatorio {
@@ -215,19 +254,6 @@
 
         .event-general .event-dot {
             background: var(--primary);
-        }
-
-        /* No Disponible — distinctive red/coral with diagonal stripe pattern */
-        .event-nodisponible {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 25%, rgba(239, 68, 68, 0.14) 25%, rgba(239, 68, 68, 0.14) 50%, rgba(239, 68, 68, 0.08) 50%, rgba(239, 68, 68, 0.08) 75%, rgba(239, 68, 68, 0.14) 75%);
-            background-size: 8px 8px;
-            color: #b91c1c;
-            border-color: rgba(239, 68, 68, 0.3);
-            font-style: italic;
-        }
-
-        .event-nodisponible .event-dot {
-            background: #ef4444;
         }
 
         /* Buttons & Toolbar */
@@ -316,11 +342,6 @@
             box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
         }
 
-        .check-sala:checked {
-            background: #8b5cf6;
-            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
-        }
-
         .check-recordatorio:checked {
             background: #f59e0b;
             box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
@@ -329,11 +350,6 @@
         .check-general:checked {
             background: var(--primary);
             box-shadow: 0 2px 8px rgba(45, 90, 135, 0.3);
-        }
-
-        .check-nodisponible:checked {
-            background: #ef4444;
-            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
         }
 
         .btn-icon {
@@ -357,296 +373,107 @@
             transform: translateY(-1px);
         }
 
-        /* ── Disponibilidad Button ────────────────── */
-        .btn-disponibilidad {
-            width: 100%;
-            padding: 12px 14px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border-radius: 12px;
-            border: 2px dashed #fca5a5;
-            background: linear-gradient(135deg, #fff5f5 0%, #fef2f2 100%);
-            color: #dc2626;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.25s ease;
-        }
-
-        .btn-disponibilidad:hover {
-            border-color: #ef4444;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.15);
-            transform: translateY(-1px);
-        }
-
-        .btn-disponibilidad:active {
-            transform: translateY(0);
-        }
-
-        /* ── Modal de Disponibilidad ────────────── */
-        .disp-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            z-index: 1100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: dispFadeIn 0.2s ease;
-        }
-
-        @keyframes dispFadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        .disp-modal {
-            background: #ffffff;
-            border-radius: 20px;
-            width: 440px;
-            max-width: 92vw;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.04);
-            animation: dispSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-            overflow: hidden;
-        }
-
-        @keyframes dispSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.97);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .disp-modal-header {
-            padding: 1.25rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid #fee2e2;
-            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
-        }
-
-        .disp-modal-header-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
-            flex-shrink: 0;
-        }
-
-        .disp-modal-body {
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-        }
-
-        .disp-field {
-            display: flex;
-            flex-direction: column;
+        /* Mini calendar */
+        .mini-cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 0.75rem;
             gap: 6px;
         }
 
-        .disp-label {
-            font-size: 0.82rem;
+        .mini-cal-header {
+            color: var(--text-light);
+            font-weight: 700;
+        }
+
+        .mini-cal-day {
+            padding: 4px;
+            font-weight: 500;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .mini-cal-day:hover {
+            background: var(--input-bg);
+        }
+
+        .mini-cal-day.other-month {
+            color: var(--text-light);
+        }
+
+        .mini-cal-day.today {
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(45, 90, 135, 0.4);
+        }
+
+        /* Día / Agenda list views */
+        .dia-lista {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dia-evento-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dia-evento-row:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            transform: translateY(-1px);
+        }
+
+        .dia-evento-hora {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            min-width: 52px;
+        }
+
+        .dia-evento-titulo {
             font-weight: 600;
-            color: #64748b;
+            color: var(--text-primary);
+        }
+
+        .dia-evento-desc {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .agenda-fecha-header {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            margin: 1.25rem 0 0.5rem;
+            padding-bottom: 6px;
+            border-bottom: 1px dashed var(--border);
         }
 
-        .disp-input {
-            padding: 10px 14px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            color: #0f172a;
-            background: #fafbfc;
-            transition: all 0.2s;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .disp-input:focus {
-            border-color: #ef4444;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-            background: #ffffff;
-        }
-
-        .disp-time-row {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-        }
-
-        .disp-time-row .disp-field {
-            flex: 1;
-        }
-
-        .disp-time-sep {
-            padding-bottom: 12px;
-            color: #94a3b8;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        /* Quick time pills */
-        .disp-quick-times {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .disp-pill {
-            padding: 5px 12px;
-            border-radius: 20px;
-            border: 1.5px solid #e2e8f0;
-            background: #fafbfc;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .disp-pill:hover {
-            border-color: #fca5a5;
-            background: #fff5f5;
-            color: #dc2626;
-        }
-
-        .disp-pill.active-pill {
-            border-color: #ef4444;
-            background: #fef2f2;
-            color: #dc2626;
-        }
-
-        /* Day complete toggle */
-        .disp-toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 14px;
-            border-radius: 10px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-        }
-
-        .disp-toggle-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #334155;
-        }
-
-        .disp-toggle-sublabel {
-            font-size: 0.78rem;
-            color: #94a3b8;
-            margin-top: 1px;
-        }
-
-        .disp-toggle {
-            width: 44px;
-            height: 24px;
-            border-radius: 12px;
-            background: #cbd5e1;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            transition: background 0.25s;
-            flex-shrink: 0;
-        }
-
-        .disp-toggle.on {
-            background: #ef4444;
-        }
-
-        .disp-toggle::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: white;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .disp-toggle.on::after {
-            transform: translateX(20px);
-        }
-
-        .disp-modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid #f1f5f9;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            background: #fafbfc;
-        }
-
-        .disp-btn-cancel {
-            padding: 9px 20px;
-            border-radius: 10px;
-            border: 1.5px solid #e2e8f0;
-            background: white;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .disp-btn-cancel:hover {
-            border-color: #cbd5e1;
-            background: #f8fafc;
-            color: #334155;
-        }
-
-        .disp-btn-save {
-            padding: 9px 24px;
-            border-radius: 10px;
-            border: none;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
-        }
-
-        .disp-btn-save:hover {
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
-            transform: translateY(-1px);
-        }
-
-        .disp-btn-save:active {
-            transform: translateY(0);
+        .agenda-fecha-header:first-child {
+            margin-top: 0;
         }
     </style>
 
@@ -663,118 +490,64 @@
                 Crear Nuevo Evento
             </button>
 
-            <!-- Botón Marcar No Disponible -->
-            <button class="btn-disponibilidad" @click="showDisponibilidad = true; initFecha()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                </svg>
-                Marcar No Disponible
-            </button>
-
-            <!-- Mini Calendar Placeholder -->
+            <!-- Mini Calendar -->
             <div class="card" style="padding: 1.25rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.25rem;">
-                    <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Mayo 2026</span>
+                    <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);" th:text="${miniLabel}">Mes</span>
                     <div style="display:flex; gap: 4px;">
-                        <button class="btn-icon"
-                            style="width:26px; height:26px; border:none; background:transparent;"><svg width="14"
-                                height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <button class="btn-icon" style="width:26px; height:26px; border:none; background:transparent;"
+                                th:attr="hx-get='/agenda/calendario?vista=' + ${vista} + '&fecha=' + ${miniAnterior}"
+                                hx-target="#calendario-content" hx-swap="outerHTML">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <polyline points="15 18 9 12 15 6"></polyline>
-                            </svg></button>
-                        <button class="btn-icon"
-                            style="width:26px; height:26px; border:none; background:transparent;"><svg width="14"
-                                height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            </svg>
+                        </button>
+                        <button class="btn-icon" style="width:26px; height:26px; border:none; background:transparent;"
+                                th:attr="hx-get='/agenda/calendario?vista=' + ${vista} + '&fecha=' + ${miniSiguiente}"
+                                hx-target="#calendario-content" hx-swap="outerHTML">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg></button>
+                            </svg>
+                        </button>
                     </div>
                 </div>
-                <div
-                    style="display:grid; grid-template-columns: repeat(7, 1fr); text-align:center; font-size: 0.75rem; gap:6px;">
-                    <div style="color:var(--text-light); font-weight:700;">L</div>
-                    <div style="color:var(--text-light); font-weight:700;">M</div>
-                    <div style="color:var(--text-light); font-weight:700;">M</div>
-                    <div style="color:var(--text-light); font-weight:700;">J</div>
-                    <div style="color:var(--text-light); font-weight:700;">V</div>
-                    <div style="color:var(--text-light); font-weight:700;">S</div>
-                    <div style="color:var(--text-light); font-weight:700;">D</div>
-
-                    <div style="color:var(--text-light); padding:4px;">27</div>
-                    <div style="color:var(--text-light); padding:4px;">28</div>
-                    <div style="color:var(--text-light); padding:4px;">29</div>
-                    <div style="color:var(--text-light); padding:4px;">30</div>
-                    <div style="padding:4px; font-weight:500;">1</div>
-                    <div style="padding:4px; font-weight:500;">2</div>
-                    <div style="padding:4px; font-weight:500;">3</div>
-
-                    <div style="padding:4px; font-weight:500;">4</div>
-                    <div style="padding:4px; font-weight:500;">5</div>
-                    <div style="padding:4px; font-weight:500;">6</div>
-                    <div style="padding:4px; font-weight:500;">7</div>
-                    <div style="padding:4px; font-weight:500;">8</div>
-                    <div style="padding:4px; font-weight:500;">9</div>
-                    <div style="padding:4px; font-weight:500;">10</div>
-
-                    <div style="padding:4px; font-weight:500;">11</div>
-                    <div style="padding:4px; font-weight:500;">12</div>
-                    <div style="padding:4px; font-weight:500;">13</div>
-                    <div style="padding:4px; font-weight:500;">14</div>
-                    <div style="padding:4px; font-weight:500;">15</div>
-                    <div style="padding:4px; font-weight:500;">16</div>
-                    <div style="padding:4px; font-weight:500;">17</div>
-
-                    <div style="padding:4px; font-weight:500;">18</div>
-                    <div style="padding:4px; font-weight:500;">19</div>
-                    <div style="padding:4px; font-weight:500;">20</div>
-                    <div style="padding:4px; font-weight:500;">21</div>
-                    <div style="padding:4px; font-weight:500;">22</div>
-                    <div style="padding:4px; font-weight:500;">23</div>
-                    <div style="padding:4px; font-weight:500;">24</div>
-
-                    <div style="padding:4px; font-weight:500;">25</div>
-                    <div style="padding:4px; font-weight:500;">26</div>
-                    <div style="padding:4px; font-weight:500;">27</div>
-                    <div style="padding:4px; font-weight:500;">28</div>
-                    <div
-                        style="background:var(--primary); color:white; border-radius:50%; font-weight:700; width: 24px; height: 24px; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(45,90,135,0.4);">
-                        29</div>
-                    <div style="padding:4px; font-weight:500;">30</div>
-                    <div style="padding:4px; font-weight:500;">31</div>
+                <div class="mini-cal-grid">
+                    <div class="mini-cal-header">L</div>
+                    <div class="mini-cal-header">M</div>
+                    <div class="mini-cal-header">M</div>
+                    <div class="mini-cal-header">J</div>
+                    <div class="mini-cal-header">V</div>
+                    <div class="mini-cal-header">S</div>
+                    <div class="mini-cal-header">D</div>
+                    <th:block th:each="semana : ${miniSemanas}">
+                        <div th:each="d : ${semana}" class="mini-cal-day"
+                             th:classappend="${d.otroMes} ? 'other-month' : (${d.hoy} ? 'today' : '')"
+                             th:text="${d.diaMes}"
+                             th:attr="hx-get='/agenda/calendario?vista=dia&fecha=' + ${d.fecha}"
+                             hx-target="#calendario-content" hx-swap="outerHTML">1</div>
+                    </th:block>
                 </div>
             </div>
 
             <!-- Filters -->
             <div class="card" style="padding: 1.25rem;">
-                <h4
-                    style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">
+                <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">
                     Mis Calendarios</h4>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label class="filter-item">
-                        <input type="checkbox" class="filter-checkbox check-tarea" checked>
-                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">✅ Tareas
-                            Pendientes</span>
+                        <input type="checkbox" class="filter-checkbox check-tarea" checked
+                               onchange="toggleCalendarioTipo('tarea', this.checked)">
+                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">✅ Tareas</span>
                     </label>
                     <label class="filter-item">
-                        <input type="checkbox" class="filter-checkbox check-sala" checked>
-                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">💻 Salas
-                            Virtuales</span>
+                        <input type="checkbox" class="filter-checkbox check-recordatorio" checked
+                               onchange="toggleCalendarioTipo('recordatorio', this.checked)">
+                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">⏰ Recordatorios</span>
                     </label>
                     <label class="filter-item">
-                        <input type="checkbox" class="filter-checkbox check-recordatorio" checked>
-                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">⏰
-                            Recordatorios</span>
-                    </label>
-                    <label class="filter-item"
-                        style="margin-top: 8px; border-top: 1px dashed var(--border); border-radius: 0; padding-top: 14px;">
-                        <input type="checkbox" class="filter-checkbox check-general" checked>
-                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">📅 Eventos
-                            Institucionales</span>
-                    </label>
-                    <label class="filter-item">
-                        <input type="checkbox" class="filter-checkbox check-nodisponible" checked>
-                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">🚫 No
-                            Disponible</span>
+                        <input type="checkbox" class="filter-checkbox check-general" checked
+                               onchange="toggleCalendarioTipo('general', this.checked)">
+                        <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary);">📅 Eventos Institucionales</span>
                     </label>
                 </div>
             </div>
@@ -786,171 +559,166 @@
             <div class="cal-toolbar">
                 <div style="display: flex; align-items: center; gap: 1.25rem;">
                     <div style="display: flex; gap: 6px;">
-                        <button class="btn-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <button class="btn-icon"
+                                th:attr="hx-get='/agenda/calendario?vista=' + ${vista} + '&fecha=' + ${fechaAnterior}"
+                                hx-target="#calendario-content" hx-swap="outerHTML">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="15 18 9 12 15 6"></polyline>
-                            </svg></button>
-                        <button class="btn-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            </svg>
+                        </button>
+                        <button class="btn-icon"
+                                th:attr="hx-get='/agenda/calendario?vista=' + ${vista} + '&fecha=' + ${fechaSiguiente}"
+                                hx-target="#calendario-content" hx-swap="outerHTML">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg></button>
+                            </svg>
+                        </button>
                     </div>
-                    <h2
-                        style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.5px;">
-                        Mayo 2026</h2>
-                    <button class="btn btn-secondary"
-                        style="padding: 6px 16px; border-radius: 8px; font-weight: 600;">Hoy</button>
+                    <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.5px;"
+                        th:text="${tituloLabel}">Mes</h2>
+                    <button class="btn btn-secondary" style="padding: 6px 16px; border-radius: 8px; font-weight: 600;"
+                            th:attr="hx-get='/agenda/calendario?vista=' + ${vista} + '&fecha=' + ${hoyIso}"
+                            hx-target="#calendario-content" hx-swap="outerHTML">Hoy</button>
                 </div>
 
                 <div class="btn-group">
-                    <button>Día</button>
-                    <button>Semana</button>
-                    <button class="active">Mes</button>
-                    <button>Agenda</button>
+                    <button th:classappend="${vista == 'dia'} ? 'active'"
+                            th:attr="hx-get='/agenda/calendario?vista=dia&fecha=' + ${fechaRef}"
+                            hx-target="#calendario-content" hx-swap="outerHTML">Día</button>
+                    <button th:classappend="${vista == 'semana'} ? 'active'"
+                            th:attr="hx-get='/agenda/calendario?vista=semana&fecha=' + ${fechaRef}"
+                            hx-target="#calendario-content" hx-swap="outerHTML">Semana</button>
+                    <button th:classappend="${vista == 'mes'} ? 'active'"
+                            th:attr="hx-get='/agenda/calendario?vista=mes&fecha=' + ${fechaRef}"
+                            hx-target="#calendario-content" hx-swap="outerHTML">Mes</button>
+                    <button th:classappend="${vista == 'agenda'} ? 'active'"
+                            th:attr="hx-get='/agenda/calendario?vista=agenda&fecha=' + ${fechaRef}"
+                            hx-target="#calendario-content" hx-swap="outerHTML">Agenda</button>
                 </div>
             </div>
 
-            <!-- Header Row -->
-            <div class="cal-header-row">
-                <div class="cal-header-cell">Lunes</div>
-                <div class="cal-header-cell">Martes</div>
-                <div class="cal-header-cell">Miércoles</div>
-                <div class="cal-header-cell">Jueves</div>
-                <div class="cal-header-cell">Viernes</div>
-                <div class="cal-header-cell" style="color:var(--text-light);">Sábado</div>
-                <div class="cal-header-cell" style="color:var(--text-light);">Domingo</div>
-            </div>
+            <!-- Vista Mes -->
+            <th:block th:if="${vista == 'mes'}">
+                <div class="cal-header-row">
+                    <div class="cal-header-cell">Lunes</div>
+                    <div class="cal-header-cell">Martes</div>
+                    <div class="cal-header-cell">Miércoles</div>
+                    <div class="cal-header-cell">Jueves</div>
+                    <div class="cal-header-cell">Viernes</div>
+                    <div class="cal-header-cell" style="color:var(--text-light);">Sábado</div>
+                    <div class="cal-header-cell" style="color:var(--text-light);">Domingo</div>
+                </div>
+                <div class="cal-mes-body">
+                    <div th:each="semana : ${semanas}" class="cal-semana-bloque">
+                        <div class="cal-bandas-wrapper" th:if="${semana.filasBandas > 0}"
+                             th:style="'max-height:' + ${semana.alturaColapsadaPx} + 'px;'"
+                             th:attr="data-collapsed-height=${semana.alturaColapsadaPx}, data-expanded-height=${semana.alturaExpandidaPx}">
+                            <div class="cal-bandas-row"
+                                 th:style="'grid-template-rows: repeat(' + ${semana.filasBandas} + ', 22px);'">
+                                <div th:each="banda : ${semana.bandas}" class="cal-banda"
+                                     th:style="'grid-column:' + ${banda.gridColumn} + '; grid-row:' + (${banda.fila} + 1) + ';'"
+                                     th:title="${banda.titulo}" th:text="${banda.titulo}">Banda</div>
+                            </div>
+                        </div>
+                        <button type="button" class="cal-banda-mas" th:if="${semana.bandasOcultas > 0}"
+                                onclick="toggleBandasSemana(this)"
+                                th:text="'+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'"
+                                th:attr="data-mas-label='+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">+1 más</button>
+                        <div class="cal-dias-row">
+                            <div th:each="d : ${semana.dias}" class="cal-cell"
+                                 th:classappend="${d.otroMes} ? 'other-month' : (${d.hoy} ? 'today' : '')">
+                                <span class="cal-date" th:text="${d.diaMes}">1</span>
+                                <div class="cal-events-container" th:if="${!d.eventosSinBandas.empty}">
+                                    <div th:each="ev, iterEv : ${d.eventosSinBandas}" th:if="${iterEv.index < 3}"
+                                         th:class="'cal-event ' + ${ev.cssClass}" th:title="${ev.titulo}">
+                                        <div class="event-dot"></div>
+                                        <span th:if="${ev.tieneHora}" th:text="${#temporals.format(ev.hora, 'HH:mm')}"></span>
+                                        <span th:text="${ev.titulo}">Evento</span>
+                                    </div>
+                                    <div class="cal-event-mas" th:if="${#lists.size(d.eventosSinBandas) > 3}"
+                                         th:text="'+' + (${#lists.size(d.eventosSinBandas) - 3}) + ' más'">+2 más</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
 
-            <!-- Grid -->
-            <div class="cal-grid">
-                <!-- Week 1 -->
-                <div class="cal-cell other-month"><span class="cal-date">27</span></div>
-                <div class="cal-cell other-month"><span class="cal-date">28</span></div>
-                <div class="cal-cell other-month"><span class="cal-date">29</span></div>
-                <div class="cal-cell other-month"><span class="cal-date">30</span></div>
-                <div class="cal-cell">
-                    <span class="cal-date">1</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-general" title="Día del Trabajador">
-                            <div class="event-dot"></div>Día del Trabajador
+            <!-- Vista Semana -->
+            <th:block th:if="${vista == 'semana'}">
+                <div class="cal-header-row">
+                    <div class="cal-header-cell" th:each="d : ${semana.dias}"
+                         th:text="${d.etiquetaCorta}">Lunes 1</div>
+                </div>
+                <div class="cal-bandas-wrapper" th:if="${semana.filasBandas > 0}"
+                     th:style="'max-height:' + ${semana.alturaColapsadaPx} + 'px;'"
+                     th:attr="data-collapsed-height=${semana.alturaColapsadaPx}, data-expanded-height=${semana.alturaExpandidaPx}">
+                    <div class="cal-bandas-row"
+                         th:style="'grid-template-rows: repeat(' + ${semana.filasBandas} + ', 22px);'">
+                        <div th:each="banda : ${semana.bandas}" class="cal-banda"
+                             th:style="'grid-column:' + ${banda.gridColumn} + '; grid-row:' + (${banda.fila} + 1) + ';'"
+                             th:title="${banda.titulo}" th:text="${banda.titulo}">Banda</div>
+                    </div>
+                </div>
+                <button type="button" class="cal-banda-mas" th:if="${semana.bandasOcultas > 0}"
+                        onclick="toggleBandasSemana(this)"
+                        th:text="'+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'"
+                        th:attr="data-mas-label='+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">+1 más</button>
+                <div class="cal-dias-row" style="grid-auto-rows: minmax(400px, 1fr);">
+                    <div th:each="d : ${semana.dias}" class="cal-cell" th:classappend="${d.hoy} ? 'today'">
+                        <span class="cal-date" th:text="${d.diaMes}">1</span>
+                        <div class="cal-events-container" th:if="${!d.eventosSinBandas.empty}">
+                            <div th:each="ev, iterEv : ${d.eventosSinBandas}" th:if="${iterEv.index < 8}"
+                                 th:class="'cal-event ' + ${ev.cssClass}" th:title="${ev.titulo}">
+                                <div class="event-dot"></div>
+                                <span th:if="${ev.tieneHora}" th:text="${#temporals.format(ev.hora, 'HH:mm')}"></span>
+                                <span th:text="${ev.titulo}">Evento</span>
+                            </div>
+                            <div class="cal-event-mas" th:if="${#lists.size(d.eventosSinBandas) > 8}"
+                                 th:text="'+' + (${#lists.size(d.eventosSinBandas) - 8}) + ' más'">+2 más</div>
                         </div>
                     </div>
                 </div>
-                <div class="cal-cell"><span class="cal-date">2</span></div>
-                <div class="cal-cell"><span class="cal-date">3</span></div>
+            </th:block>
 
-                <!-- Week 2 -->
-                <div class="cal-cell"><span class="cal-date">4</span></div>
-                <div class="cal-cell">
-                    <span class="cal-date">5</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-sala" title="08:00 AM - Clase Matemáticas 10-1">
-                            <div class="event-dot"></div>08:00 Clase Mate
-                        </div>
-                        <div class="cal-event event-tarea" title="10:30 AM - Revisar ensayos de Español">
-                            <div class="event-dot"></div>10:30 Revisar ensayos
-                        </div>
-                    </div>
-                </div>
-                <div class="cal-cell">
-                    <span class="cal-date">6</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-nodisponible" title="No disponible — Cita médica 10:00-12:00">
-                            <div class="event-dot"></div>🚫 10:00-12:00 Cita médica
+            <!-- Vista Día -->
+            <th:block th:if="${vista == 'dia'}">
+                <div class="dia-lista">
+                    <p class="table-empty" th:if="${dia.eventos.empty}">No hay eventos para este día.</p>
+                    <div th:each="ev : ${dia.eventos}" class="dia-evento-row">
+                        <span class="dia-evento-hora" th:text="${ev.tieneHora} ? ${#temporals.format(ev.hora, 'HH:mm')} : '—'">—</span>
+                        <div>
+                            <div class="dia-evento-titulo">
+                                <span th:text="${ev.icono}">📅</span>
+                                <span th:text="${ev.titulo}">Título</span>
+                            </div>
+                            <div class="dia-evento-desc" th:if="${ev.descripcion != null and !ev.descripcion.isBlank()}"
+                                 th:text="${ev.descripcion}">Descripción</div>
                         </div>
                     </div>
                 </div>
-                <div class="cal-cell">
-                    <span class="cal-date">7</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-recordatorio" title="Subir notas del primer trimestre al sistema">
-                            <div class="event-dot"></div>Subir notas
-                        </div>
-                    </div>
-                </div>
-                <div class="cal-cell"><span class="cal-date">8</span></div>
-                <div class="cal-cell"><span class="cal-date">9</span></div>
-                <div class="cal-cell"><span class="cal-date">10</span></div>
+            </th:block>
 
-                <!-- Week 3 -->
-                <div class="cal-cell"><span class="cal-date">11</span></div>
-                <div class="cal-cell"><span class="cal-date">12</span></div>
-                <div class="cal-cell">
-                    <span class="cal-date">13</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-general" title="09:00 AM - Reunión General de Docentes">
-                            <div class="event-dot"></div>09:00 Reunión Docentes
+            <!-- Vista Agenda -->
+            <th:block th:if="${vista == 'agenda'}">
+                <div class="dia-lista">
+                    <p class="table-empty" th:if="${agendaDias == null or agendaDias.empty}">No hay eventos programados este mes.</p>
+                    <th:block th:each="d : ${agendaDias}">
+                        <div class="agenda-fecha-header" th:text="${d.etiquetaLarga}">Lunes 1 enero</div>
+                        <div th:each="ev : ${d.eventos}" class="dia-evento-row">
+                            <span class="dia-evento-hora" th:text="${ev.tieneHora} ? ${#temporals.format(ev.hora, 'HH:mm')} : '—'">—</span>
+                            <div>
+                                <div class="dia-evento-titulo">
+                                    <span th:text="${ev.icono}">📅</span>
+                                    <span th:text="${ev.titulo}">Título</span>
+                                </div>
+                                <div class="dia-evento-desc" th:if="${ev.descripcion != null and !ev.descripcion.isBlank()}"
+                                     th:text="${ev.descripcion}">Descripción</div>
+                            </div>
                         </div>
-                    </div>
+                    </th:block>
                 </div>
-                <div class="cal-cell"><span class="cal-date">14</span></div>
-                <div class="cal-cell">
-                    <span class="cal-date">15</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-sala" title="09:00 AM - Ciencias Naturales 8-2">
-                            <div class="event-dot"></div>09:00 Ciencias Naturales
-                        </div>
-                    </div>
-                </div>
-                <div class="cal-cell"><span class="cal-date">16</span></div>
-                <div class="cal-cell"><span class="cal-date">17</span></div>
-
-                <!-- Week 4 -->
-                <div class="cal-cell"><span class="cal-date">18</span></div>
-                <div class="cal-cell">
-                    <span class="cal-date">19</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-nodisponible"
-                            title="No disponible — Todo el día — Asuntos personales">
-                            <div class="event-dot"></div>🚫 Día completo
-                        </div>
-                    </div>
-                </div>
-                <div class="cal-cell">
-                    <span class="cal-date">20</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-tarea" title="07:00 AM - Preparar material de clase">
-                            <div class="event-dot"></div>07:00 Preparar material
-                        </div>
-                    </div>
-                </div>
-                <div class="cal-cell"><span class="cal-date">21</span></div>
-                <div class="cal-cell"><span class="cal-date">22</span></div>
-                <div class="cal-cell"><span class="cal-date">23</span></div>
-                <div class="cal-cell"><span class="cal-date">24</span></div>
-
-                <!-- Week 5 -->
-                <div class="cal-cell"><span class="cal-date">25</span></div>
-                <div class="cal-cell"><span class="cal-date">26</span></div>
-                <div class="cal-cell"><span class="cal-date">27</span></div>
-                <div class="cal-cell">
-                    <span class="cal-date">28</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-recordatorio"
-                            title="Revisar exámenes de reposición antes de las 5:00 PM">
-                            <div class="event-dot"></div>Revisar Exámenes
-                        </div>
-                    </div>
-                </div>
-                <div class="cal-cell today">
-                    <span class="cal-date">29</span>
-                    <div class="cal-events-container">
-                        <div class="cal-event event-tarea" title="08:30 AM - Calificar proyectos finales">
-                            <div class="event-dot"></div>08:30 Calificar proyectos
-                        </div>
-                        <div class="cal-event event-sala" title="13:00 PM - Inglés Conversacional (Sala B)">
-                            <div class="event-dot"></div>13:00 Inglés Conversacional
-                        </div>
-                        <div class="cal-event event-general" title="15:30 PM - Entrega de Proyectos">
-                            <div class="event-dot"></div>15:30 Entrega Proyectos
-                        </div>
-                    </div>
-                </div>
-                <div class="cal-cell"><span class="cal-date">30</span></div>
-                <div class="cal-cell"><span class="cal-date">31</span></div>
-            </div>
+            </th:block>
         </div>
     </div>
-
-    <th:block th:replace="~{agenda/calendario/modal-disponibilidad :: modal}"></th:block>
 </div>

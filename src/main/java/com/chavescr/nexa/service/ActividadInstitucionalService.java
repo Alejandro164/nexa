@@ -111,6 +111,19 @@ public class ActividadInstitucionalService {
                 .findFirst();
     }
 
+    /** Eventos cuyo rango de fechas se solapa con [desde, hasta], sin importar el año. */
+    public List<EventoMepDTO> listarEventosEnRango(LocalDate desde, LocalDate hasta) {
+        List<EventoMepDTO> eventos = new java.util.ArrayList<>();
+        for (int anio = desde.getYear(); anio <= hasta.getYear(); anio++) {
+            eventos.addAll(listarEventosDelAnio(anio));
+        }
+        return eventos.stream()
+                .filter(e -> e.getFechaInicio() != null && e.getFechaFin() != null)
+                .filter(e -> !e.getFechaFin().isBefore(desde) && !e.getFechaInicio().isAfter(hasta))
+                .sorted(Comparator.comparing(EventoMepDTO::getFechaInicio))
+                .toList();
+    }
+
     private int anioActual() {
         return LocalDate.now().getYear();
     }

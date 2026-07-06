@@ -527,6 +527,20 @@ function cerrarActividadModal() {
     }, 180);
 }
 
+function toggleCalendarioTipo(tipo, visible) {
+    document.querySelectorAll('.cal-event.event-' + tipo).forEach(function (el) {
+        el.style.display = visible ? '' : 'none';
+    });
+}
+
+function toggleBandasSemana(btn) {
+    var wrapper = btn.previousElementSibling;
+    if (!wrapper || !wrapper.classList.contains('cal-bandas-wrapper')) return;
+    var expandido = wrapper.classList.toggle('expanded');
+    wrapper.style.maxHeight = (expandido ? wrapper.dataset.expandedHeight : wrapper.dataset.collapsedHeight) + 'px';
+    btn.textContent = expandido ? 'Ver menos' : btn.dataset.masLabel;
+}
+
 function _desmontarAcademicSelect(sel) {
     if (!sel || !sel.classList.contains('academic-native-select')) return;
     var wrap = sel.parentElement;

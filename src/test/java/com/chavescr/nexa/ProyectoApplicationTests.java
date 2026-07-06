@@ -18,6 +18,8 @@ import org.thymeleaf.TemplateSpec;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
+import com.chavescr.nexa.dto.DiaCalendarioDTO;
+import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
@@ -244,5 +246,68 @@ class ProyectoApplicationTests {
 						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
 		assertTrue(htmlNoEncontrado.contains("Actividad no encontrada"));
 		assertTrue(htmlNoEncontrado.contains("No se encontró información"));
+	}
+
+	@Test
+	void calendarioVistaMesRenderaEventosConTopeBandasYLabelsEnEspanol() {
+		LocalDate lunes = LocalDate.of(2026, 7, 6);
+
+		List<EventoCalendarioDTO> eventosLunes = List.of(
+				EventoCalendarioDTO.deTarea("Tarea 1", "desc", lunes),
+				EventoCalendarioDTO.deTarea("Tarea 2", "desc", lunes),
+				EventoCalendarioDTO.deTarea("Tarea 3", "desc", lunes),
+				EventoCalendarioDTO.deTarea("Tarea 4", "desc", lunes));
+		DiaCalendarioDTO diaLunes = new DiaCalendarioDTO(lunes, false, true, eventosLunes);
+
+		DiaCalendarioDTO diaMartes = new DiaCalendarioDTO(lunes.plusDays(1), false, false,
+				List.of(EventoCalendarioDTO.deRecordatorio("Enviar reporte", "desc", lunes.plusDays(1),
+						java.time.LocalTime.of(16, 30))));
+
+		DiaCalendarioDTO diaMiercoles = new DiaCalendarioDTO(lunes.plusDays(2), false, false,
+				List.of(EventoCalendarioDTO.deInstitucional("Feriado", "desc", lunes.plusDays(2), null, false)));
+
+		List<DiaCalendarioDTO> dias = new java.util.ArrayList<>(List.of(diaLunes, diaMartes, diaMiercoles));
+		for (int i = 3; i < 7; i++) {
+			dias.add(new DiaCalendarioDTO(lunes.plusDays(i), false, false, List.of()));
+		}
+
+		List<com.chavescr.nexa.dto.BandaEventoDTO> bandas = List.of(
+				new com.chavescr.nexa.dto.BandaEventoDTO("Semana de Exámenes", "desc", null, 1, 4, 0),
+				new com.chavescr.nexa.dto.BandaEventoDTO("Feria Científica", "desc", null, 2, 3, 1));
+		com.chavescr.nexa.dto.SemanaCalendarioDTO semana = new com.chavescr.nexa.dto.SemanaCalendarioDTO(dias, bandas);
+
+		Context context = new Context();
+		context.setVariable("vista", "mes");
+		context.setVariable("semanas", List.of(semana));
+		context.setVariable("miniSemanas", List.of(dias));
+		context.setVariable("miniLabel", "Julio 2026");
+		context.setVariable("miniAnterior", "2026-06-06");
+		context.setVariable("miniSiguiente", "2026-08-06");
+		context.setVariable("fechaRef", "2026-07-06");
+		context.setVariable("tituloLabel", "Julio 2026");
+		context.setVariable("hoyIso", "2026-07-06");
+		context.setVariable("fechaAnterior", "2026-06-06");
+		context.setVariable("fechaSiguiente", "2026-08-06");
+
+		String html = templateEngine.process("agenda/calendario/calendario", context);
+
+		assertTrue(html.contains("Julio 2026"));
+		assertTrue(html.contains("Tarea 1"));
+		assertTrue(html.contains("Tarea 2"));
+		assertTrue(html.contains("Tarea 3"));
+		assertFalse(html.contains("Tarea 4"));
+		assertTrue(html.contains("+1 más"));
+		assertTrue(html.contains("event-tarea"));
+		assertTrue(html.contains("event-recordatorio"));
+		assertTrue(html.contains("event-general"));
+		assertTrue(html.contains("16:30"));
+		assertTrue(html.contains("cal-banda"));
+		assertTrue(html.contains("Semana de Exámenes"));
+		assertTrue(html.contains("Feria Científica"));
+		assertTrue(html.contains("grid-column:1 / 5"));
+		assertTrue(html.contains("grid-row:1"));
+		assertTrue(html.contains("grid-row:2"));
+		assertFalse(html.contains("Marcar No Disponible"));
+		assertFalse(html.contains("Salas Virtuales"));
 	}
 }

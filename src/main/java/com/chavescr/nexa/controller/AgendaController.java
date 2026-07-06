@@ -18,6 +18,7 @@ import com.chavescr.nexa.entity.Proyecto;
 import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.TareaProyecto;
 import com.chavescr.nexa.service.ActividadInstitucionalService;
+import com.chavescr.nexa.service.CalendarioService;
 import com.chavescr.nexa.service.ParticipacionService;
 import com.chavescr.nexa.service.ProyectoService;
 import com.chavescr.nexa.service.RecordatorioService;
@@ -40,11 +41,90 @@ public class AgendaController {
     @Autowired
     private ActividadInstitucionalService actividadInstitucionalService;
 
+    @Autowired
+    private CalendarioService calendarioService;
+
     // ─── CALENDARIO / TAREAS / ACTIVIDAD / RECORDATORIOS ───────
 
     @GetMapping("/calendario")
-    public String calendario() {
+    public String calendario(@RequestParam(required = false) String vista,
+            @RequestParam(required = false) String fecha,
+            Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        Long usuarioId = requerirUsuario(session);
+
+        String vistaActual = (vista == null || vista.isBlank()) ? "semana" : vista;
+        java.time.LocalDate referencia = parsearFecha(fecha);
+
+        switch (vistaActual) {
+            case "semana" -> model.addAttribute("semana",
+                    calendarioService.construirSemana(institucionId, usuarioId, referencia));
+            case "dia" -> model.addAttribute("dia",
+                    calendarioService.construirDia(institucionId, usuarioId, referencia));
+            case "agenda" -> model.addAttribute("agendaDias",
+                    calendarioService.construirAgenda(institucionId, usuarioId, referencia));
+            default -> model.addAttribute("semanas",
+                    calendarioService.construirMes(institucionId, usuarioId, referencia));
+        }
+
+        model.addAttribute("miniSemanas", calendarioService.construirMesSimple(referencia));
+        model.addAttribute("miniLabel", capitalizar(
+                referencia.getMonth().getDisplayName(java.time.format.TextStyle.FULL, new java.util.Locale("es"))
+                        + " " + referencia.getYear()));
+        model.addAttribute("miniAnterior", referencia.minusMonths(1).toString());
+        model.addAttribute("miniSiguiente", referencia.plusMonths(1).toString());
+
+        model.addAttribute("vista", vistaActual);
+        model.addAttribute("fechaRef", referencia.toString());
+        model.addAttribute("tituloLabel", construirTituloLabel(vistaActual, referencia));
+        model.addAttribute("hoyIso", java.time.LocalDate.now().toString());
+        model.addAttribute("fechaAnterior", calcularAdyacente(vistaActual, referencia, -1).toString());
+        model.addAttribute("fechaSiguiente", calcularAdyacente(vistaActual, referencia, 1).toString());
+
         return "agenda/calendario/calendario :: content";
+    }
+
+    private java.time.LocalDate parsearFecha(String fecha) {
+        if (fecha == null || fecha.isBlank()) return java.time.LocalDate.now();
+        try {
+            return java.time.LocalDate.parse(fecha);
+        } catch (java.time.format.DateTimeParseException e) {
+            return java.time.LocalDate.now();
+        }
+    }
+
+    private java.time.LocalDate calcularAdyacente(String vista, java.time.LocalDate referencia, int direccion) {
+        return switch (vista) {
+            case "semana" -> referencia.plusWeeks(direccion);
+            case "dia" -> referencia.plusDays(direccion);
+            default -> referencia.plusMonths(direccion);
+        };
+    }
+
+    private String construirTituloLabel(String vista, java.time.LocalDate referencia) {
+        java.util.Locale locale = new java.util.Locale("es");
+        switch (vista) {
+            case "semana" -> {
+                java.time.LocalDate inicio = referencia.with(java.time.DayOfWeek.MONDAY);
+                java.time.LocalDate fin = referencia.with(java.time.DayOfWeek.SUNDAY);
+                java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("d MMM", locale);
+                return capitalizar(inicio.format(fmt)) + " – " + capitalizar(fin.format(fmt)) + " " + fin.getYear();
+            }
+            case "dia" -> {
+                String diaSemana = referencia.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, locale);
+                String mes = referencia.getMonth().getDisplayName(java.time.format.TextStyle.FULL, locale);
+                return capitalizar(diaSemana) + " " + referencia.getDayOfMonth() + " de " + mes + " de "
+                        + referencia.getYear();
+            }
+            default -> {
+                String mes = referencia.getMonth().getDisplayName(java.time.format.TextStyle.FULL, locale);
+                return capitalizar(mes) + " " + referencia.getYear();
+            }
+        }
+    }
+
+    private String capitalizar(String texto) {
+        return texto == null || texto.isEmpty() ? texto : Character.toUpperCase(texto.charAt(0)) + texto.substring(1);
     }
 
     @GetMapping("/tareas")
