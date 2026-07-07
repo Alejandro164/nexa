@@ -198,6 +198,7 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materias", service.listarMateriasActivas(institucionId));
         model.addAttribute("docentes", service.listarDocentes(institucionId));
+        model.addAttribute("aulas", service.listarAulasActivas(institucionId));
         return "configuracion-academica/horario/form :: form-content";
     }
 
@@ -207,13 +208,14 @@ public class ConfiguracionAcademicaController {
             @RequestParam Long nivelId,
             @RequestParam Long materiaId,
             @RequestParam Long docenteId,
+            @RequestParam Long aulaId,
             @RequestParam String dia,
             @RequestParam Integer numeroLeccion,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime horaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime horaFin,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        service.guardarLeccion(institucionId, id, periodoId, nivelId, materiaId, docenteId,
+        service.guardarLeccion(institucionId, id, periodoId, nivelId, materiaId, docenteId, aulaId,
                 dia, numeroLeccion, horaInicio, horaFin);
         cargarHorario(model, institucionId, periodoId, nivelId);
         notificarGuardado(response, "Lección asignada correctamente");

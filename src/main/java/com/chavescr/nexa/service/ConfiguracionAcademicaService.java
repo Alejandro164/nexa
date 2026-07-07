@@ -192,7 +192,9 @@ public class ConfiguracionAcademicaService {
     }
 
     public void eliminarAula(Long institucionId, Long id) {
-        aulaRepository.delete(obtenerAula(institucionId, id));
+        Aula aula = obtenerAula(institucionId, id);
+        horarioRepository.deleteByInstitucionIdAndAulaId(institucionId, id);
+        aulaRepository.delete(aula);
     }
 
     @Transactional(readOnly = true)
@@ -219,7 +221,7 @@ public class ConfiguracionAcademicaService {
     }
 
     public HorarioLeccion guardarLeccion(Long institucionId, Long id, Long periodoId, Long nivelId,
-            Long materiaId, Long docenteId, String dia, Integer numeroLeccion,
+            Long materiaId, Long docenteId, Long aulaId, String dia, Integer numeroLeccion,
             LocalTime horaInicio, LocalTime horaFin) {
         if (!DIAS.contains(dia) || !LECCIONES.contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
@@ -252,6 +254,7 @@ public class ConfiguracionAcademicaService {
         leccion.setMateria(obtenerMateria(institucionId, materiaId));
         leccion.setDocente(usuarioRepository.findActivoByIdAndInstitucionId(docenteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Docente no válido para la institución")));
+        leccion.setAula(obtenerAula(institucionId, aulaId));
         leccion.setDia(dia);
         leccion.setNumeroLeccion(numeroLeccion);
         leccion.setHoraInicio(horaInicio);

@@ -83,6 +83,7 @@
                                  onclick="abrirModalAcademico()">
                                 <strong th:text="${item.materia.nombre}">Matemáticas</strong>
                                 <span th:text="${item.docente.nombre}">Docente</span>
+                                <span th:text="${item.aula.nombre}">Aula</span>
                                 <small th:text="|${#temporals.format(item.horaInicio, 'HH:mm')} - ${#temporals.format(item.horaFin, 'HH:mm')}|">07:00 - 07:40</small>
                                 <button type="button" class="schedule-remove" title="Eliminar asignación"
                                         th:attr="data-delete-url=|/configuracion-academica/horario/${item.id}?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}|,

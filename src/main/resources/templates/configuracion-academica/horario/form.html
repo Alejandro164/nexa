@@ -13,10 +13,10 @@
                 <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
             </div>
             <div class="modal-body">
-                <div th:if="${materias.empty or docentes.empty}" class="academic-empty academic-empty-block">
-                    Debes tener materias activas y usuarios activos asociados a la institución.
+                <div th:if="${materias.empty or docentes.empty or aulas.empty}" class="academic-empty academic-empty-block">
+                    Debes tener materias activas, usuarios activos y aulas activas asociadas a la institución.
                 </div>
-                <form th:unless="${materias.empty or docentes.empty}"
+                <form th:unless="${materias.empty or docentes.empty or aulas.empty}"
                       hx-post="/configuracion-academica/horario"
                       hx-target="#horario-panel"
                       hx-swap="outerHTML">
@@ -44,6 +44,16 @@
                                     th:value="${docente.id}"
                                     th:selected="${leccion.docente != null and leccion.docente.id == docente.id}"
                                     th:text="${docente.nombre}">Profesor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Aula</label>
+                        <select class="form-input" name="aulaId" required>
+                            <option value="">Seleccione un aula</option>
+                            <option th:each="aula : ${aulas}"
+                                    th:value="${aula.id}"
+                                    th:selected="${leccion.aula != null and leccion.aula.id == aula.id}"
+                                    th:text="|${aula.nombre} (${aula.capacidad})|">Aula</option>
                         </select>
                     </div>
                     <div class="academic-form-grid">

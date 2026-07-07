@@ -101,6 +101,7 @@ class ProyectoApplicationTests {
 		leccion.setNivel(nivel);
 		leccion.setMateria(materia);
 		leccion.setDocente(docente);
+		leccion.setAula(aula);
 		leccion.setDia("LUNES");
 		leccion.setNumeroLeccion(1);
 		leccion.setHoraInicio(LocalTime.of(7, 0));
@@ -151,6 +152,7 @@ class ProyectoApplicationTests {
 				"configuracion-academica/horario/horario", context);
 		assertTrue(horarioRenderizado.contains("Matemáticas"));
 		assertTrue(horarioRenderizado.contains("Docente de prueba"));
+		assertTrue(horarioRenderizado.contains("Aula 101"));
 		assertTrue(horarioRenderizado.contains("schedule-slot schedule-slot-filled"));
 		assertFalse(horarioRenderizado.contains(
 				"periodoId=1&amp;amp;nivelId=1"));
