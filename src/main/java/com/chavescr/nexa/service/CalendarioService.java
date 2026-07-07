@@ -59,7 +59,7 @@ public class CalendarioService {
             if (diasSemana.size() == 7) {
                 LocalDate finSemanaActual = inicioSemanaActual.plusDays(6);
                 semanas.add(new SemanaCalendarioDTO(diasSemana,
-                        calcularBandas(inicioSemanaActual, finSemanaActual)));
+                        calcularBandas(institucionId, inicioSemanaActual, finSemanaActual)));
                 diasSemana = new ArrayList<>();
                 inicioSemanaActual = cursor.plusDays(1);
             }
@@ -73,13 +73,17 @@ public class CalendarioService {
         LocalDate ultimoDiaMes = referencia.withDayOfMonth(referencia.lengthOfMonth());
         LocalDate inicioGrid = primerDiaMes.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate finGrid = ultimoDiaMes.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+        LocalDate inicioSemanaRef = referencia.with(DayOfWeek.MONDAY);
+        LocalDate finSemanaRef = referencia.with(DayOfWeek.SUNDAY);
 
         List<List<DiaCalendarioDTO>> semanas = new ArrayList<>();
         List<DiaCalendarioDTO> semanaActual = new ArrayList<>();
         for (LocalDate cursor = inicioGrid; !cursor.isAfter(finGrid); cursor = cursor.plusDays(1)) {
             boolean otroMes = cursor.getMonthValue() != referencia.getMonthValue()
                     || cursor.getYear() != referencia.getYear();
-            semanaActual.add(new DiaCalendarioDTO(cursor, otroMes, cursor.equals(LocalDate.now()), List.of()));
+            boolean enSemanaActual = !cursor.isBefore(inicioSemanaRef) && !cursor.isAfter(finSemanaRef);
+            semanaActual.add(new DiaCalendarioDTO(cursor, otroMes, cursor.equals(LocalDate.now()), List.of(),
+                    enSemanaActual));
             if (semanaActual.size() == 7) {
                 semanas.add(semanaActual);
                 semanaActual = new ArrayList<>();
@@ -99,7 +103,7 @@ public class CalendarioService {
             dias.add(new DiaCalendarioDTO(cursor, false, cursor.equals(LocalDate.now()),
                     eventosPorDia.getOrDefault(cursor, List.of())));
         }
-        return new SemanaCalendarioDTO(dias, calcularBandas(inicioSemana, finSemana));
+        return new SemanaCalendarioDTO(dias, calcularBandas(institucionId, inicioSemana, finSemana));
     }
 
     public DiaCalendarioDTO construirDia(Long institucionId, Long usuarioId, LocalDate referencia) {
@@ -123,8 +127,9 @@ public class CalendarioService {
      * Se devuelven todas las filas; la vista solo muestra {@link SemanaCalendarioDTO#FILAS_VISIBLES_POR_DEFECTO}
      * de entrada y permite expandir el resto.
      */
-    private List<BandaEventoDTO> calcularBandas(LocalDate inicioSemana, LocalDate finSemana) {
-        List<EventoMepDTO> multiDia = actividadInstitucionalService.listarEventosEnRango(inicioSemana, finSemana)
+    private List<BandaEventoDTO> calcularBandas(Long institucionId, LocalDate inicioSemana, LocalDate finSemana) {
+        List<EventoMepDTO> multiDia = actividadInstitucionalService
+                .listarEventosEnRango(institucionId, inicioSemana, finSemana)
                 .stream()
                 .filter(e -> e.getFechaFin().isAfter(e.getFechaInicio()))
                 .sorted(Comparator.comparing(EventoMepDTO::getFechaInicio))
@@ -153,7 +158,7 @@ public class CalendarioService {
             finColumnaPorFila.set(fila, columnaFin);
 
             bandas.add(new BandaEventoDTO(ev.getTitulo(), ev.getDescripcion(), ev.getLink(),
-                    columnaInicio, columnaFin, fila));
+                    columnaInicio, columnaFin, fila, ev.getFechaInicio(), ev.getFechaFin()));
         }
         return bandas;
     }
@@ -179,7 +184,7 @@ public class CalendarioService {
             }
         }
 
-        for (EventoMepDTO ev : actividadInstitucionalService.listarEventosEnRango(desde, hasta)) {
+        for (EventoMepDTO ev : actividadInstitucionalService.listarEventosEnRango(institucionId, desde, hasta)) {
             // Se ancla al día de inicio (o al primer día visible si ya estaba en curso). Los eventos
             // de varios días también se muestran como banda en la grilla (ver calcularBandas); aquí
             // se guardan igual para que las vistas de lista (Día/Agenda) los sigan mostrando completos.

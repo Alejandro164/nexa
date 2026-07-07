@@ -3,10 +3,11 @@
     <div id="part-content">
         <form class="filters-bar"
               hx-get="/agenda/participacion"
-              hx-target="#part-content"
-              hx-swap="outerHTML"
+              hx-target="#part-tabla-container"
+              hx-swap="innerHTML"
               hx-trigger="submit, change from:.filter-select delay:200ms, input from:.filter-input delay:400ms">
-            <input class="filter-input" type="text" name="filtro" th:value="${filtro}" placeholder="🔍 Buscar por nombre o email..." style="flex:1;min-width:200px;">
+            <input class="filter-input" type="text" name="filtro" th:value="${filtro}"
+                   placeholder="🔍 Buscar por nombre o email..." style="flex:1;min-width:200px;">
             <select class="form-input filter-select" name="rol">
                 <option value="" th:selected="${rolSel == null or rolSel == ''}">Todos los roles</option>
                 <option value="ROLE_ADMIN" th:selected="${rolSel == 'ROLE_ADMIN'}">Admin</option>
@@ -21,50 +22,54 @@
             </select>
         </form>
 
-        <div class="module-card">
-            <div class="module-card-header">
-                <h3 class="module-card-title">Participantes <span style="font-weight:400;color:#94a3b8;font-size:0.85rem;" th:text="'(' + ${participantes != null ? #lists.size(participantes) : 0} + ')'">(0)</span></h3>
-            </div>
-            <table class="table">
-                <thead>
-                    <tr><th>Persona</th><th>Rol</th><th>Tareas</th><th>Cumplimiento</th><th>Promedio</th><th>Proyectos</th><th></th></tr>
-                </thead>
-                <tbody>
-                    <tr th:if="${participantes == null or participantes.empty}"><td colspan="7" class="table-empty">No se encontraron participantes.</td></tr>
-                    <tr th:each="p : ${participantes}">
-                        <td>
-                            <div class="user-cell">
-                                <div class="avatar-circle" th:style="'background:' + (${p.rol} == 'ADMIN' ? '#9d174d' : (${p.rol} == 'EDITOR' ? '#3730a3' : '#2563eb'))" th:text="${#strings.substring(p.nombre, 0, 1)}">N</div>
-                                <div class="user-info">
-                                    <span class="user-name" th:text="${p.nombre}">Nombre</span>
-                                    <span class="user-email" th:text="${p.email}">email</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="rol-badge"
-                                  th:classappend="${p.rol} == 'ADMIN' ? 'rol-admin' : (${p.rol} == 'EDITOR' ? 'rol-editor' : 'rol-user')"
-                                  th:text="${p.rol}">ROL</span>
-                        </td>
-                        <td><span class="stat-value-sm" th:text="${p.completadas} + '/' + ${p.totalTareas}">0/0</span></td>
-                        <td>
-                            <div class="tasa-bar">
-                                <span class="tasa-num" th:style="'color:' + (${p.tasaCumplimiento} >= 70 ? '#16a34a' : (${p.tasaCumplimiento} >= 40 ? '#d97706' : '#ef4444'))" th:text="${p.tasaCumplimiento} + '%'">0%</span>
-                                <div class="mini-bar"><div class="mini-bar-fill" th:attr="style='width:'+${p.tasaCumplimiento}+'%;' + (${p.tasaCumplimiento} >= 70 ? 'background:#16a34a;' : (${p.tasaCumplimiento} >= 40 ? 'background:#d97706;' : 'background:#ef4444;'))"></div></div>
-                            </div>
-                        </td>
-                        <td th:text="${p.promedioCalificacion != null ? p.promedioCalificacion : '—'}">—</td>
-                        <td th:text="${p.proyectosCount}">0</td>
-                        <td>
-                            <button class="btn-xs btn-ghost"
-                                    th:attr="hx-get=|/agenda/participacion/detalle/${p.usuarioId}|"
-                                    hx-target="#detalle-container" hx-swap="innerHTML">📋</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <div th:replace="~{agenda/participacion/contenido :: tabla}"></div>
 
         <div id="detalle-container" style="margin-top: 1rem;"></div>
+    </div>
+</div>
+
+<div th:fragment="tabla" id="part-tabla-container">
+    <div class="module-card">
+        <div class="module-card-header">
+            <h3 class="module-card-title">Participantes <span style="font-weight:400;color:#94a3b8;font-size:0.85rem;" th:text="'(' + ${participantes != null ? #lists.size(participantes) : 0} + ')'">(0)</span></h3>
+        </div>
+        <table class="table">
+            <thead>
+                <tr><th>Persona</th><th>Rol</th><th>Tareas</th><th>Cumplimiento</th><th>Promedio</th><th>Proyectos</th><th></th></tr>
+            </thead>
+            <tbody>
+                <tr th:if="${participantes == null or participantes.empty}"><td colspan="7" class="table-empty">No se encontraron participantes.</td></tr>
+                <tr th:each="p : ${participantes}">
+                    <td>
+                        <div class="user-cell">
+                            <div class="avatar-circle" th:style="'background:' + (${p.rol} == 'ADMIN' ? '#9d174d' : (${p.rol} == 'EDITOR' ? '#3730a3' : '#2563eb'))" th:text="${#strings.substring(p.nombre, 0, 1)}">N</div>
+                            <div class="user-info">
+                                <span class="user-name" th:text="${p.nombre}">Nombre</span>
+                                <span class="user-email" th:text="${p.email}">email</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="rol-badge"
+                              th:classappend="${p.rol} == 'ADMIN' ? 'rol-admin' : (${p.rol} == 'EDITOR' ? 'rol-editor' : 'rol-user')"
+                              th:text="${p.rol}">ROL</span>
+                    </td>
+                    <td><span class="stat-value-sm" th:text="${p.completadas} + '/' + ${p.totalTareas}">0/0</span></td>
+                    <td>
+                        <div class="tasa-bar">
+                            <span class="tasa-num" th:style="'color:' + (${p.tasaCumplimiento} >= 70 ? '#16a34a' : (${p.tasaCumplimiento} >= 40 ? '#d97706' : '#ef4444'))" th:text="${p.tasaCumplimiento} + '%'">0%</span>
+                            <div class="mini-bar"><div class="mini-bar-fill" th:attr="style='width:'+${p.tasaCumplimiento}+'%;' + (${p.tasaCumplimiento} >= 70 ? 'background:#16a34a;' : (${p.tasaCumplimiento} >= 40 ? 'background:#d97706;' : 'background:#ef4444;'))"></div></div>
+                        </div>
+                    </td>
+                    <td th:text="${p.promedioCalificacion != null ? p.promedioCalificacion : '—'}">—</td>
+                    <td th:text="${p.proyectosCount}">0</td>
+                    <td>
+                        <button class="btn-xs btn-ghost"
+                                th:attr="hx-get=|/agenda/participacion/detalle/${p.usuarioId}|"
+                                hx-target="#detalle-container" hx-swap="innerHTML">📋</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>

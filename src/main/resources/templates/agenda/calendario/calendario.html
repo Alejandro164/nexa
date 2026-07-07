@@ -1,4 +1,4 @@
-<div th:fragment="content" id="calendario-content" class="tab-pane">
+<div th:fragment="content" id="calendario-content" class="tab-pane" hx-indicator="#agenda-loading">
     <style>
         /* Modern Calendar Styles */
         .cal-wrapper {
@@ -108,7 +108,9 @@
             padding: 0 2px 2px;
             background: none;
             border: none;
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 4px;
             width: 100%;
             text-align: left;
             cursor: pointer;
@@ -118,6 +120,15 @@
         .cal-banda-mas:hover {
             color: var(--primary);
             text-decoration: underline;
+        }
+
+        .cal-banda-mas-arrow {
+            flex-shrink: 0;
+            transition: transform 0.25s ease;
+        }
+
+        .cal-banda-mas.expanded .cal-banda-mas-arrow {
+            transform: rotate(180deg);
         }
 
         .cal-dias-row {
@@ -375,16 +386,35 @@
 
         /* Mini calendar */
         .mini-cal-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
             text-align: center;
             font-size: 0.75rem;
-            gap: 6px;
+        }
+
+        .mini-cal-header-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
         }
 
         .mini-cal-header {
             color: var(--text-light);
             font-weight: 700;
+        }
+
+        .mini-cal-week {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            border-radius: 14px;
+            transition: background 0.2s;
+        }
+
+        .mini-cal-week.semana-actual {
+            background: rgba(45, 90, 135, 0.1);
+            box-shadow: inset 0 0 0 1px rgba(45, 90, 135, 0.2);
         }
 
         .mini-cal-day {
@@ -475,21 +505,109 @@
         .agenda-fecha-header:first-child {
             margin-top: 0;
         }
+
+        /* Popover de detalle de evento (aparece al lado del elemento clicado) */
+        .evento-popover {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            width: 320px;
+            max-width: calc(100vw - 16px);
+            max-height: calc(100vh - 16px);
+            overflow-y: auto;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+            padding: 1.1rem 1.25rem;
+            opacity: 0;
+            transform: scale(0.96);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        .evento-popover.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .evento-popover-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0.6rem;
+        }
+
+        .evento-popover-icono {
+            font-size: 1.1rem;
+        }
+
+        .evento-popover-tipo {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 3px 9px;
+            border-radius: 999px;
+            flex: 1;
+        }
+
+        .evento-popover-close {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 1.3rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 6px;
+            transition: all 0.15s;
+        }
+
+        .evento-popover-close:hover {
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+
+        .evento-popover-titulo {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .evento-popover-fecha {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.6rem;
+        }
+
+        .evento-popover-desc {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 0.6rem;
+            white-space: pre-line;
+        }
+
+        .evento-popover-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .evento-popover-link:hover {
+            text-decoration: underline;
+        }
     </style>
 
     <div class="cal-wrapper">
         <!-- Sidebar -->
         <div class="cal-sidebar">
-            <button class="btn btn-primary"
-                style="width: 100%; padding: 14px; font-size: 1rem; border-radius: 12px; box-shadow: 0 8px 20px rgba(45,90,135,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Crear Nuevo Evento
-            </button>
-
             <!-- Mini Calendar -->
             <div class="card" style="padding: 1.25rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.25rem;">
@@ -512,20 +630,23 @@
                     </div>
                 </div>
                 <div class="mini-cal-grid">
-                    <div class="mini-cal-header">L</div>
-                    <div class="mini-cal-header">M</div>
-                    <div class="mini-cal-header">M</div>
-                    <div class="mini-cal-header">J</div>
-                    <div class="mini-cal-header">V</div>
-                    <div class="mini-cal-header">S</div>
-                    <div class="mini-cal-header">D</div>
-                    <th:block th:each="semana : ${miniSemanas}">
+                    <div class="mini-cal-header-row">
+                        <div class="mini-cal-header">L</div>
+                        <div class="mini-cal-header">M</div>
+                        <div class="mini-cal-header">M</div>
+                        <div class="mini-cal-header">J</div>
+                        <div class="mini-cal-header">V</div>
+                        <div class="mini-cal-header">S</div>
+                        <div class="mini-cal-header">D</div>
+                    </div>
+                    <div th:each="semana : ${miniSemanas}" class="mini-cal-week"
+                         th:classappend="${semana[0].enSemanaActual} ? 'semana-actual' : ''">
                         <div th:each="d : ${semana}" class="mini-cal-day"
                              th:classappend="${d.otroMes} ? 'other-month' : (${d.hoy} ? 'today' : '')"
                              th:text="${d.diaMes}"
                              th:attr="hx-get='/agenda/calendario?vista=dia&fecha=' + ${d.fecha}"
                              hx-target="#calendario-content" hx-swap="outerHTML">1</div>
-                    </th:block>
+                    </div>
                 </div>
             </div>
 
@@ -617,20 +738,29 @@
                                  th:style="'grid-template-rows: repeat(' + ${semana.filasBandas} + ', 22px);'">
                                 <div th:each="banda : ${semana.bandas}" class="cal-banda"
                                      th:style="'grid-column:' + ${banda.gridColumn} + '; grid-row:' + (${banda.fila} + 1) + ';'"
-                                     th:title="${banda.titulo}" th:text="${banda.titulo}">Banda</div>
+                                     th:title="${banda.titulo}" th:text="${banda.titulo}"
+                                     onclick="mostrarDetalleEvento(this, event)"
+                                     th:attr="data-icono='📅', data-tipo-label='Evento Institucional', data-tipo-clase='event-general', data-titulo=${banda.titulo}, data-fecha=${banda.rangoLabel}, data-descripcion=${banda.descripcion} ?: '', data-enlace=${banda.enlace} ?: ''">Banda</div>
                             </div>
                         </div>
                         <button type="button" class="cal-banda-mas" th:if="${semana.bandasOcultas > 0}"
                                 onclick="toggleBandasSemana(this)"
-                                th:text="'+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'"
-                                th:attr="data-mas-label='+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">+1 más</button>
+                                th:attr="data-mas-label='+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">
+                            <svg class="cal-banda-mas-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                            <span th:text="'+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">+1 más</span>
+                        </button>
                         <div class="cal-dias-row">
                             <div th:each="d : ${semana.dias}" class="cal-cell"
                                  th:classappend="${d.otroMes} ? 'other-month' : (${d.hoy} ? 'today' : '')">
                                 <span class="cal-date" th:text="${d.diaMes}">1</span>
                                 <div class="cal-events-container" th:if="${!d.eventosSinBandas.empty}">
                                     <div th:each="ev, iterEv : ${d.eventosSinBandas}" th:if="${iterEv.index < 3}"
-                                         th:class="'cal-event ' + ${ev.cssClass}" th:title="${ev.titulo}">
+                                         th:class="'cal-event ' + ${ev.cssClass}" th:title="${ev.titulo}"
+                                         onclick="mostrarDetalleEvento(this, event)"
+                                         th:attr="data-icono=${ev.icono}, data-tipo-label=${ev.tipoLabel}, data-tipo-clase=${ev.cssClass}, data-titulo=${ev.titulo}, data-fecha=${ev.fechaLabel} + (${ev.tieneHora} ? (' · ' + ${#temporals.format(ev.hora,'HH:mm')}) : ''), data-descripcion=${ev.descripcion} ?: '', data-enlace=${ev.enlace} ?: ''">
                                         <div class="event-dot"></div>
                                         <span th:if="${ev.tieneHora}" th:text="${#temporals.format(ev.hora, 'HH:mm')}"></span>
                                         <span th:text="${ev.titulo}">Evento</span>
@@ -657,19 +787,28 @@
                          th:style="'grid-template-rows: repeat(' + ${semana.filasBandas} + ', 22px);'">
                         <div th:each="banda : ${semana.bandas}" class="cal-banda"
                              th:style="'grid-column:' + ${banda.gridColumn} + '; grid-row:' + (${banda.fila} + 1) + ';'"
-                             th:title="${banda.titulo}" th:text="${banda.titulo}">Banda</div>
+                             th:title="${banda.titulo}" th:text="${banda.titulo}"
+                             onclick="mostrarDetalleEvento(this, event)"
+                             th:attr="data-icono='📅', data-tipo-label='Evento Institucional', data-tipo-clase='event-general', data-titulo=${banda.titulo}, data-fecha=${banda.rangoLabel}, data-descripcion=${banda.descripcion} ?: '', data-enlace=${banda.enlace} ?: ''">Banda</div>
                     </div>
                 </div>
                 <button type="button" class="cal-banda-mas" th:if="${semana.bandasOcultas > 0}"
                         onclick="toggleBandasSemana(this)"
-                        th:text="'+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'"
-                        th:attr="data-mas-label='+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">+1 más</button>
+                        th:attr="data-mas-label='+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">
+                    <svg class="cal-banda-mas-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                    <span th:text="'+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">+1 más</span>
+                </button>
                 <div class="cal-dias-row" style="grid-auto-rows: minmax(400px, 1fr);">
                     <div th:each="d : ${semana.dias}" class="cal-cell" th:classappend="${d.hoy} ? 'today'">
                         <span class="cal-date" th:text="${d.diaMes}">1</span>
                         <div class="cal-events-container" th:if="${!d.eventosSinBandas.empty}">
                             <div th:each="ev, iterEv : ${d.eventosSinBandas}" th:if="${iterEv.index < 8}"
-                                 th:class="'cal-event ' + ${ev.cssClass}" th:title="${ev.titulo}">
+                                 th:class="'cal-event ' + ${ev.cssClass}" th:title="${ev.titulo}"
+                                 onclick="mostrarDetalleEvento(this, event)"
+                                 th:attr="data-icono=${ev.icono}, data-tipo-label=${ev.tipoLabel}, data-tipo-clase=${ev.cssClass}, data-titulo=${ev.titulo}, data-fecha=${ev.fechaLabel} + (${ev.tieneHora} ? (' · ' + ${#temporals.format(ev.hora,'HH:mm')}) : ''), data-descripcion=${ev.descripcion} ?: '', data-enlace=${ev.enlace} ?: ''">
                                 <div class="event-dot"></div>
                                 <span th:if="${ev.tieneHora}" th:text="${#temporals.format(ev.hora, 'HH:mm')}"></span>
                                 <span th:text="${ev.titulo}">Evento</span>
@@ -685,7 +824,9 @@
             <th:block th:if="${vista == 'dia'}">
                 <div class="dia-lista">
                     <p class="table-empty" th:if="${dia.eventos.empty}">No hay eventos para este día.</p>
-                    <div th:each="ev : ${dia.eventos}" class="dia-evento-row">
+                    <div th:each="ev : ${dia.eventos}" class="dia-evento-row"
+                         onclick="mostrarDetalleEvento(this, event)"
+                         th:attr="data-icono=${ev.icono}, data-tipo-label=${ev.tipoLabel}, data-tipo-clase=${ev.cssClass}, data-titulo=${ev.titulo}, data-fecha=${ev.fechaLabel} + (${ev.tieneHora} ? (' · ' + ${#temporals.format(ev.hora,'HH:mm')}) : ''), data-descripcion=${ev.descripcion} ?: '', data-enlace=${ev.enlace} ?: ''">
                         <span class="dia-evento-hora" th:text="${ev.tieneHora} ? ${#temporals.format(ev.hora, 'HH:mm')} : '—'">—</span>
                         <div>
                             <div class="dia-evento-titulo">
@@ -705,7 +846,9 @@
                     <p class="table-empty" th:if="${agendaDias == null or agendaDias.empty}">No hay eventos programados este mes.</p>
                     <th:block th:each="d : ${agendaDias}">
                         <div class="agenda-fecha-header" th:text="${d.etiquetaLarga}">Lunes 1 enero</div>
-                        <div th:each="ev : ${d.eventos}" class="dia-evento-row">
+                        <div th:each="ev : ${d.eventos}" class="dia-evento-row"
+                             onclick="mostrarDetalleEvento(this, event)"
+                             th:attr="data-icono=${ev.icono}, data-tipo-label=${ev.tipoLabel}, data-tipo-clase=${ev.cssClass}, data-titulo=${ev.titulo}, data-fecha=${ev.fechaLabel} + (${ev.tieneHora} ? (' · ' + ${#temporals.format(ev.hora,'HH:mm')}) : ''), data-descripcion=${ev.descripcion} ?: '', data-enlace=${ev.enlace} ?: ''">
                             <span class="dia-evento-hora" th:text="${ev.tieneHora} ? ${#temporals.format(ev.hora, 'HH:mm')} : '—'">—</span>
                             <div>
                                 <div class="dia-evento-titulo">
@@ -720,5 +863,18 @@
                 </div>
             </th:block>
         </div>
+    </div>
+
+    <!-- Popover de detalle de evento -->
+    <div id="evento-popover" class="evento-popover">
+        <div class="evento-popover-header">
+            <span class="evento-popover-icono">📅</span>
+            <span class="evento-popover-tipo event-general">Tipo</span>
+            <button type="button" class="evento-popover-close" onclick="cerrarEventoPopover()">&times;</button>
+        </div>
+        <div class="evento-popover-titulo">Título</div>
+        <div class="evento-popover-fecha">Fecha</div>
+        <div class="evento-popover-desc">Descripción</div>
+        <a class="evento-popover-link" href="#" target="_blank" rel="noopener">Ver más →</a>
     </div>
 </div>

@@ -1,5 +1,6 @@
 package com.chavescr.nexa.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.chavescr.nexa.entity.ActividadInstitucionalPropia;
 import com.chavescr.nexa.entity.Proyecto;
 import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.TareaProyecto;
@@ -227,20 +229,96 @@ public class AgendaController {
     public String actividad(@RequestParam(required = false) Integer mes,
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) String filtro,
-            Model model) {
-        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(mes, categoria, filtro));
-        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias());
+            Model model, HttpSession session, HttpServletRequest request) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(institucionId, mes, categoria, filtro));
+        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(institucionId));
         model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
         model.addAttribute("mesSel", mes);
         model.addAttribute("categoriaSel", categoria);
         model.addAttribute("filtro", filtro);
+        model.addAttribute("puedeCrearActividad", esDirectorOAdmin(request));
+        if ("actividad-tabla-container".equals(request.getHeader("HX-Target"))) {
+            return "agenda/actividad/actividad :: eventos-tabla-con-contador";
+        }
         return "agenda/actividad/actividad :: content";
     }
 
     @GetMapping("/actividad/detalle/{id}")
-    public String actividadDetalle(@PathVariable String id, Model model) {
-        model.addAttribute("evento", actividadInstitucionalService.obtenerEvento(id).orElse(null));
+    public String actividadDetalle(@PathVariable String id, Model model, HttpSession session,
+            HttpServletRequest request) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("evento", actividadInstitucionalService.obtenerEvento(institucionId, id).orElse(null));
+        model.addAttribute("puedeCrearActividad", esDirectorOAdmin(request));
         return "agenda/actividad/actividad :: detalle-modal";
+    }
+
+    @GetMapping("/actividad/form")
+    public String actividadFormCrear(Model model, HttpServletRequest request) {
+        exigirDirectorOAdmin(request);
+        model.addAttribute("actividad", new ActividadInstitucionalPropia());
+        return "agenda/actividad/formulario :: form-content";
+    }
+
+    @GetMapping("/actividad/form/{id}")
+    public String actividadFormEditar(@PathVariable Long id, Model model, HttpSession session,
+            HttpServletRequest request) {
+        exigirDirectorOAdmin(request);
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("actividad", actividadInstitucionalService.obtenerActividadPropiaEntidad(institucionId, id));
+        return "agenda/actividad/formulario :: form-content";
+    }
+
+    @PostMapping("/actividad")
+    public String actividadGuardar(
+            @RequestParam(required = false) Long id,
+            @RequestParam String titulo,
+            @RequestParam(required = false) String descripcion,
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fechaInicio,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fechaFin,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String enlace,
+            Model model, HttpSession session, HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response) {
+        exigirDirectorOAdmin(request);
+        Long institucionId = requerirInstitucion(session);
+        Long usuarioId = requerirUsuario(session);
+        try {
+            actividadInstitucionalService.guardarActividadPropia(institucionId, usuarioId, id,
+                    titulo, descripcion, fechaInicio, fechaFin, categoria, enlace);
+            model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(institucionId, null, null, null));
+            model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(institucionId));
+            model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
+            model.addAttribute("puedeCrearActividad", true);
+            return "agenda/actividad/actividad :: content";
+        } catch (Exception e) {
+            response.setHeader("HX-Retarget", "#actividad-modal-container");
+            response.setHeader("HX-Reswap", "innerHTML");
+            model.addAttribute("error", e.getMessage());
+            ActividadInstitucionalPropia actividad = new ActividadInstitucionalPropia();
+            actividad.setId(id);
+            actividad.setTitulo(titulo);
+            actividad.setDescripcion(descripcion);
+            actividad.setFechaInicio(fechaInicio);
+            actividad.setFechaFin(fechaFin);
+            actividad.setCategoria(categoria);
+            actividad.setEnlace(enlace);
+            model.addAttribute("actividad", actividad);
+            return "agenda/actividad/formulario :: form-content";
+        }
+    }
+
+    @DeleteMapping("/actividad/{id}")
+    public String actividadEliminar(@PathVariable Long id, Model model, HttpSession session,
+            HttpServletRequest request) {
+        exigirDirectorOAdmin(request);
+        Long institucionId = requerirInstitucion(session);
+        actividadInstitucionalService.eliminarActividadPropia(institucionId, id);
+        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(institucionId, null, null, null));
+        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(institucionId));
+        model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
+        model.addAttribute("puedeCrearActividad", true);
+        return "agenda/actividad/actividad :: content";
     }
 
     @GetMapping("/recordatorios")
@@ -321,13 +399,16 @@ public class AgendaController {
     public String participacion(@RequestParam(required = false) String filtro,
                                 @RequestParam(required = false) String rol,
                                 @RequestParam(required = false) String estado,
-                                Model model, HttpSession session) {
+                                Model model, HttpSession session, HttpServletRequest request) {
         Long institucionId = institucionId(session);
         if (institucionId == null) return "redirect:/";
         model.addAttribute("participantes", participacionService.listarParticipantes(institucionId, filtro, rol, estado));
         model.addAttribute("filtro", filtro);
         model.addAttribute("rolSel", rol);
         model.addAttribute("estadoSel", estado);
+        if ("part-tabla-container".equals(request.getHeader("HX-Target"))) {
+            return "agenda/participacion/contenido :: tabla";
+        }
         return "agenda/participacion/contenido :: content";
     }
 
@@ -516,5 +597,16 @@ public class AgendaController {
         Long id = (Long) session.getAttribute("SESSION_USUARIO_ID");
         if (id == null) throw new IllegalArgumentException("No hay usuario en sesión");
         return id;
+    }
+
+    private boolean esDirectorOAdmin(HttpServletRequest request) {
+        return request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+    }
+
+    private void exigirDirectorOAdmin(HttpServletRequest request) {
+        if (!esDirectorOAdmin(request)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Solo Director o Admin pueden crear o modificar actividades institucionales");
+        }
     }
 }

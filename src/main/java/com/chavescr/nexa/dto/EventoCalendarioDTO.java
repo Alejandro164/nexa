@@ -2,12 +2,16 @@ package com.chavescr.nexa.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.TextStyle;
+import java.util.Locale;
 
 /**
  * Representa un evento unificado para el calendario de la Agenda,
  * proveniente de Tareas, Recordatorios o Actividades Institucionales (MEP).
  */
 public class EventoCalendarioDTO {
+
+    private static final Locale ES = new Locale("es");
 
     public enum Tipo { TAREA, RECORDATORIO, INSTITUCIONAL }
 
@@ -75,5 +79,24 @@ public class EventoCalendarioDTO {
 
     public boolean isTieneEnlace() {
         return enlace != null && !enlace.isBlank();
+    }
+
+    public String getTipoLabel() {
+        return switch (tipo) {
+            case TAREA -> "Tarea";
+            case RECORDATORIO -> "Recordatorio";
+            case INSTITUCIONAL -> "Evento Institucional";
+        };
+    }
+
+    /** Ej: "Lunes 6 de julio de 2026" — para el detalle completo del evento. */
+    public String getFechaLabel() {
+        String diaSemana = capitalizar(fecha.getDayOfWeek().getDisplayName(TextStyle.FULL, ES));
+        String mes = fecha.getMonth().getDisplayName(TextStyle.FULL, ES);
+        return diaSemana + " " + fecha.getDayOfMonth() + " de " + mes + " de " + fecha.getYear();
+    }
+
+    private static String capitalizar(String texto) {
+        return texto.isEmpty() ? texto : Character.toUpperCase(texto.charAt(0)) + texto.substring(1);
     }
 }

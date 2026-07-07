@@ -14,18 +14,28 @@ public class DiaCalendarioDTO {
     private final boolean otroMes;
     private final boolean hoy;
     private final List<EventoCalendarioDTO> eventos;
+    private final boolean enSemanaActual;
 
     public DiaCalendarioDTO(LocalDate fecha, boolean otroMes, boolean hoy, List<EventoCalendarioDTO> eventos) {
+        this(fecha, otroMes, hoy, eventos, false);
+    }
+
+    public DiaCalendarioDTO(LocalDate fecha, boolean otroMes, boolean hoy, List<EventoCalendarioDTO> eventos,
+            boolean enSemanaActual) {
         this.fecha = fecha;
         this.otroMes = otroMes;
         this.hoy = hoy;
         this.eventos = eventos;
+        this.enSemanaActual = enSemanaActual;
     }
 
     public LocalDate getFecha() { return fecha; }
     public boolean isOtroMes() { return otroMes; }
     public boolean isHoy() { return hoy; }
     public List<EventoCalendarioDTO> getEventos() { return eventos; }
+
+    /** Si este día pertenece a la semana actualmente seleccionada (usado en el mini-calendario). */
+    public boolean isEnSemanaActual() { return enSemanaActual; }
 
     public int getDiaMes() { return fecha.getDayOfMonth(); }
 

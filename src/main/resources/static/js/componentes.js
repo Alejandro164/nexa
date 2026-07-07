@@ -482,6 +482,7 @@ function cerrarTareasModal() {
     setTimeout(function () {
         el.style.display = 'none';
         el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
     }, 180);
 }
 
@@ -503,6 +504,7 @@ function cerrarRecordatoriosModal() {
     setTimeout(function () {
         el.style.display = 'none';
         el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
     }, 180);
 }
 
@@ -524,6 +526,7 @@ function cerrarActividadModal() {
     setTimeout(function () {
         el.style.display = 'none';
         el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
     }, 180);
 }
 
@@ -538,8 +541,84 @@ function toggleBandasSemana(btn) {
     if (!wrapper || !wrapper.classList.contains('cal-bandas-wrapper')) return;
     var expandido = wrapper.classList.toggle('expanded');
     wrapper.style.maxHeight = (expandido ? wrapper.dataset.expandedHeight : wrapper.dataset.collapsedHeight) + 'px';
-    btn.textContent = expandido ? 'Ver menos' : btn.dataset.masLabel;
+    btn.classList.toggle('expanded', expandido);
+    var label = btn.querySelector('span');
+    if (label) label.textContent = expandido ? 'Ver menos' : btn.dataset.masLabel;
 }
+
+function mostrarDetalleEvento(el, evt) {
+    evt.stopPropagation();
+    var pop = document.getElementById('evento-popover');
+    if (!pop) return;
+
+    pop.querySelector('.evento-popover-icono').textContent = el.dataset.icono || '';
+    pop.querySelector('.evento-popover-tipo').textContent = el.dataset.tipoLabel || '';
+    pop.querySelector('.evento-popover-tipo').className = 'evento-popover-tipo ' + (el.dataset.tipoClase || '');
+    pop.querySelector('.evento-popover-titulo').textContent = el.dataset.titulo || '';
+    pop.querySelector('.evento-popover-fecha').textContent = el.dataset.fecha || '';
+
+    var desc = pop.querySelector('.evento-popover-desc');
+    if (el.dataset.descripcion) {
+        desc.textContent = el.dataset.descripcion;
+        desc.style.display = '';
+    } else {
+        desc.style.display = 'none';
+    }
+
+    var link = pop.querySelector('.evento-popover-link');
+    if (el.dataset.enlace) {
+        link.href = el.dataset.enlace;
+        link.style.display = '';
+    } else {
+        link.style.display = 'none';
+    }
+
+    pop.style.display = 'block';
+    pop.style.visibility = 'hidden';
+    pop.classList.remove('visible');
+
+    var rect = el.getBoundingClientRect();
+    var margin = 12;
+    var popWidth = pop.offsetWidth;
+    var popHeight = pop.offsetHeight;
+
+    var left = rect.right + margin;
+    var origenIzquierda = true;
+    if (left + popWidth > window.innerWidth - 8) {
+        left = rect.left - popWidth - margin;
+        origenIzquierda = false;
+    }
+    if (left < 8) left = Math.max(8, Math.min(rect.left, window.innerWidth - popWidth - 8));
+
+    var top = rect.top;
+    if (top + popHeight > window.innerHeight - 8) top = window.innerHeight - popHeight - 8;
+    if (top < 8) top = 8;
+
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.transformOrigin = origenIzquierda ? 'left top' : 'right top';
+    pop.style.visibility = 'visible';
+
+    requestAnimationFrame(function () { pop.classList.add('visible'); });
+}
+
+function cerrarEventoPopover() {
+    var pop = document.getElementById('evento-popover');
+    if (!pop || pop.style.display === 'none') return;
+    pop.classList.remove('visible');
+    setTimeout(function () { pop.style.display = 'none'; }, 150);
+}
+
+document.addEventListener('click', function (e) {
+    var pop = document.getElementById('evento-popover');
+    if (pop && pop.style.display !== 'none' && !pop.contains(e.target)) {
+        cerrarEventoPopover();
+    }
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') cerrarEventoPopover();
+});
 
 function _desmontarAcademicSelect(sel) {
     if (!sel || !sel.classList.contains('academic-native-select')) return;
