@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop">
+        <div class="modal-dialog" style="max-width: 560px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${aula.id == null ? 'Registrar aula' : 'Editar aula'}">Aula</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form hx-post="/configuracion-academica/aulas"
+                      hx-target="#aulas-panel"
+                      hx-swap="outerHTML">
+                    <input type="hidden" name="id" th:value="${aula.id}">
+                    <div class="academic-form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nombre</label>
+                            <input class="form-input" name="nombre" maxlength="80" required
+                                   th:value="${aula.nombre}" placeholder="Ej. Aula 101">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-input" name="tipo" required>
+                                <option value="" disabled hidden th:selected="${aula.tipo == null or aula.tipo.isBlank()}">
+                                    Seleccione un tipo
+                                </option>
+                                <option value="Regular" th:selected="${aula.tipo == 'Regular'}">Regular</option>
+                                <option value="Laboratorio" th:selected="${aula.tipo == 'Laboratorio'}">Laboratorio</option>
+                                <option value="Taller" th:selected="${aula.tipo == 'Taller'}">Taller</option>
+                                <option value="Sala de Cómputo" th:selected="${aula.tipo == 'Sala de Cómputo'}">Sala de Cómputo</option>
+                                <option value="Sala de Arte" th:selected="${aula.tipo == 'Sala de Arte'}">Sala de Arte</option>
+                                <option value="Sala de Música" th:selected="${aula.tipo == 'Sala de Música'}">Sala de Música</option>
+                                <option value="Auditorio" th:selected="${aula.tipo == 'Auditorio'}">Auditorio</option>
+                                <option value="Biblioteca" th:selected="${aula.tipo == 'Biblioteca'}">Biblioteca</option>
+                                <option value="Gimnasio" th:selected="${aula.tipo == 'Gimnasio'}">Gimnasio</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="academic-form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Capacidad</label>
+                            <input class="form-input" type="number" name="capacidad" min="1" required
+                                   th:value="${aula.capacidad}" placeholder="Ej. 30">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ubicación</label>
+                            <input class="form-input" name="ubicacion" maxlength="120"
+                                   th:value="${aula.ubicacion}" placeholder="Ej. Pabellón A, Piso 1">
+                        </div>
+                    </div>
+                    <input type="hidden" name="_activo" value="on">
+                    <label class="academic-check">
+                        <input type="checkbox" name="activo" th:checked="${aula.id == null or aula.activo}">
+                        <span class="academic-check-control">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
+                        <span>Aula activa</span>
+                    </label>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar aula</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

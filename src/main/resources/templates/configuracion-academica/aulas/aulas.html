@@ -1,0 +1,63 @@
+<div th:fragment="content" id="aulas-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Aulas
+                    <span style="font-weight:400; color:#94a3b8; font-size:0.85rem;"
+                          th:text="'(' + ${aulas != null ? #lists.size(aulas) : 0} + ')'"></span>
+                </h3>
+                <p class="academic-help">Administra los espacios físicos disponibles para lecciones.</p>
+            </div>
+            <button class="btn-primary"
+                    hx-get="/configuracion-academica/aulas/form"
+                    hx-target="#modal-container"
+                    onclick="abrirModalAcademico()">+ Nueva aula</button>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Capacidad</th>
+                        <th>Ubicación</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${aulas == null or aulas.empty}">
+                        <td colspan="6" class="table-empty">No hay aulas registradas.</td>
+                    </tr>
+                    <tr th:each="aula : ${aulas}">
+                        <td><strong th:text="${aula.nombre}">Aula 101</strong></td>
+                        <td th:text="${aula.tipo}">Regular</td>
+                        <td th:text="${aula.capacidad}">30</td>
+                        <td th:text="${aula.ubicacion != null and !aula.ubicacion.isBlank() ? aula.ubicacion : '—'}">Pabellón A</td>
+                        <td>
+                            <span th:if="${aula.activo}" class="badge badge-success">Activa</span>
+                            <span th:unless="${aula.activo}" class="badge badge-secondary">Inactiva</span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get=|/configuracion-academica/aulas/form/${aula.id}|"
+                                        hx-target="#modal-container"
+                                        onclick="abrirModalAcademico()"
+                                        title="Editar">✏️</button>
+                                <button type="button" class="btn-xs btn-danger-ghost"
+                                        th:attr="data-delete-url=|/configuracion-academica/aulas/${aula.id}|,
+                                                 data-delete-message=|¿Deseas eliminar el aula ${aula.nombre}? Esta acción no se puede deshacer.|"
+                                        data-delete-title="Eliminar aula"
+                                        data-delete-target="#aulas-panel"
+                                        data-delete-swap="outerHTML"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        title="Eliminar">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

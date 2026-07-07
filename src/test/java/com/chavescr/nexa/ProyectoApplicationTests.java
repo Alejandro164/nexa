@@ -21,6 +21,7 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import com.chavescr.nexa.dto.DiaCalendarioDTO;
 import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
+import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
@@ -86,6 +87,14 @@ class ProyectoApplicationTests {
 		docente.setId(1L);
 		docente.setNombre("Docente de prueba");
 
+		Aula aula = new Aula();
+		aula.setId(1L);
+		aula.setNombre("Aula 101");
+		aula.setTipo("Regular");
+		aula.setCapacidad(30);
+		aula.setUbicacion("Pabellón A, Piso 1");
+		aula.setActivo(true);
+
 		HorarioLeccion leccion = new HorarioLeccion();
 		leccion.setId(1L);
 		leccion.setPeriodo(periodo);
@@ -115,6 +124,8 @@ class ProyectoApplicationTests {
 		context.setVariable("periodoId", 1L);
 		context.setVariable("nivelId", 1L);
 		context.setVariable("docentes", List.of(docente));
+		context.setVariable("aulas", List.of(aula));
+		context.setVariable("aula", aula);
 
 		List<String> templates = List.of(
 				"configuracion-academica/periodos/periodos",
@@ -123,11 +134,18 @@ class ProyectoApplicationTests {
 				"configuracion-academica/niveles/form",
 				"configuracion-academica/materias/materias",
 				"configuracion-academica/materias/form",
+				"configuracion-academica/aulas/aulas",
+				"configuracion-academica/aulas/form",
 				"configuracion-academica/horario/horario",
 				"configuracion-academica/horario/form",
 				"configuracion-academica/components/confirmar-eliminacion");
 
 		templates.forEach(template -> assertFalse(templateEngine.process(template, context).isBlank()));
+
+		String aulasRenderizado = templateEngine.process("configuracion-academica/aulas/aulas", context);
+		assertTrue(aulasRenderizado.contains("Aula 101"));
+		assertTrue(aulasRenderizado.contains("Pabellón A, Piso 1"));
+		assertTrue(aulasRenderizado.contains("/configuracion-academica/aulas/1"));
 
 		String horarioRenderizado = templateEngine.process(
 				"configuracion-academica/horario/horario", context);

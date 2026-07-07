@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
@@ -136,6 +137,36 @@ public class ConfiguracionAcademicaController {
         return "configuracion-academica/materias/materias :: content";
     }
 
+    @GetMapping("/aulas/form")
+    public String nuevaAula(Model model) {
+        model.addAttribute("aula", new Aula());
+        return "configuracion-academica/aulas/form :: form-content";
+    }
+
+    @GetMapping("/aulas/form/{id}")
+    public String editarAula(@PathVariable Long id, Model model, HttpSession session) {
+        model.addAttribute("aula", service.obtenerAula(requerirInstitucion(session), id));
+        return "configuracion-academica/aulas/form :: form-content";
+    }
+
+    @PostMapping("/aulas")
+    public String guardarAula(@ModelAttribute Aula aula, Model model,
+            HttpSession session, HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        service.guardarAula(institucionId, aula);
+        model.addAttribute("aulas", service.listarAulas(institucionId));
+        notificarGuardado(response, "Aula guardada correctamente");
+        return "configuracion-academica/aulas/aulas :: content";
+    }
+
+    @DeleteMapping("/aulas/{id}")
+    public String eliminarAula(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        service.eliminarAula(institucionId, id);
+        model.addAttribute("aulas", service.listarAulas(institucionId));
+        return "configuracion-academica/aulas/aulas :: content";
+    }
+
     @GetMapping("/horario")
     public String horario(@RequestParam(required = false) Long periodoId,
             @RequestParam(required = false) Long nivelId, Model model, HttpSession session) {
@@ -204,6 +235,7 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("periodos", service.listarPeriodos(institucionId));
         model.addAttribute("niveles", service.listarNiveles(institucionId));
         model.addAttribute("materias", service.listarMaterias(institucionId));
+        model.addAttribute("aulas", service.listarAulas(institucionId));
         cargarHorario(model, institucionId, null, null);
     }
 
