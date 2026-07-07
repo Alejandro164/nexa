@@ -16,7 +16,6 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Código</th>
                         <th>Descripción</th>
                         <th>Fecha inicio</th>
@@ -27,10 +26,9 @@
                 </thead>
                 <tbody>
                     <tr th:if="${periodos == null or periodos.empty}">
-                        <td colspan="7" class="academic-empty">No hay períodos registrados.</td>
+                        <td colspan="6" class="table-empty">No hay períodos registrados.</td>
                     </tr>
                     <tr th:each="periodo : ${periodos}">
-                        <td th:text="${periodo.id}">1</td>
                         <td><strong th:text="${periodo.codigo}">2026-I</strong></td>
                         <td th:text="${periodo.descripcion}">Primer período</td>
                         <td th:text="${#temporals.format(periodo.fechaInicio, 'dd/MM/yyyy')}">01/02/2026</td>
@@ -40,18 +38,20 @@
                             <span th:unless="${periodo.activo}" class="badge badge-secondary">Inactivo</span>
                         </td>
                         <td>
-                            <div class="academic-actions">
-                                <button class="btn btn-secondary btn-sm"
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost"
                                         th:attr="hx-get=|/configuracion-academica/periodos/form/${periodo.id}|"
                                         hx-target="#modal-container"
-                                        onclick="abrirModalAcademico()">Editar</button>
-                                <button type="button" class="btn btn-destructive btn-sm"
+                                        onclick="abrirModalAcademico()"
+                                        title="Editar">✏️</button>
+                                <button type="button" class="btn-xs btn-danger-ghost"
                                         th:attr="data-delete-url=|/configuracion-academica/periodos/${periodo.id}|,
                                                  data-delete-message=|¿Deseas eliminar el período ${periodo.codigo}? También se eliminarán sus lecciones asignadas.|"
                                         data-delete-title="Eliminar período"
                                         data-delete-target="#periodos-panel"
                                         data-delete-swap="outerHTML"
-                                        onclick="abrirConfirmacionAcademica(this)">Eliminar</button>
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        title="Eliminar">🗑️</button>
                             </div>
                         </td>
                     </tr>

@@ -77,6 +77,41 @@
                     transform: translateY(0);
                 }
             }
+
+            .agenda-content-wrapper {
+                position: relative;
+            }
+
+            .agenda-loading-overlay {
+                position: absolute;
+                inset: 0;
+                z-index: 50;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 14px;
+                background: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(2px);
+                -webkit-backdrop-filter: blur(2px);
+                border-radius: 16px;
+                font-weight: 600;
+                color: var(--text-secondary);
+                font-size: 0.9rem;
+                pointer-events: none;
+                min-height: 300px;
+            }
+
+            .htmx-request.agenda-loading-overlay,
+            .htmx-request .agenda-loading-overlay {
+                pointer-events: auto;
+            }
+
+            .agenda-loading-overlay .spinner {
+                width: 32px;
+                height: 32px;
+                border-width: 3px;
+            }
         </style>
 
         <div x-data="{ activeTab: 'calendario' }">
@@ -84,7 +119,7 @@
                 <div class="config-tabs">
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'calendario' }"
                         @click="activeTab = 'calendario'" hx-get="/agenda/calendario" hx-target="#agenda-content"
-                        hx-swap="innerHTML">
+                        hx-indicator="#agenda-loading" hx-swap="innerHTML">
                         📅 Calendario
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'tareas' }"
@@ -99,7 +134,7 @@
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'actividad' }"
                         @click="activeTab = 'actividad'" hx-get="/agenda/actividad" hx-target="#agenda-content"
-                        hx-swap="innerHTML">
+                        hx-indicator="#agenda-loading" hx-swap="innerHTML">
                         📋 Actividad Institucional
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'proyectos' }"
@@ -116,8 +151,15 @@
             </div>
 
             <!-- Contenedor HTMX para el contenido de las pestañas -->
-            <div id="agenda-content" class="tab-pane" hx-get="/agenda/calendario" hx-trigger="load" hx-swap="innerHTML">
-                <!-- El contenido se cargará dinámicamente aquí -->
+            <div class="agenda-content-wrapper">
+                <div id="agenda-loading" class="htmx-indicator agenda-loading-overlay">
+                    <div class="spinner"></div>
+                    <span>Cargando...</span>
+                </div>
+                <div id="agenda-content" class="tab-pane" hx-get="/agenda/calendario" hx-trigger="load"
+                    hx-indicator="#agenda-loading" hx-swap="innerHTML">
+                    <!-- El contenido se cargará dinámicamente aquí -->
+                </div>
             </div>
         </div>
     </main>

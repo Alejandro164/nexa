@@ -19,4 +19,5 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
     void deleteByInstitucionIdAndPeriodoId(Long institucionId, Long periodoId);
     void deleteByInstitucionIdAndNivelId(Long institucionId, Long nivelId);
     void deleteByInstitucionIdAndMateriaId(Long institucionId, Long materiaId);
+    void deleteByInstitucionIdAndAulaId(Long institucionId, Long aulaId);
 }

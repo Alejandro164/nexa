@@ -1,17 +1,148 @@
-<div th:fragment="content" class="tab-pane">
+<div th:fragment="content" id="actividad-content" class="tab-pane" hx-indicator="#agenda-loading">
+    <form class="filters-bar"
+          hx-get="/agenda/actividad"
+          hx-target="#actividad-tabla-container" hx-swap="innerHTML"
+          hx-trigger="submit, change from:.filter-select delay:200ms, input from:.filter-input delay:400ms">
+        <input class="filter-input" type="text" name="filtro" th:value="${filtro}"
+               placeholder="🔍 Buscar por título o descripción..." style="flex:1; min-width:220px;">
+        <select class="form-input filter-select" name="mes">
+            <option value="" th:selected="${mesSel == null}">Todos los meses</option>
+            <option th:each="m : ${meses}" th:value="${m.key}" th:text="${m.value}"
+                    th:selected="${mesSel != null and mesSel == m.key}"></option>
+        </select>
+        <select class="form-input filter-select" name="categoria">
+            <option value="" th:selected="${categoriaSel == null or categoriaSel.isBlank()}">Todas las categorías</option>
+            <option th:each="c : ${categorias}" th:value="${c}" th:text="${c}"
+                    th:selected="${categoriaSel != null and categoriaSel == c}"></option>
+        </select>
+    </form>
+
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Actividades Institucionales</h3>
-            <button class="btn btn-primary">+ Nueva Actividad</button>
+            <h3 class="card-title">Actividades Institucionales
+                <span id="actividad-count" style="font-weight:400; color:#94a3b8; font-size:0.85rem;"
+                      th:text="'(' + ${eventos != null ? #lists.size(eventos) : 0} + ')'"></span>
+            </h3>
+            <button th:if="${puedeCrearActividad}" class="btn-primary"
+                    hx-get="/agenda/actividad/form"
+                    hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                    onclick="abrirActividadModal()">+ Nueva Actividad</button>
         </div>
-        <div style="padding: 2rem;">
-            <div class="grid-container">
-                <div class="card" style="padding:1.5rem; border:1px solid var(--border);">
-                    <h4 style="font-weight:600; color:var(--primary);">Asamblea General de Docentes</h4>
-                    <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px;">Dirigida por: Dirección • Fecha: Lunes 10:00 AM • Salón de Actos</p>
-                    <button class="btn btn-secondary" style="margin-top:1rem; width:100%; justify-content:center;">Ver Detalles</button>
+        <div id="actividad-tabla-container" th:insert="~{agenda/actividad/actividad :: eventos-tabla}"></div>
+    </div>
+
+    <div id="actividad-modal-container" style="display:none;"></div>
+</div>
+
+<th:block th:fragment="eventos-tabla-con-contador">
+    <span id="actividad-count" hx-swap-oob="true" style="font-weight:400; color:#94a3b8; font-size:0.85rem;"
+          th:text="'(' + ${eventos != null ? #lists.size(eventos) : 0} + ')'"></span>
+    <div th:replace="~{agenda/actividad/actividad :: eventos-tabla}"></div>
+</th:block>
+
+<th:block th:fragment="eventos-tabla">
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Categoría</th>
+                    <th>Fecha</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${eventos == null or eventos.empty}">
+                    <td colspan="4" class="table-empty">No se encontraron actividades institucionales con esos filtros.</td>
+                </tr>
+                <tr th:each="ev : ${eventos}">
+                    <td>
+                        <strong th:text="${ev.titulo}" style="color:#0f172a;">Título</strong>
+                        <span th:if="${ev.destacadoFlag}" class="badge badge-info" style="margin-left:6px;">Destacado</span>
+                        <span th:if="${ev.propia}" class="badge badge-secondary" style="margin-left:6px;">Institución</span>
+                    </td>
+                    <td><span class="badge badge-primary" th:text="${ev.nombreCategoria}">Categoría</span></td>
+                    <td style="white-space:nowrap;"
+                        th:text="${ev.rangoUnico}
+                            ? ${#temporals.format(ev.fechaInicio, 'dd/MM/yyyy')}
+                            : ${#temporals.format(ev.fechaInicio, 'dd/MM/yyyy')} + ' – ' + ${#temporals.format(ev.fechaFin, 'dd/MM/yyyy')}">
+                        Fecha
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-xs btn-ghost"
+                                    th:attr="hx-get='/agenda/actividad/detalle/' + ${ev.id}"
+                                    hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                    onclick="abrirActividadModal()">Ver detalles</button>
+                            <th:block th:if="${ev.propia and puedeCrearActividad}">
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/agenda/actividad/form/' + ${#strings.substringAfter(ev.id, 'local-')}"
+                                        hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                        onclick="abrirActividadModal()" title="Editar">✏️</button>
+                                <button class="btn-xs btn-danger-ghost"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        th:attr="data-delete-url='/agenda/actividad/' + ${#strings.substringAfter(ev.id, 'local-')},
+                                                 data-delete-target='#actividad-content',
+                                                 data-delete-swap='outerHTML',
+                                                 data-delete-title='Eliminar actividad',
+                                                 data-delete-message='¿Deseas eliminar la actividad ' + ${ev.titulo} + '? Esta acción no se puede deshacer.'"
+                                        title="Eliminar">🗑️</button>
+                            </th:block>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</th:block>
+
+<th:block th:fragment="detalle-modal">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarActividadModal()">
+        <div class="modal-dialog" style="max-width:560px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${evento != null ? evento.titulo : 'Actividad no encontrada'}">Actividad</h3>
+                <button type="button" class="close-btn" onclick="cerrarActividadModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <th:block th:if="${evento != null}">
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem;">
+                        <span class="badge badge-primary" th:text="${evento.nombreCategoria}">Categoría</span>
+                        <span class="badge badge-info" th:if="${evento.destacadoFlag}">Destacado</span>
+                        <span class="badge badge-secondary" th:if="${evento.propia}">Institución</span>
+                        <span class="badge badge-secondary" th:each="sub : ${evento.subcategorias}"
+                              th:if="${sub != null and !sub.isBlank()}" th:text="${sub}">Subcategoría</span>
+                    </div>
+                    <p style="font-weight:600; color:var(--text-secondary); margin-bottom:0.75rem;"
+                       th:text="${evento.rangoUnico}
+                            ? ${#temporals.format(evento.fechaInicio, 'dd/MM/yyyy')}
+                            : ${#temporals.format(evento.fechaInicio, 'dd/MM/yyyy')} + ' – ' + ${#temporals.format(evento.fechaFin, 'dd/MM/yyyy')}">
+                        Fecha
+                    </p>
+                    <p th:if="${evento.descripcion != null and !evento.descripcion.isBlank()}"
+                       style="white-space:pre-line; color:var(--text-secondary); font-size:0.9rem;"
+                       th:text="${evento.descripcion}">Descripción</p>
+                </th:block>
+                <p th:if="${evento == null}" class="table-empty">No se encontró información para esta actividad.</p>
+
+                <div class="modal-footer">
+                    <th:block th:if="${evento != null and evento.propia and puedeCrearActividad}">
+                        <button type="button" class="btn btn-destructive"
+                                th:attr="data-delete-url='/agenda/actividad/' + ${#strings.substringAfter(evento.id, 'local-')},
+                                         data-delete-target='#actividad-content',
+                                         data-delete-swap='outerHTML',
+                                         data-delete-title='Eliminar actividad',
+                                         data-delete-message='¿Deseas eliminar la actividad ' + ${evento.titulo} + '? Esta acción no se puede deshacer.'"
+                                onclick="cerrarActividadModal(); abrirConfirmacionAcademica(this)">Eliminar</button>
+                        <button class="btn-secondary"
+                                th:attr="hx-get='/agenda/actividad/form/' + ${#strings.substringAfter(evento.id, 'local-')}"
+                                hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                onclick="abrirActividadModal()">Editar</button>
+                    </th:block>
+                    <a th:if="${evento != null and evento.tieneLink}" th:href="${evento.link}" target="_blank" rel="noopener"
+                       class="btn-secondary">Ver más</a>
+                    <button type="button" class="btn-primary" onclick="cerrarActividadModal()">Cerrar</button>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</th:block>

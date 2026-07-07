@@ -691,6 +691,9 @@
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'materias' }" @click="activeTab = 'materias'">
                         Materias
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'aulas' }" @click="activeTab = 'aulas'">
+                        Aulas
+                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'horario' }"
                             @click="activeTab = 'horario'; recargarHorarioAcademico()">
                         Horario
@@ -711,6 +714,11 @@
             <!-- Contenido Visual de Materias -->
             <div x-show="activeTab === 'materias'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-academica/materias/materias :: content}"></div>
+            </div>
+
+            <!-- Contenido Visual de Aulas -->
+            <div x-show="activeTab === 'aulas'" class="tab-pane" x-cloak>
+                <div th:replace="~{configuracion-academica/aulas/aulas :: content}"></div>
             </div>
 
             <!-- Contenido Visual de Horario -->

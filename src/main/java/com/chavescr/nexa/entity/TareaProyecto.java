@@ -43,8 +43,8 @@ public class TareaProyecto {
     @Column(nullable = true)
     private LocalDateTime fechaCompletada;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "miembro_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "miembro_id", nullable = true)
     private MiembroProyecto miembro;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -54,9 +54,20 @@ public class TareaProyecto {
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaAsignacion;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private PrioridadTarea prioridad = PrioridadTarea.MEDIA;
+
     public enum EstadoTarea {
         PENDIENTE, EN_PROGRESO, COMPLETADA, VENCIDA
     }
+
+    public enum PrioridadTarea {
+        ALTA, MEDIA, BAJA
+    }
+
+    public PrioridadTarea getPrioridad() { return prioridad; }
+    public void setPrioridad(PrioridadTarea prioridad) { this.prioridad = prioridad; }
 
     @PrePersist
     protected void onCreate() {

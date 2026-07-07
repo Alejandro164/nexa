@@ -40,6 +40,10 @@ public class HorarioLeccion {
     @JoinColumn(name = "docente_id", nullable = false)
     private Usuario docente;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "aula_id", nullable = false)
+    private Aula aula;
+
     @Column(nullable = false, length = 12)
     private String dia;
 
@@ -98,6 +102,14 @@ public class HorarioLeccion {
 
     public void setDocente(Usuario docente) {
         this.docente = docente;
+    }
+
+    public Aula getAula() {
+        return aula;
+    }
+
+    public void setAula(Aula aula) {
+        this.aula = aula;
     }
 
     public String getDia() {

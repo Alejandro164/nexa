@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarRecordatoriosModal()">
+        <div class="modal-dialog" style="max-width:480px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${recordatorio.id == null ? 'Nuevo Recordatorio' : 'Editar Recordatorio'}">Recordatorio</h3>
+                <button type="button" class="close-btn" onclick="cerrarRecordatoriosModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form th:action="@{/agenda/recordatorios}" method="post"
+                      hx-post="/agenda/recordatorios"
+                      hx-target="#recordatorios-tabla-container" hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) cerrarRecordatoriosModal()">
+                    <input type="hidden" name="id" th:value="${recordatorio.id}">
+
+                    <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">Título *</label>
+                        <input class="form-input" type="text" name="titulo" required maxlength="200"
+                               th:value="${recordatorio.titulo}" placeholder="¿Qué necesitas recordar?">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-textarea" name="descripcion" maxlength="1000"
+                                  th:text="${recordatorio.descripcion}"
+                                  placeholder="Detalles adicionales..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Fecha y Hora Límite *</label>
+                            <input class="form-input" type="datetime-local" name="fechaLimite" required
+                                   th:value="${recordatorio.fechaLimite}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Estado</label>
+                            <select class="form-input" name="estado">
+                                <option value="PENDIENTE"  th:selected="${recordatorio.estado == null or recordatorio.estado.name() == 'PENDIENTE'}">Pendiente</option>
+                                <option value="COMPLETADO" th:selected="${recordatorio.estado != null and recordatorio.estado.name() == 'COMPLETADO'}">Completado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarRecordatoriosModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

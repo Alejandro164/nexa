@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarActividadModal()">
+        <div class="modal-dialog" style="max-width:520px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${actividad.id == null ? 'Nueva Actividad Institucional' : 'Editar Actividad Institucional'}">Actividad</h3>
+                <button type="button" class="close-btn" onclick="cerrarActividadModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form th:action="@{/agenda/actividad}" method="post"
+                      hx-post="/agenda/actividad"
+                      hx-target="#actividad-content" hx-swap="outerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) cerrarActividadModal()">
+                    <input type="hidden" name="id" th:value="${actividad.id}">
+
+                    <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">Título *</label>
+                        <input class="form-input" type="text" name="titulo" required maxlength="200"
+                               th:value="${actividad.titulo}" placeholder="Nombre de la actividad">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-textarea" name="descripcion" maxlength="2000"
+                                  th:text="${actividad.descripcion}"
+                                  placeholder="Detalles adicionales..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Fecha de Inicio *</label>
+                            <input class="form-input" type="date" name="fechaInicio" required
+                                   th:value="${actividad.fechaInicio}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha de Fin</label>
+                            <input class="form-input" type="date" name="fechaFin"
+                                   th:value="${actividad.fechaFin}" placeholder="Igual a la de inicio si se deja vacía">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Categoría</label>
+                            <input class="form-input" type="text" name="categoria" maxlength="100"
+                                   th:value="${actividad.categoria}" placeholder="Ej: Institucional, Cultural...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Enlace</label>
+                            <input class="form-input" type="url" name="enlace" maxlength="500"
+                                   th:value="${actividad.enlace}" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarActividadModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -433,12 +433,229 @@ function proyectoComponente() {
     };
 }
 
+function toggleTipoAsignacion(tipo) {
+    var wrapP = document.getElementById('wrap-asig-proyecto');
+    var wrapU = document.getElementById('wrap-asig-personal');
+    var selP  = document.getElementById('asig-proyecto');
+    var selU  = document.getElementById('asig-personal');
+    if (!wrapP || !wrapU) return;
+
+    function resetAcademicSelect(sel) {
+        if (!sel) return;
+        sel.value = '';
+        var wrap = sel.closest('.academic-select');
+        if (wrap) {
+            wrap.classList.remove('open');
+            if (wrap._academicSync) wrap._academicSync();
+            if (wrap._academicPanel) wrap._academicPanel.classList.remove('is-open');
+        }
+    }
+
+    if (tipo === 'p') {
+        wrapP.style.display = '';
+        if (selP) selP.disabled = false;
+        wrapU.style.display = 'none';
+        if (selU) { selU.disabled = true; resetAcademicSelect(selU); }
+    } else {
+        wrapU.style.display = '';
+        if (selU) selU.disabled = false;
+        wrapP.style.display = 'none';
+        if (selP) { selP.disabled = true; resetAcademicSelect(selP); }
+    }
+}
+
+function abrirTareasModal() {
+    var el = document.getElementById('tareas-modal-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarTareasModal() {
+    var el = document.getElementById('tareas-modal-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
+    }, 180);
+}
+
+function abrirRecordatoriosModal() {
+    var el = document.getElementById('recordatorios-modal-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarRecordatoriosModal() {
+    var el = document.getElementById('recordatorios-modal-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
+    }, 180);
+}
+
+function abrirActividadModal() {
+    var el = document.getElementById('actividad-modal-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarActividadModal() {
+    var el = document.getElementById('actividad-modal-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
+    }, 180);
+}
+
+function toggleCalendarioTipo(tipo, visible) {
+    document.querySelectorAll('.cal-event.event-' + tipo).forEach(function (el) {
+        el.style.display = visible ? '' : 'none';
+    });
+}
+
+function toggleBandasSemana(btn) {
+    var wrapper = btn.previousElementSibling;
+    if (!wrapper || !wrapper.classList.contains('cal-bandas-wrapper')) return;
+    var expandido = wrapper.classList.toggle('expanded');
+    wrapper.style.maxHeight = (expandido ? wrapper.dataset.expandedHeight : wrapper.dataset.collapsedHeight) + 'px';
+    btn.classList.toggle('expanded', expandido);
+    var label = btn.querySelector('span');
+    if (label) label.textContent = expandido ? 'Ver menos' : btn.dataset.masLabel;
+}
+
+function mostrarDetalleEvento(el, evt) {
+    evt.stopPropagation();
+    var pop = document.getElementById('evento-popover');
+    if (!pop) return;
+
+    pop.querySelector('.evento-popover-icono').textContent = el.dataset.icono || '';
+    pop.querySelector('.evento-popover-tipo').textContent = el.dataset.tipoLabel || '';
+    pop.querySelector('.evento-popover-tipo').className = 'evento-popover-tipo ' + (el.dataset.tipoClase || '');
+    pop.querySelector('.evento-popover-titulo').textContent = el.dataset.titulo || '';
+    pop.querySelector('.evento-popover-fecha').textContent = el.dataset.fecha || '';
+
+    var desc = pop.querySelector('.evento-popover-desc');
+    if (el.dataset.descripcion) {
+        desc.textContent = el.dataset.descripcion;
+        desc.style.display = '';
+    } else {
+        desc.style.display = 'none';
+    }
+
+    var link = pop.querySelector('.evento-popover-link');
+    if (el.dataset.enlace) {
+        link.href = el.dataset.enlace;
+        link.style.display = '';
+    } else {
+        link.style.display = 'none';
+    }
+
+    pop.style.display = 'block';
+    pop.style.visibility = 'hidden';
+    pop.classList.remove('visible');
+
+    var rect = el.getBoundingClientRect();
+    var margin = 12;
+    var popWidth = pop.offsetWidth;
+    var popHeight = pop.offsetHeight;
+
+    var left = rect.right + margin;
+    var origenIzquierda = true;
+    if (left + popWidth > window.innerWidth - 8) {
+        left = rect.left - popWidth - margin;
+        origenIzquierda = false;
+    }
+    if (left < 8) left = Math.max(8, Math.min(rect.left, window.innerWidth - popWidth - 8));
+
+    var top = rect.top;
+    if (top + popHeight > window.innerHeight - 8) top = window.innerHeight - popHeight - 8;
+    if (top < 8) top = 8;
+
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.transformOrigin = origenIzquierda ? 'left top' : 'right top';
+    pop.style.visibility = 'visible';
+
+    requestAnimationFrame(function () { pop.classList.add('visible'); });
+}
+
+function cerrarEventoPopover() {
+    var pop = document.getElementById('evento-popover');
+    if (!pop || pop.style.display === 'none') return;
+    pop.classList.remove('visible');
+    setTimeout(function () { pop.style.display = 'none'; }, 150);
+}
+
+document.addEventListener('click', function (e) {
+    var pop = document.getElementById('evento-popover');
+    if (pop && pop.style.display !== 'none' && !pop.contains(e.target)) {
+        cerrarEventoPopover();
+    }
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') cerrarEventoPopover();
+});
+
+function _desmontarAcademicSelect(sel) {
+    if (!sel || !sel.classList.contains('academic-native-select')) return;
+    var wrap = sel.parentElement;
+    if (!wrap || !wrap.classList.contains('academic-select')) return;
+    if (wrap._academicPanel) wrap._academicPanel.remove();
+    wrap.parentNode.insertBefore(sel, wrap);
+    wrap.remove();
+    sel.classList.remove('academic-native-select');
+    delete sel.dataset.academicSelect;
+}
+
+function cargarMiembrosFormTarea(proyectoId) {
+    var sel = document.getElementById('form-tarea-miembro');
+    if (!sel) return;
+
+    _desmontarAcademicSelect(sel);
+
+    if (!proyectoId) {
+        sel.innerHTML = '<option value="">-- Seleccionar miembro --</option>';
+        inicializarSelectoresAcademicos(sel.parentNode);
+        return;
+    }
+
+    htmx.ajax('GET', '/agenda/tareas/miembros', {
+        target: '#form-tarea-miembro', swap: 'innerHTML'
+    }).then(function () {
+        inicializarSelectoresAcademicos(sel.parentNode);
+    });
+}
+
 // ── Posicionamiento inteligente de dropdowns ─────────────────────────────────
 
 function posicionarDropdown(trigger, panel, gap) {
     gap = gap || 6;
-    var rect = trigger.getBoundingClientRect();
-    var maxH = parseInt(window.getComputedStyle(panel).maxHeight) || 240;
+    var rect       = trigger.getBoundingClientRect();
+    var maxH       = parseInt(window.getComputedStyle(panel).maxHeight) || 240;
     var spaceBelow = window.innerHeight - rect.bottom - gap;
     var spaceAbove = rect.top - gap;
 
@@ -447,17 +664,14 @@ function posicionarDropdown(trigger, panel, gap) {
     panel.style.right = 'auto';
 
     if (spaceBelow >= maxH) {
-        // Cabe completo abajo
         panel.style.top       = (rect.bottom + gap) + 'px';
         panel.style.bottom    = 'auto';
         panel.style.maxHeight = maxH + 'px';
     } else if (spaceAbove >= spaceBelow) {
-        // Más espacio arriba → mostrar arriba, capeado al maxH original
         panel.style.top       = 'auto';
         panel.style.bottom    = (window.innerHeight - rect.top + gap) + 'px';
         panel.style.maxHeight = Math.min(maxH, Math.max(spaceAbove, 80)) + 'px';
     } else {
-        // Más espacio abajo pero no cabe completo → mostrar abajo recortado
         panel.style.top       = (rect.bottom + gap) + 'px';
         panel.style.bottom    = 'auto';
         panel.style.maxHeight = Math.min(maxH, Math.max(spaceBelow, 80)) + 'px';
@@ -587,7 +801,7 @@ function inicializarSelectoresAcademicos(root) {
         }
 
         Array.from(native.options).forEach(function (o) {
-            if (o.hidden || o.disabled || !o.value) return;
+            if (o.hidden || o.disabled) return;
             var btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'academic-select-option';
@@ -640,6 +854,12 @@ if (!window.academicSelectEventsRegistered) {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') cerrarSelectoresAcademicos();
     });
+    window.addEventListener('scroll', function (e) {
+        // No cerrar si el scroll ocurre dentro del panel de opciones
+        if (e.target && typeof e.target.closest === 'function' &&
+            e.target.closest('.academic-select-options')) return;
+        cerrarSelectoresAcademicos();
+    }, true);
     document.addEventListener('htmx:load', function (e) {
         inicializarSelectoresAcademicos(e.detail.elt);
     });

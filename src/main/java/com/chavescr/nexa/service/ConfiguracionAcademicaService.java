@@ -9,12 +9,14 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
+import com.chavescr.nexa.repository.AulaRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.repository.InstitucionRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
@@ -35,19 +37,22 @@ public class ConfiguracionAcademicaService {
     private final MateriaRepository materiaRepository;
     private final HorarioLeccionRepository horarioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final AulaRepository aulaRepository;
 
     public ConfiguracionAcademicaService(InstitucionRepository institucionRepository,
             PeriodoAcademicoRepository periodoRepository,
             NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository,
             HorarioLeccionRepository horarioRepository,
-            UsuarioRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository,
+            AulaRepository aulaRepository) {
         this.institucionRepository = institucionRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
+        this.aulaRepository = aulaRepository;
     }
 
     @Transactional(readOnly = true)
@@ -156,6 +161,43 @@ public class ConfiguracionAcademicaService {
     }
 
     @Transactional(readOnly = true)
+    public List<Aula> listarAulas(Long institucionId) {
+        return aulaRepository.findByInstitucionIdOrderByNombreAsc(institucionId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Aula> listarAulasActivas(Long institucionId) {
+        return aulaRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
+    }
+
+    @Transactional(readOnly = true)
+    public Aula obtenerAula(Long institucionId, Long id) {
+        return aulaRepository.findByIdAndInstitucionId(id, institucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Aula no encontrada"));
+    }
+
+    public Aula guardarAula(Long institucionId, Aula datos) {
+        if (datos.getCapacidad() == null || datos.getCapacidad() <= 0) {
+            throw new IllegalArgumentException("La capacidad debe ser mayor a cero");
+        }
+        Aula aula = datos.getId() == null ? new Aula() : obtenerAula(institucionId, datos.getId());
+        aula.setInstitucion(obtenerInstitucion(institucionId));
+        aula.setNombre(datos.getNombre().trim());
+        aula.setCapacidad(datos.getCapacidad());
+        aula.setTipo(datos.getTipo().trim());
+        aula.setUbicacion(datos.getUbicacion() != null && !datos.getUbicacion().isBlank()
+                ? datos.getUbicacion().trim() : null);
+        aula.setActivo(Boolean.TRUE.equals(datos.getActivo()));
+        return aulaRepository.save(aula);
+    }
+
+    public void eliminarAula(Long institucionId, Long id) {
+        Aula aula = obtenerAula(institucionId, id);
+        horarioRepository.deleteByInstitucionIdAndAulaId(institucionId, id);
+        aulaRepository.delete(aula);
+    }
+
+    @Transactional(readOnly = true)
     public List<Usuario> listarDocentes(Long institucionId) {
         return usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, "ROLE_DOCENTE");
     }
@@ -179,7 +221,7 @@ public class ConfiguracionAcademicaService {
     }
 
     public HorarioLeccion guardarLeccion(Long institucionId, Long id, Long periodoId, Long nivelId,
-            Long materiaId, Long docenteId, String dia, Integer numeroLeccion,
+            Long materiaId, Long docenteId, Long aulaId, String dia, Integer numeroLeccion,
             LocalTime horaInicio, LocalTime horaFin) {
         if (!DIAS.contains(dia) || !LECCIONES.contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
@@ -212,6 +254,7 @@ public class ConfiguracionAcademicaService {
         leccion.setMateria(obtenerMateria(institucionId, materiaId));
         leccion.setDocente(usuarioRepository.findActivoByIdAndInstitucionId(docenteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Docente no válido para la institución")));
+        leccion.setAula(obtenerAula(institucionId, aulaId));
         leccion.setDia(dia);
         leccion.setNumeroLeccion(numeroLeccion);
         leccion.setHoraInicio(horaInicio);

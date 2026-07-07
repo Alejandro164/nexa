@@ -38,11 +38,18 @@
                     th:text="${#strings.substring(#authentication.principal.nombre, 0, 1).toUpperCase()}">U</div>
                 <span class="profile-name" th:text="${#authentication.principal.nombre}">Usuario</span>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="chevron-icon" :class="{ 'chevron-rotated': open }">
                     <polyline points="6 9 12 15 18 9" />
                 </svg>
             </button>
-            <div class="profile-dropdown" x-show="open" x-cloak style="display: none;">
+            <div class="profile-dropdown" x-show="open" x-cloak style="display: none;"
+                 x-transition:enter="dropdown-enter"
+                 x-transition:enter-start="dropdown-enter-start"
+                 x-transition:enter-end="dropdown-enter-end"
+                 x-transition:leave="dropdown-leave"
+                 x-transition:leave-start="dropdown-leave-start"
+                 x-transition:leave-end="dropdown-leave-end">
                 <div class="dropdown-header">
                     <div class="dropdown-user-name" th:text="${#authentication.principal.nombre}">Usuario</div>
                     <div class="dropdown-user-role"

@@ -204,6 +204,102 @@ public class ProyectoService {
         tareaRepository.delete(tarea);
     }
 
+    // ─── Tareas generales (vista agenda) ──────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<TareaProyecto> listarTareasInstitucion(Long institucionId) {
+        return tareaRepository.findByInstitucionIdOrderByFechaLimiteAsc(institucionId);
+    }
+
+    @Transactional(readOnly = true)
+    public TareaProyecto obtenerTareaInstitucion(Long institucionId, Long tareaId) {
+        return tareaRepository.findByIdAndProyecto_Institucion_Id(tareaId, institucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Tarea no encontrada"));
+    }
+
+    public TareaProyecto guardarTareaGeneral(Long institucionId, Long tareaId,
+            Long proyectoId, Long usuarioId, String titulo, String descripcion,
+            java.time.LocalDate fechaLimite, TareaProyecto.EstadoTarea estado,
+            TareaProyecto.PrioridadTarea prioridad) {
+        TareaProyecto tarea;
+        if (tareaId != null) {
+            tarea = obtenerTareaInstitucion(institucionId, tareaId);
+            // Actualizar asignación si se proporcionó
+            if (proyectoId != null || usuarioId != null) {
+                if (proyectoId != null) {
+                    tarea.setProyecto(obtenerProyecto(institucionId, proyectoId));
+                    tarea.setMiembro(null);
+                } else {
+                    Proyecto proyecto = tarea.getProyecto(); // mantener proyecto actual
+                    Usuario usuario = usuarioRepository.findActivoByIdAndInstitucionId(usuarioId, institucionId)
+                            .orElseThrow(() -> new IllegalArgumentException("Personal no válido"));
+                    MiembroProyecto miembro = miembroRepository
+                            .findByProyectoIdOrderByFechaAsignacionDesc(proyecto.getId()).stream()
+                            .filter(m -> m.getUsuario().getId().equals(usuarioId))
+                            .findFirst()
+                            .orElseGet(() -> {
+                                MiembroProyecto nuevo = new MiembroProyecto();
+                                nuevo.setProyecto(proyecto);
+                                nuevo.setUsuario(usuario);
+                                nuevo.setRol(MiembroProyecto.RolProyecto.MIEMBRO);
+                                return miembroRepository.save(nuevo);
+                            });
+                    tarea.setMiembro(miembro);
+                }
+            }
+        } else {
+            if (proyectoId == null && usuarioId == null)
+                throw new IllegalArgumentException("Debes seleccionar un proyecto o personal");
+            tarea = new TareaProyecto();
+            if (proyectoId != null) {
+                // Asignada a un proyecto completo (sin miembro específico)
+                Proyecto proyecto = obtenerProyecto(institucionId, proyectoId);
+                tarea.setProyecto(proyecto);
+                tarea.setMiembro(null);
+            } else {
+                // Asignada a un usuario → busca o crea membresía en su primer proyecto activo
+                Usuario usuario = usuarioRepository.findActivosByInstitucionId(institucionId).stream()
+                        .filter(u -> u.getId().equals(usuarioId))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException("Personal no válido"));
+                // Tomar el primer proyecto activo donde participe, o el primero de la institución
+                Proyecto proyecto = miembroRepository.findAll().stream()
+                        .filter(m -> m.getUsuario().getId().equals(usuarioId))
+                        .map(MiembroProyecto::getProyecto)
+                        .filter(p -> p.getInstitucion().getId().equals(institucionId))
+                        .findFirst()
+                        .orElseGet(() -> proyectoRepository
+                                .findByInstitucionIdOrderByFechaCreacionDesc(institucionId).stream()
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalArgumentException("No hay proyectos disponibles")));
+                tarea.setProyecto(proyecto);
+                MiembroProyecto miembro = miembroRepository
+                        .findByProyectoIdOrderByFechaAsignacionDesc(proyecto.getId()).stream()
+                        .filter(m -> m.getUsuario().getId().equals(usuarioId))
+                        .findFirst()
+                        .orElseGet(() -> {
+                            MiembroProyecto nuevo = new MiembroProyecto();
+                            nuevo.setProyecto(proyecto);
+                            nuevo.setUsuario(usuario);
+                            nuevo.setRol(MiembroProyecto.RolProyecto.MIEMBRO);
+                            return miembroRepository.save(nuevo);
+                        });
+                tarea.setMiembro(miembro);
+            }
+        }
+        tarea.setTitulo(titulo.trim());
+        tarea.setDescripcion(descripcion != null ? descripcion.trim() : null);
+        tarea.setFechaLimite(fechaLimite);
+        tarea.setEstado(estado != null ? estado : TareaProyecto.EstadoTarea.PENDIENTE);
+        tarea.setPrioridad(prioridad != null ? prioridad : TareaProyecto.PrioridadTarea.MEDIA);
+        return tareaRepository.save(tarea);
+    }
+
+    public void eliminarTareaGeneral(Long institucionId, Long tareaId) {
+        TareaProyecto tarea = obtenerTareaInstitucion(institucionId, tareaId);
+        tareaRepository.delete(tarea);
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> obtenerDashboard(Long institucionId, Long proyectoId) {
         Proyecto proyecto = obtenerProyecto(institucionId, proyectoId);
