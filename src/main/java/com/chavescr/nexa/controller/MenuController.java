@@ -17,9 +17,9 @@ public class MenuController {
         return htmxRequest ? "estudiantes/index :: htmx-content" : "estudiantes/index";
     }
 
-    @GetMapping("/academico")
-    public String academico(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "academico/index :: htmx-content" : "academico/index";
+    @GetMapping("/gestion-academica")
+    public String gestionAcademica(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+        return htmxRequest ? "gestion-academica/index :: htmx-content" : "gestion-academica/index";
     }
 
     @GetMapping("/coordinacion-academica")
