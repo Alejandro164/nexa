@@ -1008,6 +1008,7 @@ INSERT INTO public.roles (id, nombre) VALUES (1, 'ROLE_ADMIN');
 INSERT INTO public.roles (id, nombre) VALUES (4, 'ROLE_DIRECTOR');
 INSERT INTO public.roles (id, nombre) VALUES (5, 'ROLE_DOCENTE');
 INSERT INTO public.roles (id, nombre) VALUES (6, 'ROLE_PADRE');
+INSERT INTO public.roles (id, nombre) VALUES (7, 'ROLE_ESTUDIANTE');
 
 
 --
@@ -1229,7 +1230,7 @@ SELECT pg_catalog.setval('public.registros_asistencia_id_seq', 1, false);
 -- Name: roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.roles_id_seq', 6, true);
+SELECT pg_catalog.setval('public.roles_id_seq', 7, true);
 
 
 --

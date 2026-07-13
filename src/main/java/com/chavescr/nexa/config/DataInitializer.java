@@ -61,6 +61,7 @@ public class DataInitializer implements ApplicationRunner {
         Rol rolDirector = crearRolSiNoExiste("ROLE_DIRECTOR");
         Rol rolDocente = crearRolSiNoExiste("ROLE_DOCENTE");
         Rol rolPadre = crearRolSiNoExiste("ROLE_PADRE");
+        Rol rolEstudiante = crearRolSiNoExiste("ROLE_ESTUDIANTE");
 
         // ── 2. Instituciones ──────────────────────────────────────────────────
         Institucion instAlpha = crearInstitucionSiNoExiste("Liceo Alpha", "1790012301001", "Av. Principal 100");
@@ -107,6 +108,36 @@ public class DataInitializer implements ApplicationRunner {
                 "Marcela Vindas", "marcela@empresa.com", "marcela.vindas",
                 "8-9012-3456", "user1234", true,
                 Set.of(rolPadre), Set.of(instGamma));
+
+        crearUsuarioSiNoExiste(
+                "Sofía Alpízar Soto", "sofia.alpizar@empresa.com", "sofia.alpizar",
+                "9-0123-4567", "user1234", true,
+                Set.of(rolEstudiante), Set.of(instAlpha));
+
+        crearUsuarioSiNoExiste(
+                "Diego Ramírez Vargas", "diego.ramirez@empresa.com", "diego.ramirez",
+                "9-1234-5678", "user1234", true,
+                Set.of(rolEstudiante), Set.of(instAlpha));
+
+        crearUsuarioSiNoExiste(
+                "Valeria Solano Mora", "valeria.solano@empresa.com", "valeria.solano",
+                "9-2345-6789", "user1234", true,
+                Set.of(rolEstudiante), Set.of(instBeta));
+
+        crearUsuarioSiNoExiste(
+                "Kevin Araya Castro", "kevin.araya@empresa.com", "kevin.araya",
+                "9-3456-7890", "user1234", true,
+                Set.of(rolEstudiante), Set.of(instBeta));
+
+        crearUsuarioSiNoExiste(
+                "Fernanda Quesada Brenes", "fernanda.quesada@empresa.com", "fernanda.quesada",
+                "9-4567-8901", "user1234", true,
+                Set.of(rolEstudiante), Set.of(instGamma));
+
+        crearUsuarioSiNoExiste(
+                "Andrés Mata Rojas", "andres.mata@empresa.com", "andres.mata",
+                "9-5678-9012", "user1234", true,
+                Set.of(rolEstudiante), Set.of(instGamma));
 
         log.info("=== [DataInitializer] Datos iniciales listos ===");
     }
