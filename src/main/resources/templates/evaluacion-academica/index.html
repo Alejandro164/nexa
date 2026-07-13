@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Evaluación Académica — Nexa</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Evaluación Académica</th:block>
+    <th:block layout:fragment="page-subtitle">Consolidados de notas, boletas, cuadro de honor, estadísticas y certificaciones</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar { display: none; }
+            .config-tabs { display: flex; width: 100%; gap: 6px; }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .eval-stats-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            @media (max-width: 768px) {
+                .eval-stats-grid { grid-template-columns: repeat(2, 1fr); }
+            }
+            .eval-stat-card {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 1.25rem;
+                text-align: center;
+            }
+            .eval-stat-value {
+                font-size: 1.8rem;
+                font-weight: 700;
+                color: var(--primary);
+            }
+            .eval-stat-label {
+                font-size: 0.78rem;
+                color: var(--text-secondary);
+                margin-top: 0.25rem;
+            }
+            .honor-item {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 1rem 1.25rem;
+                border-bottom: 1px solid var(--border);
+            }
+            .honor-item:last-child { border-bottom: none; }
+            .honor-rank {
+                font-size: 1.4rem;
+                font-weight: 800;
+                min-width: 40px;
+                text-align: center;
+            }
+            .honor-rank.gold { color: #f0a500; }
+            .honor-rank.silver { color: #97a8b7; }
+            .honor-rank.bronze { color: #c97b4d; }
+            .honor-avg {
+                font-weight: 700;
+                font-size: 1.1rem;
+                margin-left: auto;
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'consolidado' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'consolidado' }"
+                            @click="activeTab = 'consolidado'">
+                        📊 Consolidado de Notas
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'boletas' }"
+                            @click="activeTab = 'boletas'">
+                        📄 Boletas de Calificaciones
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'honor' }"
+                            @click="activeTab = 'honor'">
+                        🏅 Cuadro de Honor
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'estadisticas' }"
+                            @click="activeTab = 'estadisticas'">
+                        📈 Estadísticas
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'certificaciones' }"
+                            @click="activeTab = 'certificaciones'">
+                        🏛️ Certificaciones
+                    </button>
+                </div>
+            </div>
+
+            <!-- Consolidado de Notas -->
+            <div x-show="activeTab === 'consolidado'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Consolidado de Calificaciones</h3>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <select class="form-input" style="max-width: 160px;">
+                                <option>Sección 7-1</option>
+                                <option>Sección 8-1</option>
+                                <option>Sección 10-5</option>
+                            </select>
+                            <select class="form-input" style="max-width: 200px;">
+                                <option>Matemáticas</option>
+                                <option>Ciencias</option>
+                                <option>Español</option>
+                            </select>
+                            <select class="form-input" style="max-width: 160px;">
+                                <option>II Trimestre 2026</option>
+                                <option>I Trimestre 2026</option>
+                            </select>
+                            <button class="btn btn-primary" style="white-space: nowrap;">📥 Exportar</button>
+                        </div>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Estudiante</th>
+                                        <th>Cotidiano<br><small>35%</small></th>
+                                        <th>Tareas<br><small>15%</small></th>
+                                        <th>Proyectos<br><small>25%</small></th>
+                                        <th>Exámenes<br><small>20%</small></th>
+                                        <th>Asistencia<br><small>5%</small></th>
+                                        <th>Nota Final</th>
+                                        <th>Nivel</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
+                                        <td>95</td><td>88</td><td>92</td><td>90</td><td>98</td>
+                                        <td style="font-weight:700; font-size:1.1rem; color:var(--primary);">93.1</td>
+                                        <td><span class="badge badge-success">Avanzado</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td style="font-weight:600;">Valeria Rojas Méndez</td>
+                                        <td>85</td><td>88</td><td>72</td><td>80</td><td>95</td>
+                                        <td style="font-weight:700; font-size:1.1rem; color:var(--primary);">82.0</td>
+                                        <td><span class="badge badge-primary">Intermedio</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
+                                        <td>78</td><td>80</td><td>85</td><td>70</td><td>65</td>
+                                        <td style="font-weight:700; font-size:1.1rem; color:var(--primary);">77.3</td>
+                                        <td><span class="badge badge-warning">Intermedio</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td style="font-weight:600;">Carlos Gutiérrez Mora</td>
+                                        <td>60</td><td>55</td><td>68</td><td>62</td><td>80</td>
+                                        <td style="font-weight:700; font-size:1.1rem; color:var(--danger);">63.6</td>
+                                        <td><span class="badge badge-danger">Inicial</span></td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr style="background: rgba(45,90,135,0.05); font-weight: 600; border-top: 2px solid var(--border);">
+                                        <td colspan="2">Promedio del Grupo</td>
+                                        <td>79.5</td><td>77.8</td><td>79.3</td><td>75.5</td><td>84.5</td>
+                                        <td style="font-size:1.1rem; color:var(--primary);">79.0</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boletas de Calificaciones -->
+            <div x-show="activeTab === 'boletas'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Boletas de Calificaciones</h3>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <select class="form-input" style="max-width: 220px;">
+                                <option>Seleccione estudiante...</option>
+                                <option>Sofía Alpízar Soto</option>
+                                <option>Valeria Rojas Méndez</option>
+                                <option>Mateo Quirós Vargas</option>
+                            </select>
+                            <select class="form-input" style="max-width: 180px;">
+                                <option>II Trimestre 2026</option>
+                                <option>I Trimestre 2026</option>
+                            </select>
+                            <button class="btn btn-primary" style="white-space: nowrap;">🖨️ Generar Boleta</button>
+                        </div>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div style="border: 1px solid var(--border); border-radius: 12px; overflow: hidden; max-width: 700px; margin: 0 auto;">
+                            <div style="background: var(--primary); color: white; padding: 1.25rem 1.5rem; text-align: center;">
+                                <h3 style="margin: 0; font-weight: 700;">Boleta de Calificaciones</h3>
+                                <p style="margin: 4px 0 0; opacity: 0.85; font-size: 0.85rem;">Institución Educativa Nexa</p>
+                            </div>
+                            <div style="padding: 1.5rem;">
+                                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                                    <div><strong>Estudiante:</strong> Sofía Alpízar Soto</div>
+                                    <div><strong>Nivel:</strong> 7° - 1</div>
+                                    <div><strong>Período:</strong> II Trimestre 2026</div>
+                                </div>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Materia</th>
+                                            <th>Cotidiano</th>
+                                            <th>Tareas</th>
+                                            <th>Proyectos</th>
+                                            <th>Exámenes</th>
+                                            <th>Asistencia</th>
+                                            <th>Nota Final</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>Matemáticas</td><td>95</td><td>88</td><td>92</td><td>90</td><td>98</td><td style="font-weight:700; color:var(--success);">93.1</td></tr>
+                                        <tr><td>Ciencias</td><td>90</td><td>85</td><td>88</td><td>92</td><td>96</td><td style="font-weight:700; color:var(--success);">90.1</td></tr>
+                                        <tr><td>Español</td><td>88</td><td>90</td><td>85</td><td>87</td><td>100</td><td style="font-weight:700; color:var(--primary);">88.8</td></tr>
+                                        <tr><td>Estudios Sociales</td><td>92</td><td>87</td><td>90</td><td>88</td><td>94</td><td style="font-weight:700; color:var(--success);">90.3</td></tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="background: rgba(45,90,135,0.05); border-top: 2px solid var(--border);">
+                                            <td style="font-weight:700;">Promedio General</td>
+                                            <td>91.3</td><td>87.5</td><td>88.8</td><td>89.3</td><td>97.0</td>
+                                            <td style="font-weight:700; font-size:1.1rem; color:var(--primary);">90.6</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                <div style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">
+                                    <p>Conducta: <strong style="color: var(--success);">Muy Buena</strong> &nbsp;|&nbsp;
+                                    Asistencia: <strong>97%</strong> &nbsp;|&nbsp;
+                                    Emitido: 12/08/2026</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cuadro de Honor -->
+            <div x-show="activeTab === 'honor'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Cuadro de Honor</h3>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <select class="form-input" style="max-width: 180px;">
+                                <option>Sección 7-1</option>
+                                <option>Sección 8-1</option>
+                                <option>Sección 10-5</option>
+                            </select>
+                            <select class="form-input" style="max-width: 200px;">
+                                <option>II Trimestre 2026</option>
+                                <option>I Trimestre 2026</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="card" style="border: 2px solid #f0a500; margin-bottom: 1rem;">
+                            <div style="padding: 0;">
+                                <div class="honor-item">
+                                    <div class="honor-rank gold">🥇</div>
+                                    <div>
+                                        <strong>Sofía Alpízar Soto</strong>
+                                        <div class="text-muted text-sm">Matemáticas, Ciencias, Español, Estudios Sociales</div>
+                                    </div>
+                                    <div class="honor-avg" style="color: #f0a500;">90.6</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" style="border: 2px solid #97a8b7; margin-bottom: 1rem;">
+                            <div style="padding: 0;">
+                                <div class="honor-item">
+                                    <div class="honor-rank silver">🥈</div>
+                                    <div>
+                                        <strong>Valeria Rojas Méndez</strong>
+                                        <div class="text-muted text-sm">Matemáticas, Ciencias, Español</div>
+                                    </div>
+                                    <div class="honor-avg" style="color: #97a8b7;">82.0</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" style="border: 2px solid #c97b4d;">
+                            <div style="padding: 0;">
+                                <div class="honor-item">
+                                    <div class="honor-rank bronze">🥉</div>
+                                    <div>
+                                        <strong>Mateo Quirós Vargas</strong>
+                                        <div class="text-muted text-sm">Matemáticas, Ciencias</div>
+                                    </div>
+                                    <div class="honor-avg" style="color: #c97b4d;">77.3</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div x-show="activeTab === 'estadisticas'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Estadísticas de Rendimiento</h3>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <select class="form-input" style="max-width: 180px;">
+                                <option>Sección 7-1</option>
+                                <option>Sección 8-1</option>
+                                <option>Sección 10-5</option>
+                            </select>
+                            <select class="form-input" style="max-width: 200px;">
+                                <option>II Trimestre 2026</option>
+                                <option>I Trimestre 2026</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="eval-stats-grid">
+                            <div class="eval-stat-card">
+                                <div class="eval-stat-value">84.1</div>
+                                <div class="eval-stat-label">Promedio General del Grupo</div>
+                            </div>
+                            <div class="eval-stat-card">
+                                <div class="eval-stat-value" style="color: var(--success);">93.1</div>
+                                <div class="eval-stat-label">Nota Más Alta</div>
+                            </div>
+                            <div class="eval-stat-card">
+                                <div class="eval-stat-value" style="color: var(--danger);">63.6</div>
+                                <div class="eval-stat-label">Nota Más Baja</div>
+                            </div>
+                            <div class="eval-stat-card">
+                                <div class="eval-stat-value" style="color: var(--warning);">50%</div>
+                                <div class="eval-stat-label">Estudiantes &ge; Nivel Avanzado</div>
+                            </div>
+                        </div>
+
+                        <div class="table-container" style="margin-top: 1.5rem;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Materia</th>
+                                        <th>Promedio</th>
+                                        <th>Máximo</th>
+                                        <th>Mínimo</th>
+                                        <th>Aprobados</th>
+                                        <th>Avanzado</th>
+                                        <th>Intermedio</th>
+                                        <th>Inicial</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Matemáticas</td>
+                                        <td>85.2</td><td>95</td><td>60</td>
+                                        <td><span class="badge badge-success">3</span></td>
+                                        <td>1</td><td>1</td><td>1</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Ciencias</td>
+                                        <td>82.8</td><td>92</td><td>55</td>
+                                        <td><span class="badge badge-success">3</span></td>
+                                        <td>1</td><td>2</td><td>0</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Español</td>
+                                        <td>78.5</td><td>88</td><td>62</td>
+                                        <td><span class="badge badge-warning">2</span></td>
+                                        <td>1</td><td>1</td><td>1</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Estudios Sociales</td>
+                                        <td>80.1</td><td>90</td><td>58</td>
+                                        <td><span class="badge badge-success">3</span></td>
+                                        <td>1</td><td>2</td><td>0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Certificaciones -->
+            <div x-show="activeTab === 'certificaciones'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Certificaciones de Notas</h3>
+                        <button class="btn btn-primary">+ Generar Certificación</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                            Emita certificaciones oficiales de notas para estudiantes que las requieran. Válidas para traslados, becas y trámites legales.
+                        </p>
+
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Tipo de Certificación</th>
+                                        <th>Propósito</th>
+                                        <th>Fecha Emisión</th>
+                                        <th>Firmado por</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
+                                        <td><span class="badge badge-primary">Notas Generales</span></td>
+                                        <td class="text-muted text-sm">Solicitud de beca en universidad extranjera</td>
+                                        <td>10/08/2026</td>
+                                        <td>Dir. María Jiménez</td>
+                                        <td><span class="badge badge-success">EMITIDA</span></td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Descargar</button>
+                                                <button class="btn btn-sm btn-danger">Anular</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
+                                        <td><span class="badge badge-primary">Conducta</span></td>
+                                        <td class="text-muted text-sm">Requisito para programa de intercambio</td>
+                                        <td>12/08/2026</td>
+                                        <td>Dir. María Jiménez</td>
+                                        <td><span class="badge badge-warning">PENDIENTE</span></td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-primary">Firmar</button>
+                                                <button class="btn btn-sm btn-danger">Anular</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Daniela Mora Castro</td>
+                                        <td><span class="badge badge-primary">Traslado</span></td>
+                                        <td class="text-muted text-sm">Cambio a nueva institución educativa</td>
+                                        <td>05/08/2026</td>
+                                        <td>Dir. María Jiménez</td>
+                                        <td><span class="badge badge-success">EMITIDA</span></td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Descargar</button>
+                                                <button class="btn btn-sm btn-danger">Anular</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Gestión Especial — Nexa</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">Gestión Especial</th:block>
+    <th:block layout:fragment="page-subtitle">Ampliaciones, ajustes de nota, traslados e importación desde plantillas SEA</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar { display: none; }
+            .config-tabs { display: flex; width: 100%; gap: 6px; }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .especial-highlight {
+                background: rgba(232, 121, 45, 0.08);
+                border-left: 3px solid #e8792d;
+                padding: 1rem 1.25rem;
+                border-radius: 0 8px 8px 0;
+                margin-bottom: 1.5rem;
+                font-size: 0.88rem;
+                color: var(--text-secondary);
+            }
+        </style>
+
+        <div x-data="{ activeTab: 'ampliacion-evaluacion' }">
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'ampliacion-evaluacion' }"
+                            @click="activeTab = 'ampliacion-evaluacion'">
+                        📝 Ampliación de Evaluación
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'ampliacion-conducta' }"
+                            @click="activeTab = 'ampliacion-conducta'">
+                        🟡 Ampliación de Conducta
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'nota-traslado' }"
+                            @click="activeTab = 'nota-traslado'">
+                        🔄 Nota por Traslado
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'ajuste-nota' }"
+                            @click="activeTab = 'ajuste-nota'">
+                        ⚙️ Ajuste de Nota Final
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'importar-sea' }"
+                            @click="activeTab = 'importar-sea'">
+                        📤 Importar Plantilla SEA
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ampliación de Evaluación -->
+            <div x-show="activeTab === 'ampliacion-evaluacion'" class="tab-pane">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Ampliación de Evaluación</h3>
+                        <button class="btn btn-primary">+ Nueva Ampliación</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="especial-highlight">
+                            La ampliación de evaluación permite a estudiantes que no alcanzaron la nota mínima realizar pruebas adicionales para demostrar sus conocimientos.
+                        </div>
+                        <div class="filter-bar" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                            <div class="form-group" style="min-width: 180px;">
+                                <label class="form-label">Nivel</label>
+                                <select class="form-input">
+                                    <option>Sección 7-1</option>
+                                    <option>Sección 8-1</option>
+                                    <option>Sección 10-5</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="min-width: 180px;">
+                                <label class="form-label">Materia</label>
+                                <select class="form-input">
+                                    <option>Matemáticas</option>
+                                    <option>Ciencias</option>
+                                    <option>Español</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="min-width: 180px;">
+                                <label class="form-label">Período</label>
+                                <select class="form-input">
+                                    <option>I Trimestre 2026</option>
+                                    <option>II Trimestre 2026</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Componente</th>
+                                        <th>Nota Original</th>
+                                        <th>Nota Ampliación</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
+                                        <td>Cotidiano</td>
+                                        <td><span class="badge badge-warning">62</span></td>
+                                        <td><span class="badge badge-success">75</span></td>
+                                        <td>15/08/2026</td>
+                                        <td><span class="badge badge-success">APROBADA</span></td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Editar</button>
+                                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Valeria Rojas Méndez</td>
+                                        <td>Exámenes</td>
+                                        <td><span class="badge badge-danger">55</span></td>
+                                        <td><span class="badge badge-warning">68</span></td>
+                                        <td>18/08/2026</td>
+                                        <td><span class="badge badge-warning">PENDIENTE</span></td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Editar</button>
+                                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ampliación de Conducta -->
+            <div x-show="activeTab === 'ampliacion-conducta'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Ampliación de Conducta</h3>
+                        <button class="btn btn-primary">+ Nueva Ampliación</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="especial-highlight">
+                            La ampliación de conducta se aplica cuando un estudiante requiere demostrar mejoras en su comportamiento para modificar su nota de conducta.
+                        </div>
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Nivel</th>
+                                        <th>Conducta Actual</th>
+                                        <th>Observaciones</th>
+                                        <th>Fecha Solicitud</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Carlos Gutiérrez Mora</td>
+                                        <td>Sección 7-1</td>
+                                        <td><span class="badge badge-danger">Regular</span></td>
+                                        <td class="text-muted text-sm">Ha mostrado mejoría significativa en las últimas 3 semanas</td>
+                                        <td>05/08/2026</td>
+                                        <td><span class="badge badge-primary">EN REVISIÓN</span></td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Editar</button>
+                                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Andrea Solís Vega</td>
+                                        <td>Sección 10-5</td>
+                                        <td><span class="badge badge-warning">Aceptable</span></td>
+                                        <td class="text-muted text-sm">Solicita pasar a Buena por participación en actividades extracurriculares</td>
+                                        <td>10/08/2026</td>
+                                        <td><span class="badge badge-success">APROBADA</span></td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Editar</button>
+                                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nota por Traslado -->
+            <div x-show="activeTab === 'nota-traslado'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Nota por Traslado</h3>
+                        <button class="btn btn-primary">+ Registrar Traslado</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="especial-highlight">
+                            Registre las notas de estudiantes que ingresan por traslado desde otra institución educativa, asignando equivalencias según el plan de estudios.
+                        </div>
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Institución Origen</th>
+                                        <th>Materia</th>
+                                        <th>Nota Original</th>
+                                        <th>Nota Equivalente</th>
+                                        <th>Fecha Ingreso</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Daniela Mora Castro</td>
+                                        <td class="text-muted">Liceo de San José</td>
+                                        <td>Matemáticas</td>
+                                        <td><span class="badge badge-primary">85</span></td>
+                                        <td><span class="badge badge-success">90</span></td>
+                                        <td>01/07/2026</td>
+                                        <td><span class="badge badge-success">APLICADA</span></td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Editar</button>
+                                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">José Vargas Ríos</td>
+                                        <td class="text-muted">Colegio Técnico de Alajuela</td>
+                                        <td>Ciencias</td>
+                                        <td><span class="badge badge-warning">72</span></td>
+                                        <td><span class="badge badge-warning">70</span></td>
+                                        <td>15/07/2026</td>
+                                        <td><span class="badge badge-warning">PENDIENTE</span></td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Editar</button>
+                                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ajuste de Nota Final -->
+            <div x-show="activeTab === 'ajuste-nota'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Ajuste de Nota Final</h3>
+                        <button class="btn btn-primary">+ Nuevo Ajuste</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="especial-highlight">
+                            Permite realizar ajustes manuales a la nota final de un estudiante por circunstancias excepcionales debidamente justificadas por la dirección.
+                        </div>
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Materia</th>
+                                        <th>Nota Calculada</th>
+                                        <th>Nota Ajustada</th>
+                                        <th>Motivo</th>
+                                        <th>Autorizado por</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
+                                        <td>Matemáticas</td>
+                                        <td><span class="badge badge-primary">88.5</span></td>
+                                        <td><span class="badge badge-success">92.0</span></td>
+                                        <td class="text-muted text-sm">Participación destacada en Olimpiadas Nacionales de Matemática</td>
+                                        <td>Dir. María Jiménez</td>
+                                        <td>20/08/2026</td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Editar</button>
+                                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
+                                        <td>Ciencias</td>
+                                        <td><span class="badge badge-warning">69.2</span></td>
+                                        <td><span class="badge badge-primary">72.0</span></td>
+                                        <td class="text-muted text-sm">Ausencia prolongada por enfermedad justificada con dictamen médico</td>
+                                        <td>Dir. María Jiménez</td>
+                                        <td>22/08/2026</td>
+                                        <td>
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="btn btn-sm btn-secondary">Editar</button>
+                                                <button class="btn btn-sm btn-danger">Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Importar Plantilla SEA -->
+            <div x-show="activeTab === 'importar-sea'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Importar Plantilla SEA</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="especial-highlight">
+                            Importe calificaciones desde archivos de plantilla SEA (Sistema de Evaluación de los Aprendizajes) generados por el MEP. Formatos soportados: .xlsx, .csv
+                        </div>
+
+                        <div style="margin-bottom: 2rem;">
+                            <div style="border: 2px dashed var(--border); border-radius: 12px; padding: 2.5rem; text-align: center; background: var(--input-bg);">
+                                <div style="font-size: 2.5rem; margin-bottom: 0.75rem; color: var(--text-light);">📁</div>
+                                <h4 style="margin-bottom: 0.5rem; color: var(--text-primary);">Arrastre el archivo aquí o haga clic para seleccionar</h4>
+                                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.5rem;">Archivos .xlsx o .csv de la plantilla SEA del MEP</p>
+                                <button class="btn btn-primary">Seleccionar Archivo</button>
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-top: 1.5rem;">
+                            <div class="card-header">
+                                <h3 class="card-title">Importaciones Recientes</h3>
+                            </div>
+                            <div style="padding: 0;">
+                                <div class="table-container">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Archivo</th>
+                                                <th>Fecha Importación</th>
+                                                <th>Registros</th>
+                                                <th>Período</th>
+                                                <th>Estado</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <strong>SEA_Matemáticas_7-1.csv</strong>
+                                                    <div class="text-muted text-sm">2.4 MB</div>
+                                                </td>
+                                                <td>10/08/2026 14:30</td>
+                                                <td><span class="badge badge-primary">35</span></td>
+                                                <td>II Trimestre 2026</td>
+                                                <td><span class="badge badge-success">COMPLETADA</span></td>
+                                                <td>
+                                                    <div style="display:flex; gap:6px;">
+                                                        <button class="btn btn-sm btn-secondary">Ver</button>
+                                                        <button class="btn btn-sm btn-danger">Reversar</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>SEA_Ciencias_8-1.xlsx</strong>
+                                                    <div class="text-muted text-sm">1.8 MB</div>
+                                                </td>
+                                                <td>08/08/2026 09:15</td>
+                                                <td><span class="badge badge-primary">28</span></td>
+                                                <td>II Trimestre 2026</td>
+                                                <td><span class="badge badge-success">COMPLETADA</span></td>
+                                                <td>
+                                                    <div style="display:flex; gap:6px;">
+                                                        <button class="btn btn-sm btn-secondary">Ver</button>
+                                                        <button class="btn btn-sm btn-danger">Reversar</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong>SEA_Español_10-5.csv</strong>
+                                                    <div class="text-muted text-sm">3.1 MB</div>
+                                                </td>
+                                                <td>05/08/2026 11:45</td>
+                                                <td><span class="badge badge-primary">22</span></td>
+                                                <td>II Trimestre 2026</td>
+                                                <td><span class="badge badge-danger">ERROR</span></td>
+                                                <td>
+                                                    <div style="display:flex; gap:6px;">
+                                                        <button class="btn btn-sm btn-secondary">Ver</button>
+                                                        <button class="btn btn-sm btn-danger">Reversar</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

@@ -22,9 +22,19 @@ public class MenuController {
         return htmxRequest ? "gestion-academica/index :: htmx-content" : "gestion-academica/index";
     }
 
+    @GetMapping("/gestion-especial")
+    public String gestionEspecial(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+        return htmxRequest ? "gestion-especial/index :: htmx-content" : "gestion-especial/index";
+    }
+
     @GetMapping("/coordinacion-academica")
     public String coordinacionAcademica(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "coordinacion-academica/index :: htmx-content" : "coordinacion-academica/index";
+    }
+
+    @GetMapping("/evaluacion-academica")
+    public String evaluacionAcademica(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+        return htmxRequest ? "evaluacion-academica/index :: htmx-content" : "evaluacion-academica/index";
     }
 
     @GetMapping("/comedor")
