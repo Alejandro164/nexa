@@ -1,5 +1,6 @@
 package com.chavescr.nexa.config;
 
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -94,50 +95,65 @@ public class DataInitializer implements ApplicationRunner {
                 "5-6789-0123", "user1234", false, // inactivo
                 Set.of(rolDocente), Set.of(instGamma));
 
-        crearUsuarioSiNoExiste(
+        Usuario rosa = crearUsuarioSiNoExiste(
                 "Rosa Jiménez", "rosa@empresa.com", "rosa.jimenez",
                 "6-7890-1234", "user1234", true,
                 Set.of(rolPadre), Set.of(instAlpha));
 
-        crearUsuarioSiNoExiste(
+        Usuario manuel = crearUsuarioSiNoExiste(
+                "Manuel Alpízar", "manuel.alpizar@empresa.com", "manuel.alpizar",
+                "9-6789-0123", "user1234", true,
+                Set.of(rolPadre), Set.of(instAlpha));
+
+        Usuario jorge = crearUsuarioSiNoExiste(
                 "Jorge Salas", "jorge@empresa.com", "jorge.salas",
                 "7-8901-2345", "user1234", true,
                 Set.of(rolPadre), Set.of(instBeta));
 
-        crearUsuarioSiNoExiste(
+        Usuario marcela = crearUsuarioSiNoExiste(
                 "Marcela Vindas", "marcela@empresa.com", "marcela.vindas",
                 "8-9012-3456", "user1234", true,
                 Set.of(rolPadre), Set.of(instGamma));
 
-        crearUsuarioSiNoExiste(
+        Usuario sofia = crearUsuarioSiNoExiste(
                 "Sofía Alpízar Soto", "sofia.alpizar@empresa.com", "sofia.alpizar",
                 "9-0123-4567", "user1234", true,
                 Set.of(rolEstudiante), Set.of(instAlpha));
 
-        crearUsuarioSiNoExiste(
+        Usuario diego = crearUsuarioSiNoExiste(
                 "Diego Ramírez Vargas", "diego.ramirez@empresa.com", "diego.ramirez",
                 "9-1234-5678", "user1234", true,
                 Set.of(rolEstudiante), Set.of(instAlpha));
 
-        crearUsuarioSiNoExiste(
+        Usuario valeria = crearUsuarioSiNoExiste(
                 "Valeria Solano Mora", "valeria.solano@empresa.com", "valeria.solano",
                 "9-2345-6789", "user1234", true,
                 Set.of(rolEstudiante), Set.of(instBeta));
 
-        crearUsuarioSiNoExiste(
+        Usuario kevin = crearUsuarioSiNoExiste(
                 "Kevin Araya Castro", "kevin.araya@empresa.com", "kevin.araya",
                 "9-3456-7890", "user1234", true,
                 Set.of(rolEstudiante), Set.of(instBeta));
 
-        crearUsuarioSiNoExiste(
+        Usuario fernanda = crearUsuarioSiNoExiste(
                 "Fernanda Quesada Brenes", "fernanda.quesada@empresa.com", "fernanda.quesada",
                 "9-4567-8901", "user1234", true,
                 Set.of(rolEstudiante), Set.of(instGamma));
 
-        crearUsuarioSiNoExiste(
+        Usuario andres = crearUsuarioSiNoExiste(
                 "Andrés Mata Rojas", "andres.mata@empresa.com", "andres.mata",
                 "9-5678-9012", "user1234", true,
                 Set.of(rolEstudiante), Set.of(instGamma));
+
+        // ── 4. Relación Padres-Estudiantes ───────────────────────────────────
+        // Rosa tiene dos estudiantes; Sofía tiene dos padres (Rosa y Manuel).
+        vincularPadreEstudiante(rosa, sofia);
+        vincularPadreEstudiante(rosa, diego);
+        vincularPadreEstudiante(manuel, sofia);
+        vincularPadreEstudiante(jorge, valeria);
+        vincularPadreEstudiante(jorge, kevin);
+        vincularPadreEstudiante(marcela, fernanda);
+        vincularPadreEstudiante(marcela, andres);
 
         log.info("=== [DataInitializer] Datos iniciales listos ===");
     }
@@ -163,12 +179,13 @@ public class DataInitializer implements ApplicationRunner {
         });
     }
 
-    private void crearUsuarioSiNoExiste(String nombre, String email, String usuario,
+    private Usuario crearUsuarioSiNoExiste(String nombre, String email, String usuario,
             String cedula, String rawPassword, boolean activo,
             Set<Rol> roles, Set<Institucion> instituciones) {
-        if (usuarioRepository.existsByEmail(email)) {
+        Optional<Usuario> existente = usuarioRepository.findByEmail(email);
+        if (existente.isPresent()) {
             log.info("  [USUARIO ya existe] {}", email);
-            return;
+            return existente.get();
         }
         Usuario u = new Usuario();
         u.setNombre(nombre);
@@ -181,5 +198,15 @@ public class DataInitializer implements ApplicationRunner {
         u.setInstituciones(instituciones);
         usuarioRepository.save(u);
         log.info("  [USUARIO creado] {} / {} ({})", email, usuario, activo ? "activo" : "inactivo");
+        return u;
+    }
+
+    private void vincularPadreEstudiante(Usuario padre, Usuario estudiante) {
+        if (usuarioRepository.existeVinculoPadreEstudiante(padre.getId(), estudiante.getId())) {
+            return;
+        }
+        padre.getEstudiantes().add(estudiante);
+        usuarioRepository.save(padre);
+        log.info("  [VINCULO creado] {} (padre) -> {} (estudiante)", padre.getEmail(), estudiante.getEmail());
     }
 }

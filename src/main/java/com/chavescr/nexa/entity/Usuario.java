@@ -58,6 +58,15 @@ public class Usuario implements UserDetails {
     @JoinTable(name = "usuario_instituciones", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "institucion_id"))
     private Set<Institucion> instituciones = new HashSet<>();
 
+    // Many-to-Many auto-referencial: un padre puede tener varios estudiantes asignados
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "padres_estudiantes", joinColumns = @JoinColumn(name = "padre_id"), inverseJoinColumns = @JoinColumn(name = "estudiante_id"))
+    private Set<Usuario> estudiantes = new HashSet<>();
+
+    // Lado inverso: los padres asignados a este estudiante
+    @ManyToMany(mappedBy = "estudiantes")
+    private Set<Usuario> padres = new HashSet<>();
+
     public Usuario() {
     }
 
@@ -170,6 +179,24 @@ public class Usuario implements UserDetails {
 
     public void setInstituciones(Set<Institucion> instituciones) {
         this.instituciones = instituciones;
+    }
+
+    @JsonIgnore
+    public Set<Usuario> getEstudiantes() {
+        return estudiantes;
+    }
+
+    public void setEstudiantes(Set<Usuario> estudiantes) {
+        this.estudiantes = estudiantes;
+    }
+
+    @JsonIgnore
+    public Set<Usuario> getPadres() {
+        return padres;
+    }
+
+    public void setPadres(Set<Usuario> padres) {
+        this.padres = padres;
     }
 
     @Override

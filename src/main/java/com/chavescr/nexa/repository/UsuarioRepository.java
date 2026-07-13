@@ -52,4 +52,14 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
                      "WHERE u.id = :usuarioId AND i.id = :institucionId AND u.activo = true")
        Optional<Usuario> findActivoByIdAndInstitucionId(@Param("usuarioId") Long usuarioId,
                      @Param("institucionId") Long institucionId);
+
+       @Query("SELECT DISTINCT e FROM Usuario p JOIN p.estudiantes e WHERE p.id = :padreId ORDER BY e.nombre")
+       List<Usuario> findEstudiantesByPadreId(@Param("padreId") Long padreId);
+
+       @Query("SELECT DISTINCT p FROM Usuario e JOIN e.padres p WHERE e.id = :estudianteId ORDER BY p.nombre")
+       List<Usuario> findPadresByEstudianteId(@Param("estudianteId") Long estudianteId);
+
+       @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Usuario p JOIN p.estudiantes e " +
+                     "WHERE p.id = :padreId AND e.id = :estudianteId")
+       boolean existeVinculoPadreEstudiante(@Param("padreId") Long padreId, @Param("estudianteId") Long estudianteId);
 }
