@@ -115,11 +115,22 @@
             text-align: left;
             cursor: pointer;
             font-family: inherit;
+            max-height: 20px;
+            opacity: 1;
+            overflow: hidden;
+            transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
         }
 
         .cal-banda-mas:hover {
             color: var(--primary);
             text-decoration: underline;
+        }
+
+        .cal-banda-mas.oculto {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
         }
 
         .cal-banda-mas-arrow {
@@ -208,18 +219,30 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1), max-height 0.25s ease, opacity 0.2s ease, margin 0.25s ease, padding 0.25s ease;
             display: flex;
             align-items: center;
             gap: 6px;
             border: 1px solid transparent;
             position: relative;
+            max-height: 28px;
+            opacity: 1;
         }
 
         .cal-event:hover {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             filter: brightness(0.95);
             z-index: 10;
+        }
+
+        .cal-event.oculto {
+            opacity: 0;
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: -4px;
+            border-width: 0;
+            pointer-events: none;
         }
 
         .event-dot {

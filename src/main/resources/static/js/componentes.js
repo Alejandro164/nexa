@@ -530,10 +530,41 @@ function cerrarActividadModal() {
     }, 180);
 }
 
+function animarEvento(el, visible) {
+    if (visible) {
+        el.style.display = '';
+        requestAnimationFrame(function () {
+            el.classList.remove('oculto');
+        });
+        return;
+    }
+    el.classList.add('oculto');
+    el.addEventListener('transitionend', function ocultarAlTerminar(e) {
+        if (e.target !== el) return;
+        el.removeEventListener('transitionend', ocultarAlTerminar);
+        if (el.classList.contains('oculto')) {
+            el.style.display = 'none';
+        }
+    });
+}
+
 function toggleCalendarioTipo(tipo, visible) {
     document.querySelectorAll('.cal-event.event-' + tipo).forEach(function (el) {
-        el.style.display = visible ? '' : 'none';
+        animarEvento(el, visible);
     });
+    if (tipo === 'general') {
+        document.querySelectorAll('.cal-bandas-wrapper').forEach(function (wrapper) {
+            if (visible) {
+                var expandido = wrapper.classList.contains('expanded');
+                wrapper.style.maxHeight = (expandido ? wrapper.dataset.expandedHeight : wrapper.dataset.collapsedHeight) + 'px';
+            } else {
+                wrapper.style.maxHeight = '0px';
+            }
+        });
+        document.querySelectorAll('.cal-banda-mas').forEach(function (btn) {
+            btn.classList.toggle('oculto', !visible);
+        });
+    }
 }
 
 function toggleBandasSemana(btn) {
