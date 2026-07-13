@@ -60,6 +60,7 @@ public class DataInitializer implements ApplicationRunner {
         Rol rolAdmin = crearRolSiNoExiste("ROLE_ADMIN");
         Rol rolDirector = crearRolSiNoExiste("ROLE_DIRECTOR");
         Rol rolDocente = crearRolSiNoExiste("ROLE_DOCENTE");
+        Rol rolPadre = crearRolSiNoExiste("ROLE_PADRE");
 
         // ── 2. Instituciones ──────────────────────────────────────────────────
         Institucion instAlpha = crearInstitucionSiNoExiste("Liceo Alpha", "1790012301001", "Av. Principal 100");
@@ -91,6 +92,21 @@ public class DataInitializer implements ApplicationRunner {
                 "Luis Pérez", "luis@empresa.com", "luis.perez",
                 "5-6789-0123", "user1234", false, // inactivo
                 Set.of(rolDocente), Set.of(instGamma));
+
+        crearUsuarioSiNoExiste(
+                "Rosa Jiménez", "rosa@empresa.com", "rosa.jimenez",
+                "6-7890-1234", "user1234", true,
+                Set.of(rolPadre), Set.of(instAlpha));
+
+        crearUsuarioSiNoExiste(
+                "Jorge Salas", "jorge@empresa.com", "jorge.salas",
+                "7-8901-2345", "user1234", true,
+                Set.of(rolPadre), Set.of(instBeta));
+
+        crearUsuarioSiNoExiste(
+                "Marcela Vindas", "marcela@empresa.com", "marcela.vindas",
+                "8-9012-3456", "user1234", true,
+                Set.of(rolPadre), Set.of(instGamma));
 
         log.info("=== [DataInitializer] Datos iniciales listos ===");
     }

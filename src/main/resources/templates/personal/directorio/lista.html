@@ -32,7 +32,7 @@
                     <td>
                         <div style="display:flex;flex-wrap:wrap;gap:2px;">
                             <span th:each="r : ${u.roles}" class="badge-xs"
-                                  th:classappend="${r.nombre == 'ROLE_ADMIN' ? 'badge-admin' : (r.nombre == 'ROLE_DIRECTOR' ? 'badge-director' : 'badge-docente')}"
+                                  th:classappend="${r.nombre == 'ROLE_ADMIN' ? 'badge-admin' : (r.nombre == 'ROLE_DIRECTOR' ? 'badge-director' : (r.nombre == 'ROLE_PADRE' ? 'badge-padre' : 'badge-docente'))}"
                                   th:text="${r.nombre.replace('ROLE_', '')}">ROL</span>
                             <span th:if="${u.roles.empty}" style="color:#94a3b8;font-size:0.8rem;">Sin rol</span>
                         </div>
