@@ -35,6 +35,17 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
        @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.instituciones WHERE u.email = :email")
        Optional<Usuario> findByEmailWithInstituciones(@Param("email") String email);
 
+       /**
+        * Igual que {@link #findByIdentifier}, pero con las instituciones cargadas.
+        * Usado para resolver al usuario autenticado, cuyo "name" en el SecurityContext
+        * es el identificador de login (puede ser email, usuario o cédula), no siempre el email.
+        */
+       @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.instituciones WHERE " +
+                     "LOWER(u.email)   = LOWER(:identifier) OR " +
+                     "LOWER(u.usuario) = LOWER(:identifier) OR " +
+                     "u.cedula         = :identifier")
+       Optional<Usuario> findByIdentifierWithInstituciones(@Param("identifier") String identifier);
+
        @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i " +
                      "WHERE i.id = :institucionId AND u.activo = true ORDER BY u.nombre")
        List<Usuario> findActivosByInstitucionId(@Param("institucionId") Long institucionId);
@@ -47,6 +58,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
        @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i " +
                      "WHERE i.id = :institucionId ORDER BY u.nombre")
        List<Usuario> findAllByInstitucionId(@Param("institucionId") Long institucionId);
+
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r " +
+                     "WHERE i.id = :institucionId AND r.nombre = :rolNombre ORDER BY u.nombre")
+       List<Usuario> findAllByInstitucionIdAndRol(@Param("institucionId") Long institucionId,
+                     @Param("rolNombre") String rolNombre);
 
        @Query("SELECT u FROM Usuario u JOIN u.instituciones i " +
                      "WHERE u.id = :usuarioId AND i.id = :institucionId AND u.activo = true")

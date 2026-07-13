@@ -1,0 +1,45 @@
+<div th:fragment="content" class="tab-pane" xmlns:th="http://www.thymeleaf.org"
+     x-data="{
+         openModal(id) {
+             const el = document.getElementById(id);
+             el.style.display = 'block';
+             setTimeout(() => {
+                 void el.offsetWidth;
+                 el.classList.remove('dir-modal-closing');
+                 el.classList.add('dir-modal-visible');
+             }, 0);
+         },
+         closeModal(id) {
+             const el = document.getElementById(id);
+             el.classList.remove('dir-modal-visible');
+             el.classList.add('dir-modal-closing');
+             setTimeout(() => {
+                 el.style.display = 'none';
+                 el.classList.remove('dir-modal-closing');
+             }, 180);
+         }
+     }"
+     @open-modal.window="openModal('estudiantes-modal-container')"
+     @close-modal.window="closeModal('estudiantes-modal-container')"
+     @open-ficha.window="openModal('estudiantes-ficha-container')"
+     @close-ficha.window="closeModal('estudiantes-ficha-container')"
+     @keydown.escape.window="closeModal('estudiantes-modal-container'); closeModal('estudiantes-ficha-container')">
+
+    <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header">
+            <h3 class="card-title">Buscar Expediente Estudiantil</h3>
+            <div class="search-box">
+                <input type="text" class="form-input" name="q" placeholder="Buscar por cédula o nombre..."
+                       th:value="${q}"
+                       hx-get="/estudiantes/expedientes/lista"
+                       hx-trigger="keyup changed delay:400ms, search"
+                       hx-target="#estudiantes-dir-content" hx-swap="innerHTML">
+            </div>
+        </div>
+    </div>
+
+    <div id="estudiantes-dir-content" th:insert="~{estudiantes/expedientes/lista :: content}"></div>
+
+    <div id="estudiantes-modal-container" style="display:none;"></div>
+    <div id="estudiantes-ficha-container" style="display:none;"></div>
+</div>

@@ -99,12 +99,18 @@
                         <h3 class="card-title">Hijos Asociados a tu Cuenta</h3>
                     </div>
                     <div style="padding: 1.5rem;">
-                        <div class="premium-list-item">
+                        <div th:if="${#lists.isEmpty(hijos)}" style="text-align:center; padding:1rem 0;">
+                            <h4 style="color:var(--text-secondary); margin-bottom:0.5rem;">No tienes hijos asociados a tu cuenta</h4>
+                            <p style="font-size:0.9rem; color:var(--text-light);">Contacta a la institución si esto no es correcto.</p>
+                        </div>
+                        <div th:each="hijo : ${hijos}" class="premium-list-item">
                             <div>
-                                <h4 style="font-weight:600;">Sofia Alpizar Soto</h4>
-                                <p style="font-size:0.85rem; color:var(--text-secondary);">Sección 7-1 • Cédula: 1-1892-0245</p>
+                                <h4 style="font-weight:600;" th:text="${hijo.nombre}">Nombre</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);"
+                                   th:text="${hijo.cedula != null ? ('Cédula: ' + hijo.cedula) : 'Sin cédula registrada'}">Cédula</p>
                             </div>
-                            <span class="badge badge-success">Estudiante Activo</span>
+                            <span class="badge" th:classappend="${hijo.activo ? 'badge-success' : 'badge-secondary'}"
+                                  th:text="${hijo.activo ? 'Estudiante Activo' : 'Estudiante Inactivo'}">Estado</span>
                         </div>
                     </div>
                 </div>

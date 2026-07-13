@@ -94,45 +94,7 @@
 
             <!-- Expedientes -->
             <div x-show="activeTab === 'expedientes'" class="tab-pane">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Buscar Expediente Estudiantil</h3>
-                        <div class="search-box">
-                            <input type="text" class="form-input" placeholder="Buscar por cédula o nombre...">
-                        </div>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Identificación</th>
-                                        <th>Estudiante</th>
-                                        <th>Nivel / Sección</th>
-                                        <th>Condición</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>1-1892-0245</td>
-                                        <td style="font-weight:600;">Sofia Alpizar Soto</td>
-                                        <td>Sétimo Año (Sección 7-1)</td>
-                                        <td><span class="badge badge-success">Regular</span></td>
-                                        <td><button class="btn btn-secondary" style="padding:4px 8px;">Ver Ficha</button></td>
-                                    </tr>
-                                    <tr>
-                                        <td>2-0811-0941</td>
-                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
-                                        <td>Octavo Año (Sección 8-2)</td>
-                                        <td><span class="badge badge-primary">Adecuación No Sig.</span></td>
-                                        <td><button class="btn btn-secondary" style="padding:4px 8px;">Ver Ficha</button></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                <div hx-get="/estudiantes/expedientes" hx-trigger="load" hx-swap="innerHTML"></div>
             </div>
 
             <!-- Prematrícula -->
@@ -269,6 +231,8 @@
             </div>
 
         </div>
+
+        <div th:replace="~{configuracion-academica/components/confirmar-eliminacion :: modal}"></div>
     </main>
 
 </body>

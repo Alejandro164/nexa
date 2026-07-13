@@ -1,6 +1,12 @@
 package com.chavescr.nexa.config;
 
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -36,6 +42,19 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 public class DataInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+
+    private static final String[] NOMBRES_PERSONAS = {
+            "Carlos", "Luis", "José", "Juan", "Pedro", "Miguel", "Fernando", "Ricardo", "Eduardo", "Alberto",
+            "Roberto", "Manuel", "Francisco", "Gustavo", "Rodrigo", "Sergio", "Mario", "Víctor", "Óscar", "Raúl",
+            "María", "Ana", "Laura", "Carmen", "Patricia", "Silvia", "Mónica", "Adriana", "Gabriela", "Daniela",
+            "Andrea", "Paola", "Karla", "Vanessa", "Melissa", "Tatiana", "Ivannia", "Yendry", "Priscilla", "Natalia"
+    };
+
+    private static final String[] APELLIDOS_PERSONAS = {
+            "Rodríguez", "González", "Hernández", "Pérez", "Sánchez", "Ramírez", "Torres", "Flores", "Rivera", "Gómez",
+            "Díaz", "Reyes", "Morales", "Cruz", "Ortiz", "Gutiérrez", "Chavarría", "Solís", "Barrantes", "Mora",
+            "Vargas", "Castro", "Jiménez", "Rojas", "Alvarado", "Segura", "Zamora", "Quesada", "Brenes", "Araya"
+    };
 
     private final RolRepository rolRepository;
     private final InstitucionRepository institucionRepository;
@@ -155,6 +174,24 @@ public class DataInitializer implements ApplicationRunner {
         vincularPadreEstudiante(marcela, fernanda);
         vincularPadreEstudiante(marcela, andres);
 
+        // ── 5. Estudiantes adicionales (mínimo 30 por institución) ───────────
+        List<Usuario> estudiantesGenerados = new ArrayList<>();
+        estudiantesGenerados.addAll(generarEstudiantes(instAlpha, rolEstudiante, 28, 0));
+        estudiantesGenerados.addAll(generarEstudiantes(instBeta, rolEstudiante, 28, 28));
+        estudiantesGenerados.addAll(generarEstudiantes(instGamma, rolEstudiante, 28, 56));
+
+        // ── 6. Padres adicionales (mínimo 50 en total) ────────────────────────
+        List<Usuario> padresGenerados = generarPadres(rolPadre, 56, 500);
+
+        // ── 7. Asignar 1 o 2 padres a cada estudiante que aún no tenga ────────
+        // Los padres se comparten en un mismo pool entre instituciones, así que un
+        // padre puede terminar con hijos en más de una institución.
+        List<Usuario> todosLosPadres = new ArrayList<>(List.of(rosa, manuel, jorge, marcela));
+        todosLosPadres.addAll(padresGenerados);
+        List<Usuario> todosLosEstudiantes = new ArrayList<>(List.of(sofia, diego, valeria, kevin, fernanda, andres));
+        todosLosEstudiantes.addAll(estudiantesGenerados);
+        asignarPadresFaltantes(todosLosEstudiantes, todosLosPadres);
+
         log.info("=== [DataInitializer] Datos iniciales listos ===");
     }
 
@@ -208,5 +245,83 @@ public class DataInitializer implements ApplicationRunner {
         padre.getEstudiantes().add(estudiante);
         usuarioRepository.save(padre);
         log.info("  [VINCULO creado] {} (padre) -> {} (estudiante)", padre.getEmail(), estudiante.getEmail());
+    }
+
+    /**
+     * Genera {@code cantidad} estudiantes de relleno para una institución, combinando
+     * nombres/apellidos de ejemplo. {@code offset} debe ser distinto por institución
+     * (y del rango usado por {@link #generarPadres}) para que los correos/cédulas
+     * generados no colisionen entre sí.
+     */
+    private List<Usuario> generarEstudiantes(Institucion institucion, Rol rolEstudiante, int cantidad, int offset) {
+        List<Usuario> generados = new ArrayList<>();
+        for (int i = 0; i < cantidad; i++) {
+            generados.add(generarPersona(offset + i, rolEstudiante, Set.of(institucion)));
+        }
+        return generados;
+    }
+
+    /**
+     * Genera {@code cantidad} padres de relleno, sin institución asignada de entrada.
+     * Su(s) institución(es) se completan luego en {@link #asignarPadresFaltantes},
+     * a medida que se les vincula con estudiantes de una u otra institución.
+     */
+    private List<Usuario> generarPadres(Rol rolPadre, int cantidad, int offset) {
+        List<Usuario> generados = new ArrayList<>();
+        for (int i = 0; i < cantidad; i++) {
+            generados.add(generarPersona(offset + i, rolPadre, new HashSet<>()));
+        }
+        return generados;
+    }
+
+    private Usuario generarPersona(int idx, Rol rol, Set<Institucion> instituciones) {
+        String nombre = NOMBRES_PERSONAS[idx % NOMBRES_PERSONAS.length];
+        String apellido1 = APELLIDOS_PERSONAS[idx % APELLIDOS_PERSONAS.length];
+        String apellido2 = APELLIDOS_PERSONAS[(idx + 11) % APELLIDOS_PERSONAS.length];
+        String nombreCompleto = nombre + " " + apellido1 + " " + apellido2;
+        String usuarioHandle = normalizarParaHandle(nombre) + "." + normalizarParaHandle(apellido1) + idx;
+        String email = usuarioHandle + "@empresa.com";
+        String cedula = "9-" + String.format("%04d", idx) + "-" + String.format("%04d", 9999 - idx);
+
+        return crearUsuarioSiNoExiste(nombreCompleto, email, usuarioHandle,
+                cedula, "user1234", true, Set.of(rol), instituciones);
+    }
+
+    /**
+     * Asegura que cada estudiante tenga 1 o 2 padres. Los que ya tienen al menos uno
+     * (vínculos deliberados de la sección 4) se dejan intactos; al resto se le asignan
+     * padres al azar (con semilla fija para que el resultado sea el mismo en cada
+     * reinicio) tomados del mismo pool compartido entre instituciones.
+     */
+    private void asignarPadresFaltantes(List<Usuario> estudiantes, List<Usuario> padres) {
+        Random random = new Random(42);
+        for (Usuario estudiante : estudiantes) {
+            if (!usuarioRepository.findPadresByEstudianteId(estudiante.getId()).isEmpty()) {
+                continue;
+            }
+            int cantidadPadres = random.nextInt(2) + 1; // 1 o 2
+            List<Usuario> disponibles = new ArrayList<>(padres);
+            Collections.shuffle(disponibles, random);
+            for (int i = 0; i < cantidadPadres; i++) {
+                Usuario padre = disponibles.get(i);
+                vincularPadreEstudiante(padre, estudiante);
+                asegurarInstitucionDelPadre(padre, estudiante);
+            }
+        }
+    }
+
+    private void asegurarInstitucionDelPadre(Usuario padre, Usuario estudiante) {
+        for (Institucion inst : estudiante.getInstituciones()) {
+            if (padre.getInstituciones().stream().noneMatch(i -> i.getId().equals(inst.getId()))) {
+                padre.getInstituciones().add(inst);
+                usuarioRepository.save(padre);
+            }
+        }
+    }
+
+    private String normalizarParaHandle(String texto) {
+        return Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("[^\\p{ASCII}]", "")
+                .toLowerCase();
     }
 }

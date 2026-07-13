@@ -1,5 +1,6 @@
 package com.chavescr.nexa.service;
 
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,8 +45,38 @@ public class PersonalService {
     }
 
     @Transactional(readOnly = true)
+    public List<Usuario> listarPorRol(Long institucionId, String rolNombre) {
+        return usuarioRepository.findAllByInstitucionIdAndRol(institucionId, rolNombre);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Usuario> listarPorRol(Long institucionId, String rolNombre, String filtro) {
+        List<Usuario> todos = usuarioRepository.findAllByInstitucionIdAndRol(institucionId, rolNombre);
+        if (filtro == null || filtro.isBlank()) {
+            return todos;
+        }
+        String f = normalizar(filtro.trim());
+        return todos.stream()
+                .filter(u -> normalizar(u.getNombre()).contains(f)
+                        || (u.getCedula() != null && normalizar(u.getCedula()).contains(f)))
+                .toList();
+    }
+
+    private String normalizar(String texto) {
+        return Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("[^\\p{ASCII}]", "")
+                .toLowerCase();
+    }
+
+    @Transactional(readOnly = true)
     public List<Rol> listarRoles() {
         return rolRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Rol obtenerRolPorNombre(String nombre) {
+        return rolRepository.findByNombre(nombre)
+                .orElseThrow(() -> new IllegalArgumentException("Rol no encontrado: " + nombre));
     }
 
     @Transactional(readOnly = true)

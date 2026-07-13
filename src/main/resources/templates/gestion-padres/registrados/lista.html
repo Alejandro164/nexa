@@ -1,0 +1,64 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="module-card">
+        <div class="module-card-header">
+            <h3 class="module-card-title" th:text="'Padres Registrados (' + ${padres != null ? #lists.size(padres) : 0} + ')'">Padres Registrados (0)</h3>
+            <button class="btn-primary"
+                    hx-get="/padres/registrados/form"
+                    hx-target="#padres-modal-container" hx-swap="innerHTML"
+                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                    style="font-size:0.85rem;padding:8px 16px;">+ Agregar</button>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Usuario</th>
+                    <th>Cédula</th>
+                    <th>Roles</th>
+                    <th>Estado</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${padres == null or padres.empty}">
+                    <td colspan="7" class="table-empty">No hay padres registrados.</td>
+                </tr>
+                <tr th:each="u : ${padres}">
+                    <td><strong th:text="${u.nombre}" style="color:#0f172a;">Nombre</strong></td>
+                    <td th:text="${u.email}" style="color:#64748b;">email</td>
+                    <td><code style="font-size:0.8rem;color:#475569;" th:text="${u.usuario}">usuario</code></td>
+                    <td th:text="${u.cedula != null ? u.cedula : '—'}" style="color:#94a3b8;">—</td>
+                    <td>
+                        <div style="display:flex;flex-wrap:wrap;gap:2px;">
+                            <span th:each="r : ${u.roles}" class="badge-xs"
+                                  th:classappend="${r.nombre == 'ROLE_ADMIN' ? 'badge-admin' : (r.nombre == 'ROLE_DIRECTOR' ? 'badge-director' : (r.nombre == 'ROLE_PADRE' ? 'badge-padre' : (r.nombre == 'ROLE_ESTUDIANTE' ? 'badge-estudiante' : 'badge-docente')))}"
+                                  th:text="${r.nombre.replace('ROLE_', '')}">ROL</span>
+                            <span th:if="${u.roles.empty}" style="color:#94a3b8;font-size:0.8rem;">Sin rol</span>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="badge-xs" style="border:none;cursor:pointer;"
+                                th:classappend="${u.activo ? 'badge-activo' : 'badge-inactivo'}"
+                                th:text="${u.activo ? 'Activo' : 'Inactivo'}"
+                                th:attr="hx-put='/padres/registrados/' + ${u.id} + '/activo'"
+                                hx-target="#padres-dir-content" hx-swap="innerHTML">Estado</button>
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-xs btn-ghost"
+                                    th:attr="hx-get='/padres/registrados/form/' + ${u.id}"
+                                    hx-target="#padres-modal-container" hx-swap="innerHTML"
+                                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                                    title="Editar">✏️</button>
+                            <button class="btn-xs btn-danger-ghost"
+                                    onclick="abrirConfirmacionAcademica(this)"
+                                    th:attr="data-delete-url='/padres/registrados/' + ${u.id},data-delete-target='#padres-dir-content',data-delete-title='Eliminar padre',data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
+                                    title="Eliminar">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

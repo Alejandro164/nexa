@@ -48,11 +48,21 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public List<InstitucionDTO> obtenerInstitucionesDelUsuarioActual() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return usuarioRepository.findByEmailWithInstituciones(email)
+        String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepository.findByIdentifierWithInstituciones(identifier)
                 .map(usuario -> usuario.getInstituciones().stream()
                         .filter(Institucion::getActiva)
                         .map(InstitucionDTO::new)
+                        .toList())
+                .orElse(Collections.emptyList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioDTO> obtenerEstudiantesDelUsuarioActual() {
+        String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepository.findByIdentifier(identifier)
+                .map(padre -> usuarioRepository.findEstudiantesByPadreId(padre.getId()).stream()
+                        .map(UsuarioDTO::new)
                         .toList())
                 .orElse(Collections.emptyList());
     }
