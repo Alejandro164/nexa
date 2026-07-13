@@ -52,6 +52,11 @@ public class MenuController {
         return htmxRequest ? "comunicacion/index :: htmx-content" : "comunicacion/index";
     }
 
+    @GetMapping("/contacto")
+    public String contacto(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+        return htmxRequest ? "contacto/index :: htmx-content" : "contacto/index";
+    }
+
     @GetMapping("/agenda")
     public String agenda(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "agenda/index :: htmx-content" : "agenda/index";
