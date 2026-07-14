@@ -78,4 +78,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
        @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Usuario p JOIN p.estudiantes e " +
                      "WHERE p.id = :padreId AND e.id = :estudianteId")
        boolean existeVinculoPadreEstudiante(@Param("padreId") Long padreId, @Param("estudianteId") Long estudianteId);
+
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r " +
+                     "WHERE u.cedula = :cedula AND i.id = :institucionId AND r.nombre = 'ROLE_PADRE'")
+       Optional<Usuario> findPadreByCedulaAndInstitucionId(@Param("cedula") String cedula,
+                     @Param("institucionId") Long institucionId);
 }

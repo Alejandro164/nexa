@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
     layout:decorate="~{index}">
 
 <head>
@@ -131,6 +132,12 @@
                             @click="activeTab = 'regimen'"
                             hx-get="/personal/regimen" hx-target="#personal-content" hx-swap="innerHTML">
                         ⚖️ Régimen Disciplinario
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'solicitudes' }"
+                            @click="activeTab = 'solicitudes'"
+                            hx-get="/personal/solicitudes" hx-target="#personal-content" hx-swap="innerHTML"
+                            sec:authorize="hasAnyAuthority('ROLE_DOCENTE', 'ROLE_DIRECTOR', 'ROLE_ADMIN')">
+                        📋 Solicitudes de Padres
                     </button>
                 </div>
             </div>

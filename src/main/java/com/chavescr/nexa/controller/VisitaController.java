@@ -1,7 +1,9 @@
 package com.chavescr.nexa.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -10,12 +12,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.chavescr.nexa.entity.RegistroAsistencia;
+import com.chavescr.nexa.entity.RetiroEstudiante;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.entity.Visita;
+import com.chavescr.nexa.repository.UsuarioRepository;
+import com.chavescr.nexa.service.PersonalService;
 import com.chavescr.nexa.service.RegistroAsistenciaService;
+import com.chavescr.nexa.service.RetiroEstudianteService;
 import com.chavescr.nexa.service.UsuarioService;
 import com.chavescr.nexa.service.VisitaService;
 
@@ -33,7 +40,16 @@ public class VisitaController {
     private RegistroAsistenciaService registroAsistenciaService;
 
     @Autowired
+    private RetiroEstudianteService retiroEstudianteService;
+
+    @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private PersonalService personalService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @GetMapping
     public String index(Model model, HttpSession session, HttpServletRequest request) {
@@ -43,6 +59,8 @@ public class VisitaController {
             model.addAttribute("visitas", visitasDelDia);
             agregarStats(model, visitasDelDia);
 
+            model.addAttribute("personas", personalService.listarPorRol(institucionId, rolParaTipo("DOCENTE")));
+
             List<RegistroAsistencia> asistenciasDelDia = registroAsistenciaService.obtenerRegistrosDelDia(institucionId);
             model.addAttribute("asistencias", asistenciasDelDia);
             Map<String, Long> conteo = registroAsistenciaService.obtenerConteoPersonalPresente(institucionId);
@@ -51,11 +69,38 @@ public class VisitaController {
 
             List<Usuario> usuarios = usuarioService.obtenerTodos();
             model.addAttribute("usuarios", usuarios);
+
+            List<RetiroEstudiante> retirosDelDia = retiroEstudianteService.obtenerRetirosDelDia(institucionId);
+            model.addAttribute("retiros", retirosDelDia);
+            agregarStatsRetiros(model, retirosDelDia);
         }
+        model.addAttribute("puedeAutorizarRetiros", esPersonalAutorizado(request));
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "control-acceso/index :: htmx-content";
         }
         return "control-acceso/index";
+    }
+
+    private void agregarStatsRetiros(Model model, List<RetiroEstudiante> retiros) {
+        long pendientes = retiros.stream().filter(r -> r.getEstado() == RetiroEstudiante.EstadoRetiro.PENDIENTE).count();
+        long autorizados = retiros.stream().filter(r -> r.getEstado() == RetiroEstudiante.EstadoRetiro.AUTORIZADO).count();
+        long finalizados = retiros.stream().filter(r -> r.getEstado() == RetiroEstudiante.EstadoRetiro.FINALIZADO).count();
+        model.addAttribute("retirosStatsPendientes", pendientes);
+        model.addAttribute("retirosStatsAutorizados", autorizados);
+        model.addAttribute("retirosStatsFinalizados", finalizados);
+        model.addAttribute("retirosStatsTotal", (long) retiros.size());
+    }
+
+    private boolean esPersonalAutorizado(HttpServletRequest request) {
+        return request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR")
+                || request.isUserInRole("ROLE_DOCENTE");
+    }
+
+    private void exigirPersonalAutorizado(HttpServletRequest request) {
+        if (!esPersonalAutorizado(request)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Solo el personal de la institución puede autorizar retiros de estudiantes");
+        }
     }
 
     private void agregarStats(Model model, List<Visita> visitas) {
@@ -68,6 +113,42 @@ public class VisitaController {
         model.addAttribute("statsFinalizadas", finalizadas);
         model.addAttribute("statsDenegadas", denegadas);
         model.addAttribute("statsTotal", (long) visitas.size());
+    }
+
+    @GetMapping("/buscar-padre")
+    @ResponseBody
+    public Map<String, Object> buscarPadre(@RequestParam String cedula, HttpSession session) {
+        Map<String, Object> resultado = new HashMap<>();
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        Optional<Usuario> padreOpt = institucionId == null
+                ? Optional.empty()
+                : usuarioRepository.findPadreByCedulaAndInstitucionId(cedula.trim(), institucionId);
+        if (padreOpt.isPresent()) {
+            Usuario padre = padreOpt.get();
+            resultado.put("encontrado", true);
+            resultado.put("nombre", padre.getNombre());
+            resultado.put("identificacion", padre.getCedula());
+        } else {
+            resultado.put("encontrado", false);
+        }
+        return resultado;
+    }
+
+    @GetMapping("/personas")
+    public String personas(@RequestParam String tipoDestinatario, Model model, HttpSession session) {
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        if (institucionId != null) {
+            model.addAttribute("personas", personalService.listarPorRol(institucionId, rolParaTipo(tipoDestinatario)));
+        }
+        return "control-acceso/registrar/registrar :: campo-persona";
+    }
+
+    private String rolParaTipo(String tipoDestinatario) {
+        return switch (tipoDestinatario) {
+            case "DIRECTORA" -> "ROLE_DIRECTOR";
+            case "ADMINISTRATIVO" -> "ROLE_ADMIN";
+            default -> "ROLE_DOCENTE";
+        };
     }
 
     @GetMapping("/buscar")
@@ -181,6 +262,49 @@ public class VisitaController {
                 tipoRegistro == RegistroAsistencia.TipoRegistro.ENTRADA
                         ? "Entrada registrada exitosamente."
                         : "Salida registrada exitosamente.");
+        return "redirect:/control-de-acceso";
+    }
+
+    // ─── RETIRO DE ESTUDIANTES (solicitado por padres desde Portal Padres) ──
+
+    @GetMapping("/retiros/refresh")
+    public String refreshRetiros(Model model, HttpSession session, HttpServletRequest request) {
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        if (institucionId != null) {
+            List<RetiroEstudiante> retirosDelDia = retiroEstudianteService.obtenerRetirosDelDia(institucionId);
+            model.addAttribute("retiros", retirosDelDia);
+            agregarStatsRetiros(model, retirosDelDia);
+        }
+        model.addAttribute("puedeAutorizarRetiros", esPersonalAutorizado(request));
+        return "control-acceso/retiros/retiros :: tabla-retiros";
+    }
+
+    @PostMapping("/retiros/autorizar")
+    public String autorizarRetiro(@RequestParam Long retiroId, HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        exigirPersonalAutorizado(request);
+        retiroEstudianteService.autorizar(retiroId);
+        redirectAttributes.addFlashAttribute("successMsg", "Retiro autorizado.");
+        return "redirect:/control-de-acceso";
+    }
+
+    @PostMapping("/retiros/denegar")
+    public String denegarRetiro(@RequestParam Long retiroId,
+            @RequestParam(required = false) String motivoDenegacion,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        exigirPersonalAutorizado(request);
+        retiroEstudianteService.denegar(retiroId, motivoDenegacion);
+        redirectAttributes.addFlashAttribute("successMsg", "Retiro denegado.");
+        return "redirect:/control-de-acceso";
+    }
+
+    @PostMapping("/retiros/salida")
+    public String salidaRetiro(@RequestParam Long retiroId, HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        exigirPersonalAutorizado(request);
+        retiroEstudianteService.registrarSalida(retiroId);
+        redirectAttributes.addFlashAttribute("successMsg", "Salida del estudiante registrada.");
         return "redirect:/control-de-acceso";
     }
 }

@@ -35,7 +35,7 @@
         <div class="card-header">
             <h3 class="card-title">Registro de Visitas de Hoy</h3>
         </div>
-        <div style="padding: 0 1.5rem 1.5rem 1.5rem;">
+        <div style="padding: 0 0 1.5rem 0;">
             <div th:if="${visitas != null && !visitas.empty}">
                 <div class="table-container">
                     <table class="table">
@@ -48,7 +48,6 @@
                                 <th>Cita</th>
                                 <th>Hora</th>
                                 <th>Estado</th>
-                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -67,22 +66,6 @@
                                     <span th:if="${v.estado.toString() == 'AUTORIZADA'}" class="badge badge-success">Autorizada</span>
                                     <span th:if="${v.estado.toString() == 'DENEGADA'}" class="badge badge-secondary">Denegada</span>
                                     <span th:if="${v.estado.toString() == 'FINALIZADA'}" class="badge badge-primary">Finalizada</span>
-                                </td>
-                                <td>
-                                    <div class="d-flex gap-1">
-                                        <form th:if="${v.estado.toString() == 'PENDIENTE'}" th:action="@{/control-de-acceso/autorizar}" method="post" style="margin:0;">
-                                            <input type="hidden" name="visitaId" th:value="${v.id}" />
-                                            <button type="submit" class="btn-accion btn-autorizar" style="padding:0.3rem 0.65rem; font-size:0.7rem;">✓</button>
-                                        </form>
-                                        <form th:if="${v.estado.toString() == 'PENDIENTE'}" th:action="@{/control-de-acceso/denegar}" method="post" style="margin:0;">
-                                            <input type="hidden" name="visitaId" th:value="${v.id}" />
-                                            <button type="submit" class="btn-accion btn-denegar" style="padding:0.3rem 0.65rem; font-size:0.7rem;">✕</button>
-                                        </form>
-                                        <form th:if="${v.estado.toString() == 'AUTORIZADA'}" th:action="@{/control-de-acceso/salida}" method="post" style="margin:0;">
-                                            <input type="hidden" name="visitaId" th:value="${v.id}" />
-                                            <button type="submit" class="btn-accion btn-salida" style="padding:0.3rem 0.65rem; font-size:0.7rem;">Salida</button>
-                                        </form>
-                                    </div>
                                 </td>
                             </tr>
                         </tbody>

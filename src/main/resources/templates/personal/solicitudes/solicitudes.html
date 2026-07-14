@@ -1,0 +1,75 @@
+<div th:fragment="content" class="tab-pane">
+    <div id="tabla-solicitudes-container" th:fragment="tabla-solicitudes">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Solicitudes de Padres</h3>
+            </div>
+            <div style="padding: 0 0 1.5rem 0;">
+                <div th:if="${solicitudes != null && !solicitudes.empty}" class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Padre</th>
+                                <th>Tipo</th>
+                                <th>Detalle</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Respuesta</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="s : ${solicitudes}">
+                                <td style="font-weight:600;" th:text="${s.padre.nombre}">Padre</td>
+                                <td>
+                                    <span th:if="${s.tipo.toString() == 'CONSTANCIA_MATRICULA'}">Constancia de Matrícula</span>
+                                    <span th:if="${s.tipo.toString() == 'CAMBIO_DIRECCION'}">Cambio de Dirección</span>
+                                    <span th:if="${s.tipo.toString() == 'CITA_DOCENTE'}"
+                                          th:text="'Cita con ' + (${s.docente != null} ? ${s.docente.nombre} : 'docente')">Cita con Docente</span>
+                                    <span th:if="${s.tipo.toString() == 'OTRO'}">Otro</span>
+                                    <p th:if="${s.estudiante != null}" style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;"
+                                       th:text="'Sobre: ' + ${s.estudiante.nombre}">Estudiante</p>
+                                </td>
+                                <td style="max-width:220px;" th:text="${s.detalle != null and !s.detalle.isBlank() ? s.detalle : '—'}">Detalle</td>
+                                <td style="font-size:0.85rem;" th:text="${#temporals.format(s.fechaSolicitud, 'dd/MM HH:mm')}">Fecha</td>
+                                <td>
+                                    <span th:if="${s.estado.toString() == 'PENDIENTE'}" class="badge badge-danger">Pendiente</span>
+                                    <span th:if="${s.estado.toString() == 'EN_PROCESO'}" class="badge badge-primary">En Proceso</span>
+                                    <span th:if="${s.estado.toString() == 'RESUELTA'}" class="badge badge-success">Resuelta</span>
+                                    <span th:if="${s.estado.toString() == 'RECHAZADA'}" class="badge badge-secondary">Rechazada</span>
+                                </td>
+                                <td style="max-width:180px; font-size:0.85rem; color:var(--text-secondary);"
+                                    th:text="${s.respuesta != null and !s.respuesta.isBlank() ? s.respuesta : '—'}">Respuesta</td>
+                                <td>
+                                    <div th:if="${s.estado.toString() == 'PENDIENTE' or s.estado.toString() == 'EN_PROCESO'}"
+                                         style="display:flex; flex-direction:column; gap:0.4rem; min-width:200px;">
+                                        <form th:if="${s.estado.toString() == 'PENDIENTE'}"
+                                              th:action="@{'/personal/solicitudes/' + ${s.id} + '/en-proceso'}" method="post" style="margin:0;">
+                                            <button type="submit" class="btn-xs" style="background:#f59e0b; color:#fff; padding:0.3rem 0.65rem; font-size:0.7rem;">Marcar en proceso</button>
+                                        </form>
+                                        <form th:action="@{'/personal/solicitudes/' + ${s.id} + '/resolver'}" method="post"
+                                              style="display:flex; gap:0.35rem; margin:0;">
+                                            <input type="text" name="respuesta" class="form-input" placeholder="Respuesta..."
+                                                   style="font-size:0.75rem; padding:0.3rem 0.5rem;">
+                                            <button type="submit" class="btn-xs" style="background:#22c55e; color:#fff; padding:0.3rem 0.65rem; font-size:0.7rem;">✓ Resolver</button>
+                                        </form>
+                                        <form th:action="@{'/personal/solicitudes/' + ${s.id} + '/rechazar'}" method="post"
+                                              style="display:flex; gap:0.35rem; margin:0;">
+                                            <input type="text" name="respuesta" class="form-input" placeholder="Motivo de rechazo..."
+                                                   style="font-size:0.75rem; padding:0.3rem 0.5rem;">
+                                            <button type="submit" class="btn-xs" style="background:#ef4444; color:#fff; padding:0.3rem 0.65rem; font-size:0.7rem;">✕ Rechazar</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${solicitudes == null || solicitudes.empty}" class="empty-state">
+                    <h4 style="color:var(--text-secondary);">No hay solicitudes de padres</h4>
+                    <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.25rem;">Las solicitudes que los padres envíen desde el Portal Padres aparecerán aquí.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

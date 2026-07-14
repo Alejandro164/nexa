@@ -1,23 +1,11 @@
 package com.chavescr.nexa.controller;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-import com.chavescr.nexa.service.UsuarioService;
-
-import jakarta.servlet.http.HttpServletRequest;
-
 @Controller
 public class MenuController {
-
-    private final UsuarioService usuarioService;
-
-    public MenuController(UsuarioService usuarioService) {
-        this.usuarioService = usuarioService;
-    }
 
     @GetMapping("/usuarios")
     public String usuarios(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
@@ -62,16 +50,6 @@ public class MenuController {
     @GetMapping("/agenda")
     public String agenda(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "agenda/index :: htmx-content" : "agenda/index";
-    }
-
-    @GetMapping("/portal-padres")
-    public String portalPadres(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
-            Model model, HttpServletRequest request) {
-        if (!request.isUserInRole("ROLE_PADRE") && !request.isUserInRole("ROLE_ADMIN")) {
-            throw new AccessDeniedException("Solo usuarios con rol Padre o Admin pueden acceder al Portal de Padres");
-        }
-        model.addAttribute("hijos", usuarioService.obtenerEstudiantesDelUsuarioActual());
-        return htmxRequest ? "padres/index :: htmx-content" : "padres/index";
     }
 
     @GetMapping("/reportes")
