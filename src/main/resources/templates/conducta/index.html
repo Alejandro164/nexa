@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Conducta</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="page-title">📊 Registro de Conducta</th:block>
+    <th:block layout:fragment="page-subtitle">Seguimiento del comportamiento y disciplina estudiantil</th:block>
+
+    <main layout:fragment="content" th:fragment="htmx-content">
+        <style>
+            .conducta-container {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                min-height: 70vh;
+            }
+
+            .conducta-toolbar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #ffffff;
+                padding: 1.5rem;
+                border-radius: 12px;
+                border: 1px solid var(--border);
+                box-shadow: var(--shadow-sm);
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+
+            .conducta-search {
+                flex: 1;
+                min-width: 280px;
+                position: relative;
+            }
+
+            .conducta-search input {
+                width: 100%;
+                padding: 10px 16px 10px 42px;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: var(--input-bg);
+                font-size: 0.95rem;
+                transition: all 0.2s;
+            }
+
+            .conducta-search input:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
+            }
+
+            .conducta-search svg {
+                position: absolute;
+                left: 14px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--text-light);
+            }
+
+            .conducta-filters {
+                display: flex;
+                gap: 0.75rem;
+            }
+
+            .conducta-filter {
+                padding: 9px 14px;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: #ffffff;
+                font-size: 0.88rem;
+                color: var(--text-primary);
+                cursor: pointer;
+            }
+
+            .conducta-stats {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1rem;
+            }
+
+            .stat-card {
+                background: #ffffff;
+                border-radius: 12px;
+                border: 1px solid var(--border);
+                padding: 1.25rem 1.5rem;
+                box-shadow: var(--shadow-sm);
+                display: flex;
+                flex-direction: column;
+                gap: 0.35rem;
+            }
+
+            .stat-card .stat-label {
+                font-size: 0.78rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .stat-card .stat-value {
+                font-size: 1.6rem;
+                font-weight: 700;
+                color: #0f172a;
+            }
+
+            .stat-card.positiva .stat-value { color: #15803d; }
+            .stat-card.negativa .stat-value { color: #dc2626; }
+            .stat-card.pendiente .stat-value { color: #a16207; }
+
+            /* Table */
+            .conducta-table-container {
+                background: #ffffff;
+                border-radius: 12px;
+                border: 1px solid var(--border);
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+
+            .conducta-table {
+                width: 100%;
+                table-layout: fixed;
+                border-collapse: collapse;
+                text-align: left;
+                min-width: 900px;
+            }
+
+            .conducta-table th,
+            .conducta-table td {
+                padding: 0.85rem 1rem;
+                font-size: 0.88rem;
+                border-bottom: 1px solid var(--border);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .conducta-table th {
+                background: var(--input-bg);
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 2px solid var(--border);
+            }
+
+            .conducta-table td {
+                color: var(--text-primary);
+            }
+
+            .conducta-table tr:last-child td {
+                border-bottom: none;
+            }
+
+            .conducta-table tr:hover td {
+                background: rgba(45, 90, 135, 0.02);
+            }
+
+            .conducta-table .col-estudiante { width: 18%; }
+            .conducta-table .col-seccion { width: 10%; }
+            .conducta-table .col-fecha { width: 10%; }
+            .conducta-table .col-tipo { width: 9%; }
+            .conducta-table .col-descripcion { width: 30%; }
+            .conducta-table .col-puntos { width: 8%; }
+            .conducta-table .col-estado { width: 8%; }
+            .conducta-table .col-accion { width: 7%; }
+
+            .student-cell {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .student-avatar {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 0.78rem;
+                color: #fff;
+                flex-shrink: 0;
+            }
+
+            .badge-tipo {
+                padding: 4px 10px;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .badge-tipo.positiva {
+                background: rgba(34, 197, 94, 0.12);
+                color: #15803d;
+            }
+
+            .badge-tipo.negativa {
+                background: rgba(239, 68, 68, 0.1);
+                color: #dc2626;
+            }
+
+            .badge-tipo.leve {
+                background: rgba(234, 179, 8, 0.12);
+                color: #a16207;
+            }
+
+            .badge-estado {
+                padding: 4px 10px;
+                border-radius: 4px;
+                font-size: 0.78rem;
+                font-weight: 600;
+            }
+
+            .badge-estado.registrado {
+                background: rgba(59, 130, 246, 0.1);
+                color: #1d4ed8;
+            }
+
+            .badge-estado.en-proceso {
+                background: rgba(234, 179, 8, 0.1);
+                color: #a16207;
+            }
+
+            .badge-estado.resuelto {
+                background: rgba(34, 197, 94, 0.1);
+                color: #15803d;
+            }
+
+            .puntos-positivo {
+                color: #15803d;
+                font-weight: 700;
+            }
+
+            .puntos-negativo {
+                color: #dc2626;
+                font-weight: 700;
+            }
+
+            .btn-detalle {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                padding: 5px 10px;
+                border-radius: 6px;
+                background: rgba(45, 90, 135, 0.1);
+                color: var(--primary);
+                font-weight: 600;
+                font-size: 0.78rem;
+                text-decoration: none;
+                transition: all 0.2s;
+                border: none;
+                cursor: pointer;
+            }
+
+            .btn-detalle:hover {
+                background: var(--primary);
+                color: #ffffff;
+            }
+
+            @media (max-width: 768px) {
+                .conducta-stats {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+        </style>
+
+        <div class="conducta-container">
+
+            <!-- Stats Cards -->
+            <div class="conducta-stats">
+                <div class="stat-card positiva">
+                    <span class="stat-label">Conducta Positiva</span>
+                    <span class="stat-value">+247</span>
+                    <span style="font-size:0.78rem;color:var(--text-secondary);">86 reconocimientos</span>
+                </div>
+                <div class="stat-card negativa">
+                    <span class="stat-label">Conducta Negativa</span>
+                    <span class="stat-value">−32</span>
+                    <span style="font-size:0.78rem;color:var(--text-secondary);">14 incidencias</span>
+                </div>
+                <div class="stat-card pendiente">
+                    <span class="stat-label">Pendientes</span>
+                    <span class="stat-value">5</span>
+                    <span style="font-size:0.78rem;color:var(--text-secondary);">En revisión</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Balance General</span>
+                    <span class="stat-value" style="color:#15803d;">+215</span>
+                    <span style="font-size:0.78rem;color:var(--text-secondary);">Puntuación neta</span>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="conducta-toolbar">
+                <div class="conducta-search">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" placeholder="Buscar por estudiante, grado o descripción...">
+                </div>
+                <div class="conducta-filters">
+                    <select class="conducta-filter">
+                        <option value="">Todos los tipos</option>
+                        <option value="positiva">Conducta Positiva</option>
+                        <option value="negativa">Conducta Negativa</option>
+                        <option value="leve">Falta Leve</option>
+                    </select>
+                    <select class="conducta-filter">
+                        <option value="">Todos los estados</option>
+                        <option value="registrado">Registrado</option>
+                        <option value="en-proceso">En Proceso</option>
+                        <option value="resuelto">Resuelto</option>
+                    </select>
+                    <button class="btn btn-primary" style="display:flex;align-items:center;gap:6px;border-radius:8px;font-size:0.85rem;padding:9px 16px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Nuevo Registro
+                    </button>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="conducta-table-container">
+                <table class="conducta-table">
+                    <thead>
+                        <tr>
+                            <th class="col-estudiante">Estudiante</th>
+                            <th class="col-seccion">Sección</th>
+                            <th class="col-fecha">Fecha</th>
+                            <th class="col-tipo">Tipo</th>
+                            <th class="col-descripcion">Descripción</th>
+                            <th class="col-puntos">Puntos</th>
+                            <th class="col-estado">Estado</th>
+                            <th class="col-accion">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="col-estudiante">
+                                <div class="student-cell">
+                                    <div class="student-avatar" style="background:#2d5a87;">AC</div>
+                                    <div>
+                                        <div style="font-weight:600;color:#0f172a;">Alejandro Chaves</div>
+                                        <div style="font-size:0.75rem;color:var(--text-secondary);">1-1234-5678</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="col-seccion">10-1</td>
+                            <td class="col-fecha">05/07/2026</td>
+                            <td class="col-tipo"><span class="badge-tipo positiva">⭐ Positiva</span></td>
+                            <td class="col-descripcion" title="Excelente participación en la feria científica institucional">Excelente participación en la feria científica institucional</td>
+                            <td class="col-puntos"><span class="puntos-positivo">+15</span></td>
+                            <td class="col-estado"><span class="badge-estado resuelto">Resuelto</span></td>
+                            <td class="col-accion"><button class="btn-detalle">Ver</button></td>
+                        </tr>
+                        <tr>
+                            <td class="col-estudiante">
+                                <div class="student-cell">
+                                    <div class="student-avatar" style="background:#e11d48;">MP</div>
+                                    <div>
+                                        <div style="font-weight:600;color:#0f172a;">María Pérez Vargas</div>
+                                        <div style="font-size:0.75rem;color:var(--text-secondary);">2-0987-6543</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="col-seccion">11-2</td>
+                            <td class="col-fecha">03/07/2026</td>
+                            <td class="col-tipo"><span class="badge-tipo negativa">⚠️ Negativa</span></td>
+                            <td class="col-descripcion" title="Incumplimiento reiterado del uniforme escolar">Incumplimiento reiterado del uniforme escolar</td>
+                            <td class="col-puntos"><span class="puntos-negativo">−5</span></td>
+                            <td class="col-estado"><span class="badge-estado en-proceso">En Proceso</span></td>
+                            <td class="col-accion"><button class="btn-detalle">Ver</button></td>
+                        </tr>
+                        <tr>
+                            <td class="col-estudiante">
+                                <div class="student-cell">
+                                    <div class="student-avatar" style="background:#0284c7;">CS</div>
+                                    <div>
+                                        <div style="font-weight:600;color:#0f172a;">Carlos Soto Gómez</div>
+                                        <div style="font-size:0.75rem;color:var(--text-secondary);">1-5555-4444</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="col-seccion">9-3</td>
+                            <td class="col-fecha">01/07/2026</td>
+                            <td class="col-tipo"><span class="badge-tipo positiva">⭐ Positiva</span></td>
+                            <td class="col-descripcion" title="Ayuda voluntaria en la organización de la biblioteca escolar">Ayuda voluntaria en la organización de la biblioteca escolar</td>
+                            <td class="col-puntos"><span class="puntos-positivo">+10</span></td>
+                            <td class="col-estado"><span class="badge-estado resuelto">Resuelto</span></td>
+                            <td class="col-accion"><button class="btn-detalle">Ver</button></td>
+                        </tr>
+                        <tr>
+                            <td class="col-estudiante">
+                                <div class="student-cell">
+                                    <div class="student-avatar" style="background:#7c3aed;">LR</div>
+                                    <div>
+                                        <div style="font-weight:600;color:#0f172a;">Lucía Rojas Méndez</div>
+                                        <div style="font-size:0.75rem;color:var(--text-secondary);">3-0456-7890</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="col-seccion">8-1</td>
+                            <td class="col-fecha">28/06/2026</td>
+                            <td class="col-tipo"><span class="badge-tipo leve">🟡 Falta Leve</span></td>
+                            <td class="col-descripcion" title="Uso de celular en horas de clase sin autorización">Uso de celular en horas de clase sin autorización</td>
+                            <td class="col-puntos"><span class="puntos-negativo">−3</span></td>
+                            <td class="col-estado"><span class="badge-estado registrado">Registrado</span></td>
+                            <td class="col-accion"><button class="btn-detalle">Ver</button></td>
+                        </tr>
+                        <tr>
+                            <td class="col-estudiante">
+                                <div class="student-cell">
+                                    <div class="student-avatar" style="background:#059669;">DM</div>
+                                    <div>
+                                        <div style="font-weight:600;color:#0f172a;">Daniel Mora Castillo</div>
+                                        <div style="font-size:0.75rem;color:var(--text-secondary);">1-7788-9900</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="col-seccion">10-2</td>
+                            <td class="col-fecha">25/06/2026</td>
+                            <td class="col-tipo"><span class="badge-tipo positiva">⭐ Positiva</span></td>
+                            <td class="col-descripcion" title="Reconocimiento por liderazgo estudiantil y apoyo a compañeros">Reconocimiento por liderazgo estudiantil y apoyo a compañeros</td>
+                            <td class="col-puntos"><span class="puntos-positivo">+20</span></td>
+                            <td class="col-estado"><span class="badge-estado resuelto">Resuelto</span></td>
+                            <td class="col-accion"><button class="btn-detalle">Ver</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem;">
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">Mostrando 1 a 5 de 105 registros</div>
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" disabled>Anterior</button>
+                    <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">1</button>
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">2</button>
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">3</button>
+                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Siguiente</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+
+</html>

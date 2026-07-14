@@ -42,6 +42,11 @@ public class MenuController {
         return htmxRequest ? "comedor/index :: htmx-content" : "comedor/index";
     }
 
+    @GetMapping("/conducta")
+    public String conducta(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+        return htmxRequest ? "conducta/index :: htmx-content" : "conducta/index";
+    }
+
     @GetMapping("/personal")
     public String personal(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "personal/index :: htmx-content" : "personal/index";
@@ -80,6 +85,11 @@ public class MenuController {
     @GetMapping("/archivo-graduados")
     public String archivoGraduados(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "archivo/index :: htmx-content" : "archivo/index";
+    }
+
+    @GetMapping("/oficios")
+    public String oficios(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+        return htmxRequest ? "oficios/index :: htmx-content" : "oficios/index";
     }
 
 }
