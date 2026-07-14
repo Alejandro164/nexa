@@ -1,0 +1,29 @@
+<div th:fragment="content" class="tab-pane" xmlns:th="http://www.thymeleaf.org"
+     x-data="{
+         openModal() {
+             const el = document.getElementById('padres-modal-container');
+             el.style.display = 'block';
+             setTimeout(() => {
+                 void el.offsetWidth;
+                 el.classList.remove('dir-modal-closing');
+                 el.classList.add('dir-modal-visible');
+             }, 0);
+         },
+         closeModal() {
+             const el = document.getElementById('padres-modal-container');
+             el.classList.remove('dir-modal-visible');
+             el.classList.add('dir-modal-closing');
+             setTimeout(() => {
+                 el.style.display = 'none';
+                 el.classList.remove('dir-modal-closing');
+             }, 180);
+         }
+     }">
+
+    <div id="padres-dir-content" th:insert="~{gestion-padres/registrados/lista :: content}"></div>
+
+    <div id="padres-modal-container" style="display:none;"
+         @close-modal.window="closeModal()"
+         @open-modal.window="openModal()"
+         @keydown.escape.window="closeModal()"></div>
+</div>

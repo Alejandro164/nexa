@@ -59,6 +59,17 @@
             </svg>
             <span class="nav-item-text">Personal</span>
         </a>
+        <a href="/padres" class="nav-item" hx-get="/padres" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span class="nav-item-text">Padres</span>
+        </a>
         <a href="/control-de-acceso" class="nav-item" hx-get="/control-de-acceso" hx-target=".content-area"
             hx-swap="innerHTML" hx-push-url="true">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -170,7 +181,7 @@
             <span class="nav-item-text">Agenda</span>
         </a>
         <a href="/portal-padres" class="nav-item" hx-get="/portal-padres" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_PADRE', 'ROLE_ADMIN')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />

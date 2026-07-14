@@ -7,14 +7,19 @@
             <form th:action="@{/control-de-acceso/registrar}" method="post">
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Nombre del Visitante *</label>
-                        <input type="text" name="nombreVisitante" class="form-input" style="padding-left:0.75rem;"
-                            required placeholder="Nombre completo">
+                        <label class="form-label">Identificación (Cédula)</label>
+                        <div style="display:flex; gap:0.5rem;">
+                            <input type="text" id="identificacionVisita" name="identificacion" class="form-input"
+                                style="padding-left:0.75rem; flex:1;" placeholder="Ej: 1-1234-0567">
+                            <button type="button" class="btn btn-secondary" style="white-space:nowrap;"
+                                    onclick="buscarPadrePorCedula()">🔍 Buscar Padre</button>
+                        </div>
+                        <p id="buscarPadreMsg" style="font-size:0.8rem; margin-top:4px; min-height:1em;"></p>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Identificación (Cédula)</label>
-                        <input type="text" name="identificacion" class="form-input" style="padding-left:0.75rem;"
-                            placeholder="Ej: 1-1234-0567">
+                        <label class="form-label">Nombre del Visitante *</label>
+                        <input type="text" id="nombreVisitante" name="nombreVisitante" class="form-input" style="padding-left:0.75rem;"
+                            required placeholder="Nombre completo">
                     </div>
                 </div>
                 <div class="form-group">
@@ -25,16 +30,27 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Tipo de Persona a Visitar *</label>
-                        <select name="tipoDestinatario" class="form-input" style="padding-left:0.75rem;" required>
+                        <select name="tipoDestinatario" class="form-input" style="padding-left:0.75rem;" required
+                                hx-get="/control-de-acceso/personas" hx-trigger="change"
+                                hx-target="#campo-persona-container" hx-swap="outerHTML">
                             <option value="DIRECTORA">Directora</option>
                             <option value="DOCENTE" selected>Docente</option>
                             <option value="ADMINISTRATIVO">Administrativo</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="campo-persona-container" th:fragment="campo-persona">
                         <label class="form-label">Nombre de la Persona *</label>
+                        <select name="personaAVisitar" class="form-input" style="padding-left:0.75rem;" required
+                                th:if="${personas != null}">
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option th:each="p : ${personas}" th:value="${p.nombre}" th:text="${p.nombre}"></option>
+                        </select>
+                        <p th:if="${personas != null and personas.empty}"
+                           style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">
+                            No hay personal disponible de este tipo en la institución.
+                        </p>
                         <input type="text" name="personaAVisitar" class="form-input" style="padding-left:0.75rem;"
-                            required placeholder="Nombre de la persona a visitar">
+                               required placeholder="Nombre de la persona a visitar" th:if="${personas == null}">
                     </div>
                 </div>
                 <div class="form-group" style="display:flex; align-items:center; gap:0.75rem;">
@@ -54,4 +70,35 @@
             </form>
         </div>
     </div>
+
+    <script>
+        function buscarPadrePorCedula() {
+            const cedula = document.getElementById('identificacionVisita').value.trim();
+            const msg = document.getElementById('buscarPadreMsg');
+            if (!cedula) {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = 'Ingresá una cédula para buscar.';
+                return;
+            }
+            msg.style.color = 'var(--text-light)';
+            msg.textContent = 'Buscando...';
+            fetch('/control-de-acceso/buscar-padre?cedula=' + encodeURIComponent(cedula))
+                .then(r => r.json())
+                .then(data => {
+                    if (data.encontrado) {
+                        document.getElementById('nombreVisitante').value = data.nombre;
+                        document.getElementById('identificacionVisita').value = data.identificacion;
+                        msg.style.color = 'var(--success)';
+                        msg.textContent = '✅ Padre encontrado: ' + data.nombre;
+                    } else {
+                        msg.style.color = 'var(--danger)';
+                        msg.textContent = '⚠️ No se encontró un padre registrado con esa cédula en esta institución.';
+                    }
+                })
+                .catch(() => {
+                    msg.style.color = 'var(--danger)';
+                    msg.textContent = 'Error al buscar. Intentá de nuevo.';
+                });
+        }
+    </script>
 </div>

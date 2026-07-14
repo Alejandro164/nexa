@@ -242,7 +242,7 @@
             }
 
             .form-visita {
-                max-width: 600px;
+                max-width: 900px;
             }
 
             .form-row {
@@ -346,6 +346,10 @@
                         @click="activeTab = 'historial'; htmx.ajax('GET', '/control-de-acceso/historial', { target: '#tabla-historial-container', swap: 'outerHTML' })">
                         📋 Historial
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'retiros' }"
+                        @click="activeTab = 'retiros'; htmx.ajax('GET', '/control-de-acceso/retiros/refresh', { target: '#tabla-retiros-container', swap: 'outerHTML' })">
+                        🎒 Retiro de Estudiantes
+                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'asistencia' }"
                         @click="activeTab = 'asistencia'; htmx.ajax('GET', '/control-de-acceso/asistencia/refresh', { target: '#tabla-asistencia-container', swap: 'outerHTML' })">
                         🕐 Asistencia Personal
@@ -364,6 +368,10 @@
 
             <div x-show="activeTab === 'historial'" class="tab-pane" x-cloak>
                 <div th:replace="~{control-acceso/historial/historial :: content}"></div>
+            </div>
+
+            <div x-show="activeTab === 'retiros'" class="tab-pane" x-cloak>
+                <div th:replace="~{control-acceso/retiros/retiros :: content}"></div>
             </div>
 
             <div x-show="activeTab === 'asistencia'" class="tab-pane" x-cloak>

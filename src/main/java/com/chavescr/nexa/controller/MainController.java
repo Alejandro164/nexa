@@ -87,13 +87,24 @@ public class MainController {
 
     @PostMapping("/inicio/cambiar-institucion")
     public String cambiarInstitucion(@RequestParam Long institucionId,
+            HttpServletRequest request,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
-        System.out.println("Institucion 23423: " + institucionId);
-        institucionService.findById(institucionId).ifPresent(inst -> {
-            session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
-            session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
-        });
+        if (request.isUserInRole("ROLE_ADMIN")) {
+            institucionService.findById(institucionId).ifPresent(inst -> {
+                session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
+                session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
+            });
+            return "redirect:/inicio";
+        }
+
+        usuarioService.obtenerInstitucionesDelUsuarioActual().stream()
+                .filter(inst -> inst.getId().equals(institucionId))
+                .findFirst()
+                .ifPresent(inst -> {
+                    session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
+                    session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
+                });
         return "redirect:/inicio";
     }
 

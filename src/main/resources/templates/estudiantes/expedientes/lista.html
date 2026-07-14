@@ -1,10 +1,10 @@
 <div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
     <div class="module-card">
         <div class="module-card-header">
-            <h3 class="module-card-title" th:text="'Directorio de Personal (' + ${personal != null ? #lists.size(personal) : 0} + ')'">Directorio (0)</h3>
+            <h3 class="module-card-title" th:text="'Expedientes (' + ${estudiantes != null ? #lists.size(estudiantes) : 0} + ')'">Expedientes (0)</h3>
             <button class="btn-primary"
-                    hx-get="/personal/directorio/form"
-                    hx-target="#dir-modal-container" hx-swap="innerHTML"
+                    hx-get="/estudiantes/expedientes/form"
+                    hx-target="#estudiantes-modal-container" hx-swap="innerHTML"
                     hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
                     style="font-size:0.85rem;padding:8px 16px;">+ Agregar</button>
         </div>
@@ -13,7 +13,6 @@
                 <tr>
                     <th>Nombre</th>
                     <th>Email</th>
-                    <th>Usuario</th>
                     <th>Cédula</th>
                     <th>Roles</th>
                     <th>Estado</th>
@@ -21,13 +20,12 @@
                 </tr>
             </thead>
             <tbody>
-                <tr th:if="${personal == null or personal.empty}">
-                    <td colspan="7" class="table-empty">No hay personal registrado.</td>
+                <tr th:if="${estudiantes == null or estudiantes.empty}">
+                    <td colspan="6" class="table-empty">No se encontraron estudiantes.</td>
                 </tr>
-                <tr th:each="u : ${personal}">
+                <tr th:each="u : ${estudiantes}">
                     <td><strong th:text="${u.nombre}" style="color:#0f172a;">Nombre</strong></td>
                     <td th:text="${u.email}" style="color:#64748b;">email</td>
-                    <td><code style="font-size:0.8rem;color:#475569;" th:text="${u.usuario}">usuario</code></td>
                     <td th:text="${u.cedula != null ? u.cedula : '—'}" style="color:#94a3b8;">—</td>
                     <td>
                         <div style="display:flex;flex-wrap:wrap;gap:2px;">
@@ -41,19 +39,24 @@
                         <button class="badge-xs" style="border:none;cursor:pointer;"
                                 th:classappend="${u.activo ? 'badge-activo' : 'badge-inactivo'}"
                                 th:text="${u.activo ? 'Activo' : 'Inactivo'}"
-                                th:attr="hx-put='/personal/directorio/' + ${u.id} + '/activo'"
-                                hx-target="#dir-content" hx-swap="innerHTML">Estado</button>
+                                th:attr="hx-put='/estudiantes/expedientes/' + ${u.id} + '/activo'"
+                                hx-target="#estudiantes-dir-content" hx-swap="innerHTML">Estado</button>
                     </td>
                     <td>
                         <div class="table-actions">
                             <button class="btn-xs btn-ghost"
-                                    th:attr="hx-get='/personal/directorio/form/' + ${u.id}"
-                                    hx-target="#dir-modal-container" hx-swap="innerHTML"
+                                    th:attr="hx-get='/estudiantes/expedientes/ficha/' + ${u.id}"
+                                    hx-target="#estudiantes-ficha-container" hx-swap="innerHTML"
+                                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-ficha'))"
+                                    title="Ver Ficha">📁</button>
+                            <button class="btn-xs btn-ghost"
+                                    th:attr="hx-get='/estudiantes/expedientes/form/' + ${u.id}"
+                                    hx-target="#estudiantes-modal-container" hx-swap="innerHTML"
                                     hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
                                     title="Editar">✏️</button>
                             <button class="btn-xs btn-danger-ghost"
                                     onclick="abrirConfirmacionAcademica(this)"
-                                    th:attr="data-delete-url='/personal/directorio/' + ${u.id},data-delete-target='#dir-content',data-delete-title='Eliminar funcionario',data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
+                                    th:attr="data-delete-url='/estudiantes/expedientes/' + ${u.id},data-delete-target='#estudiantes-dir-content',data-delete-title='Eliminar estudiante',data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
                                     title="Eliminar">🗑️</button>
                         </div>
                     </td>

@@ -1,0 +1,92 @@
+<div th:fragment="content" class="tab-pane">
+    <div id="tabla-retiros-container" th:fragment="tabla-retiros">
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fef3c7; color:#d97706;">⏳</div>
+            <div>
+                <div class="stat-value" th:text="${retirosStatsPendientes != null ? retirosStatsPendientes : 0}">0</div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#d1fae5; color:#059669;">✅</div>
+            <div>
+                <div class="stat-value" th:text="${retirosStatsAutorizados != null ? retirosStatsAutorizados : 0}">0</div>
+                <div class="stat-label">Autorizados</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#dbeafe; color:#2563eb;">🏁</div>
+            <div>
+                <div class="stat-value" th:text="${retirosStatsFinalizados != null ? retirosStatsFinalizados : 0}">0</div>
+                <div class="stat-label">Finalizados</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#f3e8ff; color:#7c3aed;">📊</div>
+            <div>
+                <div class="stat-value" th:text="${retirosStatsTotal != null ? retirosStatsTotal : 0}">0</div>
+                <div class="stat-label">Total Hoy</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Solicitudes de Retiro de Estudiantes</h3>
+        </div>
+        <div style="padding: 0 1.5rem 1.5rem 1.5rem;">
+            <div th:if="${retiros != null && !retiros.empty}">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>Padre / Encargado</th>
+                                <th>Motivo</th>
+                                <th>Solicitado</th>
+                                <th>Estado</th>
+                                <th th:if="${puedeAutorizarRetiros}">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="r : ${retiros}">
+                                <td style="font-weight:600;" th:text="${r.estudiante.nombre}">Estudiante</td>
+                                <td th:text="${r.padre.nombre}">Padre</td>
+                                <td th:text="${r.motivo != null and !r.motivo.isBlank() ? r.motivo : '—'}">Motivo</td>
+                                <td style="font-size:0.85rem;" th:text="${#temporals.format(r.fechaHoraSolicitud, 'HH:mm')}">Hora</td>
+                                <td>
+                                    <span th:if="${r.estado.toString() == 'PENDIENTE'}" class="badge badge-danger">Pendiente</span>
+                                    <span th:if="${r.estado.toString() == 'AUTORIZADO'}" class="badge badge-success">Autorizado</span>
+                                    <span th:if="${r.estado.toString() == 'DENEGADO'}" class="badge badge-secondary">Denegado</span>
+                                    <span th:if="${r.estado.toString() == 'FINALIZADO'}" class="badge badge-primary">Finalizado</span>
+                                </td>
+                                <td th:if="${puedeAutorizarRetiros}">
+                                    <div class="d-flex gap-1">
+                                        <form th:if="${r.estado.toString() == 'PENDIENTE'}" th:action="@{/control-de-acceso/retiros/autorizar}" method="post" style="margin:0;">
+                                            <input type="hidden" name="retiroId" th:value="${r.id}" />
+                                            <button type="submit" class="btn-accion btn-autorizar" style="padding:0.3rem 0.65rem; font-size:0.7rem;">✓</button>
+                                        </form>
+                                        <form th:if="${r.estado.toString() == 'PENDIENTE'}" th:action="@{/control-de-acceso/retiros/denegar}" method="post" style="margin:0;">
+                                            <input type="hidden" name="retiroId" th:value="${r.id}" />
+                                            <button type="submit" class="btn-accion btn-denegar" style="padding:0.3rem 0.65rem; font-size:0.7rem;">✕</button>
+                                        </form>
+                                        <form th:if="${r.estado.toString() == 'AUTORIZADO'}" th:action="@{/control-de-acceso/retiros/salida}" method="post" style="margin:0;">
+                                            <input type="hidden" name="retiroId" th:value="${r.id}" />
+                                            <button type="submit" class="btn-accion btn-salida" style="padding:0.3rem 0.65rem; font-size:0.7rem;">Salida</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div th:if="${retiros == null || retiros.empty}" class="empty-state">
+                <h4 style="color:var(--text-secondary);">No hay solicitudes de retiro hoy</h4>
+                <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.25rem;">Las solicitudes que los padres hagan desde el Portal Padres aparecerán aquí.</p>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

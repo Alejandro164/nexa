@@ -1,0 +1,50 @@
+<div th:fragment="modal" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" onclick="if(event.target===this) window.dispatchEvent(new CustomEvent('close-ficha'))">
+        <div class="modal-dialog" style="max-width:560px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${estudiante != null ? estudiante.nombre : 'Estudiante no encontrado'}">Expediente</h3>
+                <button type="button" class="close-btn"
+                        onclick="window.dispatchEvent(new CustomEvent('close-ficha'))">&times;</button>
+            </div>
+            <div class="modal-body">
+                <th:block th:if="${estudiante != null}">
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem;">
+                        <span class="badge" th:classappend="${estudiante.activo ? 'badge-success' : 'badge-secondary'}"
+                              th:text="${estudiante.activo ? 'Estudiante Activo' : 'Estudiante Inactivo'}">Estado</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:1.25rem;">
+                        <div>
+                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Cédula</p>
+                            <p style="font-weight:600;" th:text="${estudiante.cedula != null ? estudiante.cedula : '—'}">—</p>
+                        </div>
+                        <div>
+                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Usuario</p>
+                            <p style="font-weight:600;" th:text="${estudiante.usuario}">usuario</p>
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Correo electrónico</p>
+                            <p style="font-weight:600;" th:text="${estudiante.email}">correo</p>
+                        </div>
+                    </div>
+
+                    <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.6rem;">
+                        👨‍👩‍👧 Padres / Encargados
+                    </h4>
+                    <div th:if="${padres == null or padres.empty}" style="color:var(--text-light); font-size:0.85rem;">
+                        No hay padres o encargados vinculados a este estudiante.
+                    </div>
+                    <div th:each="p : ${padres}" class="premium-list-item" style="margin-bottom:0.5rem;">
+                        <div>
+                            <h4 style="font-weight:600;" th:text="${p.nombre}">Nombre del padre</h4>
+                            <p style="font-size:0.85rem; color:var(--text-secondary);" th:text="${p.email}">correo</p>
+                        </div>
+                        <span class="badge" th:classappend="${p.activo ? 'badge-success' : 'badge-secondary'}"
+                              th:text="${p.activo ? 'Activo' : 'Inactivo'}">Estado</span>
+                    </div>
+                </th:block>
+                <p th:if="${estudiante == null}" class="table-empty">No se encontró información para este estudiante.</p>
+            </div>
+        </div>
+    </div>
+</div>

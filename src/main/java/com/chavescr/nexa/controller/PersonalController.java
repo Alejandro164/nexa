@@ -2,8 +2,10 @@ package com.chavescr.nexa.controller;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,6 +21,7 @@ import com.chavescr.nexa.entity.RegimenDisciplinario;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.service.PersonalService;
 import com.chavescr.nexa.service.RegimenDisciplinarioService;
+import com.chavescr.nexa.service.SolicitudService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -31,6 +34,9 @@ public class PersonalController {
 
     @Autowired
     private PersonalService personalService;
+
+    @Autowired
+    private SolicitudService solicitudService;
 
     @GetMapping("/asistencia")
     public String asistencia() {
@@ -217,6 +223,53 @@ public class PersonalController {
         return "personal/regimen/todos/todos :: content";
     }
 
+    // ─── SOLICITUDES DE PADRES ──────────────────────────────────
+
+    @GetMapping("/solicitudes")
+    public String solicitudes(Model model, HttpSession session, HttpServletRequest request) {
+        exigirDocenteODirector(request);
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        return "personal/solicitudes/solicitudes :: content";
+    }
+
+    @GetMapping("/solicitudes/lista")
+    public String solicitudesLista(Model model, HttpSession session, HttpServletRequest request) {
+        exigirDocenteODirector(request);
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        return "personal/solicitudes/solicitudes :: tabla-solicitudes";
+    }
+
+    @PostMapping("/solicitudes/{id}/en-proceso")
+    public String solicitudEnProceso(@PathVariable Long id, Model model, HttpSession session, HttpServletRequest request) {
+        exigirDocenteODirector(request);
+        solicitudService.marcarEnProceso(id);
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        return "personal/solicitudes/solicitudes :: tabla-solicitudes";
+    }
+
+    @PostMapping("/solicitudes/{id}/resolver")
+    public String solicitudResolver(@PathVariable Long id, @RequestParam(required = false) String respuesta,
+            Model model, HttpSession session, HttpServletRequest request) {
+        exigirDocenteODirector(request);
+        solicitudService.resolver(id, respuesta);
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        return "personal/solicitudes/solicitudes :: tabla-solicitudes";
+    }
+
+    @PostMapping("/solicitudes/{id}/rechazar")
+    public String solicitudRechazar(@PathVariable Long id, @RequestParam(required = false) String respuesta,
+            Model model, HttpSession session, HttpServletRequest request) {
+        exigirDocenteODirector(request);
+        solicitudService.rechazar(id, respuesta);
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        return "personal/solicitudes/solicitudes :: tabla-solicitudes";
+    }
+
     // ─── HELPERS ───────────────────────────────────────────────
 
     private Long institucionId(HttpSession session) {
@@ -227,5 +280,12 @@ public class PersonalController {
         Long id = institucionId(session);
         if (id == null) throw new IllegalArgumentException("No hay institución seleccionada");
         return id;
+    }
+
+    private void exigirDocenteODirector(HttpServletRequest request) {
+        if (!request.isUserInRole("ROLE_DOCENTE") && !request.isUserInRole("ROLE_DIRECTOR")
+                && !request.isUserInRole("ROLE_ADMIN")) {
+            throw new AccessDeniedException("Solo docentes, directores o administradores pueden ver las solicitudes de padres");
+        }
     }
 }

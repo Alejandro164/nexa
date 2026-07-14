@@ -69,10 +69,20 @@
         </style>
 
         <div x-data="{ activeTab: 'hijos' }">
+            <div th:if="${successMsg}"
+                 style="background:rgba(34,197,94,0.1); color:var(--success); border:1px solid rgba(34,197,94,0.3); border-radius:10px; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.9rem; font-weight:600;"
+                 th:text="${successMsg}">Éxito</div>
+            <div th:if="${errorMsg}"
+                 style="background:rgba(220,38,38,0.1); color:var(--danger); border:1px solid rgba(220,38,38,0.3); border-radius:10px; padding:0.75rem 1rem; margin-bottom:1rem; font-size:0.9rem; font-weight:600;"
+                 th:text="${errorMsg}">Error</div>
+
             <div class="config-tabs-container">
                 <div class="config-tabs">
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'hijos' }" @click="activeTab = 'hijos'">
                         👨‍👩‍👧 Mis Hijos
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'acceso' }" @click="activeTab = 'acceso'">
+                        🚪 Control de Acceso
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'notas' }" @click="activeTab = 'notas'">
                         🏆 Ver Notas
@@ -98,13 +108,90 @@
                     <div class="card-header">
                         <h3 class="card-title">Hijos Asociados a tu Cuenta</h3>
                     </div>
+                    <div style="padding: 0;">
+                        <div th:if="${#lists.isEmpty(hijos)}" style="text-align:center; padding:1.5rem;">
+                            <h4 style="color:var(--text-secondary); margin-bottom:0.5rem;">No tienes hijos asociados a tu cuenta</h4>
+                            <p style="font-size:0.9rem; color:var(--text-light);">Contacta a la institución si esto no es correcto.</p>
+                        </div>
+                        <div th:if="${!#lists.isEmpty(hijos)}" class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Cédula</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="hijo : ${hijos}">
+                                        <td style="font-weight:600;" th:text="${hijo.nombre}">Nombre</td>
+                                        <td th:text="${hijo.cedula != null ? hijo.cedula : '—'}">Cédula</td>
+                                        <td>
+                                            <span class="badge" th:classappend="${hijo.activo ? 'badge-success' : 'badge-secondary'}"
+                                                  th:text="${hijo.activo ? 'Estudiante Activo' : 'Estudiante Inactivo'}">Estado</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control de Acceso -->
+            <div x-show="activeTab === 'acceso'" class="tab-pane" x-cloak>
+                <div class="card" style="margin-bottom:1.5rem;">
+                    <div class="card-header">
+                        <h3 class="card-title">Mi Ingreso al Campus</h3>
+                    </div>
+                    <div style="padding: 1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+                        <form th:action="@{/portal-padres/ingreso}" method="post" style="margin:0;">
+                            <input type="hidden" name="tipo" value="ENTRADA">
+                            <button type="submit" class="btn btn-primary">🟢 Registrar mi Entrada</button>
+                        </form>
+                        <form th:action="@{/portal-padres/ingreso}" method="post" style="margin:0;">
+                            <input type="hidden" name="tipo" value="SALIDA">
+                            <button type="submit" class="btn btn-secondary">🔴 Registrar mi Salida</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom:1.5rem;">
+                    <div class="card-header">
+                        <h3 class="card-title">Solicitar Retiro de un Hijo</h3>
+                    </div>
                     <div style="padding: 1.5rem;">
-                        <div class="premium-list-item">
+                        <div th:if="${#lists.isEmpty(hijos)}" style="color:var(--text-light); font-size:0.9rem;">
+                            No tienes hijos asociados a tu cuenta.
+                        </div>
+                        <form th:each="hijo : ${hijos}" th:action="@{/portal-padres/retiros}" method="post"
+                              style="display:flex; gap:0.75rem; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap;">
+                            <input type="hidden" name="estudianteId" th:value="${hijo.id}">
+                            <span style="font-weight:600; min-width:180px;" th:text="${hijo.nombre}">Nombre</span>
+                            <input type="text" name="motivo" class="form-input" placeholder="Motivo (opcional)"
+                                   style="flex:1; min-width:180px;">
+                            <button type="submit" class="btn btn-primary" style="white-space:nowrap;">Solicitar Retiro</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Mis Solicitudes Recientes</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div th:if="${#lists.isEmpty(retiros)}" style="color:var(--text-light); font-size:0.9rem;">
+                            Aún no has solicitado ningún retiro.
+                        </div>
+                        <div th:each="r : ${retiros}" class="premium-list-item">
                             <div>
-                                <h4 style="font-weight:600;">Sofia Alpizar Soto</h4>
-                                <p style="font-size:0.85rem; color:var(--text-secondary);">Sección 7-1 • Cédula: 1-1892-0245</p>
+                                <h4 style="font-weight:600;" th:text="${r.estudiante.nombre}">Estudiante</h4>
+                                <p style="font-size:0.85rem; color:var(--text-secondary);"
+                                   th:text="${#temporals.format(r.fechaHoraSolicitud, 'dd/MM/yyyy HH:mm')} + (${r.motivo != null and !r.motivo.isBlank()} ? (' • ' + ${r.motivo}) : '')">Fecha</p>
                             </div>
-                            <span class="badge badge-success">Estudiante Activo</span>
+                            <span class="badge"
+                                  th:classappend="${r.estado.toString() == 'PENDIENTE' ? 'badge-primary' : (r.estado.toString() == 'AUTORIZADO' ? 'badge-success' : (r.estado.toString() == 'DENEGADO' ? 'badge-secondary' : 'badge-info'))}"
+                                  th:text="${r.estado.toString() == 'PENDIENTE' ? 'Pendiente' : (r.estado.toString() == 'AUTORIZADO' ? 'Autorizado' : (r.estado.toString() == 'DENEGADO' ? 'Denegado' : 'Finalizado'))}">Estado</span>
                         </div>
                     </div>
                 </div>
@@ -178,15 +265,100 @@
             </div>
 
             <!-- Solicitudes -->
-            <div x-show="activeTab === 'solicitudes'" class="tab-pane" x-cloak>
+            <div x-show="activeTab === 'solicitudes'" class="tab-pane" x-cloak
+                 x-data="{ mostrarModal: false, tipo: '' }">
+
+                <div x-show="mostrarModal" x-cloak @keydown.escape.window="mostrarModal = false">
+                    <div class="modal-backdrop" @click.self="mostrarModal = false">
+                        <div class="modal-dialog">
+                            <div class="modal-header">
+                                <h3 class="modal-title">Nueva Solicitud</h3>
+                                <button type="button" class="close-btn" @click="mostrarModal = false">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <form th:action="@{/portal-padres/solicitudes}" method="post">
+                                    <div class="form-group">
+                                        <label class="form-label">Tipo de Solicitud *</label>
+                                        <select name="tipo" class="form-input" x-model="tipo" required>
+                                            <option value="" disabled hidden selected>Seleccione Tipo de Solicitud</option>
+                                            <option value="CONSTANCIA_MATRICULA">Constancia de Matrícula</option>
+                                            <option value="CAMBIO_DIRECCION">Cambio de Dirección</option>
+                                            <option value="CITA_DOCENTE">Cita con Docente</option>
+                                            <option value="OTRO">Otro</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" x-show="tipo === 'CONSTANCIA_MATRICULA' || tipo === 'CITA_DOCENTE'" x-cloak>
+                                        <label class="form-label">Hijo/a *</label>
+                                        <select name="estudianteId" class="form-input"
+                                                :required="tipo === 'CONSTANCIA_MATRICULA' || tipo === 'CITA_DOCENTE'">
+                                            <option value="" disabled hidden selected>Seleccione un hijo/a</option>
+                                            <option th:each="hijo : ${hijos}" th:value="${hijo.id}" th:text="${hijo.nombre}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" x-show="tipo === 'CITA_DOCENTE'" x-cloak>
+                                        <label class="form-label">Docente *</label>
+                                        <select name="docenteId" class="form-input">
+                                            <option value="">Seleccione un docente</option>
+                                            <option th:each="d : ${docentesDisponibles}" th:value="${d.id}" th:text="${d.nombre}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Detalle</label>
+                                        <textarea name="detalle" class="form-input" style="min-height:80px; resize:vertical;"
+                                                  placeholder="Información adicional relevante..."></textarea>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn-secondary" @click="mostrarModal = false">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title font-medium">Gestión de Trámites y Certificados</h3>
-                        <button class="btn btn-primary">+ Nueva Solicitud</button>
+                        <h3 class="card-title">Mis Solicitudes</h3>
+                        <button type="button" class="btn btn-primary" @click="mostrarModal = true">+ Nueva Solicitud</button>
                     </div>
-                    <div style="padding: 2rem; text-align: center;">
-                        <h4 style="color:var(--text-secondary); margin-bottom:0.5rem;">No tienes solicitudes en trámite</h4>
-                        <p style="font-size:0.9rem; color:var(--text-light);">Aquí puedes solicitar constancias de matrícula y reportar cambios de dirección.</p>
+                    <div style="padding: 0;">
+                        <div th:if="${#lists.isEmpty(misSolicitudes)}" style="text-align:center; color:var(--text-light); font-size:0.9rem; padding:1.5rem;">
+                            No tienes solicitudes en trámite.
+                        </div>
+                        <div th:if="${!#lists.isEmpty(misSolicitudes)}" class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Fecha</th>
+                                        <th>Detalle</th>
+                                        <th>Estado</th>
+                                        <th>Respuesta</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="s : ${misSolicitudes}">
+                                        <td style="font-weight:600;">
+                                            <span th:if="${s.tipo.toString() == 'CONSTANCIA_MATRICULA'}">Constancia de Matrícula</span>
+                                            <span th:if="${s.tipo.toString() == 'CAMBIO_DIRECCION'}">Cambio de Dirección</span>
+                                            <span th:if="${s.tipo.toString() == 'CITA_DOCENTE'}"
+                                                  th:text="'Cita con ' + (${s.docente != null} ? ${s.docente.nombre} : 'docente')"></span>
+                                            <span th:if="${s.tipo.toString() == 'OTRO'}">Otro</span>
+                                        </td>
+                                        <td style="font-size:0.85rem;" th:text="${#temporals.format(s.fechaSolicitud, 'dd/MM/yyyy HH:mm')}">Fecha</td>
+                                        <td th:text="${s.detalle != null and !s.detalle.isBlank() ? s.detalle : '—'}">Detalle</td>
+                                        <td>
+                                            <span class="badge"
+                                                  th:classappend="${s.estado.toString() == 'PENDIENTE' ? 'badge-primary' : (s.estado.toString() == 'EN_PROCESO' ? 'badge-info' : (s.estado.toString() == 'RESUELTA' ? 'badge-success' : 'badge-secondary'))}"
+                                                  th:text="${s.estado.toString() == 'PENDIENTE' ? 'Pendiente' : (s.estado.toString() == 'EN_PROCESO' ? 'En Proceso' : (s.estado.toString() == 'RESUELTA' ? 'Resuelta' : 'Rechazada'))}">Estado</span>
+                                        </td>
+                                        <td style="font-size:0.85rem; color:var(--text-secondary);"
+                                            th:text="${s.respuesta != null and !s.respuesta.isBlank() ? s.respuesta : '—'}">Respuesta</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
