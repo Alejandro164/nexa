@@ -19,9 +19,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.RolRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -59,15 +61,18 @@ public class DataInitializer implements ApplicationRunner {
     private final RolRepository rolRepository;
     private final InstitucionRepository institucionRepository;
     private final UsuarioRepository usuarioRepository;
+    private final NivelAcademicoRepository nivelAcademicoRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(RolRepository rolRepository,
             InstitucionRepository institucionRepository,
             UsuarioRepository usuarioRepository,
+            NivelAcademicoRepository nivelAcademicoRepository,
             PasswordEncoder passwordEncoder) {
         this.rolRepository = rolRepository;
         this.institucionRepository = institucionRepository;
         this.usuarioRepository = usuarioRepository;
+        this.nivelAcademicoRepository = nivelAcademicoRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -164,6 +169,20 @@ public class DataInitializer implements ApplicationRunner {
                 "9-5678-9012", "user1234", true,
                 Set.of(rolEstudiante), Set.of(instGamma));
 
+        // ── 3.1 Secciones de los estudiantes creados a mano ───────────────────
+        List<NivelAcademico> nivelesAlpha = nivelAcademicoRepository
+                .findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(instAlpha.getId());
+        asignarSeccionFaltante(sofia, nivelesAlpha, 0);
+        asignarSeccionFaltante(diego, nivelesAlpha, 1);
+        List<NivelAcademico> nivelesBeta = nivelAcademicoRepository
+                .findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(instBeta.getId());
+        asignarSeccionFaltante(valeria, nivelesBeta, 0);
+        asignarSeccionFaltante(kevin, nivelesBeta, 1);
+        List<NivelAcademico> nivelesGamma = nivelAcademicoRepository
+                .findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(instGamma.getId());
+        asignarSeccionFaltante(fernanda, nivelesGamma, 0);
+        asignarSeccionFaltante(andres, nivelesGamma, 1);
+
         // ── 4. Relación Padres-Estudiantes ───────────────────────────────────
         // Rosa tiene dos estudiantes; Sofía tiene dos padres (Rosa y Manuel).
         vincularPadreEstudiante(rosa, sofia);
@@ -254,11 +273,28 @@ public class DataInitializer implements ApplicationRunner {
      * generados no colisionen entre sí.
      */
     private List<Usuario> generarEstudiantes(Institucion institucion, Rol rolEstudiante, int cantidad, int offset) {
+        List<NivelAcademico> niveles = nivelAcademicoRepository
+                .findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucion.getId());
         List<Usuario> generados = new ArrayList<>();
         for (int i = 0; i < cantidad; i++) {
-            generados.add(generarPersona(offset + i, rolEstudiante, Set.of(institucion)));
+            Usuario estudiante = generarPersona(offset + i, rolEstudiante, Set.of(institucion));
+            asignarSeccionFaltante(estudiante, niveles, i);
+            generados.add(estudiante);
         }
         return generados;
+    }
+
+    /**
+     * Asigna una sección (grado + sección) activa de la institución a un estudiante
+     * que aún no tenga una, repartiéndolos de forma rotativa entre las secciones
+     * disponibles. Si la institución no tiene secciones configuradas, no hace nada.
+     */
+    private void asignarSeccionFaltante(Usuario estudiante, List<NivelAcademico> niveles, int indice) {
+        if (estudiante.getNivelAcademico() != null || niveles.isEmpty()) {
+            return;
+        }
+        estudiante.setNivelAcademico(niveles.get(indice % niveles.size()));
+        usuarioRepository.save(estudiante);
     }
 
     /**

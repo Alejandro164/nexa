@@ -83,4 +83,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
                      "WHERE u.cedula = :cedula AND i.id = :institucionId AND r.nombre = 'ROLE_PADRE'")
        Optional<Usuario> findPadreByCedulaAndInstitucionId(@Param("cedula") String cedula,
                      @Param("institucionId") Long institucionId);
+
+       @Query("SELECT u FROM Usuario u WHERE u.nivelAcademico.id = :nivelId AND u.activo = true ORDER BY u.nombre")
+       List<Usuario> findEstudiantesActivosByNivelId(@Param("nivelId") Long nivelId);
 }

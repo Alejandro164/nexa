@@ -1,0 +1,91 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Pase de Lista Diario</h3>
+            <div style="display: flex; gap: 0.75rem;">
+                <select class="form-input" style="max-width: 180px;" name="nivelId"
+                        hx-get="/gestion-academica/asistencia"
+                        hx-target="#asistencia-panel" hx-swap="innerHTML"
+                        hx-include="[name='fecha']">
+                    <option value="" th:if="${secciones == null or secciones.empty}" disabled selected>Sin secciones</option>
+                    <option th:each="s : ${secciones}" th:value="${s.id}" th:text="'Sección ' + ${s.nombreCompleto}"
+                            th:selected="${nivelId != null and nivelId == s.id}"></option>
+                </select>
+                <input type="date" class="form-input" style="max-width: 160px;" name="fecha" th:value="${fecha}"
+                       hx-get="/gestion-academica/asistencia"
+                       hx-target="#asistencia-panel" hx-swap="innerHTML"
+                       hx-include="[name='nivelId']" hx-trigger="change" />
+            </div>
+        </div>
+        <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
+        <div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Estudiante</th>
+                            <th>Estado Asistencia</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${filas == null or filas.empty}">
+                            <td colspan="3" class="table-empty">No hay estudiantes activos en esta sección.</td>
+                        </tr>
+                        <tr th:each="f : ${filas}">
+                            <td style="font-weight:600;" th:text="${f.estudiante.nombre}">Nombre</td>
+                            <td>
+                                <div style="display:flex; gap:8px;">
+                                    <button type="button" class="btn"
+                                            th:style="${f.estado != null and f.estado.name() == 'PRESENTE'} ? 'padding:4px 10px;font-size:0.75rem;background-color:var(--success);color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
+                                            hx-post="/gestion-academica/asistencia/registrar"
+                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, fecha: '${fecha}', estado: 'PRESENTE'}|"
+                                            hx-target="#asistencia-panel" hx-swap="innerHTML">Presente</button>
+                                    <button type="button" class="btn"
+                                            th:style="${f.estado != null and f.estado.name() == 'AUSENTE'} ? 'padding:4px 10px;font-size:0.75rem;background-color:var(--danger);color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
+                                            hx-post="/gestion-academica/asistencia/registrar"
+                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, fecha: '${fecha}', estado: 'AUSENTE'}|"
+                                            hx-target="#asistencia-panel" hx-swap="innerHTML">Ausente</button>
+                                    <button type="button" class="btn"
+                                            th:style="${f.estado != null and f.estado.name() == 'TARDIA'} ? 'padding:4px 10px;font-size:0.75rem;background-color:#d97706;color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
+                                            hx-post="/gestion-academica/asistencia/registrar"
+                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, fecha: '${fecha}', estado: 'TARDIA'}|"
+                                            hx-target="#asistencia-panel" hx-swap="innerHTML">Tardía</button>
+                                    <button type="button" class="btn"
+                                            th:style="${f.estado != null and f.estado.name() == 'JUSTIFICADA'} ? 'padding:4px 10px;font-size:0.75rem;background-color:var(--primary);color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
+                                            th:attr="onclick=|registrarJustificada(this, ${f.estudiante.id}, ${nivelId}, '${fecha}')|">Justificada</button>
+                                </div>
+                            </td>
+                            <td>
+                                <input type="text" class="form-input" name="observaciones" style="padding-left:10px; height: 32px;"
+                                       placeholder="Agregar nota..." th:value="${f.observaciones}"
+                                       hx-post="/gestion-academica/asistencia/registrar" hx-trigger="change"
+                                       th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, fecha: '${fecha}'}|"
+                                       hx-target="#asistencia-panel" hx-swap="innerHTML">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        function registrarJustificada(btn, estudianteId, nivelId, fecha) {
+            var fila = btn.closest('tr');
+            var nota = fila.querySelector('input[name="observaciones"]');
+            if (!nota || !nota.value.trim()) {
+                if (nota) {
+                    nota.style.borderColor = 'var(--danger)';
+                    nota.placeholder = 'Escribe una nota para justificar...';
+                    nota.focus();
+                }
+                return;
+            }
+            htmx.ajax('POST', '/gestion-academica/asistencia/registrar', {
+                target: '#asistencia-panel',
+                swap: 'innerHTML',
+                values: { estudianteId: estudianteId, nivelId: nivelId, fecha: fecha, estado: 'JUSTIFICADA', observaciones: nota.value.trim() }
+            });
+        }
+    </script>
+</div>

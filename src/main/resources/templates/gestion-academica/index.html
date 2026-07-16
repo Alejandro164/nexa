@@ -151,86 +151,9 @@
 
             <!-- Asistencia -->
             <div x-show="activeTab === 'asistencia'" class="tab-pane">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Pase de Lista Diario</h3>
-                        <div style="display: flex; gap: 0.75rem;">
-                            <select class="form-input" style="max-width: 180px;">
-                                <option>Sección 7-1</option>
-                                <option>Sección 8-1</option>
-                                <option>Sección 10-5</option>
-                            </select>
-                            <input type="date" class="form-input" style="max-width: 160px;" value="2026-07-12" />
-                        </div>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Estudiante</th>
-                                        <th>Estado Asistencia</th>
-                                        <th>Observaciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
-                                        <td>
-                                            <div style="display:flex; gap:8px;">
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background-color:var(--success); color:white; border:none; border-radius:6px;">Presente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Ausente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Tardía</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Justificada</button>
-                                            </div>
-                                        </td>
-                                        <td><input type="text" class="form-input"
-                                                style="padding-left:10px; height: 32px;" placeholder="Agregar nota...">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
-                                        <td>
-                                            <div style="display:flex; gap:8px;">
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Presente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background-color:var(--danger); color:white; border:none; border-radius:6px;">Ausente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Tardía</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Justificada</button>
-                                            </div>
-                                        </td>
-                                        <td><input type="text" class="form-input"
-                                                style="padding-left:10px; height: 32px;" placeholder="Agregar nota...">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:600;">Valeria Rojas Méndez</td>
-                                        <td>
-                                            <div style="display:flex; gap:8px;">
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Presente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Ausente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background-color:var(--warning); color:white; border:none; border-radius:6px;">Tardía</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Justificada</button>
-                                            </div>
-                                        </td>
-                                        <td><input type="text" class="form-input"
-                                                style="padding-left:10px; height: 32px;" placeholder="Agregar nota...">
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <div id="asistencia-panel" hx-get="/gestion-academica/asistencia" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando asistencia…</div>
                     </div>
                 </div>
             </div>

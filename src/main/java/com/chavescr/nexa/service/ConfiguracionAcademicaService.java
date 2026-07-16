@@ -114,7 +114,7 @@ public class ConfiguracionAcademicaService {
                 ? new NivelAcademico()
                 : obtenerNivel(institucionId, datos.getId());
         nivel.setInstitucion(obtenerInstitucion(institucionId));
-        nivel.setGrado(datos.getGrado().trim());
+        nivel.setGrado(datos.getGrado());
         nivel.setSeccion(datos.getSeccion().trim().toUpperCase());
         nivel.setActivo(Boolean.TRUE.equals(datos.getActivo()));
         return nivelRepository.save(nivel);

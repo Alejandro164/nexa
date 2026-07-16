@@ -17,21 +17,12 @@
                         <div class="form-group">
                             <label class="form-label">Grado</label>
                             <select class="form-input" name="grado" required>
-                                <option value="" disabled hidden th:selected="${nivel.grado == null or nivel.grado.isBlank()}">
+                                <option value="" disabled hidden th:selected="${nivel.grado == null}">
                                     Seleccione un grado
                                 </option>
-                                <option value="Primer grado" th:selected="${nivel.grado == 'Primer grado'}">Primer grado</option>
-                                <option value="Segundo grado" th:selected="${nivel.grado == 'Segundo grado'}">Segundo grado</option>
-                                <option value="Tercer grado" th:selected="${nivel.grado == 'Tercer grado'}">Tercer grado</option>
-                                <option value="Cuarto grado" th:selected="${nivel.grado == 'Cuarto grado'}">Cuarto grado</option>
-                                <option value="Quinto grado" th:selected="${nivel.grado == 'Quinto grado'}">Quinto grado</option>
-                                <option value="Sexto grado" th:selected="${nivel.grado == 'Sexto grado'}">Sexto grado</option>
-                                <option value="Sétimo grado" th:selected="${nivel.grado == 'Sétimo grado'}">Sétimo grado</option>
-                                <option value="Octavo grado" th:selected="${nivel.grado == 'Octavo grado'}">Octavo grado</option>
-                                <option value="Noveno grado" th:selected="${nivel.grado == 'Noveno grado'}">Noveno grado</option>
-                                <option value="Décimo grado" th:selected="${nivel.grado == 'Décimo grado'}">Décimo grado</option>
-                                <option value="Undécimo grado" th:selected="${nivel.grado == 'Undécimo grado'}">Undécimo grado</option>
-                                <option value="Duodécimo grado" th:selected="${nivel.grado == 'Duodécimo grado'}">Duodécimo grado</option>
+                                <option th:each="g : ${#numbers.sequence(1, 12)}"
+                                        th:value="${g}" th:text="${g}"
+                                        th:selected="${nivel.grado != null and nivel.grado == g}"></option>
                             </select>
                         </div>
                         <div class="form-group">

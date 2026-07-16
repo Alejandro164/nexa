@@ -22,6 +22,10 @@
                             <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Usuario</p>
                             <p style="font-weight:600;" th:text="${estudiante.usuario}">usuario</p>
                         </div>
+                        <div>
+                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Sección</p>
+                            <p style="font-weight:600;" th:text="${estudiante.nivelAcademico != null ? estudiante.nivelAcademico.nombreCompleto : '—'}">—</p>
+                        </div>
                         <div style="grid-column: span 2;">
                             <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Correo electrónico</p>
                             <p style="font-weight:600;" th:text="${estudiante.email}">correo</p>
