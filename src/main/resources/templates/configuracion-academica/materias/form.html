@@ -69,15 +69,17 @@
                         </div>
                     </div>
                     <input type="hidden" name="_activo" value="on">
-                    <label class="academic-check">
-                        <input type="checkbox" name="activo" th:checked="${materia.id == null or materia.activo}">
-                        <span class="academic-check-control">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </span>
-                        <span>Materia activa</span>
-                    </label>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="custom-checkbox" name="activo" th:checked="${materia.id == null or materia.activo}">
+                            <span class="custom-checkbox-control">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </span>
+                            <span>Materia activa</span>
+                        </label>
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
                         <button type="submit" class="btn-primary">Guardar materia</button>

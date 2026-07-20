@@ -60,13 +60,15 @@
                         </div>
 
                         <div class="form-group" style="margin-bottom: 1.25rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="checkbox" name="activa"
-                                    th:checked="${institucion.id == null ? true : institucion.activa}"
-                                    style="width: 16px; height: 16px; cursor: pointer;" />
-                                <span
-                                    style="font-weight: 500; color: var(--text-primary); font-size: 0.875rem;">Institución
-                                    Activa</span>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="custom-checkbox" name="activa"
+                                    th:checked="${institucion.id == null ? true : institucion.activa}" />
+                                <span class="custom-checkbox-control">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </span>
+                                <span>Institución Activa</span>
                             </label>
                         </div>
 
