@@ -183,6 +183,18 @@ public class DataInitializer implements ApplicationRunner {
         asignarSeccionFaltante(fernanda, nivelesGamma, 0);
         asignarSeccionFaltante(andres, nivelesGamma, 1);
 
+        // ── 3.2 Docentes con más de una institución asociada ──────────────────
+        // Un docente puede impartir materias en varios colegios a la vez.
+        // Se calculan los tres grupos de candidatos ANTES de guardar ninguno: si se
+        // guardara uno por uno, un docente recién vinculado a "destino" podría colarse
+        // como candidato de la siguiente llamada (cuyo "origen" es ese mismo "destino").
+        List<Usuario> paraBeta = docentesElegiblesParaSegundaInstitucion(rolDocente, instAlpha, instBeta, 2);
+        List<Usuario> paraGamma = docentesElegiblesParaSegundaInstitucion(rolDocente, instBeta, instGamma, 2);
+        List<Usuario> paraAlpha = docentesElegiblesParaSegundaInstitucion(rolDocente, instGamma, instAlpha, 2);
+        agregarInstitucionADocentes(paraBeta, instBeta);
+        agregarInstitucionADocentes(paraGamma, instGamma);
+        agregarInstitucionADocentes(paraAlpha, instAlpha);
+
         // ── 4. Relación Padres-Estudiantes ───────────────────────────────────
         // Rosa tiene dos estudiantes; Sofía tiene dos padres (Rosa y Manuel).
         vincularPadreEstudiante(rosa, sofia);
@@ -295,6 +307,33 @@ public class DataInitializer implements ApplicationRunner {
         }
         estudiante.setNivelAcademico(niveles.get(indice % niveles.size()));
         usuarioRepository.save(estudiante);
+    }
+
+    /**
+     * Elige hasta {@code cantidad} docentes activos de {@code origen} que aún no
+     * pertenezcan a {@code destino}, para reflejar el caso de uso de un docente que
+     * imparte materias en más de un colegio. No guarda nada todavía (ver
+     * {@link #agregarInstitucionADocentes}).
+     */
+    private List<Usuario> docentesElegiblesParaSegundaInstitucion(Rol rolDocente, Institucion origen,
+            Institucion destino, int cantidad) {
+        return usuarioRepository
+                .findActivosByInstitucionIdAndRol(origen.getId(), rolDocente.getNombre())
+                .stream()
+                .filter(docente -> !docente.getInstituciones().contains(destino))
+                .limit(cantidad)
+                .toList();
+    }
+
+    /** Idempotente: si el docente ya pertenece a la institución, no duplica nada. */
+    private void agregarInstitucionADocentes(List<Usuario> docentes, Institucion institucion) {
+        for (Usuario docente : docentes) {
+            if (docente.getInstituciones().add(institucion)) {
+                usuarioRepository.save(docente);
+                log.info("  [DOCENTE multi-institución] {} ahora también en {}", docente.getNombre(),
+                        institucion.getNombre());
+            }
+        }
     }
 
     /**

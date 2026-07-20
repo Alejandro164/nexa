@@ -70,7 +70,7 @@ class ProyectoApplicationTests {
 
 		NivelAcademico nivel = new NivelAcademico();
 		nivel.setId(1L);
-		nivel.setGrado("Sétimo");
+		nivel.setGrado(7);
 		nivel.setSeccion("A");
 		nivel.setActivo(true);
 
