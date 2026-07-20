@@ -1,41 +1,42 @@
 <div th:fragment="tabla-tareas">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 0.75rem;">
         <span style="font-weight:600;font-size:0.85rem;color:#475569;">Tareas Asignadas</span>
         <button class="btn-sm btn-primary"
-                th:attr="data-mid=${miembroId},data-pid=${proyectoId}"
-                onclick="abrirFormTarea(+this.dataset.mid, +this.dataset.pid, null)">+ Nueva</button>
+                th:attr="hx-get='/agenda/tareas/form?miembroId=' + ${miembroId},data-mid=${miembroId},data-pid=${proyectoId}"
+                hx-target="#modal-container" hx-swap="innerHTML"
+                onclick="abrirModalTareaMiembro(this)">+ Nueva</button>
     </div>
-    <div th:if="${tareas == null or tareas.empty}" style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.85rem;">Sin tareas.</div>
-    <div th:each="t : ${tareas}">
-        <div class="tarea-row">
-            <div style="flex:1;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span class="estado-badge"
-                          th:classappend="${t.estado.name() == 'PENDIENTE' ? 'estado-pendiente' : (t.estado.name() == 'EN_PROGRESO' ? 'estado-en-progreso' : (t.estado.name() == 'COMPLETADA' ? 'estado-completada' : 'estado-vencida'))}"
-                          th:text="${t.estado.name()}">PENDIENTE</span>
-                    <strong style="font-size:0.85rem;" th:text="${t.titulo}">Título</strong>
-                    <span th:if="${t.calificacion != null}" style="font-size:0.8rem;color:#64748b;" th:text="'Nota: '+${t.calificacion}+'/100'">Nota</span>
-                </div>
-                <div style="font-size:0.78rem;color:#94a3b8;margin-top:3px;" th:text="'Límite: '+${#temporals.format(t.fechaLimite, 'dd/MM/yyyy')}">Límite</div>
-            </div>
-            <div style="display:flex;gap:5px;align-items:center;">
-                <select class="form-select" style="font-size:0.75rem;padding:3px 6px;width:auto;"
-                        th:attr="data-tid=${t.id},data-pid=${t.proyecto.id},data-mid=${t.miembro.id}"
-                        onchange="cambiarEstadoTarea(+this.dataset.tid, +this.dataset.pid, +this.dataset.mid, this.value)">
-                    <option value="PENDIENTE" th:selected="${t.estado.name() == 'PENDIENTE'}">Pendiente</option>
-                    <option value="EN_PROGRESO" th:selected="${t.estado.name() == 'EN_PROGRESO'}">En progreso</option>
-                    <option value="COMPLETADA" th:selected="${t.estado.name() == 'COMPLETADA'}">Completada</option>
-                    <option value="VENCIDA" th:selected="${t.estado.name() == 'VENCIDA'}">Vencida</option>
-                </select>
-                <button class="btn-sm btn-ghost" style="font-size:0.75rem;"
-                        th:attr="data-mid=${t.miembro.id},data-pid=${t.proyecto.id},data-tid=${t.id}"
-                        onclick="abrirFormTarea(+this.dataset.mid, +this.dataset.pid, +this.dataset.tid)">✏️</button>
-                <button class="btn-sm btn-danger-ghost" style="font-size:0.75rem;"
-                        th:attr="data-tid=${t.id},data-pid=${t.proyecto.id},data-mid=${t.miembro.id}"
-                        onclick="eliminarTarea(+this.dataset.tid, +this.dataset.pid, +this.dataset.mid)">🗑️</button>
-            </div>
-        </div>
-        <div th:attr="id='tarea-form-container-'+${t.miembro.id}" style="margin:6px 0;"></div>
-    </div>
-    <div th:if="${tareas == null or tareas.empty}" th:attr="id='tarea-form-container-'+${miembroId}"></div>
+    <table class="proyecto-table">
+        <tbody>
+            <tr th:if="${tareas == null or tareas.empty}">
+                <td colspan="2" class="proyecto-empty">Sin tareas.</td>
+            </tr>
+            <tr th:each="t : ${tareas}">
+                <td>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="estado-badge"
+                              th:classappend="${t.estado.name() == 'PENDIENTE' ? 'estado-pendiente' : (t.estado.name() == 'EN_PROGRESO' ? 'estado-en-progreso' : (t.estado.name() == 'COMPLETADA' ? 'estado-completada' : 'estado-vencida'))}"
+                              th:text="${t.estado.name()}">PENDIENTE</span>
+                        <strong style="font-size:0.85rem;" th:text="${t.titulo}">Título</strong>
+                        <span th:if="${t.calificacion != null}" style="font-size:0.8rem;color:#64748b;" th:text="'Nota: '+${t.calificacion}+'/100'">Nota</span>
+                    </div>
+                    <div style="font-size:0.78rem;color:#94a3b8;margin-top:3px;" th:text="'Límite: '+${#temporals.format(t.fechaLimite, 'dd/MM/yyyy')}">Límite</div>
+                </td>
+                <td style="width:1%;white-space:nowrap;text-align:right;">
+                    <button class="btn-xs btn-ghost" style="font-size:0.75rem;"
+                            th:attr="hx-get='/agenda/tareas/form/' + ${t.id} + '?miembroId=' + ${t.miembro.id},data-mid=${t.miembro.id},data-pid=${t.proyecto.id}"
+                            hx-target="#modal-container" hx-swap="innerHTML"
+                            onclick="abrirModalTareaMiembro(this)"
+                            title="Editar">✏️</button>
+                    <button class="btn-xs btn-danger-ghost" style="font-size:0.75rem;"
+                            onclick="abrirConfirmacionAcademica(this)"
+                            th:attr="data-delete-url=|/agenda/proyectos/tareas/${t.id}?proyectoId=${t.proyecto.id}&amp;miembroId=${t.miembro.id}|,
+                                     data-delete-target='#tareas-' + ${t.miembro.id},
+                                     data-delete-title='Eliminar tarea',
+                                     data-delete-message='¿Deseas eliminar la tarea ' + ${t.titulo} + '? Esta acción no se puede deshacer.'"
+                            title="Eliminar">🗑️</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 </div>

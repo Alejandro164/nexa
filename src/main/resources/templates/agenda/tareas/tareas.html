@@ -12,13 +12,11 @@
             </h3>
             <button class="btn-primary"
                     hx-get="/agenda/tareas/form"
-                    hx-target="#tareas-modal-container" hx-swap="innerHTML"
-                    onclick="abrirTareasModal()">+ Nueva Tarea</button>
+                    hx-target="#modal-container" hx-swap="innerHTML"
+                    onclick="abrirModalTareaGeneral()">+ Nueva Tarea</button>
         </div>
         <div id="tareas-tabla-container" class="table-container" th:insert="~{agenda/tareas/tareas :: tabla-tareas}"></div>
     </div>
-
-    <div id="tareas-modal-container" style="display:none;"></div>
 </div>
 
 <th:block th:fragment="tabla-tareas">
@@ -62,8 +60,8 @@
                     <div class="table-actions">
                         <button class="btn-xs btn-ghost"
                                 th:attr="hx-get='/agenda/tareas/form/' + ${t.id}"
-                                hx-target="#tareas-modal-container" hx-swap="innerHTML"
-                                onclick="abrirTareasModal()" title="Editar">✏️</button>
+                                hx-target="#modal-container" hx-swap="innerHTML"
+                                onclick="abrirModalTareaGeneral()" title="Editar">✏️</button>
                         <button class="btn-xs btn-danger-ghost"
                                 onclick="abrirConfirmacionAcademica(this)"
                                 th:attr="data-delete-url='/agenda/tareas/' + ${t.id},
