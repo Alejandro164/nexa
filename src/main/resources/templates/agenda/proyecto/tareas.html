@@ -30,7 +30,7 @@
                             title="Editar">✏️</button>
                     <button class="btn-xs btn-danger-ghost" style="font-size:0.75rem;"
                             onclick="abrirConfirmacionAcademica(this)"
-                            th:attr="data-delete-url=|/agenda/proyectos/tareas/${t.id}?proyectoId=${t.proyecto.id}&amp;miembroId=${t.miembro.id}|,
+                            th:attr="data-delete-url='/agenda/proyectos/tareas/' + ${t.id} + '?proyectoId=' + ${t.proyecto.id} + '&miembroId=' + ${t.miembro.id},
                                      data-delete-target='#tareas-' + ${t.miembro.id},
                                      data-delete-title='Eliminar tarea',
                                      data-delete-message='¿Deseas eliminar la tarea ' + ${t.titulo} + '? Esta acción no se puede deshacer.'"

@@ -457,79 +457,9 @@
 
             <!-- Exámenes -->
             <div x-show="activeTab === 'examenes'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Pruebas y Exámenes</h3>
-                        <button class="btn btn-primary">+ Programar Examen</button>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Título</th>
-                                        <th>Tipo</th>
-                                        <th>Fecha</th>
-                                        <th>%</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <strong>Primer Examen Parcial de Ciencias</strong>
-                                            <div class="text-muted text-sm">Unidades 1-3: materia, energía y ecosistemas
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-primary">EXAMEN</span></td>
-                                        <td>05/08/2026 08:00</td>
-                                        <td>20%</td>
-                                        <td><span class="badge badge-warning">PROGRAMADO</span></td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <strong>Quiz de Matemáticas: Funciones Cuadráticas</strong>
-                                            <div class="text-muted text-sm">Evaluación corta sobre parábolas y vértices
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-primary">QUIZ</span></td>
-                                        <td>22/07/2026 10:00</td>
-                                        <td>10%</td>
-                                        <td><span class="badge badge-primary">APLICADO</span></td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <strong>Prueba de Español: Comprensión Lectora</strong>
-                                            <div class="text-muted text-sm">Análisis de texto narrativo y argumentativo
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-primary">PRUEBA</span></td>
-                                        <td>18/07/2026 09:00</td>
-                                        <td>15%</td>
-                                        <td><span class="badge badge-success">CALIFICADO</span></td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <div id="examenes-panel" hx-get="/gestion-academica/examenes" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando exámenes…</div>
                     </div>
                 </div>
             </div>

@@ -1531,8 +1531,8 @@
    para que posicionarDropdown calcule rect.width correctamente */
 .size-select-wrapper .academic-select { width: 160px; min-width: 160px; }
 
-/* Selector de Período en Distribución Porcentual: suficientemente ancho para no cortar el texto */
-.periodo-distribucion-select .academic-select { width: 300px; }
+/* Selector de Período (Distribución Porcentual, Exámenes): suficientemente ancho para no cortar el texto */
+.periodo-select-wide .academic-select { width: 300px; }
 
 .filter-input {
     padding: 7px 12px;
