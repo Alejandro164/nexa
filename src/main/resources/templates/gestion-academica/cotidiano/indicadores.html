@@ -1,0 +1,91 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Indicadores de Trabajo Cotidiano</h3>
+                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
+                    Defina los indicadores de aprendizaje que evaluará durante el trabajo cotidiano en clase.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <div class="periodo-select-wide">
+                    <select class="form-input" name="periodoId"
+                            hx-get="/gestion-academica/cotidiano/indicadores"
+                            hx-target="#indicadores-panel" hx-swap="innerHTML"
+                            hx-include="[name='materiaId']">
+                        <option value="" th:if="${periodos == null or periodos.empty}" disabled selected>Sin períodos</option>
+                        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
+                                th:selected="${periodoId != null and periodoId == p.id}"></option>
+                    </select>
+                </div>
+                <select class="form-input" style="max-width: 220px;" name="materiaId"
+                        hx-get="/gestion-academica/cotidiano/indicadores"
+                        hx-target="#indicadores-panel" hx-swap="innerHTML"
+                        hx-include="[name='periodoId']">
+                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
+                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${materiaId != null and materiaId == m.id}"></option>
+                </select>
+                <button class="btn btn-primary" style="width: 220px; white-space: nowrap;"
+                        th:if="${periodoId != null and materiaId != null}"
+                        th:attr="hx-get='/gestion-academica/cotidiano/indicadores/form?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
+                        hx-target="#modal-container" hx-swap="innerHTML"
+                        onclick="abrirModalAcademico()">Nuevo Indicador</button>
+            </div>
+        </div>
+
+        <div th:if="${periodoId == null or materiaId == null}"
+             style="padding: 2rem; text-align:center; color: var(--text-secondary);">
+            Debes crear al menos un período académico y una materia para definir indicadores.
+        </div>
+
+        <th:block th:if="${periodoId != null and materiaId != null}">
+            <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Indicador</th>
+                            <th>Descripción</th>
+                            <th>Porcentaje</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${indicadores == null or indicadores.empty}">
+                            <td colspan="4" class="table-empty">No hay indicadores definidos.</td>
+                        </tr>
+                        <tr th:each="i : ${indicadores}">
+                            <td><strong th:text="${i.titulo}">Indicador</strong></td>
+                            <td th:text="${i.descripcion}">Descripción</td>
+                            <td><span class="badge badge-primary" th:text="${i.porcentaje} + '%'">15%</span></td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn-xs btn-ghost"
+                                            th:attr="hx-get='/gestion-academica/cotidiano/indicadores/form/' + ${i.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
+                                            hx-target="#modal-container" hx-swap="innerHTML"
+                                            onclick="abrirModalAcademico()"
+                                            title="Editar">✏️</button>
+                                    <button class="btn-xs btn-danger-ghost"
+                                            onclick="abrirConfirmacionAcademica(this)"
+                                            th:attr="data-delete-url='/gestion-academica/cotidiano/indicadores/' + ${i.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId},
+                                                     data-delete-target='#indicadores-panel',
+                                                     data-delete-title='Eliminar indicador',
+                                                     data-delete-message='¿Deseas eliminar ' + ${i.titulo} + '? Esta acción no se puede deshacer.'"
+                                            title="Eliminar">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
+                            <td colspan="2">Total asignado</td>
+                            <td><span style="color: var(--primary);" th:text="${totalAsignado} + '%'">0%</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </th:block>
+    </div>
+</div>

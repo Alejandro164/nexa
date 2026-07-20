@@ -1,0 +1,71 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
+        <div class="modal-dialog" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${evaluacion.id == null ? 'Nueva Evaluación' : 'Editar Evaluación'}">Evaluación</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div th:if="${indicadoresDisponibles == null or indicadoresDisponibles.empty}" class="form-alert-error">
+                    Esta materia no tiene indicadores de trabajo cotidiano definidos en el período activo. Crea al menos uno
+                    en la pestaña "Indicadores de Trabajo Cotidiano" antes de evaluar.
+                </div>
+
+                <form th:if="${indicadoresDisponibles != null and !indicadoresDisponibles.empty}"
+                      hx-post="/gestion-academica/cotidiano/evaluacion"
+                      hx-target="#evaluacion-panel" hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()">
+                    <input type="hidden" name="id" th:value="${evaluacion.id}">
+                    <input type="hidden" name="nivelId" th:value="${nivelId}">
+                    <input type="hidden" name="materiaId" th:value="${materiaId}">
+
+                    <div class="form-group">
+                        <label class="form-label">Estudiante *</label>
+                        <select class="form-input" name="estudianteId" required>
+                            <option value="" disabled th:selected="${evaluacion.estudiante == null}">Seleccionar estudiante</option>
+                            <option th:each="e : ${estudiantes}" th:value="${e.id}" th:text="${e.nombre}"
+                                    th:selected="${evaluacion.estudiante != null and evaluacion.estudiante.id == e.id}"></option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Indicador *</label>
+                        <select class="form-input" name="indicadorId" required>
+                            <option value="" disabled th:selected="${evaluacion.indicador == null}">Seleccionar indicador</option>
+                            <option th:each="i : ${indicadoresDisponibles}" th:value="${i.id}" th:text="${i.titulo}"
+                                    th:selected="${evaluacion.indicador != null and evaluacion.indicador.id == i.id}"></option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Calificación *</label>
+                            <input class="form-input" type="number" name="calificacion" min="0" max="100" required
+                                   th:value="${evaluacion.calificacion}" placeholder="0-100">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha *</label>
+                            <input class="form-input" type="date" name="fecha" required
+                                   th:value="${evaluacion.fecha}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Observación</label>
+                        <textarea class="form-textarea" name="observacion" maxlength="500"
+                                  th:text="${evaluacion.observacion}" placeholder="Comentario opcional..."></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </div>
+                </form>
+
+                <div class="modal-footer" th:if="${indicadoresDisponibles == null or indicadoresDisponibles.empty}">
+                    <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

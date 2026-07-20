@@ -175,150 +175,18 @@
 
                 <!-- Sub-tab: Indicadores -->
                 <div x-show="subTabCotidiano === 'indicadores'">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Indicadores de Trabajo Cotidiano</h3>
-                            <button class="btn btn-primary">+ Nuevo Indicador</button>
-                        </div>
-                        <div style="padding: 1.5rem;">
-                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
-                                Defina los indicadores de aprendizaje que evaluará durante el trabajo cotidiano en clase.
-                            </p>
-                            <div class="table-container">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Indicador</th>
-                                            <th>Descripción</th>
-                                            <th>Porcentaje</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><strong>Resuelve ecuaciones lineales de primer grado</strong></td>
-                                            <td>Mide la capacidad de despejar variables y resolver ecuaciones con una incógnita</td>
-                                            <td><span class="badge badge-primary">15%</span></td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Aplica el teorema de Pitágoras en problemas</strong></td>
-                                            <td>Resolución de triángulos rectángulos en contextos prácticos</td>
-                                            <td><span class="badge badge-primary">10%</span></td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Participa activamente en discusiones grupales</strong></td>
-                                            <td>Aporta ideas, respeta turnos y construye sobre las opiniones de otros</td>
-                                            <td><span class="badge badge-primary">10%</span></td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
-                                            <td colspan="2">Total asignado</td>
-                                            <td><span style="color: var(--primary);">35%</span></td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+                    <div id="indicadores-panel" hx-get="/gestion-academica/cotidiano/indicadores" hx-trigger="load" hx-swap="innerHTML">
+                        <div class="card">
+                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando indicadores…</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Sub-tab: Evaluación -->
                 <div x-show="subTabCotidiano === 'evaluacion'">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Evaluación de Trabajo Cotidiano</h3>
-                            <div style="display: flex; gap: 0.75rem;">
-                                <select class="form-input" style="max-width: 180px;">
-                                    <option>Sección 7-1</option>
-                                    <option>Sección 8-1</option>
-                                    <option>Sección 10-5</option>
-                                </select>
-                                <select class="form-input" style="max-width: 220px;">
-                                    <option>Matemáticas</option>
-                                    <option>Ciencias</option>
-                                    <option>Español</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div style="padding: 1.5rem;">
-                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
-                                Asigne calificaciones a cada estudiante según los indicadores definidos.
-                            </p>
-                            <div class="table-container">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Estudiante</th>
-                                            <th>Indicador</th>
-                                            <th>Calificación</th>
-                                            <th>Observación</th>
-                                            <th>Fecha</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td style="font-weight:600;">Sofía Alpízar Soto</td>
-                                            <td>Resuelve ecuaciones lineales de primer grado</td>
-                                            <td><span class="badge badge-success">95</span></td>
-                                            <td class="text-muted text-sm">Excelente dominio del despeje de variables</td>
-                                            <td>10/07/2026</td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="font-weight:600;">Mateo Quirós Vargas</td>
-                                            <td>Aplica el teorema de Pitágoras en problemas</td>
-                                            <td><span class="badge badge-warning">78</span></td>
-                                            <td class="text-muted text-sm">Debe reforzar la identificación de catetos</td>
-                                            <td>08/07/2026</td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="font-weight:600;">Valeria Rojas Méndez</td>
-                                            <td>Participa activamente en discusiones grupales</td>
-                                            <td><span class="badge badge-success">92</span></td>
-                                            <td class="text-muted text-sm">Lidera debates y respeta las opiniones</td>
-                                            <td>09/07/2026</td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                    <div id="evaluacion-panel" hx-get="/gestion-academica/cotidiano/evaluacion" hx-trigger="load" hx-swap="innerHTML">
+                        <div class="card">
+                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando evaluaciones…</div>
                         </div>
                     </div>
                 </div>
