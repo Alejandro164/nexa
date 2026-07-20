@@ -392,65 +392,9 @@
 
             <!-- Proyectos -->
             <div x-show="activeTab === 'proyectos'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Proyectos Estudiantiles</h3>
-                        <button class="btn btn-primary">+ Nuevo Proyecto</button>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Estudiante</th>
-                                        <th>Fechas</th>
-                                        <th>%</th>
-                                        <th>Estado</th>
-                                        <th>Calif.</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <strong>Feria Científica: Energía Renovable</strong>
-                                            <div class="text-muted text-sm">Prototipo de panel solar casero con análisis
-                                                de eficiencia</div>
-                                        </td>
-                                        <td>Mateo Quirós Vargas</td>
-                                        <td>01/07 – 30/08</td>
-                                        <td>25%</td>
-                                        <td><span class="badge badge-warning">EN_PROGRESO</span></td>
-                                        <td>—</td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <strong>Desarrollo de App para Gestión de Residuos</strong>
-                                            <div class="text-muted text-sm">Aplicación móvil con geolocalización de
-                                                centros de reciclaje</div>
-                                        </td>
-                                        <td>Sofía Alpízar Soto</td>
-                                        <td>15/06 – 15/09</td>
-                                        <td>30%</td>
-                                        <td><span class="badge badge-primary">ABIERTO</span></td>
-                                        <td>—</td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <div id="proyectos-panel" hx-get="/gestion-academica/proyectos" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando proyectos…</div>
                     </div>
                 </div>
             </div>

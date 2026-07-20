@@ -1,0 +1,81 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
+        <div class="modal-dialog" style="max-width: 560px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${proyecto.id == null ? 'Nuevo Proyecto' : 'Editar Proyecto'}">Proyecto</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form hx-post="/gestion-academica/proyectos"
+                      hx-target="#proyectos-panel" hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()">
+                    <input type="hidden" name="id" th:value="${proyecto.id}">
+                    <input type="hidden" name="periodoId" th:value="${periodoId}">
+                    <input type="hidden" name="materiaId" th:value="${materiaId}">
+
+                    <div class="form-group">
+                        <label class="form-label">Título *</label>
+                        <input class="form-input" type="text" name="titulo" required maxlength="200"
+                               th:value="${proyecto.titulo}" placeholder="Nombre del proyecto">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-textarea" name="descripcion" maxlength="1000"
+                                  th:text="${proyecto.descripcion}" placeholder="Detalles adicionales..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Estudiante *</label>
+                        <select class="form-input" name="estudianteId" required>
+                            <option value="" disabled th:selected="${proyecto.estudiante == null}">Seleccionar estudiante</option>
+                            <option th:each="e : ${estudiantes}" th:value="${e.id}" th:text="${e.nombre}"
+                                    th:selected="${proyecto.estudiante != null and proyecto.estudiante.id == e.id}"></option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Fecha Inicio *</label>
+                            <input class="form-input" type="date" name="fechaInicio" required
+                                   th:value="${proyecto.fechaInicio}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha Fin *</label>
+                            <input class="form-input" type="date" name="fechaFin" required
+                                   th:value="${proyecto.fechaFin}">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Porcentaje *</label>
+                            <input class="form-input" type="number" name="porcentaje" min="0" max="100" required
+                                   th:value="${proyecto.porcentaje}" placeholder="Ej. 25">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Estado</label>
+                            <select class="form-input" name="estado">
+                                <option value="ABIERTO" th:selected="${proyecto.estado == null or proyecto.estado.name() == 'ABIERTO'}">Abierto</option>
+                                <option value="EN_PROGRESO" th:selected="${proyecto.estado != null and proyecto.estado.name() == 'EN_PROGRESO'}">En Progreso</option>
+                                <option value="CERRADO" th:selected="${proyecto.estado != null and proyecto.estado.name() == 'CERRADO'}">Cerrado</option>
+                                <option value="CALIFICADO" th:selected="${proyecto.estado != null and proyecto.estado.name() == 'CALIFICADO'}">Calificado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Calificación</label>
+                        <input class="form-input" type="number" name="calificacion" min="0" max="100"
+                               th:value="${proyecto.calificacion}" placeholder="Opcional, 0-100">
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
