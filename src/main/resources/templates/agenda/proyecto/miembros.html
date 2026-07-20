@@ -9,8 +9,9 @@
         <div style="padding:1rem 1.5rem;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;align-items:center;">
             <div style="flex:1;min-width:0;">
                 <select class="form-input" th:attr="id='select-usuario-'+${proyecto.id}">
-                    <option value="">-- Agregar usuario --</option>
-                    <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}" th:text="${u.nombre + ' — ' + (u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', ''))}">Usuario</option>
+                    <option value="" disabled hidden selected>Agregar Usuario</option>
+                    <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}" th:text="${u.nombre}"
+                            th:attr="data-role=${u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', '')}">Usuario</option>
                 </select>
             </div>
             <button class="btn-primary btn-sm"

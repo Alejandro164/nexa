@@ -837,8 +837,18 @@ function inicializarSelectoresAcademicos(root) {
             btn.type = 'button';
             btn.className = 'academic-select-option';
             btn.dataset.value = o.value;
-            btn.textContent = o.textContent.trim();
             btn.setAttribute('role', 'option');
+            if (o.dataset.role) {
+                var nameSpan = document.createElement('span');
+                nameSpan.className = 'academic-select-option-label';
+                nameSpan.textContent = o.textContent.trim();
+                var badge = document.createElement('span');
+                badge.className = 'badge badge-primary';
+                badge.textContent = o.dataset.role;
+                btn.append(nameSpan, badge);
+            } else {
+                btn.textContent = o.textContent.trim();
+            }
             btn.addEventListener('click', function () {
                 native.value = btn.dataset.value;
                 sync();

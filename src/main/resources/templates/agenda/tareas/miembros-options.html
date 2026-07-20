@@ -2,10 +2,11 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <body>
 <th:block th:fragment="options">
-    <option value="">-- Seleccionar personal --</option>
+    <option value="" disabled hidden>Seleccionar Personal</option>
     <option th:each="u : ${personal}"
             th:value="${u.id}"
-            th:text="${u.nombre + ' — ' + (u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', ''))}">Personal</option>
+            th:text="${u.nombre}"
+            th:attr="data-role=${u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', '')}">Personal</option>
 </th:block>
 </body>
 </html>

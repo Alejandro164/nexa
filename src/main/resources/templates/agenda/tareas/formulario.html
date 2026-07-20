@@ -52,7 +52,7 @@
                         <div id="wrap-asig-proyecto" th:style="${tarea.miembro != null} ? 'display:none' : ''">
                             <select id="asig-proyecto" name="asignarA" class="form-input"
                                     th:disabled="${tarea.miembro != null}">
-                                <option value="">-- Seleccionar proyecto --</option>
+                                <option value="" disabled hidden th:selected="${tarea.proyecto == null}">Seleccionar Proyecto</option>
                                 <option th:each="p : ${proyectos}"
                                         th:value="'p_' + ${p.id}"
                                         th:text="${p.nombre}"
@@ -63,10 +63,11 @@
                         <div id="wrap-asig-personal" th:style="${tarea.miembro == null} ? 'display:none' : ''">
                             <select id="asig-personal" name="asignarA" class="form-input"
                                     th:disabled="${tarea.miembro == null}">
-                                <option value="">-- Seleccionar personal --</option>
+                                <option value="" disabled hidden th:selected="${tarea.miembro == null}">Seleccionar Personal</option>
                                 <option th:each="u : ${personal}"
                                         th:value="'u_' + ${u.id}"
-                                        th:text="${u.nombre + ' — ' + (u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', ''))}"
+                                        th:text="${u.nombre}"
+                                        th:attr="data-role=${u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', '')}"
                                         th:selected="${tarea.miembro != null and tarea.miembro.usuario.id == u.id}">Personal</option>
                             </select>
                         </div>
