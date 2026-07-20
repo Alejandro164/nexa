@@ -434,6 +434,26 @@ function proyectoComponente() {
     };
 }
 
+// ── Componente Alpine: Distribución Porcentual (gestión académica) ──────────
+
+function distribucionForm(el) {
+    var campos = ['cotidiano', 'tareas', 'proyectos', 'examenes', 'asistencia', 'trabajosExtraclase'];
+    var saved = {};
+    campos.forEach(function (c) { saved[c] = parseInt(el.dataset[c], 10) || 0; });
+
+    return {
+        saved: saved,
+        valores: Object.assign({}, saved),
+        get total() {
+            var self = this;
+            return campos.reduce(function (sum, c) { return sum + (parseInt(self.valores[c], 10) || 0); }, 0);
+        },
+        restablecer: function (campo) {
+            this.valores[campo] = this.saved[campo];
+        }
+    };
+}
+
 function toggleTipoAsignacion(tipo) {
     var wrapP = document.getElementById('wrap-asig-proyecto');
     var wrapU = document.getElementById('wrap-asig-personal');
