@@ -144,20 +144,28 @@ public class AgendaController {
     }
 
     @GetMapping("/tareas/form")
-    public String tareaFormCrear(Model model, HttpSession session) {
+    public String tareaFormCrear(@RequestParam(required = false) Long miembroId,
+                                 Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaProyecto());
         model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
         model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        if (miembroId != null) {
+            model.addAttribute("miembroLock", proyectoService.obtenerMiembro(institucionId, miembroId));
+        }
         return "agenda/tareas/formulario :: form-content";
     }
 
     @GetMapping("/tareas/form/{id}")
-    public String tareaFormEditar(@PathVariable Long id, Model model, HttpSession session) {
+    public String tareaFormEditar(@PathVariable Long id, @RequestParam(required = false) Long miembroId,
+                                  Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         model.addAttribute("tarea", proyectoService.obtenerTareaInstitucion(institucionId, id));
         model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
         model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        if (miembroId != null) {
+            model.addAttribute("miembroLock", proyectoService.obtenerMiembro(institucionId, miembroId));
+        }
         return "agenda/tareas/formulario :: form-content";
     }
 
@@ -183,16 +191,18 @@ public class AgendaController {
         try {
             Long proyectoId = null;
             Long usuarioId = null;
+            Long miembroId = null;
             if (asignarA != null && !asignarA.isBlank()) {
                 if (asignarA.startsWith("p_")) proyectoId = Long.parseLong(asignarA.substring(2));
                 else if (asignarA.startsWith("u_")) usuarioId = Long.parseLong(asignarA.substring(2));
+                else if (asignarA.startsWith("m_")) miembroId = Long.parseLong(asignarA.substring(2));
             }
-            proyectoService.guardarTareaGeneral(institucionId, id, proyectoId, usuarioId,
+            proyectoService.guardarTareaGeneral(institucionId, id, proyectoId, usuarioId, miembroId,
                     titulo, descripcion, fechaLimite, estado, prioridad);
             model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
             return "agenda/tareas/tareas :: tabla-tareas";
         } catch (Exception e) {
-            response.setHeader("HX-Retarget", "#tareas-modal-container");
+            response.setHeader("HX-Retarget", "#modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
             model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaProyecto());
@@ -530,45 +540,6 @@ public class AgendaController {
         model.addAttribute("miembroId", miembroId);
         model.addAttribute("proyectoId", proyectoId);
         return "agenda/proyecto/tareas :: tabla-tareas";
-    }
-
-    @GetMapping("/proyectos/miembros/{miembroId}/tareas/form")
-    public String proyectoFormTarea(@PathVariable Long miembroId,
-                                    @RequestParam Long proyectoId, Model model) {
-        model.addAttribute("tarea", new TareaProyecto());
-        model.addAttribute("miembroId", miembroId);
-        model.addAttribute("proyectoId", proyectoId);
-        return "agenda/proyecto/tarea-form :: form-content";
-    }
-
-    @GetMapping("/proyectos/miembros/{miembroId}/tareas/form/{tareaId}")
-    public String proyectoFormEditarTarea(@PathVariable Long miembroId,
-                                          @PathVariable Long tareaId,
-                                          @RequestParam Long proyectoId, Model model) {
-        model.addAttribute("tarea", proyectoService.obtenerTarea(proyectoId, tareaId));
-        model.addAttribute("miembroId", miembroId);
-        model.addAttribute("proyectoId", proyectoId);
-        return "agenda/proyecto/tarea-form :: form-content";
-    }
-
-    @PostMapping("/proyectos/miembros/{miembroId}/tareas")
-    public String proyectoGuardarTarea(@PathVariable Long miembroId,
-                                       @RequestParam Long proyectoId,
-                                       @ModelAttribute TareaProyecto datos, Model model) {
-        proyectoService.guardarTarea(proyectoId, miembroId, datos);
-        model.addAttribute("tareas", proyectoService.listarTareasDeMiembro(miembroId));
-        model.addAttribute("miembroId", miembroId);
-        return "agenda/proyecto/tareas :: tabla-tareas";
-    }
-
-    @PutMapping("/proyectos/tareas/{tareaId}/estado")
-    @ResponseBody
-    public String proyectoCambiarEstadoTarea(@PathVariable Long tareaId,
-                                             @RequestParam Long proyectoId,
-                                             @RequestParam String estado) {
-        TareaProyecto.EstadoTarea nuevoEstado = TareaProyecto.EstadoTarea.valueOf(estado.toUpperCase());
-        proyectoService.cambiarEstadoTarea(proyectoId, tareaId, nuevoEstado);
-        return "ok";
     }
 
     @DeleteMapping("/proyectos/tareas/{tareaId}")

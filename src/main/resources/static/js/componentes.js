@@ -378,38 +378,39 @@ function agregarMiembro(id) {
     });
 }
 
-function eliminarMiembro(proyectoId, miembroId) {
-    if (!confirm('¿Quitar este miembro?')) return;
-    htmx.ajax('DELETE', '/agenda/proyectos/' + proyectoId + '/miembros/' + miembroId, {
-        target: '#miembros-container', swap: 'innerHTML'
-    }).then(function () {
-        htmx.ajax('GET', '/agenda/proyectos/' + proyectoId + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
-        htmx.ajax('GET', '/agenda/proyectos/buscar?filtro=', { target: '#tabla-proyectos-container', swap: 'innerHTML' });
-    });
-}
-
-function abrirFormTarea(miembroId, proyectoId, tareaId) {
-    var url = tareaId
-        ? '/agenda/proyectos/miembros/' + miembroId + '/tareas/form/' + tareaId + '?proyectoId=' + proyectoId
-        : '/agenda/proyectos/miembros/' + miembroId + '/tareas/form?proyectoId=' + proyectoId;
-    htmx.ajax('GET', url, { target: '#tarea-form-container-' + miembroId, swap: 'innerHTML' });
-}
-
-function cambiarEstadoTarea(tareaId, proyectoId, miembroId, nuevoEstado) {
-    htmx.ajax('PUT', '/agenda/proyectos/tareas/' + tareaId + '/estado?' + new URLSearchParams({ proyectoId: proyectoId, estado: nuevoEstado }), { target: '#none' })
-        .then(function () { cargarTareas(miembroId, proyectoId); });
-}
-
-function eliminarTarea(tareaId, proyectoId, miembroId) {
-    if (!confirm('¿Eliminar esta tarea?')) return;
-    htmx.ajax('DELETE', '/agenda/proyectos/tareas/' + tareaId + '?' + new URLSearchParams({ proyectoId: proyectoId, miembroId: miembroId }), { target: '#tareas-' + miembroId, swap: 'innerHTML' });
-}
-
 function cargarTareas(miembroId, proyectoId) {
-    var c = document.getElementById('tareas-' + miembroId);
-    if (c) { if (c.style.display !== 'none') { c.style.display = 'none'; return; } c.style.display = 'block'; }
-    htmx.ajax('GET', '/agenda/proyectos/miembros/' + miembroId + '/tareas?' + new URLSearchParams({ proyectoId: proyectoId }), { target: '#tareas-' + miembroId, swap: 'innerHTML' });
+    var wrap = document.getElementById('tareas-collapse-' + miembroId);
+    if (!wrap) return;
+
+    if (wrap.classList.contains('is-open')) {
+        wrap.style.maxHeight = wrap.scrollHeight + 'px';
+        requestAnimationFrame(function () {
+            wrap.classList.remove('is-open');
+            wrap.style.maxHeight = '0px';
+        });
+        return;
+    }
+
+    wrap.classList.add('is-open');
+    wrap.style.maxHeight = '0px';
+    htmx.ajax('GET', '/agenda/proyectos/miembros/' + miembroId + '/tareas?' + new URLSearchParams({ proyectoId: proyectoId }), { target: '#tareas-' + miembroId, swap: 'innerHTML' })
+        .then(function () {
+            requestAnimationFrame(function () {
+                wrap.style.maxHeight = wrap.scrollHeight + 'px';
+            });
+        });
 }
+
+// Re-sincroniza la altura del panel de tareas cuando su contenido cambia
+// (nueva tarea, tarea eliminada) mientras está abierto, para que no se recorte.
+document.addEventListener('htmx:afterSwap', function (e) {
+    var box = e.target.closest && e.target.closest('.tareas-container');
+    if (!box) return;
+    var wrap = box.closest('.tareas-collapse');
+    if (wrap && wrap.classList.contains('is-open')) {
+        wrap.style.maxHeight = wrap.scrollHeight + 'px';
+    }
+});
 
 // ── Componente Alpine: Proyectos ─────────────────────────────────────────────
 
@@ -429,6 +430,26 @@ function proyectoComponente() {
             });
             htmx.ajax('GET', '/agenda/proyectos/' + id + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
             htmx.ajax('GET', '/agenda/proyectos/' + id + '/miembros', { target: '#miembros-container', swap: 'innerHTML' });
+        }
+    };
+}
+
+// ── Componente Alpine: Distribución Porcentual (gestión académica) ──────────
+
+function distribucionForm(el) {
+    var campos = ['cotidiano', 'tareas', 'proyectos', 'examenes', 'asistencia', 'trabajosExtraclase'];
+    var saved = {};
+    campos.forEach(function (c) { saved[c] = parseInt(el.dataset[c], 10) || 0; });
+
+    return {
+        saved: saved,
+        valores: Object.assign({}, saved),
+        get total() {
+            var self = this;
+            return campos.reduce(function (sum, c) { return sum + (parseInt(self.valores[c], 10) || 0); }, 0);
+        },
+        restablecer: function (campo) {
+            this.valores[campo] = this.saved[campo];
         }
     };
 }
@@ -464,26 +485,33 @@ function toggleTipoAsignacion(tipo) {
     }
 }
 
-function abrirTareasModal() {
-    var el = document.getElementById('tareas-modal-container');
-    if (!el) return;
-    el.style.display = 'block';
-    setTimeout(function () {
-        el.classList.remove('dir-modal-closing');
-        el.classList.add('dir-modal-visible');
-    }, 0);
+// El modal de tareas usa el modal global (#modal-container). Cuando se abre
+// desde la tarjeta "Tareas Asignadas" de un miembro (en vez de la pestaña
+// Tareas), guardamos aquí ese contexto para refrescar solo esa tarjeta al guardar.
+var tareaModalMiembroCtx = null;
+
+function abrirModalTareaGeneral() {
+    tareaModalMiembroCtx = null;
+    abrirModalAcademico();
 }
 
-function cerrarTareasModal() {
-    var el = document.getElementById('tareas-modal-container');
-    if (!el) return;
-    el.classList.remove('dir-modal-visible');
-    el.classList.add('dir-modal-closing');
-    setTimeout(function () {
-        el.style.display = 'none';
-        el.classList.remove('dir-modal-closing');
-        el.innerHTML = '';
-    }, 180);
+function abrirModalTareaMiembro(btn) {
+    tareaModalMiembroCtx = { miembroId: btn.dataset.mid, proyectoId: btn.dataset.pid };
+    abrirModalAcademico();
+}
+
+function onTareaGuardada(event) {
+    if (!event.detail.successful) return;
+    cerrarModalAcademico();
+    if (!tareaModalMiembroCtx) return;
+
+    var ctx = tareaModalMiembroCtx;
+    tareaModalMiembroCtx = null;
+    var wrap = document.getElementById('tareas-collapse-' + ctx.miembroId);
+    htmx.ajax('GET', '/agenda/proyectos/miembros/' + ctx.miembroId + '/tareas?' + new URLSearchParams({ proyectoId: ctx.proyectoId }), { target: '#tareas-' + ctx.miembroId, swap: 'innerHTML' })
+        .then(function () {
+            if (wrap) requestAnimationFrame(function () { wrap.style.maxHeight = wrap.scrollHeight + 'px'; });
+        });
 }
 
 function abrirRecordatoriosModal() {
@@ -748,7 +776,9 @@ function abrirConfirmacionAcademica(trigger) {
     window.academicDeleteRequest = {
         url: trigger.dataset.deleteUrl,
         target: trigger.dataset.deleteTarget,
-        swap: trigger.dataset.deleteSwap || 'innerHTML'
+        swap: trigger.dataset.deleteSwap || 'innerHTML',
+        onComplete: trigger.dataset.deleteOncomplete || null,
+        context: trigger.dataset.deleteContext || null
     };
     document.getElementById('academic-delete-title').textContent =
         trigger.dataset.deleteTitle || 'Confirmar eliminación';
@@ -777,7 +807,17 @@ function confirmarEliminacionAcademica() {
     var req = window.academicDeleteRequest;
     if (!req || !req.url || !req.target) { cerrarConfirmacionAcademica(); return; }
     htmx.ajax('DELETE', req.url, { target: req.target, swap: req.swap })
-        .then(function () { cerrarConfirmacionAcademica(); });
+        .then(function () {
+            if (req.onComplete && typeof window[req.onComplete] === 'function') {
+                window[req.onComplete](req.context);
+            }
+            cerrarConfirmacionAcademica();
+        });
+}
+
+function refrescarPanelesProyecto(proyectoId) {
+    htmx.ajax('GET', '/agenda/proyectos/' + proyectoId + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
+    htmx.ajax('GET', '/agenda/proyectos/buscar?filtro=', { target: '#tabla-proyectos-container', swap: 'innerHTML' });
 }
 
 // ── Custom Select (academic-select) ──────────────────────────────────────────
@@ -837,8 +877,18 @@ function inicializarSelectoresAcademicos(root) {
             btn.type = 'button';
             btn.className = 'academic-select-option';
             btn.dataset.value = o.value;
-            btn.textContent = o.textContent.trim();
             btn.setAttribute('role', 'option');
+            if (o.dataset.role) {
+                var nameSpan = document.createElement('span');
+                nameSpan.className = 'academic-select-option-label';
+                nameSpan.textContent = o.textContent.trim();
+                var badge = document.createElement('span');
+                badge.className = 'badge badge-primary';
+                badge.textContent = o.dataset.role;
+                btn.append(nameSpan, badge);
+            } else {
+                btn.textContent = o.textContent.trim();
+            }
             btn.addEventListener('click', function () {
                 native.value = btn.dataset.value;
                 sync();

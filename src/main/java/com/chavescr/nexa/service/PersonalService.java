@@ -12,9 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.RolRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -27,15 +29,18 @@ public class PersonalService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final InstitucionRepository institucionRepository;
+    private final NivelAcademicoRepository nivelAcademicoRepository;
     private final PasswordEncoder passwordEncoder;
 
     public PersonalService(UsuarioRepository usuarioRepository,
                            RolRepository rolRepository,
                            InstitucionRepository institucionRepository,
+                           NivelAcademicoRepository nivelAcademicoRepository,
                            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.institucionRepository = institucionRepository;
+        this.nivelAcademicoRepository = nivelAcademicoRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -89,6 +94,12 @@ public class PersonalService {
     public Usuario guardar(Long institucionId, Long id, String nombre, String email,
                            String usuario, String cedula, String rawPassword,
                            boolean activo, List<Long> rolIds) {
+        return guardar(institucionId, id, nombre, email, usuario, cedula, rawPassword, activo, rolIds, null);
+    }
+
+    public Usuario guardar(Long institucionId, Long id, String nombre, String email,
+                           String usuario, String cedula, String rawPassword,
+                           boolean activo, List<Long> rolIds, Long nivelId) {
         Usuario u;
         if (id == null) {
             if (rawPassword == null || rawPassword.isBlank()) {
@@ -119,6 +130,14 @@ public class PersonalService {
         Institucion inst = institucionRepository.findById(institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
         u.getInstituciones().add(inst);
+
+        if (nivelId != null) {
+            NivelAcademico nivel = nivelAcademicoRepository.findByIdAndInstitucionId(nivelId, institucionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
+            u.setNivelAcademico(nivel);
+        } else {
+            u.setNivelAcademico(null);
+        }
 
         Usuario guardado = usuarioRepository.save(u);
         log.info("Personal guardado: id={}, nombre={}", guardado.getId(), guardado.getNombre());

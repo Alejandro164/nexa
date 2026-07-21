@@ -1,0 +1,207 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Distribución Porcentual</h3>
+                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
+                    Configure el porcentaje que cada componente aporta a la nota final de esta materia en este período. La suma debe ser 100%.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <div class="periodo-select-wide">
+                    <select class="form-input" name="periodoId"
+                            hx-get="/gestion-academica/distribucion"
+                            hx-target="#distribucion-panel" hx-swap="innerHTML"
+                            hx-include="[name='materiaId']">
+                        <option value="" th:if="${periodos == null or periodos.empty}" disabled selected>Sin períodos</option>
+                        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
+                                th:selected="${periodoId != null and periodoId == p.id}"></option>
+                    </select>
+                </div>
+                <select class="form-input" style="max-width: 220px;" name="materiaId"
+                        hx-get="/gestion-academica/distribucion"
+                        hx-target="#distribucion-panel" hx-swap="innerHTML"
+                        hx-include="[name='periodoId']">
+                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
+                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${materiaId != null and materiaId == m.id}"></option>
+                </select>
+            </div>
+        </div>
+
+        <div th:if="${periodos == null or periodos.empty or materias == null or materias.empty}"
+             style="padding: 2rem; text-align:center; color: var(--text-secondary);">
+            Debes crear al menos un período académico y una materia para configurar la distribución porcentual.
+        </div>
+
+        <th:block th:if="${periodos != null and !periodos.empty and materias != null and !materias.empty}">
+            <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
+            <div th:if="${guardadoOk}" style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:8px;padding:10px 14px;font-size:0.84rem;margin:1rem 1.5rem 0;">
+                Distribución guardada correctamente.
+            </div>
+
+            <form hx-post="/gestion-academica/distribucion"
+                  hx-target="#distribucion-panel" hx-swap="innerHTML"
+                  x-data="distribucionForm($el)"
+                  th:attr="data-cotidiano=${distribucion.cotidiano},data-tareas=${distribucion.tareas},
+                           data-proyectos=${distribucion.proyectos},data-examenes=${distribucion.examenes},
+                           data-asistencia=${distribucion.asistencia},data-trabajos-extraclase=${distribucion.trabajosExtraclase}">
+                <input type="hidden" name="periodoId" th:value="${periodoId}">
+                <input type="hidden" name="materiaId" th:value="${materiaId}">
+
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>Componente</th>
+                                <th style="width: 210px;">Porcentaje</th>
+                                <th style="width: 110px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align: center; color: var(--success); font-size: 1.2rem;">●</td>
+                                <td>
+                                    <strong>Cotidiano</strong>
+                                    <div class="text-muted text-sm">Trabajo diario en clase, indicadores de aprendizaje</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="range" min="0" max="100"
+                                               style="flex: 1; accent-color: var(--primary);"
+                                               x-model.number="valores.cotidiano">
+                                        <input type="number" name="cotidiano" min="0" max="100" class="form-input"
+                                               style="width:64px;padding:4px 6px;text-align:right;font-weight:700;"
+                                               x-model.number="valores.cotidiano">
+                                        <span style="font-weight:700;">%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-secondary" @click="restablecer('cotidiano')">Restablecer</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; color: #d97706; font-size: 1.2rem;">●</td>
+                                <td>
+                                    <strong>Tareas</strong>
+                                    <div class="text-muted text-sm">Trabajos de investigación, informes, maquetas</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="range" min="0" max="100"
+                                               style="flex: 1; accent-color: var(--primary);"
+                                               x-model.number="valores.tareas">
+                                        <input type="number" name="tareas" min="0" max="100" class="form-input"
+                                               style="width:64px;padding:4px 6px;text-align:right;font-weight:700;"
+                                               x-model.number="valores.tareas">
+                                        <span style="font-weight:700;">%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-secondary" @click="restablecer('tareas')">Restablecer</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; color: var(--primary); font-size: 1.2rem;">●</td>
+                                <td>
+                                    <strong>Proyectos</strong>
+                                    <div class="text-muted text-sm">Feria científica, proyectos integradores, exposiciones</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="range" min="0" max="100"
+                                               style="flex: 1; accent-color: var(--primary);"
+                                               x-model.number="valores.proyectos">
+                                        <input type="number" name="proyectos" min="0" max="100" class="form-input"
+                                               style="width:64px;padding:4px 6px;text-align:right;font-weight:700;"
+                                               x-model.number="valores.proyectos">
+                                        <span style="font-weight:700;">%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-secondary" @click="restablecer('proyectos')">Restablecer</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; color: #e11d48; font-size: 1.2rem;">●</td>
+                                <td>
+                                    <strong>Exámenes</strong>
+                                    <div class="text-muted text-sm">Pruebas escritas, exámenes parciales, quizzes</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="range" min="0" max="100"
+                                               style="flex: 1; accent-color: var(--primary);"
+                                               x-model.number="valores.examenes">
+                                        <input type="number" name="examenes" min="0" max="100" class="form-input"
+                                               style="width:64px;padding:4px 6px;text-align:right;font-weight:700;"
+                                               x-model.number="valores.examenes">
+                                        <span style="font-weight:700;">%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-secondary" @click="restablecer('examenes')">Restablecer</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; color: var(--text-secondary); font-size: 1.2rem;">●</td>
+                                <td>
+                                    <strong>Asistencia</strong>
+                                    <div class="text-muted text-sm">Porcentaje de asistencia durante el período</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="range" min="0" max="100"
+                                               style="flex: 1; accent-color: var(--primary);"
+                                               x-model.number="valores.asistencia">
+                                        <input type="number" name="asistencia" min="0" max="100" class="form-input"
+                                               style="width:64px;padding:4px 6px;text-align:right;font-weight:700;"
+                                               x-model.number="valores.asistencia">
+                                        <span style="font-weight:700;">%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-secondary" @click="restablecer('asistencia')">Restablecer</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center; color: #7c3aed; font-size: 1.2rem;">●</td>
+                                <td>
+                                    <strong>Trabajos Extraclase</strong>
+                                    <div class="text-muted text-sm">Trabajos asignados para realizar fuera del horario de clase</div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="range" min="0" max="100"
+                                               style="flex: 1; accent-color: var(--primary);"
+                                               x-model.number="valores.trabajosExtraclase">
+                                        <input type="number" name="trabajosExtraclase" min="0" max="100" class="form-input"
+                                               style="width:64px;padding:4px 6px;text-align:right;font-weight:700;"
+                                               x-model.number="valores.trabajosExtraclase">
+                                        <span style="font-weight:700;">%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-secondary" @click="restablecer('trabajosExtraclase')">Restablecer</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
+                                <td></td>
+                                <td style="font-size: 1rem;">Total</td>
+                                <td>
+                                    <span style="font-size: 1.1rem;" :style="'font-size:1.1rem;color:' + (total === 100 ? 'var(--success)' : 'var(--danger)')" x-text="total + '%'">100%</span>
+                                </td>
+                                <td>
+                                    <button type="submit" class="btn btn-primary btn-sm" :disabled="total !== 100">Guardar</button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </form>
+        </th:block>
+    </div>
+</div>

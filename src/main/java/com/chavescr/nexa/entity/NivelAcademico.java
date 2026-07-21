@@ -26,8 +26,8 @@ public class NivelAcademico {
     @JoinColumn(name = "institucion_id", nullable = false)
     private Institucion institucion;
 
-    @Column(nullable = false, length = 80)
-    private String grado;
+    @Column(nullable = false)
+    private Integer grado;
 
     @Column(nullable = false, length = 20)
     private String seccion;
@@ -51,11 +51,11 @@ public class NivelAcademico {
         this.institucion = institucion;
     }
 
-    public String getGrado() {
+    public Integer getGrado() {
         return grado;
     }
 
-    public void setGrado(String grado) {
+    public void setGrado(Integer grado) {
         this.grado = grado;
     }
 

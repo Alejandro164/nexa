@@ -20,6 +20,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -66,6 +67,11 @@ public class Usuario implements UserDetails {
     // Lado inverso: los padres asignados a este estudiante
     @ManyToMany(mappedBy = "estudiantes")
     private Set<Usuario> padres = new HashSet<>();
+
+    // Sección (grado + sección) del estudiante, si aplica
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nivel_academico_id")
+    private NivelAcademico nivelAcademico;
 
     public Usuario() {
     }
@@ -197,6 +203,14 @@ public class Usuario implements UserDetails {
 
     public void setPadres(Set<Usuario> padres) {
         this.padres = padres;
+    }
+
+    public NivelAcademico getNivelAcademico() {
+        return nivelAcademico;
+    }
+
+    public void setNivelAcademico(NivelAcademico nivelAcademico) {
+        this.nivelAcademico = nivelAcademico;
     }
 
     @Override

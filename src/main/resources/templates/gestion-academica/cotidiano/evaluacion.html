@@ -1,0 +1,86 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Evaluación de Trabajo Cotidiano</h3>
+                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
+                    Asigne calificaciones a cada estudiante según los indicadores definidos.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <select class="form-input" style="max-width: 200px;" name="nivelId"
+                        hx-get="/gestion-academica/cotidiano/evaluacion"
+                        hx-target="#evaluacion-panel" hx-swap="innerHTML"
+                        hx-include="[name='materiaId']">
+                    <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
+                    <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
+                            th:selected="${nivelId != null and nivelId == n.id}"></option>
+                </select>
+                <select class="form-input" style="max-width: 220px;" name="materiaId"
+                        hx-get="/gestion-academica/cotidiano/evaluacion"
+                        hx-target="#evaluacion-panel" hx-swap="innerHTML"
+                        hx-include="[name='nivelId']">
+                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
+                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${materiaId != null and materiaId == m.id}"></option>
+                </select>
+                <button class="btn btn-primary" style="width: 220px; white-space: nowrap;"
+                        th:if="${nivelId != null and materiaId != null}"
+                        th:attr="hx-get='/gestion-academica/cotidiano/evaluacion/form?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                        hx-target="#modal-container" hx-swap="innerHTML"
+                        onclick="abrirModalAcademico()">Nueva Evaluación</button>
+            </div>
+        </div>
+
+        <div th:if="${nivelId == null or materiaId == null}"
+             style="padding: 2rem; text-align:center; color: var(--text-secondary);">
+            Debes crear al menos una sección y una materia para evaluar el trabajo cotidiano.
+        </div>
+
+        <div th:if="${nivelId != null and materiaId != null}" class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Indicador</th>
+                        <th>Calificación</th>
+                        <th>Observación</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${evaluaciones == null or evaluaciones.empty}">
+                        <td colspan="6" class="table-empty">No hay evaluaciones registradas.</td>
+                    </tr>
+                    <tr th:each="ev : ${evaluaciones}">
+                        <td style="font-weight:600;" th:text="${ev.estudiante.nombre}">Estudiante</td>
+                        <td th:text="${ev.indicador.titulo}">Indicador</td>
+                        <td>
+                            <span th:if="${ev.calificacion >= 80}" class="badge badge-success" th:text="${ev.calificacion}">95</span>
+                            <span th:unless="${ev.calificacion >= 80}" class="badge badge-warning" th:text="${ev.calificacion}">78</span>
+                        </td>
+                        <td class="text-muted text-sm" th:text="${ev.observacion}">Observación</td>
+                        <td th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy')}">Fecha</td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/gestion-academica/cotidiano/evaluacion/form/' + ${ev.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                                        hx-target="#modal-container" hx-swap="innerHTML"
+                                        onclick="abrirModalAcademico()"
+                                        title="Editar">✏️</button>
+                                <button class="btn-xs btn-danger-ghost"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        th:attr="data-delete-url='/gestion-academica/cotidiano/evaluacion/' + ${ev.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId},
+                                                 data-delete-target='#evaluacion-panel',
+                                                 data-delete-title='Eliminar evaluación',
+                                                 data-delete-message='¿Deseas eliminar esta evaluación de ' + ${ev.estudiante.nombre} + '? Esta acción no se puede deshacer.'"
+                                        title="Eliminar">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

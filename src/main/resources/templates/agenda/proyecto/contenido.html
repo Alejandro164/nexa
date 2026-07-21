@@ -27,7 +27,7 @@
             <div id="proyectos-select-group" class="select-group">
                 <select x-model="dashboardProyectoId" class="form-input"
                         onchange="if(this.value){htmx.ajax('GET','/agenda/proyectos/'+this.value+'/dashboard',{target:'#dashboard-container',swap:'innerHTML'});htmx.ajax('GET','/agenda/proyectos/'+this.value+'/miembros',{target:'#miembros-container',swap:'innerHTML'});}">
-                    <option value="">-- Selecciona un proyecto --</option>
+                    <option value="" disabled hidden>Selecciona un proyecto</option>
                     <option th:each="p : ${proyectos}" th:value="${p.id}" th:text="${p.nombre}">Proyecto</option>
                 </select>
             </div>
@@ -111,7 +111,7 @@
     <div id="proyectos-select-group" hx-swap-oob="true" class="select-group">
         <select x-model="dashboardProyectoId" class="form-input"
                 onchange="if(this.value){htmx.ajax('GET','/agenda/proyectos/'+this.value+'/dashboard',{target:'#dashboard-container',swap:'innerHTML'});htmx.ajax('GET','/agenda/proyectos/'+this.value+'/miembros',{target:'#miembros-container',swap:'innerHTML'});}">
-            <option value="">-- Selecciona un proyecto --</option>
+            <option value="" disabled hidden>Selecciona un proyecto</option>
             <option th:each="p : ${proyectos}" th:value="${p.id}" th:text="${p.nombre}">Proyecto</option>
         </select>
     </div>

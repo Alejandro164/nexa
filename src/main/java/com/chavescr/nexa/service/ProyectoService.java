@@ -158,34 +158,19 @@ public class ProyectoService {
     }
 
     @Transactional(readOnly = true)
+    public MiembroProyecto obtenerMiembro(Long institucionId, Long miembroId) {
+        MiembroProyecto miembro = miembroRepository.findById(miembroId)
+                .orElseThrow(() -> new IllegalArgumentException("Miembro no encontrado"));
+        if (!miembro.getProyecto().getInstitucion().getId().equals(institucionId)) {
+            throw new IllegalArgumentException("Miembro no encontrado");
+        }
+        return miembro;
+    }
+
+    @Transactional(readOnly = true)
     public TareaProyecto obtenerTarea(Long proyectoId, Long tareaId) {
         return tareaRepository.findByIdAndProyectoId(tareaId, proyectoId)
                 .orElseThrow(() -> new IllegalArgumentException("Tarea no encontrada"));
-    }
-
-    public TareaProyecto guardarTarea(Long proyectoId, Long miembroId, TareaProyecto datos) {
-        if (datos.getTitulo() == null || datos.getTitulo().isBlank()) {
-            throw new IllegalArgumentException("El título es obligatorio");
-        }
-        MiembroProyecto miembro = miembroRepository.findByIdAndProyectoId(miembroId, proyectoId)
-                .orElseThrow(() -> new IllegalArgumentException("Miembro no encontrado"));
-        Proyecto proyecto = miembro.getProyecto();
-        TareaProyecto tarea = datos.getId() == null ? new TareaProyecto() : obtenerTarea(proyectoId, datos.getId());
-        tarea.setTitulo(datos.getTitulo().trim());
-        tarea.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
-        tarea.setFechaLimite(datos.getFechaLimite());
-        tarea.setCalificacion(datos.getCalificacion());
-        tarea.setMiembro(miembro);
-        tarea.setProyecto(proyecto);
-        if (datos.getEstado() != null) {
-            tarea.setEstado(datos.getEstado());
-            if (datos.getEstado() == TareaProyecto.EstadoTarea.COMPLETADA && tarea.getFechaCompletada() == null) {
-                tarea.setFechaCompletada(LocalDateTime.now());
-            }
-        }
-        TareaProyecto guardada = tareaRepository.save(tarea);
-        log.info("Tarea guardada: id={}, titulo={}", guardada.getId(), guardada.getTitulo());
-        return guardada;
     }
 
     public void cambiarEstadoTarea(Long proyectoId, Long tareaId, TareaProyecto.EstadoTarea nuevoEstado) {
@@ -218,14 +203,18 @@ public class ProyectoService {
     }
 
     public TareaProyecto guardarTareaGeneral(Long institucionId, Long tareaId,
-            Long proyectoId, Long usuarioId, String titulo, String descripcion,
+            Long proyectoId, Long usuarioId, Long miembroId, String titulo, String descripcion,
             java.time.LocalDate fechaLimite, TareaProyecto.EstadoTarea estado,
             TareaProyecto.PrioridadTarea prioridad) {
         TareaProyecto tarea;
         if (tareaId != null) {
             tarea = obtenerTareaInstitucion(institucionId, tareaId);
             // Actualizar asignación si se proporcionó
-            if (proyectoId != null || usuarioId != null) {
+            if (miembroId != null) {
+                MiembroProyecto miembro = obtenerMiembro(institucionId, miembroId);
+                tarea.setMiembro(miembro);
+                tarea.setProyecto(miembro.getProyecto());
+            } else if (proyectoId != null || usuarioId != null) {
                 if (proyectoId != null) {
                     tarea.setProyecto(obtenerProyecto(institucionId, proyectoId));
                     tarea.setMiembro(null);
@@ -248,10 +237,14 @@ public class ProyectoService {
                 }
             }
         } else {
-            if (proyectoId == null && usuarioId == null)
+            if (proyectoId == null && usuarioId == null && miembroId == null)
                 throw new IllegalArgumentException("Debes seleccionar un proyecto o personal");
             tarea = new TareaProyecto();
-            if (proyectoId != null) {
+            if (miembroId != null) {
+                MiembroProyecto miembro = obtenerMiembro(institucionId, miembroId);
+                tarea.setMiembro(miembro);
+                tarea.setProyecto(miembro.getProyecto());
+            } else if (proyectoId != null) {
                 // Asignada a un proyecto completo (sin miembro específico)
                 Proyecto proyecto = obtenerProyecto(institucionId, proyectoId);
                 tarea.setProyecto(proyecto);

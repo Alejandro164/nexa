@@ -321,6 +321,7 @@ body {
     font-size: 0.875rem;
     color: #334155;
     vertical-align: middle;
+    transition: background-color 0.15s ease;
 }
 
 .table tr:hover td {

@@ -14,6 +14,7 @@
                     <th>Nombre</th>
                     <th>Email</th>
                     <th>Cédula</th>
+                    <th>Sección</th>
                     <th>Roles</th>
                     <th>Estado</th>
                     <th style="text-align:right;">Acciones</th>
@@ -21,12 +22,13 @@
             </thead>
             <tbody>
                 <tr th:if="${estudiantes == null or estudiantes.empty}">
-                    <td colspan="6" class="table-empty">No se encontraron estudiantes.</td>
+                    <td colspan="7" class="table-empty">No se encontraron estudiantes.</td>
                 </tr>
                 <tr th:each="u : ${estudiantes}">
                     <td><strong th:text="${u.nombre}" style="color:#0f172a;">Nombre</strong></td>
                     <td th:text="${u.email}" style="color:#64748b;">email</td>
                     <td th:text="${u.cedula != null ? u.cedula : '—'}" style="color:#94a3b8;">—</td>
+                    <td th:text="${u.nivelAcademico != null ? u.nivelAcademico.nombreCompleto : '—'}" style="color:#64748b;">—</td>
                     <td>
                         <div style="display:flex;flex-wrap:wrap;gap:2px;">
                             <span th:each="r : ${u.roles}" class="badge-xs"

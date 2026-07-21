@@ -9,8 +9,9 @@
         <div style="padding:1rem 1.5rem;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;align-items:center;">
             <div style="flex:1;min-width:0;">
                 <select class="form-input" th:attr="id='select-usuario-'+${proyecto.id}">
-                    <option value="">-- Agregar usuario --</option>
-                    <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}" th:text="${u.nombre + ' — ' + (u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', ''))}">Usuario</option>
+                    <option value="" disabled hidden selected>Agregar Usuario</option>
+                    <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}" th:text="${u.nombre}"
+                            th:attr="data-role=${u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', '')}">Usuario</option>
                 </select>
             </div>
             <button class="btn-primary btn-sm"
@@ -20,25 +21,40 @@
                     onclick="agregarMiembro(+this.dataset.id)">Agregar Miembro</button>
             <span th:if="${usuariosDisponibles == null or usuariosDisponibles.empty}" style="color:#94a3b8;font-size:0.85rem;">Todos ya son miembros.</span>
         </div>
-        <div style="padding:1rem 1.5rem;">
-            <div th:if="${miembros == null or miembros.empty}" style="text-align:center;padding:2rem;color:#94a3b8;">No hay miembros. Agrega usuarios.</div>
-            <div th:each="m : ${miembros}" style="margin-bottom:1rem;">
-                <div class="miembro-row">
-                    <div class="miembro-info">
-                        <span class="miembro-nombre" th:text="${m.usuario.nombre}">Nombre</span>
-                        <span class="miembro-email" th:text="${m.usuario.email}">email</span>
-                    </div>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <button class="btn-sm btn-ghost"
-                                th:attr="data-mid=${m.id},data-pid=${proyecto.id}"
-                                onclick="cargarTareas(+this.dataset.mid, +this.dataset.pid)">📋</button>
-                        <button class="btn-sm btn-danger-ghost"
-                                th:attr="data-pid=${proyecto.id},data-mid=${m.id}"
-                                onclick="eliminarMiembro(+this.dataset.pid, +this.dataset.mid)">✕</button>
-                    </div>
-                </div>
-                <div class="tareas-container" th:attr="id='tareas-'+${m.id}" style="display:none;"></div>
-            </div>
-        </div>
+        <table class="proyecto-table">
+            <tbody>
+                <tr th:if="${miembros == null or miembros.empty}">
+                    <td colspan="2" class="proyecto-empty">No hay miembros. Agrega usuarios.</td>
+                </tr>
+                <tr th:each="m : ${miembros}">
+                    <td colspan="2">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                            <div class="miembro-info">
+                                <span class="miembro-nombre" th:text="${m.usuario.nombre}">Nombre</span>
+                                <span class="miembro-email" th:text="${m.usuario.email}">email</span>
+                            </div>
+                            <div style="display:flex;gap:4px;flex-shrink:0;">
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="data-mid=${m.id},data-pid=${proyecto.id}"
+                                        onclick="cargarTareas(+this.dataset.mid, +this.dataset.pid)"
+                                        title="Ver tareas">📋</button>
+                                <button class="btn-xs btn-danger-ghost"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        th:attr="data-delete-url='/agenda/proyectos/' + ${proyecto.id} + '/miembros/' + ${m.id},
+                                                 data-delete-target='#miembros-container',
+                                                 data-delete-oncomplete='refrescarPanelesProyecto',
+                                                 data-delete-context=${proyecto.id},
+                                                 data-delete-title='Quitar miembro',
+                                                 data-delete-message='¿Deseas quitar a ' + ${m.usuario.nombre} + ' de este proyecto?'"
+                                        title="Quitar miembro">✕</button>
+                            </div>
+                        </div>
+                        <div class="tareas-collapse" th:attr="id='tareas-collapse-'+${m.id}">
+                            <div class="tareas-container" th:attr="id='tareas-'+${m.id}" style="margin-top:0.75rem;"></div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>

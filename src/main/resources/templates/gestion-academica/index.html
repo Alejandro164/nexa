@@ -138,6 +138,10 @@
                         @click="activeTab = 'examenes'">
                         📋 Exámenes
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'extraclase' }"
+                        @click="activeTab = 'extraclase'">
+                        🏠 Extraclase
+                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'promedio' }"
                         @click="activeTab = 'promedio'">
                         ✅ Promedio
@@ -151,86 +155,9 @@
 
             <!-- Asistencia -->
             <div x-show="activeTab === 'asistencia'" class="tab-pane">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Pase de Lista Diario</h3>
-                        <div style="display: flex; gap: 0.75rem;">
-                            <select class="form-input" style="max-width: 180px;">
-                                <option>Sección 7-1</option>
-                                <option>Sección 8-1</option>
-                                <option>Sección 10-5</option>
-                            </select>
-                            <input type="date" class="form-input" style="max-width: 160px;" value="2026-07-12" />
-                        </div>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Estudiante</th>
-                                        <th>Estado Asistencia</th>
-                                        <th>Observaciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
-                                        <td>
-                                            <div style="display:flex; gap:8px;">
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background-color:var(--success); color:white; border:none; border-radius:6px;">Presente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Ausente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Tardía</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Justificada</button>
-                                            </div>
-                                        </td>
-                                        <td><input type="text" class="form-input"
-                                                style="padding-left:10px; height: 32px;" placeholder="Agregar nota...">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
-                                        <td>
-                                            <div style="display:flex; gap:8px;">
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Presente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background-color:var(--danger); color:white; border:none; border-radius:6px;">Ausente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Tardía</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Justificada</button>
-                                            </div>
-                                        </td>
-                                        <td><input type="text" class="form-input"
-                                                style="padding-left:10px; height: 32px;" placeholder="Agregar nota...">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:600;">Valeria Rojas Méndez</td>
-                                        <td>
-                                            <div style="display:flex; gap:8px;">
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Presente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Ausente</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background-color:var(--warning); color:white; border:none; border-radius:6px;">Tardía</button>
-                                                <button class="btn"
-                                                    style="padding:4px 10px; font-size:0.75rem; background:var(--input-bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:6px;">Justificada</button>
-                                            </div>
-                                        </td>
-                                        <td><input type="text" class="form-input"
-                                                style="padding-left:10px; height: 32px;" placeholder="Agregar nota...">
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <div id="asistencia-panel" hx-get="/gestion-academica/asistencia" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando asistencia…</div>
                     </div>
                 </div>
             </div>
@@ -252,150 +179,18 @@
 
                 <!-- Sub-tab: Indicadores -->
                 <div x-show="subTabCotidiano === 'indicadores'">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Indicadores de Trabajo Cotidiano</h3>
-                            <button class="btn btn-primary">+ Nuevo Indicador</button>
-                        </div>
-                        <div style="padding: 1.5rem;">
-                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
-                                Defina los indicadores de aprendizaje que evaluará durante el trabajo cotidiano en clase.
-                            </p>
-                            <div class="table-container">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Indicador</th>
-                                            <th>Descripción</th>
-                                            <th>Porcentaje</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><strong>Resuelve ecuaciones lineales de primer grado</strong></td>
-                                            <td>Mide la capacidad de despejar variables y resolver ecuaciones con una incógnita</td>
-                                            <td><span class="badge badge-primary">15%</span></td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Aplica el teorema de Pitágoras en problemas</strong></td>
-                                            <td>Resolución de triángulos rectángulos en contextos prácticos</td>
-                                            <td><span class="badge badge-primary">10%</span></td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Participa activamente en discusiones grupales</strong></td>
-                                            <td>Aporta ideas, respeta turnos y construye sobre las opiniones de otros</td>
-                                            <td><span class="badge badge-primary">10%</span></td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
-                                            <td colspan="2">Total asignado</td>
-                                            <td><span style="color: var(--primary);">35%</span></td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+                    <div id="indicadores-panel" hx-get="/gestion-academica/cotidiano/indicadores" hx-trigger="load" hx-swap="innerHTML">
+                        <div class="card">
+                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando indicadores…</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Sub-tab: Evaluación -->
                 <div x-show="subTabCotidiano === 'evaluacion'">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Evaluación de Trabajo Cotidiano</h3>
-                            <div style="display: flex; gap: 0.75rem;">
-                                <select class="form-input" style="max-width: 180px;">
-                                    <option>Sección 7-1</option>
-                                    <option>Sección 8-1</option>
-                                    <option>Sección 10-5</option>
-                                </select>
-                                <select class="form-input" style="max-width: 220px;">
-                                    <option>Matemáticas</option>
-                                    <option>Ciencias</option>
-                                    <option>Español</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div style="padding: 1.5rem;">
-                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
-                                Asigne calificaciones a cada estudiante según los indicadores definidos.
-                            </p>
-                            <div class="table-container">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Estudiante</th>
-                                            <th>Indicador</th>
-                                            <th>Calificación</th>
-                                            <th>Observación</th>
-                                            <th>Fecha</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td style="font-weight:600;">Sofía Alpízar Soto</td>
-                                            <td>Resuelve ecuaciones lineales de primer grado</td>
-                                            <td><span class="badge badge-success">95</span></td>
-                                            <td class="text-muted text-sm">Excelente dominio del despeje de variables</td>
-                                            <td>10/07/2026</td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="font-weight:600;">Mateo Quirós Vargas</td>
-                                            <td>Aplica el teorema de Pitágoras en problemas</td>
-                                            <td><span class="badge badge-warning">78</span></td>
-                                            <td class="text-muted text-sm">Debe reforzar la identificación de catetos</td>
-                                            <td>08/07/2026</td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="font-weight:600;">Valeria Rojas Méndez</td>
-                                            <td>Participa activamente en discusiones grupales</td>
-                                            <td><span class="badge badge-success">92</span></td>
-                                            <td class="text-muted text-sm">Lidera debates y respeta las opiniones</td>
-                                            <td>09/07/2026</td>
-                                            <td>
-                                                <div style="display:flex; gap:6px;">
-                                                    <button class="btn btn-sm btn-secondary">Editar</button>
-                                                    <button class="btn btn-sm btn-danger">Eliminar</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                    <div id="evaluacion-panel" hx-get="/gestion-academica/cotidiano/evaluacion" hx-trigger="load" hx-swap="innerHTML">
+                        <div class="card">
+                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando evaluaciones…</div>
                         </div>
                     </div>
                 </div>
@@ -404,435 +199,54 @@
 
             <!-- Tareas -->
             <div x-show="activeTab === 'tareas'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Tareas y Trabajos de Investigación</h3>
-                        <button class="btn btn-primary">+ Asignar Tarea</button>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Título</th>
-                                        <th>Estudiante</th>
-                                        <th>Entrega</th>
-                                        <th>%</th>
-                                        <th>Estado</th>
-                                        <th>Calif.</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <strong>Maqueta de la Célula Vegetal</strong>
-                                            <div class="text-muted text-sm">Elaborar maqueta 3D con partes identificadas
-                                            </div>
-                                        </td>
-                                        <td>Sofía Alpízar Soto</td>
-                                        <td>20/07/2026</td>
-                                        <td>10%</td>
-                                        <td><span class="badge badge-warning">PENDIENTE</span></td>
-                                        <td>—</td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <strong>Informe de Laboratorio: pH y Soluciones</strong>
-                                            <div class="text-muted text-sm">Documentar experimento con tabla de
-                                                resultados</div>
-                                        </td>
-                                        <td>Valeria Rojas Méndez</td>
-                                        <td>15/07/2026</td>
-                                        <td>15%</td>
-                                        <td><span class="badge badge-primary">ENTREGADA</span></td>
-                                        <td><span class="badge badge-success">88</span></td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <div id="tareas-est-panel" hx-get="/gestion-academica/tareas" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando tareas…</div>
                     </div>
                 </div>
             </div>
 
             <!-- Proyectos -->
             <div x-show="activeTab === 'proyectos'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Proyectos Estudiantiles</h3>
-                        <button class="btn btn-primary">+ Nuevo Proyecto</button>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Estudiante</th>
-                                        <th>Fechas</th>
-                                        <th>%</th>
-                                        <th>Estado</th>
-                                        <th>Calif.</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <strong>Feria Científica: Energía Renovable</strong>
-                                            <div class="text-muted text-sm">Prototipo de panel solar casero con análisis
-                                                de eficiencia</div>
-                                        </td>
-                                        <td>Mateo Quirós Vargas</td>
-                                        <td>01/07 – 30/08</td>
-                                        <td>25%</td>
-                                        <td><span class="badge badge-warning">EN_PROGRESO</span></td>
-                                        <td>—</td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <strong>Desarrollo de App para Gestión de Residuos</strong>
-                                            <div class="text-muted text-sm">Aplicación móvil con geolocalización de
-                                                centros de reciclaje</div>
-                                        </td>
-                                        <td>Sofía Alpízar Soto</td>
-                                        <td>15/06 – 15/09</td>
-                                        <td>30%</td>
-                                        <td><span class="badge badge-primary">ABIERTO</span></td>
-                                        <td>—</td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <div id="proyectos-panel" hx-get="/gestion-academica/proyectos" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando proyectos…</div>
                     </div>
                 </div>
             </div>
 
             <!-- Exámenes -->
             <div x-show="activeTab === 'examenes'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Pruebas y Exámenes</h3>
-                        <button class="btn btn-primary">+ Programar Examen</button>
+                <div id="examenes-panel" hx-get="/gestion-academica/examenes" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando exámenes…</div>
                     </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Título</th>
-                                        <th>Tipo</th>
-                                        <th>Fecha</th>
-                                        <th>%</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <strong>Primer Examen Parcial de Ciencias</strong>
-                                            <div class="text-muted text-sm">Unidades 1-3: materia, energía y ecosistemas
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-primary">EXAMEN</span></td>
-                                        <td>05/08/2026 08:00</td>
-                                        <td>20%</td>
-                                        <td><span class="badge badge-warning">PROGRAMADO</span></td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <strong>Quiz de Matemáticas: Funciones Cuadráticas</strong>
-                                            <div class="text-muted text-sm">Evaluación corta sobre parábolas y vértices
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-primary">QUIZ</span></td>
-                                        <td>22/07/2026 10:00</td>
-                                        <td>10%</td>
-                                        <td><span class="badge badge-primary">APLICADO</span></td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <strong>Prueba de Español: Comprensión Lectora</strong>
-                                            <div class="text-muted text-sm">Análisis de texto narrativo y argumentativo
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-primary">PRUEBA</span></td>
-                                        <td>18/07/2026 09:00</td>
-                                        <td>15%</td>
-                                        <td><span class="badge badge-success">CALIFICADO</span></td>
-                                        <td>
-                                            <div style="display:flex; gap:6px;">
-                                                <button class="btn btn-sm btn-secondary">Editar</button>
-                                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                </div>
+            </div>
+
+            <!-- Extraclase -->
+            <div x-show="activeTab === 'extraclase'" class="tab-pane" x-cloak>
+                <div id="extraclase-panel" hx-get="/gestion-academica/extraclase" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando trabajos extraclase…</div>
                     </div>
                 </div>
             </div>
 
             <!-- Promedio -->
             <div x-show="activeTab === 'promedio'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Promedio de Componentes</h3>
-                        <select class="form-input" style="max-width: 200px;">
-                            <option>Sección 7-1 - Matemáticas</option>
-                            <option>Sección 8-1 - Ciencias</option>
-                            <option>Sección 10-5 - Español</option>
-                        </select>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">Visualice el
-                            promedio ponderado de cada estudiante según los porcentajes asignados a cada componente.</p>
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Estudiante</th>
-                                        <th>Cotidiano<br><small style="color:var(--text-light);">35%</small></th>
-                                        <th>Tareas<br><small style="color:var(--text-light);">15%</small></th>
-                                        <th>Proyectos<br><small style="color:var(--text-light);">25%</small></th>
-                                        <th>Exámenes<br><small style="color:var(--text-light);">20%</small></th>
-                                        <th>Asistencia<br><small style="color:var(--text-light);">5%</small></th>
-                                        <th style="background:rgba(45,90,135,0.08);">Promedio Final</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
-                                        <td><span class="badge badge-success">95</span></td>
-                                        <td><span class="badge badge-primary">88</span></td>
-                                        <td>—</td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-success">98</span></td>
-                                        <td style="font-weight:700; font-size:1.1rem; background:rgba(45,90,135,0.05);">
-                                            93.1
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
-                                        <td><span class="badge badge-warning">78</span></td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-primary">85</span></td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-danger">65</span></td>
-                                        <td style="font-weight:700; font-size:1.1rem; background:rgba(45,90,135,0.05);">
-                                            77.3
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:600;">Valeria Rojas Méndez</td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-success">88</span></td>
-                                        <td><span class="badge badge-warning">72</span></td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-success">95</span></td>
-                                        <td style="font-weight:700; font-size:1.1rem; background:rgba(45,90,135,0.05);">
-                                            82.0
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div
-                            style="margin-top: 1.5rem; padding: 1rem; background: var(--input-bg); border-radius: 10px; display: flex; gap: 2rem; flex-wrap: wrap;">
-                            <div>
-                                <span style="color: var(--text-secondary); font-size: 0.8rem;">Promedio del grupo</span>
-                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);">84.1</div>
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más alta</span>
-                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--success);">93.1</div>
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más baja</span>
-                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--danger);">77.3</div>
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary); font-size: 0.8rem;">Estudiantes
-                                    evaluados</span>
-                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">3</div>
-                            </div>
-                        </div>
+                <div id="promedio-panel" hx-get="/gestion-academica/promedio" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando promedios…</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Componentes de Calificación -->
+            <!-- Componentes de Calificación / Distribución Porcentual -->
             <div x-show="activeTab === 'componentes'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Componentes de Calificación</h3>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">Configure el
-                            porcentaje que cada componente aporta a la nota final. La suma debe ser 100%.</p>
-
-                        <div style="border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
-                            <table class="table" style="margin-bottom: 0;">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 40px;"></th>
-                                        <th>Componente</th>
-                                        <th style="width: 140px;">Porcentaje</th>
-                                        <th style="width: 100px;">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="text-align: center; color: var(--success); font-size: 1.2rem;">●</td>
-                                        <td>
-                                            <strong>Cotidiano</strong>
-                                            <div class="text-muted text-sm">Trabajo diario en clase, indicadores de
-                                                aprendizaje</div>
-                                        </td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <input type="range" min="0" max="60" value="35"
-                                                    style="flex: 1; accent-color: var(--primary);" />
-                                                <span
-                                                    style="font-weight: 700; min-width: 45px; text-align: right;">35%</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-secondary">Restablecer</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: center; color: var(--warning); font-size: 1.2rem;">●</td>
-                                        <td>
-                                            <strong>Tareas</strong>
-                                            <div class="text-muted text-sm">Trabajos de investigación, informes,
-                                                maquetas</div>
-                                        </td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <input type="range" min="0" max="40" value="15"
-                                                    style="flex: 1; accent-color: var(--primary);" />
-                                                <span
-                                                    style="font-weight: 700; min-width: 45px; text-align: right;">15%</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-secondary">Restablecer</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: center; color: var(--primary); font-size: 1.2rem;">●</td>
-                                        <td>
-                                            <strong>Proyectos</strong>
-                                            <div class="text-muted text-sm">Feria científica, proyectos integradores,
-                                                exposiciones</div>
-                                        </td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <input type="range" min="0" max="50" value="25"
-                                                    style="flex: 1; accent-color: var(--primary);" />
-                                                <span
-                                                    style="font-weight: 700; min-width: 45px; text-align: right;">25%</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-secondary">Restablecer</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: center; color: #e11d48; font-size: 1.2rem;">●</td>
-                                        <td>
-                                            <strong>Exámenes</strong>
-                                            <div class="text-muted text-sm">Pruebas escritas, exámenes parciales,
-                                                quizzes</div>
-                                        </td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <input type="range" min="0" max="50" value="20"
-                                                    style="flex: 1; accent-color: var(--primary);" />
-                                                <span
-                                                    style="font-weight: 700; min-width: 45px; text-align: right;">20%</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-secondary">Restablecer</button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td
-                                            style="text-align: center; color: var(--text-secondary); font-size: 1.2rem;">
-                                            ●</td>
-                                        <td>
-                                            <strong>Asistencia</strong>
-                                            <div class="text-muted text-sm">Porcentaje de asistencia durante el período
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <input type="range" min="0" max="10" value="5"
-                                                    style="flex: 1; accent-color: var(--primary);" />
-                                                <span
-                                                    style="font-weight: 700; min-width: 45px; text-align: right;">5%</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-secondary">Restablecer</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                                <tfoot>
-                                    <tr
-                                        style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
-                                        <td></td>
-                                        <td style="font-size: 1rem;">Total</td>
-                                        <td>
-                                            <span style="font-size: 1.1rem; color: var(--primary);">100%</span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-primary btn-sm">Guardar</button>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                <div id="distribucion-panel" hx-get="/gestion-academica/distribucion" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando distribución…</div>
                     </div>
                 </div>
             </div>

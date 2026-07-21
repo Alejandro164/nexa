@@ -1,0 +1,39 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
+        <div class="modal-dialog" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="'Notas: ' + ${examen.titulo}">Notas</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                <table class="table" style="margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th>Estudiante</th>
+                            <th style="width: 100px;">Nota</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${filas == null or filas.empty}">
+                            <td colspan="2" class="table-empty">No hay estudiantes activos.</td>
+                        </tr>
+                        <tr th:each="fila : ${filas}">
+                            <td th:text="${fila.estudiante.nombre}">Estudiante</td>
+                            <td>
+                                <input class="form-input" type="number" min="0" max="100"
+                                       style="padding: 6px 8px;" th:value="${fila.calificacion}"
+                                       hx-trigger="change"
+                                       hx-target="#modal-container" hx-swap="innerHTML"
+                                       th:attr="hx-post='/gestion-academica/examenes/' + ${examen.id} + '/notas',
+                                                hx-vals=|js:{estudianteId: ${fila.estudiante.id}}|">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>

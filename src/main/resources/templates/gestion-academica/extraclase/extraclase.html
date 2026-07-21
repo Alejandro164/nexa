@@ -1,0 +1,98 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Trabajos Extraclase</h3>
+                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
+                    Trabajos asignados para realizar fuera del horario de clase.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <div class="periodo-select-wide">
+                    <select class="form-input" name="periodoId"
+                            hx-get="/gestion-academica/extraclase"
+                            hx-target="#extraclase-panel" hx-swap="innerHTML"
+                            hx-include="[name='materiaId']">
+                        <option value="" th:if="${periodos == null or periodos.empty}" disabled selected>Sin períodos</option>
+                        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
+                                th:selected="${periodoId != null and periodoId == p.id}"></option>
+                    </select>
+                </div>
+                <select class="form-input" style="max-width: 220px;" name="materiaId"
+                        hx-get="/gestion-academica/extraclase"
+                        hx-target="#extraclase-panel" hx-swap="innerHTML"
+                        hx-include="[name='periodoId']">
+                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
+                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${materiaId != null and materiaId == m.id}"></option>
+                </select>
+                <button class="btn btn-primary" style="width: 220px; white-space: nowrap;"
+                        th:if="${periodoId != null and materiaId != null}"
+                        th:attr="hx-get='/gestion-academica/extraclase/form?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
+                        hx-target="#modal-container" hx-swap="innerHTML"
+                        onclick="abrirModalAcademico()">Nuevo Trabajo</button>
+            </div>
+        </div>
+
+        <div th:if="${periodoId == null or materiaId == null}"
+             style="padding: 2rem; text-align:center; color: var(--text-secondary);">
+            Debes crear al menos un período académico y una materia para asignar trabajos extraclase.
+        </div>
+
+        <div th:if="${periodoId != null and materiaId != null}" class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Estudiante</th>
+                        <th>Entrega</th>
+                        <th>%</th>
+                        <th>Estado</th>
+                        <th>Calif.</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${trabajos == null or trabajos.empty}">
+                        <td colspan="7" class="table-empty">No hay trabajos extraclase asignados.</td>
+                    </tr>
+                    <tr th:each="t : ${trabajos}">
+                        <td>
+                            <strong th:text="${t.titulo}">Título</strong>
+                            <div class="text-muted text-sm" th:if="${t.descripcion != null and !t.descripcion.isBlank()}" th:text="${t.descripcion}"></div>
+                        </td>
+                        <td th:text="${t.estudiante.nombre}">Estudiante</td>
+                        <td th:text="${#temporals.format(t.fechaEntrega, 'dd/MM/yyyy')}">Entrega</td>
+                        <td th:text="${t.porcentaje} + '%'">10%</td>
+                        <td>
+                            <span th:if="${t.estado.name() == 'PENDIENTE'}" class="badge badge-warning">PENDIENTE</span>
+                            <span th:if="${t.estado.name() == 'ENTREGADA'}" class="badge badge-primary">ENTREGADA</span>
+                            <span th:if="${t.estado.name() == 'CALIFICADA'}" class="badge badge-success">CALIFICADA</span>
+                            <span th:if="${t.estado.name() == 'ATRASADA'}" class="badge badge-danger">ATRASADA</span>
+                        </td>
+                        <td>
+                            <span th:if="${t.calificacion != null}" class="badge badge-success" th:text="${t.calificacion}">88</span>
+                            <span th:unless="${t.calificacion != null}">—</span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/gestion-academica/extraclase/form/' + ${t.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
+                                        hx-target="#modal-container" hx-swap="innerHTML"
+                                        onclick="abrirModalAcademico()"
+                                        title="Editar">✏️</button>
+                                <button class="btn-xs btn-danger-ghost"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        th:attr="data-delete-url='/gestion-academica/extraclase/' + ${t.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId},
+                                                 data-delete-target='#extraclase-panel',
+                                                 data-delete-title='Eliminar trabajo',
+                                                 data-delete-message='¿Deseas eliminar ' + ${t.titulo} + '? Esta acción no se puede deshacer.'"
+                                        title="Eliminar">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

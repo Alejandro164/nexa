@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.Usuario;
+import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 import com.chavescr.nexa.service.PersonalService;
 
@@ -31,6 +32,9 @@ public class EstudiantesController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private NivelAcademicoRepository nivelAcademicoRepository;
 
     // ─── EXPEDIENTES ─────────────────────────────────────────────
 
@@ -60,11 +64,13 @@ public class EstudiantesController {
     }
 
     @GetMapping("/expedientes/form")
-    public String expedientesFormCrear(Model model) {
+    public String expedientesFormCrear(Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
         Usuario nuevo = new Usuario();
         nuevo.setRoles(java.util.Set.of(personalService.obtenerRolPorNombre(ROL_ESTUDIANTE)));
         model.addAttribute("usuario", nuevo);
         model.addAttribute("roles", personalService.listarRoles());
+        model.addAttribute("niveles", nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId));
         return "estudiantes/expedientes/formulario :: form-content";
     }
 
@@ -73,6 +79,7 @@ public class EstudiantesController {
         Long institucionId = requerirInstitucion(session);
         model.addAttribute("usuario", personalService.obtenerPorId(institucionId, id));
         model.addAttribute("roles", personalService.listarRoles());
+        model.addAttribute("niveles", nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId));
         return "estudiantes/expedientes/formulario :: form-content";
     }
 
@@ -86,10 +93,11 @@ public class EstudiantesController {
             @RequestParam(required = false) String password,
             @RequestParam(defaultValue = "false") boolean activo,
             @RequestParam(required = false) List<Long> rolIds,
+            @RequestParam(required = false) Long nivelId,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
-            personalService.guardar(institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
+            personalService.guardar(institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds, nivelId);
             model.addAttribute("estudiantes", personalService.listarPorRol(institucionId, ROL_ESTUDIANTE));
             return "estudiantes/expedientes/lista :: content";
         } catch (Exception e) {
@@ -98,6 +106,7 @@ public class EstudiantesController {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id));
             model.addAttribute("roles", personalService.listarRoles());
+            model.addAttribute("niveles", nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId));
             return "estudiantes/expedientes/formulario :: form-content";
         }
     }

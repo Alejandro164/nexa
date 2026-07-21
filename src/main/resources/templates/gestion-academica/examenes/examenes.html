@@ -1,0 +1,92 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Pruebas y Exámenes</h3>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <div class="periodo-select-wide">
+                    <select class="form-input" name="periodoId"
+                            hx-get="/gestion-academica/examenes"
+                            hx-target="#examenes-panel" hx-swap="innerHTML"
+                            hx-include="[name='materiaId']">
+                        <option value="" th:if="${periodos == null or periodos.empty}" disabled selected>Sin períodos</option>
+                        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
+                                th:selected="${periodoId != null and periodoId == p.id}"></option>
+                    </select>
+                </div>
+                <select class="form-input" style="max-width: 220px;" name="materiaId"
+                        hx-get="/gestion-academica/examenes"
+                        hx-target="#examenes-panel" hx-swap="innerHTML"
+                        hx-include="[name='periodoId']">
+                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
+                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${materiaId != null and materiaId == m.id}"></option>
+                </select>
+                <button class="btn btn-primary" style="width: 220px; white-space: nowrap;"
+                        th:if="${periodoId != null and materiaId != null}"
+                        th:attr="hx-get='/gestion-academica/examenes/form?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
+                        hx-target="#modal-container" hx-swap="innerHTML"
+                        onclick="abrirModalAcademico()">Programar Examen</button>
+            </div>
+        </div>
+
+        <div th:if="${periodoId == null or materiaId == null}"
+             style="padding: 2rem; text-align:center; color: var(--text-secondary);">
+            Debes crear al menos un período académico y una materia para programar exámenes.
+        </div>
+
+        <div th:if="${periodoId != null and materiaId != null}" class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Tipo</th>
+                        <th>Fecha</th>
+                        <th>%</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${examenes == null or examenes.empty}">
+                        <td colspan="6" class="table-empty">No hay exámenes programados.</td>
+                    </tr>
+                    <tr th:each="e : ${examenes}">
+                        <td>
+                            <strong th:text="${e.titulo}">Título</strong>
+                            <div class="text-muted text-sm" th:if="${e.descripcion != null and !e.descripcion.isBlank()}" th:text="${e.descripcion}"></div>
+                        </td>
+                        <td><span class="badge badge-primary" th:text="${e.tipo}">EXAMEN</span></td>
+                        <td th:text="${#temporals.format(e.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</td>
+                        <td th:text="${e.porcentaje} + '%'">20%</td>
+                        <td>
+                            <span th:if="${e.estado.name() == 'PROGRAMADO'}" class="badge badge-warning">PROGRAMADO</span>
+                            <span th:if="${e.estado.name() == 'APLICADO'}" class="badge badge-primary">APLICADO</span>
+                            <span th:if="${e.estado.name() == 'CALIFICADO'}" class="badge badge-success">CALIFICADO</span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/gestion-academica/examenes/' + ${e.id} + '/notas'"
+                                        hx-target="#modal-container" hx-swap="innerHTML"
+                                        onclick="abrirModalAcademico()"
+                                        title="Notas">📝</button>
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/gestion-academica/examenes/form/' + ${e.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
+                                        hx-target="#modal-container" hx-swap="innerHTML"
+                                        onclick="abrirModalAcademico()"
+                                        title="Editar">✏️</button>
+                                <button class="btn-xs btn-danger-ghost"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        th:attr="data-delete-url='/gestion-academica/examenes/' + ${e.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId},
+                                                 data-delete-target='#examenes-panel',
+                                                 data-delete-title='Eliminar examen',
+                                                 data-delete-message='¿Deseas eliminar ' + ${e.titulo} + '? Esta acción no se puede deshacer.'"
+                                        title="Eliminar">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
