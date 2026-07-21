@@ -235,88 +235,9 @@
 
             <!-- Promedio -->
             <div x-show="activeTab === 'promedio'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Promedio de Componentes</h3>
-                        <select class="form-input" style="max-width: 200px;">
-                            <option>Sección 7-1 - Matemáticas</option>
-                            <option>Sección 8-1 - Ciencias</option>
-                            <option>Sección 10-5 - Español</option>
-                        </select>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">Visualice el
-                            promedio ponderado de cada estudiante según los porcentajes asignados a cada componente.</p>
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Estudiante</th>
-                                        <th>Cotidiano<br><small style="color:var(--text-light);">35%</small></th>
-                                        <th>Tareas<br><small style="color:var(--text-light);">15%</small></th>
-                                        <th>Proyectos<br><small style="color:var(--text-light);">25%</small></th>
-                                        <th>Exámenes<br><small style="color:var(--text-light);">20%</small></th>
-                                        <th>Asistencia<br><small style="color:var(--text-light);">5%</small></th>
-                                        <th style="background:rgba(45,90,135,0.08);">Promedio Final</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
-                                        <td><span class="badge badge-success">95</span></td>
-                                        <td><span class="badge badge-primary">88</span></td>
-                                        <td>—</td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-success">98</span></td>
-                                        <td style="font-weight:700; font-size:1.1rem; background:rgba(45,90,135,0.05);">
-                                            93.1
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
-                                        <td><span class="badge badge-warning">78</span></td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-primary">85</span></td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-danger">65</span></td>
-                                        <td style="font-weight:700; font-size:1.1rem; background:rgba(45,90,135,0.05);">
-                                            77.3
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:600;">Valeria Rojas Méndez</td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-success">88</span></td>
-                                        <td><span class="badge badge-warning">72</span></td>
-                                        <td>—</td>
-                                        <td><span class="badge badge-success">95</span></td>
-                                        <td style="font-weight:700; font-size:1.1rem; background:rgba(45,90,135,0.05);">
-                                            82.0
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div
-                            style="margin-top: 1.5rem; padding: 1rem; background: var(--input-bg); border-radius: 10px; display: flex; gap: 2rem; flex-wrap: wrap;">
-                            <div>
-                                <span style="color: var(--text-secondary); font-size: 0.8rem;">Promedio del grupo</span>
-                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);">84.1</div>
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más alta</span>
-                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--success);">93.1</div>
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más baja</span>
-                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--danger);">77.3</div>
-                            </div>
-                            <div>
-                                <span style="color: var(--text-secondary); font-size: 0.8rem;">Estudiantes
-                                    evaluados</span>
-                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">3</div>
-                            </div>
-                        </div>
+                <div id="promedio-panel" hx-get="/gestion-academica/promedio" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando promedios…</div>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,126 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Promedio de Componentes</h3>
+                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
+                    Visualice el promedio ponderado de cada estudiante según los porcentajes asignados a cada componente, para el período académico activo.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <select class="form-input" style="max-width: 200px;" name="nivelId"
+                        hx-get="/gestion-academica/promedio"
+                        hx-target="#promedio-panel" hx-swap="innerHTML"
+                        hx-include="[name='materiaId']">
+                    <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
+                    <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
+                            th:selected="${nivelId != null and nivelId == n.id}"></option>
+                </select>
+                <select class="form-input" style="max-width: 220px;" name="materiaId"
+                        hx-get="/gestion-academica/promedio"
+                        hx-target="#promedio-panel" hx-swap="innerHTML"
+                        hx-include="[name='nivelId']">
+                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
+                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${materiaId != null and materiaId == m.id}"></option>
+                </select>
+            </div>
+        </div>
+
+        <div th:if="${nivelId == null or materiaId == null}"
+             style="padding: 2rem; text-align:center; color: var(--text-secondary);">
+            Debes crear al menos una sección y una materia para calcular promedios.
+        </div>
+
+        <th:block th:if="${nivelId != null and materiaId != null}">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Estudiante</th>
+                            <th>Cotidiano</th>
+                            <th>Tareas</th>
+                            <th>Proyectos</th>
+                            <th>Exámenes</th>
+                            <th>Extraclase</th>
+                            <th>Asistencia</th>
+                            <th style="background:rgba(45,90,135,0.08);">Promedio Final</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${filas == null or filas.empty}">
+                            <td colspan="8" class="table-empty">No hay estudiantes activos en esta sección.</td>
+                        </tr>
+                        <tr th:each="fila : ${filas}">
+                            <td style="font-weight:600;" th:text="${fila.estudiante.nombre}">Estudiante</td>
+                            <td>
+                                <span th:if="${fila.cotidiano == null}">—</span>
+                                <span th:if="${fila.cotidiano != null and fila.cotidiano >= 80}" class="badge badge-success" th:text="${fila.cotidiano}">95</span>
+                                <span th:if="${fila.cotidiano != null and fila.cotidiano >= 60 and fila.cotidiano < 80}" class="badge badge-warning" th:text="${fila.cotidiano}">70</span>
+                                <span th:if="${fila.cotidiano != null and fila.cotidiano < 60}" class="badge badge-danger" th:text="${fila.cotidiano}">50</span>
+                            </td>
+                            <td>
+                                <span th:if="${fila.tareas == null}">—</span>
+                                <span th:if="${fila.tareas != null and fila.tareas >= 80}" class="badge badge-success" th:text="${fila.tareas}">95</span>
+                                <span th:if="${fila.tareas != null and fila.tareas >= 60 and fila.tareas < 80}" class="badge badge-warning" th:text="${fila.tareas}">70</span>
+                                <span th:if="${fila.tareas != null and fila.tareas < 60}" class="badge badge-danger" th:text="${fila.tareas}">50</span>
+                            </td>
+                            <td>
+                                <span th:if="${fila.proyectos == null}">—</span>
+                                <span th:if="${fila.proyectos != null and fila.proyectos >= 80}" class="badge badge-success" th:text="${fila.proyectos}">95</span>
+                                <span th:if="${fila.proyectos != null and fila.proyectos >= 60 and fila.proyectos < 80}" class="badge badge-warning" th:text="${fila.proyectos}">70</span>
+                                <span th:if="${fila.proyectos != null and fila.proyectos < 60}" class="badge badge-danger" th:text="${fila.proyectos}">50</span>
+                            </td>
+                            <td>
+                                <span th:if="${fila.examenes == null}">—</span>
+                                <span th:if="${fila.examenes != null and fila.examenes >= 80}" class="badge badge-success" th:text="${fila.examenes}">95</span>
+                                <span th:if="${fila.examenes != null and fila.examenes >= 60 and fila.examenes < 80}" class="badge badge-warning" th:text="${fila.examenes}">70</span>
+                                <span th:if="${fila.examenes != null and fila.examenes < 60}" class="badge badge-danger" th:text="${fila.examenes}">50</span>
+                            </td>
+                            <td>
+                                <span th:if="${fila.extraclase == null}">—</span>
+                                <span th:if="${fila.extraclase != null and fila.extraclase >= 80}" class="badge badge-success" th:text="${fila.extraclase}">95</span>
+                                <span th:if="${fila.extraclase != null and fila.extraclase >= 60 and fila.extraclase < 80}" class="badge badge-warning" th:text="${fila.extraclase}">70</span>
+                                <span th:if="${fila.extraclase != null and fila.extraclase < 60}" class="badge badge-danger" th:text="${fila.extraclase}">50</span>
+                            </td>
+                            <td>
+                                <span th:if="${fila.asistencia == null}">—</span>
+                                <span th:if="${fila.asistencia != null and fila.asistencia >= 80}" class="badge badge-success" th:text="${fila.asistencia}">95</span>
+                                <span th:if="${fila.asistencia != null and fila.asistencia >= 60 and fila.asistencia < 80}" class="badge badge-warning" th:text="${fila.asistencia}">70</span>
+                                <span th:if="${fila.asistencia != null and fila.asistencia < 60}" class="badge badge-danger" th:text="${fila.asistencia}">50</span>
+                            </td>
+                            <td style="font-weight:700; font-size:1.1rem; background:rgba(45,90,135,0.05);">
+                                <span th:if="${fila.promedioFinal == null}" style="color: var(--text-secondary); font-weight:400; font-size:0.9rem;">Sin datos</span>
+                                <span th:if="${fila.promedioFinal != null}" th:text="${#numbers.formatDecimal(fila.promedioFinal, 1, 1)}">0.0</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${filas != null and !filas.empty}"
+                 style="margin: 1.5rem; padding: 1rem; background: var(--input-bg); border-radius: 10px; display: flex; gap: 2rem; flex-wrap: wrap;">
+                <div>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Promedio del grupo</span>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);"
+                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(promedioGrupo, 1, 1) : '—'}">—</div>
+                </div>
+                <div>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más alta</span>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--success);"
+                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(notaMasAlta, 1, 1) : '—'}">—</div>
+                </div>
+                <div>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más baja</span>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--danger);"
+                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(notaMasBaja, 1, 1) : '—'}">—</div>
+                </div>
+                <div>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Estudiantes evaluados</span>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);"
+                         th:text="${estudiantesEvaluados}">0</div>
+                </div>
+            </div>
+        </th:block>
+    </div>
+</div>

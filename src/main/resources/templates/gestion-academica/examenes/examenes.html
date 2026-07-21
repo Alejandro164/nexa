@@ -66,6 +66,11 @@
                         <td>
                             <div class="table-actions">
                                 <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/gestion-academica/examenes/' + ${e.id} + '/notas'"
+                                        hx-target="#modal-container" hx-swap="innerHTML"
+                                        onclick="abrirModalAcademico()"
+                                        title="Notas">📝</button>
+                                <button class="btn-xs btn-ghost"
                                         th:attr="hx-get='/gestion-academica/examenes/form/' + ${e.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
                                         hx-target="#modal-container" hx-swap="innerHTML"
                                         onclick="abrirModalAcademico()"

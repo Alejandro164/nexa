@@ -1,16 +1,23 @@
 package com.chavescr.nexa.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.dto.FilaNotaExamen;
 import com.chavescr.nexa.entity.Examen;
 import com.chavescr.nexa.entity.Materia;
+import com.chavescr.nexa.entity.NotaExamen;
 import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.ExamenRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
+import com.chavescr.nexa.repository.NotaExamenRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
+import com.chavescr.nexa.repository.UsuarioRepository;
 
 @Service
 @Transactional
@@ -19,12 +26,17 @@ public class ExamenService {
     private final ExamenRepository examenRepository;
     private final PeriodoAcademicoRepository periodoRepository;
     private final MateriaRepository materiaRepository;
+    private final NotaExamenRepository notaExamenRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public ExamenService(ExamenRepository examenRepository, PeriodoAcademicoRepository periodoRepository,
-            MateriaRepository materiaRepository) {
+            MateriaRepository materiaRepository, NotaExamenRepository notaExamenRepository,
+            UsuarioRepository usuarioRepository) {
         this.examenRepository = examenRepository;
         this.periodoRepository = periodoRepository;
         this.materiaRepository = materiaRepository;
+        this.notaExamenRepository = notaExamenRepository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Transactional(readOnly = true)
@@ -71,5 +83,28 @@ public class ExamenService {
     public void eliminarExamen(Long institucionId, Long id) {
         Examen examen = obtenerExamen(institucionId, id);
         examenRepository.delete(examen);
+    }
+
+    @Transactional(readOnly = true)
+    public List<FilaNotaExamen> listarNotas(Long institucionId, Long examenId) {
+        Examen examen = obtenerExamen(institucionId, examenId);
+        Map<Long, NotaExamen> notas = notaExamenRepository.findByExamenId(examen.getId()).stream()
+                .collect(Collectors.toMap(n -> n.getEstudiante().getId(), n -> n));
+        List<Usuario> estudiantes = usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, "ROLE_ESTUDIANTE");
+        return estudiantes.stream()
+                .map(e -> new FilaNotaExamen(e, notas.containsKey(e.getId()) ? notas.get(e.getId()).getCalificacion() : null))
+                .toList();
+    }
+
+    public void guardarNota(Long institucionId, Long examenId, Long estudianteId, Integer calificacion) {
+        Examen examen = obtenerExamen(institucionId, examenId);
+        Usuario estudiante = usuarioRepository.findActivoByIdAndInstitucionId(estudianteId, institucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
+        NotaExamen nota = notaExamenRepository.findByExamenIdAndEstudianteId(examen.getId(), estudianteId)
+                .orElseGet(NotaExamen::new);
+        nota.setExamen(examen);
+        nota.setEstudiante(estudiante);
+        nota.setCalificacion(calificacion);
+        notaExamenRepository.save(nota);
     }
 }

@@ -71,6 +71,27 @@ public class ExamenController {
         return "gestion-academica/examenes/examenes :: content";
     }
 
+    @GetMapping("/{id}/notas")
+    public String notas(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        cargarNotas(model, institucionId, id);
+        return "gestion-academica/examenes/notas :: form-content";
+    }
+
+    @PostMapping("/{id}/notas")
+    public String guardarNota(@PathVariable Long id, @RequestParam Long estudianteId,
+            @RequestParam Integer calificacion, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        service.guardarNota(institucionId, id, estudianteId, calificacion);
+        cargarNotas(model, institucionId, id);
+        return "gestion-academica/examenes/notas :: form-content";
+    }
+
+    private void cargarNotas(Model model, Long institucionId, Long examenId) {
+        model.addAttribute("examen", service.obtenerExamen(institucionId, examenId));
+        model.addAttribute("filas", service.listarNotas(institucionId, examenId));
+    }
+
     private void cargarPanel(Model model, Long institucionId, Long periodoId, Long materiaId) {
         var periodos = service.listarPeriodosActivos(institucionId);
         var materias = service.listarMateriasActivas(institucionId);

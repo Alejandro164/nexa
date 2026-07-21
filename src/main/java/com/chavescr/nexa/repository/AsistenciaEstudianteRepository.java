@@ -15,4 +15,7 @@ public interface AsistenciaEstudianteRepository extends JpaRepository<Asistencia
 
     Optional<AsistenciaEstudiante> findByInstitucionIdAndEstudianteIdAndFecha(Long institucionId, Long estudianteId,
             LocalDate fecha);
+
+    List<AsistenciaEstudiante> findByInstitucionIdAndEstudianteIdAndFechaBetween(Long institucionId,
+            Long estudianteId, LocalDate desde, LocalDate hasta);
 }
