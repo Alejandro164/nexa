@@ -138,6 +138,10 @@
                         @click="activeTab = 'examenes'">
                         📋 Exámenes
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'extraclase' }"
+                        @click="activeTab = 'extraclase'">
+                        🏠 Extraclase
+                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'promedio' }"
                         @click="activeTab = 'promedio'">
                         ✅ Promedio
@@ -216,6 +220,15 @@
                 <div id="examenes-panel" hx-get="/gestion-academica/examenes" hx-trigger="load" hx-swap="innerHTML">
                     <div class="card">
                         <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando exámenes…</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Extraclase -->
+            <div x-show="activeTab === 'extraclase'" class="tab-pane" x-cloak>
+                <div id="extraclase-panel" hx-get="/gestion-academica/extraclase" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando trabajos extraclase…</div>
                     </div>
                 </div>
             </div>
