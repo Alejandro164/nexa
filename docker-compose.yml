@@ -56,11 +56,12 @@ services:
       - .:/app
       # Cache de Maven para no descargar en cada rebuild
       - maven_cache:/root/.m2
-      # Montaje explícito: Conecta el disco de tu Mac a la ruta /home/datos-nexa de Docker
-      - /Users/alejandrochaves/datos-nexa:/home/datos-nexa
+      # Archivos de NubeNexa y uploads — volumen persistente dentro de Docker (sin bind mount al host)
+      - datos_nexa_dev:/home/datos-nexa
     restart: unless-stopped
 
 volumes:
   postgres_data_dev:
   redis_data:
   maven_cache:
+  datos_nexa_dev:
