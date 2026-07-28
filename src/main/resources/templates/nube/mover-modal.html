@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <div th:fragment="modal-content">
+        <div class="modal-backdrop"
+            @click.self="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
+            <div class="modal-dialog" style="max-width: 480px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Mover <span th:text="${nodo.nombre}">elemento</span></h3>
+                    <button type="button" class="close-btn"
+                        @click="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="modal-body" style="padding: 0;">
+                    <div class="nube-breadcrumbs"
+                        style="padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--input-bg);">
+                        <a th:hx-get="@{/nube-nexa/mover/{id}(id=${nodo.id}, padreId=${padreId})}"
+                            hx-target="#modal-container" hx-swap="innerHTML"
+                            th:class="${destinoId == null} ? 'active' : ''">Mi Unidad</a>
+
+                        <th:block th:each="bc : ${breadcrumbsDestino}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                            <a th:hx-get="@{/nube-nexa/mover/{id}(id=${nodo.id}, destinoId=${bc.id}, padreId=${padreId})}"
+                                hx-target="#modal-container" hx-swap="innerHTML" th:text="${bc.nombre}"
+                                th:class="${bc.id == destinoId} ? 'active' : ''">Carpeta</a>
+                        </th:block>
+                    </div>
+
+                    <div th:if="${carpetasDestino.isEmpty()}"
+                        style="padding: 2rem 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
+                        No hay subcarpetas aquí.
+                    </div>
+
+                    <div th:if="${!carpetasDestino.isEmpty()}" style="max-height: 320px; overflow-y: auto;">
+                        <a th:each="c : ${carpetasDestino}"
+                            th:hx-get="@{/nube-nexa/mover/{id}(id=${nodo.id}, destinoId=${c.id}, padreId=${padreId})}"
+                            hx-target="#modal-container" hx-swap="innerHTML"
+                            style="display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.85rem 1.5rem; border: none; border-bottom: 1px solid var(--border); background: none; cursor: pointer; text-align: left; font-family: inherit; text-decoration: none; color: inherit;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" stroke="#0ea5e9" stroke-width="1.5"
+                                fill="rgba(14,165,233,0.15)" stroke-linecap="round" stroke-linejoin="round">
+                                <path
+                                    d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                </path>
+                            </svg>
+                            <span th:text="${c.nombre}" style="flex: 1; font-size: 0.9rem;">Carpeta</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <form hx-post="/nube-nexa/mover" hx-target="#nube-content-area" hx-swap="outerHTML"
+                        hx-indicator="#nube-loading"
+                        hx-on:htmx:after-request="if(event.detail.successful){document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)}">
+                        <input type="hidden" name="id" th:value="${nodo.id}">
+                        <input type="hidden" name="destinoId" th:value="${destinoId}">
+                        <input type="hidden" name="padreId" th:value="${padreId}">
+                        <div class="modal-footer" style="margin: 0;">
+                            <button type="button" class="btn btn-secondary"
+                                @click="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Mover aquí</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

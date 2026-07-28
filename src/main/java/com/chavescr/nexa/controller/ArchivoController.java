@@ -48,6 +48,8 @@ public class ArchivoController {
             throw new IllegalArgumentException("El nodo no es un archivo");
         }
 
+        nubeNodoService.registrarAcceso(id);
+
         boolean previewDisponible = nubeNodoService.generarPreview(id);
 
         if (previewDisponible) {
@@ -103,6 +105,8 @@ public class ArchivoController {
         if (!archivo.getTipo().name().equals("ARCHIVO")) {
             throw new IllegalArgumentException("El nodo no es un archivo");
         }
+
+        nubeNodoService.registrarAcceso(id);
 
         try {
             Path filePath = Paths.get(nubeNodoService.getRutaRecursos()).resolve(archivo.getUrlArchivo());

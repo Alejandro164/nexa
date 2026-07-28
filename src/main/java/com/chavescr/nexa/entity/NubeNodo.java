@@ -49,8 +49,18 @@ public class NubeNodo {
     @OneToMany(mappedBy = "padre", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NubeNodo> hijos = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "propietario_id")
+    private Usuario propietario;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
+
+    @Column(name = "ultimo_acceso")
+    private LocalDateTime ultimoAcceso;
+
+    @Column(name = "fecha_eliminacion")
+    private LocalDateTime fechaEliminacion;
 
     @PrePersist
     protected void onCreate() {
@@ -137,5 +147,29 @@ public class NubeNodo {
 
     public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
+    }
+
+    public Usuario getPropietario() {
+        return propietario;
+    }
+
+    public void setPropietario(Usuario propietario) {
+        this.propietario = propietario;
+    }
+
+    public LocalDateTime getUltimoAcceso() {
+        return ultimoAcceso;
+    }
+
+    public void setUltimoAcceso(LocalDateTime ultimoAcceso) {
+        this.ultimoAcceso = ultimoAcceso;
+    }
+
+    public LocalDateTime getFechaEliminacion() {
+        return fechaEliminacion;
+    }
+
+    public void setFechaEliminacion(LocalDateTime fechaEliminacion) {
+        this.fechaEliminacion = fechaEliminacion;
     }
 }

@@ -15,6 +15,10 @@
     <link rel="stylesheet" th:href="@{/css/componentes.css}">
 
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <!-- Debe cargarse (defer) ANTES que Alpine: define funciones usadas en x-data="miFuncion()"
+         (ej. nubeNexaComponente, proyectoComponente) que Alpine necesita resueltas al arrancar,
+         incluso en una carga de página completa (no solo navegación htmx). -->
+    <script th:src="@{/js/componentes.js}" defer></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.8/dist/cdn.min.js"></script>
 
     <meta name="_csrf" th:content="${_csrf.token}" />
@@ -1223,8 +1227,6 @@
         .academic-select-option-label { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
         .academic-select-option .badge { flex-shrink:0; }
     </style>
-
-    <script th:src="@{/js/componentes.js}" defer></script>
 
     <th:block layout:fragment="head-extra"></th:block>
 </head>

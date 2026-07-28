@@ -952,3 +952,226 @@ if (document.readyState === 'loading') {
 } else {
     inicializarSelectoresAcademicos(document);
 }
+
+// ── Componente Alpine: Nube Nexa ─────────────────────────────────────────────
+
+function nubeNexaComponente() {
+    return {
+        nuevoDropdownOpen: false,
+        folderModalOpen: false,
+
+        activeContextMenu: null,
+
+        draggingId: null,
+        dragOverId: null,
+
+        renameModalOpen: false,
+        shareModalOpen: false,
+
+        nodeId: null,
+        nodeName: '',
+        shareLink: '',
+
+        detailsPanelOpen: false,
+        detailsData: { nombre: '', esCarpeta: false, extension: '', tamanoBytes: null, itemCount: null, fecha: '', propietario: '', ultimoAcceso: '' },
+
+        previewModalOpen: false,
+        previewId: null,
+        previewName: '',
+        previewExtension: '',
+        previewType: '',
+        _closeTimer: null,
+
+        sendModalOpen: false,
+        sendMethod: 'whatsapp', // 'whatsapp' o 'email'
+        sendType: 'system', // 'system' o 'manual'
+        sendDestination: '',
+
+        toggleNuevoDropdown() {
+            this.nuevoDropdownOpen = !this.nuevoDropdownOpen;
+        },
+
+        openFolderModal() {
+            this.folderModalOpen = true;
+            this.nuevoDropdownOpen = false;
+            setTimeout(() => {
+                let input = document.getElementById('newFolderInput');
+                if (input) input.focus();
+            }, 50);
+        },
+
+        closeFolderModal() {
+            this.folderModalOpen = false;
+        },
+
+        openPreviewModal(id, nombre, extension) {
+            if (this._closeTimer) {
+                clearTimeout(this._closeTimer);
+                this._closeTimer = null;
+            }
+            this.previewId = id;
+            this.previewName = nombre;
+
+            let ext = (extension || '').replace('.', '').toLowerCase();
+            this.previewExtension = ext;
+
+            if (['pdf'].includes(ext)) {
+                this.previewType = 'pdf';
+            } else if (['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt', 'odt', 'ods', 'odp'].includes(ext)) {
+                this.previewType = 'office';
+            } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) {
+                this.previewType = 'image';
+            } else if (['txt', 'csv', 'json', 'xml', 'md'].includes(ext)) {
+                this.previewType = 'text';
+            } else if (['mp4', 'webm'].includes(ext)) {
+                this.previewType = 'video';
+            } else if (['mp3', 'wav'].includes(ext)) {
+                this.previewType = 'audio';
+            } else {
+                this.previewType = 'unsupported';
+            }
+
+            this.previewModalOpen = true;
+
+            // Registrar el acceso explícitamente: para pdf/imagen/office/etc. el iframe/img ya lo
+            // hace como efecto secundario al pedir el archivo, pero un archivo sin previsualización
+            // soportada nunca llega a pedirle nada al servidor, así que "último acceso" nunca se
+            // actualizaría si no se registra acá también.
+            htmx.ajax('POST', '/nube-nexa/registrar-acceso/' + id, { swap: 'none' });
+        },
+
+        closePreviewModal() {
+            const contentArea = document.getElementById('nube-content-area');
+            const estabaEnRecientes = contentArea?.dataset.recientes === 'true';
+
+            this.previewModalOpen = false;
+            this._closeTimer = setTimeout(() => {
+                this.previewId = null;
+                this._closeTimer = null;
+            }, 300);
+
+            // El archivo recién abierto actualizó su "último acceso" en el servidor;
+            // refrescar la lista para que se reordene/aparezca al tope de inmediato.
+            if (estabaEnRecientes) {
+                htmx.ajax('GET', '/nube-nexa/recientes', { target: '#nube-content-area', swap: 'outerHTML' });
+            }
+        },
+
+        toggleContextMenu(id) {
+            if (this.activeContextMenu === id) {
+                this.activeContextMenu = null;
+            } else {
+                this.activeContextMenu = id;
+            }
+        },
+
+        moverArrastrando(id, destinoId) {
+            const padreId = document.getElementById('nube-content-area')?.dataset.carpetaActualId || '';
+            htmx.ajax('POST', '/nube-nexa/mover', {
+                target: '#nube-content-area',
+                swap: 'outerHTML',
+                values: { id: id, destinoId: destinoId || '', padreId: padreId }
+            });
+        },
+
+        openDetailsPanel(el) {
+            const d = el.dataset;
+            this.detailsData = {
+                nombre: d.nombre,
+                esCarpeta: d.esCarpeta === 'true',
+                extension: d.extension || '',
+                tamanoBytes: d.tamanoBytes ? parseInt(d.tamanoBytes, 10) : null,
+                itemCount: d.itemCount !== undefined ? parseInt(d.itemCount, 10) : null,
+                fecha: d.fecha || '',
+                propietario: d.propietario || '',
+                ultimoAcceso: d.ultimoAcceso || ''
+            };
+            this.detailsPanelOpen = true;
+        },
+
+        closeDetailsPanel() {
+            this.detailsPanelOpen = false;
+        },
+
+        detailsTipoTexto() {
+            if (this.detailsData.esCarpeta) return 'Carpeta';
+            return this.detailsData.extension ? 'Archivo ' + this.detailsData.extension.toUpperCase() : 'Archivo';
+        },
+
+        detailsTamanoTexto() {
+            if (this.detailsData.esCarpeta) {
+                const n = this.detailsData.itemCount || 0;
+                return n === 0 ? 'Vacía' : (n + ' elemento' + (n > 1 ? 's' : ''));
+            }
+            const bytes = this.detailsData.tamanoBytes;
+            if (!bytes && bytes !== 0) return '—';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        },
+
+        openRenameModal(id, nombre) {
+            this.nodeId = id;
+            this.nodeName = nombre;
+            this.renameModalOpen = true;
+            this.activeContextMenu = null;
+            setTimeout(() => {
+                let input = document.getElementById('renameInput');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 50);
+        },
+
+        closeRenameModal() {
+            this.renameModalOpen = false;
+        },
+
+        openShareModal(nombre) {
+            this.nodeName = nombre;
+            let randomId = Math.random().toString(36).substring(2, 10);
+            this.shareLink = window.location.origin + '/nube-nexa/compartido/' + randomId;
+            this.shareModalOpen = true;
+            this.activeContextMenu = null;
+        },
+
+        closeShareModal() {
+            this.shareModalOpen = false;
+        },
+
+        copiarEnlace() {
+            var copyText = document.getElementById("shareLinkInput");
+            if (copyText) {
+                copyText.select();
+                copyText.setSelectionRange(0, 99999);
+                navigator.clipboard.writeText(copyText.value);
+
+                let btn = document.getElementById('btnCopiar');
+                if (btn) {
+                    let originalText = btn.innerText;
+                    btn.innerText = '¡Copiado!';
+                    setTimeout(() => { btn.innerText = originalText; }, 2000);
+                }
+            }
+        },
+
+        openSendModal() {
+            if (!this.previewId) return;
+            this.sendModalOpen = true;
+            this.sendMethod = 'whatsapp';
+            this.sendType = 'system';
+            this.sendDestination = '';
+        },
+
+        closeSendModal() {
+            this.sendModalOpen = false;
+        },
+
+        executeSendDocument() {
+            // Aquí iría la llamada AJAX a los servicios propios de backend
+            alert(`Documento enviado exitosamente por ${this.sendMethod === 'whatsapp' ? 'WhatsApp' : 'Correo'}`);
+            this.closeSendModal();
+        }
+    };
+}

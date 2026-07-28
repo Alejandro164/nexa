@@ -12,12 +12,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -35,7 +37,8 @@ public class NubeController {
 
     // Vista Principal (Raíz)
     @GetMapping
-    public String nubeNexa(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest, Model model) {
+    public String nubeNexa(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            @RequestHeader(value = "HX-Target", required = false) String hxTarget, Model model) {
         List<NubeNodo> nodos = nubeNodoService.obtenerNodosRaiz();
 
         List<NubeNodo> carpetas = nodos.stream().filter(n -> n.getTipo().name().equals("CARPETA"))
@@ -47,12 +50,21 @@ public class NubeController {
         model.addAttribute("archivos", archivos);
         model.addAttribute("carpetaActual", null); // Indica que estamos en la raíz
 
+        // Navegación interna del módulo (breadcrumb "Mi Unidad") apunta a #nube-content-area:
+        // debe recibir solo ese fragmento, no la página completa del módulo (que duplicaría
+        // #nube-container al hacer hx-swap="outerHTML" sobre un elemento interno).
+        if ("nube-content-area".equals(hxTarget)) {
+            return "nube/index :: nube-content-area";
+        }
+
         return htmxRequest ? "nube/index :: htmx-content" : "nube/index";
     }
 
     // Vista de una Carpeta Específica
     @GetMapping("/carpeta/{id}")
     public String verCarpeta(@PathVariable Long id, Model model) {
+        nubeNodoService.registrarAcceso(id);
+
         List<NubeNodo> nodos = nubeNodoService.obtenerNodosPorPadre(id);
 
         List<NubeNodo> carpetas = nodos.stream().filter(n -> n.getTipo().name().equals("CARPETA"))
@@ -73,8 +85,10 @@ public class NubeController {
 
     // Crear Nueva Carpeta
     @PostMapping("/crear-carpeta")
-    public String crearCarpeta(@RequestParam String nombre, @RequestParam(required = false) Long padreId, Model model) {
-        nubeNodoService.crearCarpeta(nombre, padreId);
+    public String crearCarpeta(@RequestParam String nombre, @RequestParam(required = false) Long padreId, Model model,
+            HttpSession session) {
+        Long propietarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        nubeNodoService.crearCarpeta(nombre, padreId, propietarioId);
 
         // Recargar la vista actual (padre o raíz)
         if (padreId != null) {
@@ -100,8 +114,9 @@ public class NubeController {
         if (institucionId == null) {
             throw new IllegalStateException("Debe seleccionar una institución");
         }
+        Long propietarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         try {
-            nubeNodoService.subirArchivo(archivo, padreId, institucionId);
+            nubeNodoService.subirArchivo(archivo, padreId, institucionId, propietarioId);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -202,13 +217,13 @@ public class NubeController {
         if (padreId != null) {
             return verCarpeta(padreId, model);
         } else {
-            return nubeNexa(false, model).replace("nube/index", "nube/index :: nube-content-area");
+            return nubeNexa(false, null, model).replace("nube/index", "nube/index :: nube-content-area");
         }
     }
 
-    // Eliminar Archivo o Carpeta
-    @PostMapping("/eliminar")
-    public String eliminar(@RequestParam Long id,
+    // Eliminar Archivo o Carpeta (borrado lógico: va a la papelera)
+    @DeleteMapping("/{id}")
+    public String eliminar(@PathVariable Long id,
             @RequestParam(required = false) Long padreId,
             Model model) {
         nubeNodoService.eliminarNodo(id);
@@ -216,7 +231,88 @@ public class NubeController {
         if (padreId != null) {
             return verCarpeta(padreId, model);
         } else {
-            return nubeNexa(false, model).replace("nube/index", "nube/index :: nube-content-area");
+            return nubeNexa(false, null, model).replace("nube/index", "nube/index :: nube-content-area");
+        }
+    }
+
+    // Vista de la Papelera
+    @GetMapping("/papelera")
+    public String papelera(Model model) {
+        model.addAttribute("papeleraItems", nubeNodoService.obtenerPapelera());
+        model.addAttribute("vistaPapelera", true);
+        model.addAttribute("carpetas", List.of());
+        model.addAttribute("archivos", List.of());
+        model.addAttribute("carpetaActual", null);
+
+        return "nube/index :: nube-content-area";
+    }
+
+    // Restaurar Archivo o Carpeta desde la Papelera
+    @PostMapping("/restaurar/{id}")
+    public String restaurar(@PathVariable Long id, Model model) {
+        nubeNodoService.restaurarNodo(id);
+        return papelera(model);
+    }
+
+    // Eliminar Archivo o Carpeta definitivamente desde la Papelera
+    @DeleteMapping("/papelera/{id}")
+    public String eliminarDefinitivamente(@PathVariable Long id, Model model) {
+        nubeNodoService.eliminarNodoDefinitivamente(id);
+        return papelera(model);
+    }
+
+    // Vista de Recientes
+    @GetMapping("/recientes")
+    public String recientes(Model model) {
+        model.addAttribute("recientesItems", nubeNodoService.obtenerRecientes());
+        model.addAttribute("vistaRecientes", true);
+        model.addAttribute("carpetas", List.of());
+        model.addAttribute("archivos", List.of());
+        model.addAttribute("carpetaActual", null);
+
+        return "nube/index :: nube-content-area";
+    }
+
+    // Registrar que un nodo fue abierto (usado por el modal de vista previa, incluso cuando
+    // el archivo no tiene previsualización soportada y por eso nunca llega a golpear
+    // ArchivoController.verArchivo/previewArchivo)
+    @PostMapping("/registrar-acceso/{id}")
+    @ResponseBody
+    public void registrarAcceso(@PathVariable Long id) {
+        nubeNodoService.registrarAcceso(id);
+    }
+
+    // Abre/navega el selector de destino de "Mover a..."
+    @GetMapping("/mover/{id}")
+    public String moverSelector(@PathVariable Long id,
+            @RequestParam(required = false) Long destinoId,
+            @RequestParam(required = false) Long padreId,
+            Model model) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+
+        model.addAttribute("nodo", nodo);
+        model.addAttribute("destinoId", destinoId);
+        model.addAttribute("padreId", padreId);
+        model.addAttribute("breadcrumbsDestino",
+                destinoId != null ? nubeNodoService.obtenerRutaBreadcrumb(destinoId) : List.of());
+        model.addAttribute("carpetasDestino", nubeNodoService.obtenerCarpetasParaMover(destinoId, id));
+
+        return "nube/mover-modal :: modal-content";
+    }
+
+    // Ejecuta el movimiento
+    @PostMapping("/mover")
+    public String mover(@RequestParam Long id,
+            @RequestParam(required = false) Long destinoId,
+            @RequestParam(required = false) Long padreId,
+            Model model) {
+        nubeNodoService.moverNodo(id, destinoId);
+
+        if (padreId != null) {
+            return verCarpeta(padreId, model);
+        } else {
+            return nubeNexa(false, null, model).replace("nube/index", "nube/index :: nube-content-area");
         }
     }
 }
