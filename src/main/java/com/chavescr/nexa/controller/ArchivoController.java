@@ -18,10 +18,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.chavescr.nexa.entity.NubeNodo;
+import com.chavescr.nexa.entity.Usuario;
+import com.chavescr.nexa.repository.UsuarioRepository;
+import com.chavescr.nexa.service.NubeAccesoService;
 import com.chavescr.nexa.service.NubeNodoService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -31,11 +35,27 @@ public class ArchivoController {
     @Autowired
     private NubeNodoService nubeNodoService;
 
+    @Autowired
+    private NubeAccesoService accesoService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
     private static final Set<String> FORMATOS_OFFICE = Set.of(
             "DOCX", "DOC", "XLSX", "XLS", "PPTX", "PPT", "ODT", "ODS", "ODP");
 
+    private Usuario usuarioActual(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        return id != null ? usuarioRepository.findById(id).orElse(null) : null;
+    }
+
+    private boolean esAdmin(HttpServletRequest request) {
+        return request.isUserInRole("ROLE_ADMIN");
+    }
+
     @GetMapping("/preview/{id}")
-    public ResponseEntity<Resource> previewArchivo(@PathVariable Long id, HttpSession session) {
+    public ResponseEntity<Resource> previewArchivo(@PathVariable Long id, HttpSession session,
+            HttpServletRequest request) {
         Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
         if (institucionId == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -47,6 +67,12 @@ public class ArchivoController {
         if (!archivo.getTipo().name().equals("ARCHIVO")) {
             throw new IllegalArgumentException("El nodo no es un archivo");
         }
+
+        if (!accesoService.puedeVer(archivo, usuarioActual(session), esAdmin(request))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        nubeNodoService.registrarAcceso(id);
 
         boolean previewDisponible = nubeNodoService.generarPreview(id);
 
@@ -82,8 +108,8 @@ public class ArchivoController {
                     text-decoration:none;border-radius:6px;font-weight:500;font-size:.9rem}
                     </style></head><body><div class="card">
                     <h3>Vista previa no disponible</h3>
-                    <p>No se pudo generar la previsualizaci\u00f3n para <strong>%s</strong>.
-                    Pod\u00e9s descargar el archivo original.</p>
+                    <p>No se pudo generar la previsualización para <strong>%s</strong>.
+                    Podés descargar el archivo original.</p>
                     <a href="/archivos/descargar/%d">Descargar archivo</a>
                     </div></body></html>""",
                     archivo.getNombre(), id);
@@ -92,17 +118,24 @@ public class ArchivoController {
                     .body(new ByteArrayResource(html.getBytes(StandardCharsets.UTF_8)));
         }
 
-        return verArchivo(id);
+        return verArchivo(id, session, request);
     }
 
     @GetMapping("/ver/{id}")
-    public ResponseEntity<Resource> verArchivo(@PathVariable Long id) {
+    public ResponseEntity<Resource> verArchivo(@PathVariable Long id, HttpSession session,
+            HttpServletRequest request) {
         NubeNodo archivo = nubeNodoService.obtenerNodo(id)
                 .orElseThrow(() -> new IllegalArgumentException("Archivo no encontrado"));
 
         if (!archivo.getTipo().name().equals("ARCHIVO")) {
             throw new IllegalArgumentException("El nodo no es un archivo");
         }
+
+        if (!accesoService.puedeVer(archivo, usuarioActual(session), esAdmin(request))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        nubeNodoService.registrarAcceso(id);
 
         try {
             Path filePath = Paths.get(nubeNodoService.getRutaRecursos()).resolve(archivo.getUrlArchivo());
@@ -127,12 +160,17 @@ public class ArchivoController {
     }
 
     @GetMapping("/descargar/{id}")
-    public ResponseEntity<Resource> descargarArchivo(@PathVariable Long id) {
+    public ResponseEntity<Resource> descargarArchivo(@PathVariable Long id, HttpSession session,
+            HttpServletRequest request) {
         NubeNodo archivo = nubeNodoService.obtenerNodo(id)
                 .orElseThrow(() -> new IllegalArgumentException("Archivo no encontrado"));
 
         if (!archivo.getTipo().name().equals("ARCHIVO")) {
             throw new IllegalArgumentException("El nodo no es un archivo");
+        }
+
+        if (!accesoService.puedeVer(archivo, usuarioActual(session), esAdmin(request))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         try {

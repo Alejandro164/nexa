@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <div th:fragment="modal-content">
+        <div class="modal-backdrop"
+            @click.self="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
+            <div class="modal-dialog" style="max-width: 560px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Compartir <span th:text="${nodo.nombre}">elemento</span></h3>
+                    <button type="button" class="close-btn"
+                        @click="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <form hx-post="/nube-nexa/compartir" hx-target="#modal-container" hx-swap="innerHTML">
+                        <input type="hidden" name="id" th:value="${nodo.id}">
+                        <div style="margin-bottom: 0.75rem;">
+                            <label class="form-label">Agregar persona</label>
+                            <select class="form-input" name="usuarioId" required style="width: 100%;">
+                                <option value="" disabled selected>Selecciona una persona</option>
+                                <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}"
+                                    th:text="${u.nombre + ' (' + u.email + ')'}">Usuario</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: flex-end;">
+                            <div style="width: 140px;">
+                                <label class="form-label">Nivel</label>
+                                <select class="form-input" name="nivel" style="width: 100%; height: 38px;">
+                                    <option value="LECTOR">Lector</option>
+                                    <option value="EDITOR">Editor</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="height: 38px;" th:if="${!usuariosDisponibles.isEmpty()}">Compartir</button>
+                        </div>
+                    </form>
+                    <p th:if="${usuariosDisponibles.isEmpty()}"
+                        style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+                        No hay más personas disponibles para compartir en tu institución.
+                    </p>
+
+                    <div style="height: 1px; background: var(--border); margin: 1.25rem 0;"></div>
+
+                    <div th:if="${accesos.isEmpty()}"
+                        style="color: var(--text-secondary); font-size: 0.9rem; text-align: center; padding: 1rem 0;">
+                        Todavía no compartiste esto con nadie.
+                    </div>
+                    <div th:each="a : ${accesos}"
+                        style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0.6rem 0; border-bottom: 1px solid var(--border);">
+                        <div style="min-width: 0;">
+                            <div style="font-weight: 600; font-size: 0.9rem;" th:text="${a.usuario.nombre}">Nombre</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary);" th:text="${a.usuario.email}">
+                                email</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                            <span
+                                style="font-size: 0.78rem; padding: 2px 8px; border-radius: 999px; background: var(--input-bg); color: var(--text-secondary);"
+                                th:text="${a.nivel.name() == 'EDITOR' ? 'Editor' : 'Lector'}">Nivel</span>
+                            <button type="button" class="btn-xs btn-danger-ghost" onclick="abrirConfirmacionAcademica(this)"
+                                th:attr="data-delete-url=@{/nube-nexa/compartir/{id}/{usuarioId}(id=${nodo.id}, usuarioId=${a.usuario.id})},
+                                         data-delete-target='#modal-container', data-delete-swap='innerHTML',
+                                         data-delete-title='Quitar acceso',
+                                         data-delete-message='¿Quitarle el acceso a ' + ${a.usuario.nombre} + '?'"
+                                title="Quitar acceso">✕</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

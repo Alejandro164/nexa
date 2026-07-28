@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +20,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+
 import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.NubeNodo;
 import com.chavescr.nexa.entity.TipoNodo;
 import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.NubeNodoAccesoRepository;
 import com.chavescr.nexa.repository.NubeNodoRepository;
+import com.chavescr.nexa.repository.UsuarioRepository;
 
 @Service
 public class NubeNodoService {
@@ -38,13 +43,19 @@ public class NubeNodoService {
     private final NubeNodoRepository repository;
     private final InstitucionRepository institucionRepository;
     private final DocumentConversionService conversionService;
+    private final UsuarioRepository usuarioRepository;
+    private final NubeNodoAccesoRepository accesoRepository;
 
     public NubeNodoService(NubeNodoRepository repository,
             InstitucionRepository institucionRepository,
-            DocumentConversionService conversionService) {
+            DocumentConversionService conversionService,
+            UsuarioRepository usuarioRepository,
+            NubeNodoAccesoRepository accesoRepository) {
         this.repository = repository;
         this.institucionRepository = institucionRepository;
         this.conversionService = conversionService;
+        this.usuarioRepository = usuarioRepository;
+        this.accesoRepository = accesoRepository;
     }
 
     public String getRutaRecursos() {
@@ -52,11 +63,61 @@ public class NubeNodoService {
     }
 
     public List<NubeNodo> obtenerNodosRaiz() {
-        return repository.findByPadreIsNullOrderByTipoAscNombreAsc();
+        return repository.findByPadreIsNullAndFechaEliminacionIsNullOrderByTipoAscNombreAsc();
     }
 
     public List<NubeNodo> obtenerNodosPorPadre(Long padreId) {
-        return repository.findByPadreIdOrderByTipoAscNombreAsc(padreId);
+        return repository.findByPadreIdAndFechaEliminacionIsNullOrderByTipoAscNombreAsc(padreId);
+    }
+
+    public List<NubeNodo> obtenerPapelera() {
+        return repository.findRaicesEnPapelera();
+    }
+
+    public List<NubeNodo> obtenerRecientes() {
+        return repository.findTop50ByFechaEliminacionIsNullAndUltimoAccesoIsNotNullOrderByUltimoAccesoDesc();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void moverNodo(Long id, Long destinoId) {
+        NubeNodo nodo = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+
+        if (destinoId != null) {
+            if (destinoId.equals(id) || esDescendienteOMismo(destinoId, id)) {
+                throw new IllegalArgumentException(
+                        "No se puede mover una carpeta dentro de sí misma o de una subcarpeta suya");
+            }
+            NubeNodo destino = repository.findById(destinoId)
+                    .orElseThrow(() -> new IllegalArgumentException("Carpeta de destino no encontrada"));
+            nodo.setPadre(destino);
+        } else {
+            nodo.setPadre(null);
+        }
+
+        repository.save(nodo);
+    }
+
+    // ¿"candidatoId" es el mismo nodo que "origenId", o desciende de él? (camina hacia arriba por padre)
+    private boolean esDescendienteOMismo(Long candidatoId, Long origenId) {
+        NubeNodo actual = repository.findById(candidatoId).orElse(null);
+        while (actual != null) {
+            if (actual.getId().equals(origenId)) {
+                return true;
+            }
+            actual = actual.getPadre();
+        }
+        return false;
+    }
+
+    // Carpetas navegables en el selector de "Mover a...": excluye la que se mueve, sus propias
+    // subcarpetas (evita referencias circulares) y lo que esté en la papelera.
+    public List<NubeNodo> obtenerCarpetasParaMover(Long padreId, Long idExcluir) {
+        List<NubeNodo> nivel = padreId != null ? obtenerNodosPorPadre(padreId) : obtenerNodosRaiz();
+        return nivel.stream()
+                .filter(n -> n.getTipo() == TipoNodo.CARPETA)
+                .filter(n -> !n.getId().equals(idExcluir) && !esDescendienteOMismo(n.getId(), idExcluir))
+                .collect(Collectors.toList());
     }
 
     public Optional<NubeNodo> obtenerNodo(Long id) {
@@ -64,7 +125,7 @@ public class NubeNodoService {
     }
 
     @Transactional
-    public NubeNodo crearCarpeta(String nombre, Long padreId) {
+    public NubeNodo crearCarpeta(String nombre, Long padreId, Long propietarioId, Long institucionId) {
         NubeNodo carpeta = new NubeNodo();
         carpeta.setNombre(nombre);
         carpeta.setTipo(TipoNodo.CARPETA);
@@ -75,7 +136,23 @@ public class NubeNodoService {
             carpeta.setPadre(padre);
         }
 
+        if (propietarioId != null) {
+            usuarioRepository.findById(propietarioId).ifPresent(carpeta::setPropietario);
+        }
+
+        if (institucionId != null) {
+            institucionRepository.findById(institucionId).ifPresent(carpeta::setInstitucion);
+        }
+
         return repository.save(carpeta);
+    }
+
+    @Transactional
+    public void registrarAcceso(Long id) {
+        repository.findById(id).ifPresent(nodo -> {
+            nodo.setUltimoAcceso(LocalDateTime.now());
+            repository.save(nodo);
+        });
     }
 
     public List<NubeNodo> obtenerRutaBreadcrumb(Long nodoId) {
@@ -95,7 +172,8 @@ public class NubeNodoService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public NubeNodo subirArchivo(MultipartFile archivo, Long padreId, Long institucionId) throws IOException {
+    public NubeNodo subirArchivo(MultipartFile archivo, Long padreId, Long institucionId, Long propietarioId)
+            throws IOException {
         if (archivo == null || archivo.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío o es nulo");
         }
@@ -128,11 +206,16 @@ public class NubeNodoService {
         nodoArchivo.setExtension(extension);
         nodoArchivo.setTamanoBytes(archivo.getSize());
         nodoArchivo.setUrlArchivo(rutaRelativa);
+        nodoArchivo.setInstitucion(institucion);
 
         if (padreId != null) {
             NubeNodo padre = repository.findById(padreId)
                     .orElseThrow(() -> new IllegalArgumentException("Carpeta padre no encontrada"));
             nodoArchivo.setPadre(padre);
+        }
+
+        if (propietarioId != null) {
+            usuarioRepository.findById(propietarioId).ifPresent(nodoArchivo::setPropietario);
         }
 
         return repository.save(nodoArchivo);
@@ -195,6 +278,14 @@ public class NubeNodoService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    public void actualizarDescripcion(Long id, String descripcion) {
+        NubeNodo nodo = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        nodo.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion.trim() : null);
+        repository.save(nodo);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public void renombrarNodo(Long id, String nuevoNombre) {
         NubeNodo nodo = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
@@ -207,8 +298,48 @@ public class NubeNodoService {
         NubeNodo nodo = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
 
+        marcarEliminado(nodo, LocalDateTime.now());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void restaurarNodo(Long id) {
+        NubeNodo nodo = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+
+        marcarEliminado(nodo, null);
+    }
+
+    private void marcarEliminado(NubeNodo nodo, LocalDateTime fecha) {
+        nodo.setFechaEliminacion(fecha);
+        repository.save(nodo);
+
+        if (nodo.getTipo() == TipoNodo.CARPETA) {
+            for (NubeNodo hijo : nodo.getHijos()) {
+                marcarEliminado(hijo, fecha);
+            }
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void eliminarNodoDefinitivamente(Long id) {
+        NubeNodo nodo = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+
         eliminarFisicamente(nodo);
+        eliminarAccesos(nodo);
         repository.delete(nodo);
+    }
+
+    // Los accesos compartidos (nube_nodo_accesos) no tienen ON DELETE CASCADE hacia nube_nodos,
+    // así que hay que borrarlos explícitamente antes de purgar el nodo (y sus descendientes)
+    // o la eliminación física falla por violación de llave foránea.
+    private void eliminarAccesos(NubeNodo nodo) {
+        accesoRepository.deleteByNodoId(nodo.getId());
+        if (nodo.getTipo() == TipoNodo.CARPETA) {
+            for (NubeNodo hijo : nodo.getHijos()) {
+                eliminarAccesos(hijo);
+            }
+        }
     }
 
     private void eliminarFisicamente(NubeNodo nodo) {

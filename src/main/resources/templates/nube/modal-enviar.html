@@ -1,15 +1,8 @@
-<div th:fragment="modal" class="modal-overlay" x-show="sendModalOpen" style="display: none; z-index: 1010;"
-    :class="{ 'show-modal': sendModalOpen }">
-    <div class="modal-content">
+<div th:fragment="modal" class="modal-backdrop" x-show="sendModalOpen" style="display: none; z-index: 1010;">
+    <div class="modal-dialog">
         <div class="modal-header">
-            <h3>Enviar Documento</h3>
-            <button @click="closeSendModal()" class="close-btn" type="button">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
+            <h3 class="modal-title">Enviar Documento</h3>
+            <button @click="closeSendModal()" class="close-btn" type="button">&times;</button>
         </div>
         <div class="modal-body" style="padding-top: 10px;">
             <p style="margin-bottom: 1.5rem; color: #64748b; font-size: 0.95rem;">
@@ -121,7 +114,7 @@
                 </div>
 
                 <!-- Select Sistema -->
-                <select x-show="sendType === 'system'" x-model="sendDestination" class="modal-input"
+                <select x-show="sendType === 'system'" x-model="sendDestination" class="form-input"
                     style="width: 100%; appearance: auto; background: white;">
                     <option value="" disabled selected>-- Selecciona un contacto --</option>
                     <option value="usuario1">Juan Pérez - Depto. Legal</option>
@@ -130,23 +123,24 @@
                 </select>
 
                 <!-- Input Manual -->
-                <input x-show="sendType === 'manual'" x-model="sendDestination" type="text" class="modal-input"
+                <input x-show="sendType === 'manual'" x-model="sendDestination" type="text" class="form-input"
                     :placeholder="sendMethod === 'whatsapp' ? '+506 8888 8888' : 'ejemplo@correo.com'"
                     style="width: 100%;">
             </div>
-        </div>
-        <div class="modal-footer" style="padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-            <button class="btn-cancel" type="button" @click="closeSendModal()">Cancelar</button>
-            <button class="btn-create" type="button" @click="executeSendDocument()"
-                style="display: flex; align-items: center; gap: 6px;"
-                :style="sendMethod === 'whatsapp' ? 'background-color: #25D366; color: white; border: none;' : 'background-color: #2563eb; color: white; border: none;'">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-                Enviar Ahora
-            </button>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" @click="closeSendModal()">Cancelar</button>
+                <button class="btn btn-primary" type="button" @click="executeSendDocument()"
+                    style="display: flex; align-items: center; gap: 6px;"
+                    :style="sendMethod === 'whatsapp' ? 'background-color: #25D366; color: white; border: none;' : 'background-color: #2563eb; color: white; border: none;'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Enviar Ahora
+                </button>
+            </div>
         </div>
     </div>
 </div>

@@ -952,3 +952,304 @@ if (document.readyState === 'loading') {
 } else {
     inicializarSelectoresAcademicos(document);
 }
+
+// ── Componente Alpine: Nube Nexa ─────────────────────────────────────────────
+
+function nubeNexaComponente() {
+    return {
+        nuevoDropdownOpen: false,
+        folderModalOpen: false,
+
+        activeContextMenu: null,
+
+        draggingId: null,
+        dragOverId: null,
+
+        renameModalOpen: false,
+
+        nodeId: null,
+        nodeName: '',
+
+        detailsPanelOpen: false,
+        detailsData: { id: null, nombre: '', esCarpeta: false, extension: '', tamanoBytes: null, itemCount: null, fecha: '', propietario: '', ultimoAcceso: '', descripcion: '', puedeEditar: false, iconoHtml: '' },
+        detailsAccesos: [],
+        detailsAccesosCargando: false,
+        detailsDescripcionEditando: false,
+        detailsDescripcionBorrador: '',
+        detailsDescripcionGuardando: false,
+        detailsVideoThumb: null,
+
+        previewModalOpen: false,
+        previewId: null,
+        previewName: '',
+        previewExtension: '',
+        previewType: '',
+        _closeTimer: null,
+
+        sendModalOpen: false,
+        sendMethod: 'whatsapp', // 'whatsapp' o 'email'
+        sendType: 'system', // 'system' o 'manual'
+        sendDestination: '',
+
+        toggleNuevoDropdown() {
+            this.nuevoDropdownOpen = !this.nuevoDropdownOpen;
+        },
+
+        openFolderModal() {
+            this.folderModalOpen = true;
+            this.nuevoDropdownOpen = false;
+            setTimeout(() => {
+                let input = document.getElementById('newFolderInput');
+                if (input) input.focus();
+            }, 50);
+        },
+
+        closeFolderModal() {
+            this.folderModalOpen = false;
+        },
+
+        openPreviewModal(id, nombre, extension) {
+            if (this._closeTimer) {
+                clearTimeout(this._closeTimer);
+                this._closeTimer = null;
+            }
+            this.previewId = id;
+            this.previewName = nombre;
+
+            let ext = (extension || '').replace('.', '').toLowerCase();
+            this.previewExtension = ext;
+
+            if (['pdf'].includes(ext)) {
+                this.previewType = 'pdf';
+            } else if (['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt', 'odt', 'ods', 'odp'].includes(ext)) {
+                this.previewType = 'office';
+            } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) {
+                this.previewType = 'image';
+            } else if (['txt', 'csv', 'json', 'xml', 'md'].includes(ext)) {
+                this.previewType = 'text';
+            } else if (['mp4', 'webm'].includes(ext)) {
+                this.previewType = 'video';
+            } else if (['mp3', 'wav'].includes(ext)) {
+                this.previewType = 'audio';
+            } else {
+                this.previewType = 'unsupported';
+            }
+
+            this.previewModalOpen = true;
+
+            // Registrar el acceso explícitamente: para pdf/imagen/office/etc. el iframe/img ya lo
+            // hace como efecto secundario al pedir el archivo, pero un archivo sin previsualización
+            // soportada nunca llega a pedirle nada al servidor, así que "último acceso" nunca se
+            // actualizaría si no se registra acá también.
+            htmx.ajax('POST', '/nube-nexa/registrar-acceso/' + id, { swap: 'none' });
+        },
+
+        closePreviewModal() {
+            const contentArea = document.getElementById('nube-content-area');
+            const estabaEnRecientes = contentArea?.dataset.recientes === 'true';
+
+            this.previewModalOpen = false;
+            this._closeTimer = setTimeout(() => {
+                this.previewId = null;
+                this._closeTimer = null;
+            }, 300);
+
+            // El archivo recién abierto actualizó su "último acceso" en el servidor;
+            // refrescar la lista para que se reordene/aparezca al tope de inmediato.
+            if (estabaEnRecientes) {
+                htmx.ajax('GET', '/nube-nexa/recientes', { target: '#nube-content-area', swap: 'outerHTML' });
+            }
+        },
+
+        toggleContextMenu(id) {
+            if (this.activeContextMenu === id) {
+                this.activeContextMenu = null;
+            } else {
+                this.activeContextMenu = id;
+            }
+        },
+
+        moverArrastrando(id, destinoId) {
+            const padreId = document.getElementById('nube-content-area')?.dataset.carpetaActualId || '';
+            htmx.ajax('POST', '/nube-nexa/mover', {
+                target: '#nube-content-area',
+                swap: 'outerHTML',
+                values: { id: id, destinoId: destinoId || '', padreId: padreId }
+            });
+        },
+
+        openDetailsPanel(el) {
+            const d = el.dataset;
+
+            // El ícono por extensión (color/forma según PDF, DOCX, ZIP, etc.) ya está resuelto
+            // server-side en la tarjeta de la que se abrió este panel; se clona en vez de
+            // duplicar todo ese mapeo de extensión→ícono acá.
+            let iconoHtml = '';
+            if (d.esCarpeta !== 'true') {
+                const card = el.closest('.item-card');
+                const iconSvg = card ? card.querySelector('.item-icon svg') : null;
+                if (iconSvg) iconoHtml = iconSvg.outerHTML;
+            }
+
+            this.detailsData = {
+                id: d.id,
+                nombre: d.nombre,
+                esCarpeta: d.esCarpeta === 'true',
+                extension: d.extension || '',
+                tamanoBytes: d.tamanoBytes ? parseInt(d.tamanoBytes, 10) : null,
+                itemCount: d.itemCount !== undefined ? parseInt(d.itemCount, 10) : null,
+                fecha: d.fecha || '',
+                propietario: d.propietario || '',
+                ultimoAcceso: d.ultimoAcceso || '',
+                descripcion: d.descripcion || '',
+                puedeEditar: d.puedeEditar === 'true',
+                iconoHtml: iconoHtml
+            };
+            this.detailsPanelOpen = true;
+            this.detailsDescripcionEditando = false;
+
+            this.detailsVideoThumb = null;
+            if (this.detailsPreviewTipo() === 'video') {
+                this.capturarFrameVideo(d.id);
+            }
+
+            this.detailsAccesos = [];
+            this.detailsAccesosCargando = true;
+            fetch('/nube-nexa/accesos/' + d.id)
+                .then(r => r.ok ? r.json() : [])
+                .then(data => { this.detailsAccesos = data; })
+                .catch(() => { this.detailsAccesos = []; })
+                .finally(() => { this.detailsAccesosCargando = false; });
+        },
+
+        // Captura un frame aleatorio del video en un <canvas> oculto para usarlo como miniatura
+        // estática, en vez de embeber el <video> completo (que invita a reproducirlo ahí mismo).
+        capturarFrameVideo(id) {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.muted = true;
+            video.src = '/archivos/ver/' + id;
+
+            video.addEventListener('loadedmetadata', () => {
+                const dur = video.duration;
+                video.currentTime = (isFinite(dur) && dur > 0) ? (dur * 0.1 + Math.random() * dur * 0.8) : 0;
+            });
+
+            video.addEventListener('seeked', () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth || 320;
+                canvas.height = video.videoHeight || 180;
+                try {
+                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                    this.detailsVideoThumb = canvas.toDataURL('image/jpeg', 0.8);
+                } catch (e) {
+                    this.detailsVideoThumb = null;
+                }
+            }, { once: true });
+
+            video.addEventListener('error', () => { this.detailsVideoThumb = null; });
+        },
+
+        closeDetailsPanel() {
+            this.detailsPanelOpen = false;
+            this.detailsDescripcionEditando = false;
+        },
+
+        iniciarEdicionDescripcion() {
+            this.detailsDescripcionBorrador = this.detailsData.descripcion;
+            this.detailsDescripcionEditando = true;
+            setTimeout(() => {
+                let input = document.getElementById('detailsDescripcionInput');
+                if (input) input.focus();
+            }, 50);
+        },
+
+        cancelarEdicionDescripcion() {
+            this.detailsDescripcionEditando = false;
+        },
+
+        guardarDescripcion() {
+            const id = this.detailsData.id;
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            this.detailsDescripcionGuardando = true;
+            fetch('/nube-nexa/descripcion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    [csrfHeader]: csrfToken
+                },
+                body: 'id=' + encodeURIComponent(id) + '&descripcion=' + encodeURIComponent(this.detailsDescripcionBorrador || '')
+            })
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(data => {
+                    this.detailsData.descripcion = data.descripcion || '';
+                    this.detailsDescripcionEditando = false;
+                })
+                .finally(() => { this.detailsDescripcionGuardando = false; });
+        },
+
+        detailsTipoTexto() {
+            if (this.detailsData.esCarpeta) return 'Carpeta';
+            return this.detailsData.extension ? 'Archivo ' + this.detailsData.extension.toUpperCase() : 'Archivo';
+        },
+
+        detailsPreviewTipo() {
+            if (this.detailsData.esCarpeta || !this.detailsData.id) return null;
+            const ext = (this.detailsData.extension || '').toLowerCase();
+            if (ext === 'pdf') return 'pdf';
+            if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return 'image';
+            if (['mp4', 'webm'].includes(ext)) return 'video';
+            return null;
+        },
+
+        detailsTamanoTexto() {
+            if (this.detailsData.esCarpeta) {
+                const n = this.detailsData.itemCount || 0;
+                return n === 0 ? 'Vacía' : (n + ' elemento' + (n > 1 ? 's' : ''));
+            }
+            const bytes = this.detailsData.tamanoBytes;
+            if (!bytes && bytes !== 0) return '—';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        },
+
+        openRenameModal(id, nombre) {
+            this.nodeId = id;
+            this.nodeName = nombre;
+            this.renameModalOpen = true;
+            this.activeContextMenu = null;
+            setTimeout(() => {
+                let input = document.getElementById('renameInput');
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
+            }, 50);
+        },
+
+        closeRenameModal() {
+            this.renameModalOpen = false;
+        },
+
+        openSendModal() {
+            if (!this.previewId) return;
+            this.sendModalOpen = true;
+            this.sendMethod = 'whatsapp';
+            this.sendType = 'system';
+            this.sendDestination = '';
+        },
+
+        closeSendModal() {
+            this.sendModalOpen = false;
+        },
+
+        executeSendDocument() {
+            // Aquí iría la llamada AJAX a los servicios propios de backend
+            alert(`Documento enviado exitosamente por ${this.sendMethod === 'whatsapp' ? 'WhatsApp' : 'Correo'}`);
+            this.closeSendModal();
+        }
+    };
+}
