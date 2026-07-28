@@ -121,7 +121,7 @@ public class NubeNodoService {
     }
 
     @Transactional
-    public NubeNodo crearCarpeta(String nombre, Long padreId, Long propietarioId) {
+    public NubeNodo crearCarpeta(String nombre, Long padreId, Long propietarioId, Long institucionId) {
         NubeNodo carpeta = new NubeNodo();
         carpeta.setNombre(nombre);
         carpeta.setTipo(TipoNodo.CARPETA);
@@ -134,6 +134,10 @@ public class NubeNodoService {
 
         if (propietarioId != null) {
             usuarioRepository.findById(propietarioId).ifPresent(carpeta::setPropietario);
+        }
+
+        if (institucionId != null) {
+            institucionRepository.findById(institucionId).ifPresent(carpeta::setInstitucion);
         }
 
         return repository.save(carpeta);
@@ -198,6 +202,7 @@ public class NubeNodoService {
         nodoArchivo.setExtension(extension);
         nodoArchivo.setTamanoBytes(archivo.getSize());
         nodoArchivo.setUrlArchivo(rutaRelativa);
+        nodoArchivo.setInstitucion(institucion);
 
         if (padreId != null) {
             NubeNodo padre = repository.findById(padreId)

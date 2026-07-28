@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,8 +25,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import com.chavescr.nexa.entity.NubeNodo;
+import com.chavescr.nexa.entity.NubeNodoAcceso;
+import com.chavescr.nexa.entity.Usuario;
+import com.chavescr.nexa.repository.UsuarioRepository;
+import com.chavescr.nexa.service.NubeAccesoService;
 import com.chavescr.nexa.service.NubeNodoService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -35,20 +41,39 @@ public class NubeController {
     @Autowired
     private NubeNodoService nubeNodoService;
 
+    @Autowired
+    private NubeAccesoService accesoService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    private Usuario usuarioActual(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        return id != null ? usuarioRepository.findById(id).orElse(null) : null;
+    }
+
+    private boolean esAdmin(HttpServletRequest request) {
+        return request.isUserInRole("ROLE_ADMIN");
+    }
+
+    private void poblarModeloRaiz(Model model, Usuario usuario, boolean admin) {
+        List<NubeNodo> nodos = nubeNodoService.obtenerNodosRaiz().stream()
+                .filter(n -> accesoService.puedeVer(n, usuario, admin))
+                .collect(Collectors.toList());
+
+        model.addAttribute("carpetas",
+                nodos.stream().filter(n -> n.getTipo().name().equals("CARPETA")).collect(Collectors.toList()));
+        model.addAttribute("archivos",
+                nodos.stream().filter(n -> n.getTipo().name().equals("ARCHIVO")).collect(Collectors.toList()));
+        model.addAttribute("carpetaActual", null);
+    }
+
     // Vista Principal (Raíz)
     @GetMapping
     public String nubeNexa(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
-            @RequestHeader(value = "HX-Target", required = false) String hxTarget, Model model) {
-        List<NubeNodo> nodos = nubeNodoService.obtenerNodosRaiz();
-
-        List<NubeNodo> carpetas = nodos.stream().filter(n -> n.getTipo().name().equals("CARPETA"))
-                .collect(Collectors.toList());
-        List<NubeNodo> archivos = nodos.stream().filter(n -> n.getTipo().name().equals("ARCHIVO"))
-                .collect(Collectors.toList());
-
-        model.addAttribute("carpetas", carpetas);
-        model.addAttribute("archivos", archivos);
-        model.addAttribute("carpetaActual", null); // Indica que estamos en la raíz
+            @RequestHeader(value = "HX-Target", required = false) String hxTarget, Model model,
+            HttpSession session, HttpServletRequest request) {
+        poblarModeloRaiz(model, usuarioActual(session), esAdmin(request));
 
         // Navegación interna del módulo (breadcrumb "Mi Unidad") apunta a #nube-content-area:
         // debe recibir solo ese fragmento, no la página completa del módulo (que duplicaría
@@ -62,7 +87,14 @@ public class NubeController {
 
     // Vista de una Carpeta Específica
     @GetMapping("/carpeta/{id}")
-    public String verCarpeta(@PathVariable Long id, Model model) {
+    public String verCarpeta(@PathVariable Long id, Model model, HttpSession session, HttpServletRequest request) {
+        NubeNodo carpetaActual = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Carpeta no encontrada"));
+
+        if (!accesoService.puedeVer(carpetaActual, usuarioActual(session), esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes acceso a esta carpeta");
+        }
+
         nubeNodoService.registrarAcceso(id);
 
         List<NubeNodo> nodos = nubeNodoService.obtenerNodosPorPadre(id);
@@ -72,7 +104,6 @@ public class NubeController {
         List<NubeNodo> archivos = nodos.stream().filter(n -> n.getTipo().name().equals("ARCHIVO"))
                 .collect(Collectors.toList());
 
-        NubeNodo carpetaActual = nubeNodoService.obtenerNodo(id).orElse(null);
         List<NubeNodo> breadcrumbs = nubeNodoService.obtenerRutaBreadcrumb(id);
 
         model.addAttribute("carpetas", carpetas);
@@ -85,21 +116,28 @@ public class NubeController {
 
     // Crear Nueva Carpeta
     @PostMapping("/crear-carpeta")
-    public String crearCarpeta(@RequestParam String nombre, @RequestParam(required = false) Long padreId, Model model,
-            HttpSession session) {
-        Long propietarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-        nubeNodoService.crearCarpeta(nombre, padreId, propietarioId);
+    public String crearCarpeta(@RequestParam String nombre, @RequestParam(required = false) Long padreId,
+            Model model, HttpSession session, HttpServletRequest request) {
+        Usuario usuario = usuarioActual(session);
+        boolean admin = esAdmin(request);
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+
+        if (padreId != null) {
+            NubeNodo padre = nubeNodoService.obtenerNodo(padreId)
+                    .orElseThrow(() -> new IllegalArgumentException("Carpeta padre no encontrada"));
+            if (!accesoService.puedeEditar(padre, usuario, admin)) {
+                throw new IllegalArgumentException("No tienes permiso para crear contenido en esta carpeta");
+            }
+        }
+
+        Long propietarioId = usuario != null ? usuario.getId() : null;
+        nubeNodoService.crearCarpeta(nombre, padreId, propietarioId, institucionId);
 
         // Recargar la vista actual (padre o raíz)
         if (padreId != null) {
-            return verCarpeta(padreId, model);
+            return verCarpeta(padreId, model, session, request);
         } else {
-            List<NubeNodo> nodos = nubeNodoService.obtenerNodosRaiz();
-            model.addAttribute("carpetas",
-                    nodos.stream().filter(n -> n.getTipo().name().equals("CARPETA")).collect(Collectors.toList()));
-            model.addAttribute("archivos",
-                    nodos.stream().filter(n -> n.getTipo().name().equals("ARCHIVO")).collect(Collectors.toList()));
-            model.addAttribute("carpetaActual", null);
+            poblarModeloRaiz(model, usuario, admin);
             return "nube/index :: nube-content-area";
         }
     }
@@ -109,12 +147,23 @@ public class NubeController {
     public String subirArchivo(@RequestParam("archivo") MultipartFile archivo,
             @RequestParam(required = false) Long padreId,
             Model model,
-            HttpSession session) {
+            HttpSession session, HttpServletRequest request) {
+        Usuario usuario = usuarioActual(session);
+        boolean admin = esAdmin(request);
         Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
         if (institucionId == null) {
             throw new IllegalStateException("Debe seleccionar una institución");
         }
-        Long propietarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+
+        if (padreId != null) {
+            NubeNodo padre = nubeNodoService.obtenerNodo(padreId)
+                    .orElseThrow(() -> new IllegalArgumentException("Carpeta padre no encontrada"));
+            if (!accesoService.puedeEditar(padre, usuario, admin)) {
+                throw new IllegalArgumentException("No tienes permiso para subir archivos a esta carpeta");
+            }
+        }
+
+        Long propietarioId = usuario != null ? usuario.getId() : null;
         try {
             nubeNodoService.subirArchivo(archivo, padreId, institucionId, propietarioId);
         } catch (Exception e) {
@@ -122,26 +171,26 @@ public class NubeController {
         }
 
         if (padreId != null) {
-            return verCarpeta(padreId, model);
+            return verCarpeta(padreId, model, session, request);
         } else {
-            List<NubeNodo> nodos = nubeNodoService.obtenerNodosRaiz();
-            model.addAttribute("carpetas",
-                    nodos.stream().filter(n -> n.getTipo().name().equals("CARPETA")).collect(Collectors.toList()));
-            model.addAttribute("archivos",
-                    nodos.stream().filter(n -> n.getTipo().name().equals("ARCHIVO")).collect(Collectors.toList()));
-            model.addAttribute("carpetaActual", null);
+            poblarModeloRaiz(model, usuario, admin);
             return "nube/index :: nube-content-area";
         }
     }
 
     // Descargar Archivo
     @GetMapping("/descargar/{id}")
-    public ResponseEntity<Resource> descargarArchivo(@PathVariable Long id) {
+    public ResponseEntity<Resource> descargarArchivo(@PathVariable Long id, HttpSession session,
+            HttpServletRequest request) {
         NubeNodo archivo = nubeNodoService.obtenerNodo(id)
                 .orElseThrow(() -> new IllegalArgumentException("Archivo no encontrado"));
 
         if (!archivo.getTipo().name().equals("ARCHIVO")) {
             throw new IllegalArgumentException("El nodo no es un archivo");
+        }
+
+        if (!accesoService.puedeVer(archivo, usuarioActual(session), esAdmin(request))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         try {
@@ -162,12 +211,17 @@ public class NubeController {
 
     // Descargar Carpeta como ZIP
     @GetMapping("/descargar-carpeta/{id}")
-    public ResponseEntity<StreamingResponseBody> descargarCarpeta(@PathVariable Long id) {
+    public ResponseEntity<StreamingResponseBody> descargarCarpeta(@PathVariable Long id, HttpSession session,
+            HttpServletRequest request) {
         NubeNodo carpeta = nubeNodoService.obtenerNodo(id)
                 .orElseThrow(() -> new IllegalArgumentException("Carpeta no encontrada"));
 
         if (!carpeta.getTipo().name().equals("CARPETA")) {
             throw new IllegalArgumentException("El nodo no es una carpeta");
+        }
+
+        if (!accesoService.puedeVer(carpeta, usuarioActual(session), esAdmin(request))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         StreamingResponseBody stream = out -> {
@@ -211,13 +265,19 @@ public class NubeController {
     public String renombrar(@RequestParam Long id,
             @RequestParam String nuevoNombre,
             @RequestParam(required = false) Long padreId,
-            Model model) {
+            Model model, HttpSession session, HttpServletRequest request) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.puedeEditar(nodo, usuarioActual(session), esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes permiso para renombrar este elemento");
+        }
+
         nubeNodoService.renombrarNodo(id, nuevoNombre);
 
         if (padreId != null) {
-            return verCarpeta(padreId, model);
+            return verCarpeta(padreId, model, session, request);
         } else {
-            return nubeNexa(false, null, model).replace("nube/index", "nube/index :: nube-content-area");
+            return nubeNexa(false, null, model, session, request).replace("nube/index", "nube/index :: nube-content-area");
         }
     }
 
@@ -225,20 +285,34 @@ public class NubeController {
     @DeleteMapping("/{id}")
     public String eliminar(@PathVariable Long id,
             @RequestParam(required = false) Long padreId,
-            Model model) {
+            Model model, HttpSession session, HttpServletRequest request) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.puedeEditar(nodo, usuarioActual(session), esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes permiso para eliminar este elemento");
+        }
+
         nubeNodoService.eliminarNodo(id);
 
         if (padreId != null) {
-            return verCarpeta(padreId, model);
+            return verCarpeta(padreId, model, session, request);
         } else {
-            return nubeNexa(false, null, model).replace("nube/index", "nube/index :: nube-content-area");
+            return nubeNexa(false, null, model, session, request).replace("nube/index", "nube/index :: nube-content-area");
         }
     }
 
-    // Vista de la Papelera
+    // Vista de la Papelera (solo lo que el usuario es dueño; admin ve todo)
     @GetMapping("/papelera")
-    public String papelera(Model model) {
-        model.addAttribute("papeleraItems", nubeNodoService.obtenerPapelera());
+    public String papelera(Model model, HttpSession session, HttpServletRequest request) {
+        Usuario usuario = usuarioActual(session);
+        boolean admin = esAdmin(request);
+
+        List<NubeNodo> items = nubeNodoService.obtenerPapelera().stream()
+                .filter(n -> admin || (usuario != null && n.getPropietario() != null
+                        && n.getPropietario().getId().equals(usuario.getId())))
+                .collect(Collectors.toList());
+
+        model.addAttribute("papeleraItems", items);
         model.addAttribute("vistaPapelera", true);
         model.addAttribute("carpetas", List.of());
         model.addAttribute("archivos", List.of());
@@ -247,24 +321,44 @@ public class NubeController {
         return "nube/index :: nube-content-area";
     }
 
-    // Restaurar Archivo o Carpeta desde la Papelera
+    // Restaurar Archivo o Carpeta desde la Papelera (solo dueño o admin)
     @PostMapping("/restaurar/{id}")
-    public String restaurar(@PathVariable Long id, Model model) {
+    public String restaurar(@PathVariable Long id, Model model, HttpSession session, HttpServletRequest request) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.esPropietarioOAdmin(nodo, usuarioActual(session), esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes permiso para restaurar este elemento");
+        }
+
         nubeNodoService.restaurarNodo(id);
-        return papelera(model);
+        return papelera(model, session, request);
     }
 
-    // Eliminar Archivo o Carpeta definitivamente desde la Papelera
+    // Eliminar Archivo o Carpeta definitivamente desde la Papelera (solo dueño o admin)
     @DeleteMapping("/papelera/{id}")
-    public String eliminarDefinitivamente(@PathVariable Long id, Model model) {
+    public String eliminarDefinitivamente(@PathVariable Long id, Model model, HttpSession session,
+            HttpServletRequest request) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.esPropietarioOAdmin(nodo, usuarioActual(session), esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes permiso para eliminar definitivamente este elemento");
+        }
+
         nubeNodoService.eliminarNodoDefinitivamente(id);
-        return papelera(model);
+        return papelera(model, session, request);
     }
 
-    // Vista de Recientes
+    // Vista de Recientes (filtrada por acceso vigente)
     @GetMapping("/recientes")
-    public String recientes(Model model) {
-        model.addAttribute("recientesItems", nubeNodoService.obtenerRecientes());
+    public String recientes(Model model, HttpSession session, HttpServletRequest request) {
+        Usuario usuario = usuarioActual(session);
+        boolean admin = esAdmin(request);
+
+        List<NubeNodo> items = nubeNodoService.obtenerRecientes().stream()
+                .filter(n -> accesoService.puedeVer(n, usuario, admin))
+                .collect(Collectors.toList());
+
+        model.addAttribute("recientesItems", items);
         model.addAttribute("vistaRecientes", true);
         model.addAttribute("carpetas", List.of());
         model.addAttribute("archivos", List.of());
@@ -278,8 +372,11 @@ public class NubeController {
     // ArchivoController.verArchivo/previewArchivo)
     @PostMapping("/registrar-acceso/{id}")
     @ResponseBody
-    public void registrarAcceso(@PathVariable Long id) {
-        nubeNodoService.registrarAcceso(id);
+    public void registrarAcceso(@PathVariable Long id, HttpSession session, HttpServletRequest request) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id).orElse(null);
+        if (nodo != null && accesoService.puedeVer(nodo, usuarioActual(session), esAdmin(request))) {
+            nubeNodoService.registrarAcceso(id);
+        }
     }
 
     // Abre/navega el selector de destino de "Mover a..."
@@ -287,16 +384,24 @@ public class NubeController {
     public String moverSelector(@PathVariable Long id,
             @RequestParam(required = false) Long destinoId,
             @RequestParam(required = false) Long padreId,
-            Model model) {
+            Model model, HttpSession session, HttpServletRequest request) {
+        Usuario usuario = usuarioActual(session);
+        boolean admin = esAdmin(request);
         NubeNodo nodo = nubeNodoService.obtenerNodo(id)
                 .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.puedeEditar(nodo, usuario, admin)) {
+            throw new IllegalArgumentException("No tienes permiso para mover este elemento");
+        }
 
         model.addAttribute("nodo", nodo);
         model.addAttribute("destinoId", destinoId);
         model.addAttribute("padreId", padreId);
         model.addAttribute("breadcrumbsDestino",
                 destinoId != null ? nubeNodoService.obtenerRutaBreadcrumb(destinoId) : List.of());
-        model.addAttribute("carpetasDestino", nubeNodoService.obtenerCarpetasParaMover(destinoId, id));
+        List<NubeNodo> carpetasDestino = nubeNodoService.obtenerCarpetasParaMover(destinoId, id).stream()
+                .filter(c -> accesoService.puedeEditar(c, usuario, admin))
+                .collect(Collectors.toList());
+        model.addAttribute("carpetasDestino", carpetasDestino);
 
         return "nube/mover-modal :: modal-content";
     }
@@ -306,13 +411,94 @@ public class NubeController {
     public String mover(@RequestParam Long id,
             @RequestParam(required = false) Long destinoId,
             @RequestParam(required = false) Long padreId,
-            Model model) {
+            Model model, HttpSession session, HttpServletRequest request) {
+        Usuario usuario = usuarioActual(session);
+        boolean admin = esAdmin(request);
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.puedeEditar(nodo, usuario, admin)) {
+            throw new IllegalArgumentException("No tienes permiso para mover este elemento");
+        }
+        if (destinoId != null) {
+            NubeNodo destino = nubeNodoService.obtenerNodo(destinoId)
+                    .orElseThrow(() -> new IllegalArgumentException("Carpeta de destino no encontrada"));
+            if (!accesoService.puedeEditar(destino, usuario, admin)) {
+                throw new IllegalArgumentException("No tienes permiso para mover elementos a esa carpeta");
+            }
+        }
+
         nubeNodoService.moverNodo(id, destinoId);
 
         if (padreId != null) {
-            return verCarpeta(padreId, model);
+            return verCarpeta(padreId, model, session, request);
         } else {
-            return nubeNexa(false, null, model).replace("nube/index", "nube/index :: nube-content-area");
+            return nubeNexa(false, null, model, session, request).replace("nube/index", "nube/index :: nube-content-area");
         }
+    }
+
+    // Vista del modal de "Compartir"
+    @GetMapping("/compartir/{id}")
+    public String compartirSelector(@PathVariable Long id, Model model, HttpSession session,
+            HttpServletRequest request) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.puedeEditar(nodo, usuarioActual(session), esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes permiso para compartir este elemento");
+        }
+
+        poblarModeloCompartir(model, nodo, session);
+        return "nube/compartir-modal :: modal-content";
+    }
+
+    // Agrega o actualiza el acceso de un usuario sobre un nodo
+    @PostMapping("/compartir")
+    public String compartir(@RequestParam Long id, @RequestParam Long usuarioId, @RequestParam String nivel,
+            Model model, HttpSession session, HttpServletRequest request) {
+        Usuario usuario = usuarioActual(session);
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.puedeEditar(nodo, usuario, esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes permiso para compartir este elemento");
+        }
+
+        accesoService.compartir(nodo, usuarioId, NubeNodoAcceso.NivelAcceso.valueOf(nivel), usuario);
+        poblarModeloCompartir(model, nodo, session);
+        return "nube/compartir-modal :: modal-content";
+    }
+
+    // Quita el acceso de un usuario sobre un nodo
+    @DeleteMapping("/compartir/{id}/{usuarioId}")
+    public String quitarAcceso(@PathVariable Long id, @PathVariable Long usuarioId, Model model,
+            HttpSession session, HttpServletRequest request) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.puedeEditar(nodo, usuarioActual(session), esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes permiso para modificar el acceso de este elemento");
+        }
+
+        accesoService.quitarAcceso(id, usuarioId);
+        poblarModeloCompartir(model, nodo, session);
+        return "nube/compartir-modal :: modal-content";
+    }
+
+    // Nodos creados antes de esta funcionalidad no tienen institución asignada (no hay forma
+    // de inferirla retroactivamente); en ese caso se usa la institución activa de la sesión
+    // para poder listar candidatos para compartir en vez de dejar la lista vacía.
+    private void poblarModeloCompartir(Model model, NubeNodo nodo, HttpSession session) {
+        List<NubeNodoAcceso> accesos = accesoService.listarAccesos(nodo.getId());
+        List<Long> idsConAcceso = accesos.stream().map(a -> a.getUsuario().getId()).collect(Collectors.toList());
+        Long institucionId = nodo.getInstitucion() != null ? nodo.getInstitucion().getId()
+                : (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+
+        List<Usuario> disponibles = institucionId != null
+                ? usuarioRepository.findActivosByInstitucionId(institucionId).stream()
+                        .filter(u -> nodo.getPropietario() == null || !u.getId().equals(nodo.getPropietario().getId()))
+                        .filter(u -> !idsConAcceso.contains(u.getId()))
+                        .collect(Collectors.toList())
+                : List.of();
+
+        model.addAttribute("nodo", nodo);
+        model.addAttribute("accesos", accesos);
+        model.addAttribute("usuariosDisponibles", disponibles);
     }
 }

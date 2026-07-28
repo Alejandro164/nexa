@@ -53,6 +53,10 @@ public class NubeNodo {
     @JoinColumn(name = "propietario_id")
     private Usuario propietario;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institucion_id")
+    private Institucion institucion;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
@@ -171,5 +175,13 @@ public class NubeNodo {
 
     public void setFechaEliminacion(LocalDateTime fechaEliminacion) {
         this.fechaEliminacion = fechaEliminacion;
+    }
+
+    public Institucion getInstitucion() {
+        return institucion;
+    }
+
+    public void setInstitucion(Institucion institucion) {
+        this.institucion = institucion;
     }
 }

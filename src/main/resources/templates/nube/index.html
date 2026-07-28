@@ -517,8 +517,10 @@
                                     </svg>
                                     Cambiar nombre
                                 </button>
-                                <button type="button" class="dropdown-item" th:data-nombre="${carpeta.nombre}"
-                                    @click.prevent.stop="openShareModal($el.dataset.nombre)">
+                                <button type="button" class="dropdown-item"
+                                    th:hx-get="@{/nube-nexa/compartir/{id}(id=${carpeta.id})}"
+                                    hx-target="#modal-container" hx-swap="innerHTML"
+                                    @click="activeContextMenu = null; document.getElementById('modal-container').classList.add('show')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <circle cx="18" cy="5" r="3"></circle>
                                         <circle cx="6" cy="12" r="3"></circle>
@@ -815,8 +817,10 @@
                                     </svg>
                                     Cambiar nombre
                                 </button>
-                                <button type="button" class="dropdown-item" th:data-nombre="${archivo.nombre}"
-                                    @click.prevent.stop="openShareModal($el.dataset.nombre)">
+                                <button type="button" class="dropdown-item"
+                                    th:hx-get="@{/nube-nexa/compartir/{id}(id=${archivo.id})}"
+                                    hx-target="#modal-container" hx-swap="innerHTML"
+                                    @click="activeContextMenu = null; document.getElementById('modal-container').classList.add('show')">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <circle cx="18" cy="5" r="3"></circle>
                                         <circle cx="6" cy="12" r="3"></circle>
@@ -1136,25 +1140,6 @@
                                 </div>
                             </div>
                         </form>
-                    </div>
-                </div>
-
-                <!-- Modal Share -->
-                <div class="modal-backdrop" x-show="shareModalOpen" style="display: none;">
-                    <div class="modal-dialog" @click.outside="closeShareModal()">
-                        <div class="modal-header">
-                            <h3 class="modal-title">Compartir elemento</h3>
-                            <button @click="closeShareModal()" class="close-btn" type="button">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <p style="margin-bottom: 1rem;">Copia el siguiente enlace para compartir <strong
-                                    x-text="nodeName"></strong>:</p>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" id="shareLinkInput" class="form-input" readonly :value="shareLink">
-                                <button class="btn btn-primary" type="button" @click="copiarEnlace()"
-                                    id="btnCopiar">Copiar</button>
-                            </div>
-                        </div>
                     </div>
                 </div>
 

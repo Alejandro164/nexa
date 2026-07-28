@@ -966,11 +966,9 @@ function nubeNexaComponente() {
         dragOverId: null,
 
         renameModalOpen: false,
-        shareModalOpen: false,
 
         nodeId: null,
         nodeName: '',
-        shareLink: '',
 
         detailsPanelOpen: false,
         detailsData: { nombre: '', esCarpeta: false, extension: '', tamanoBytes: null, itemCount: null, fecha: '', propietario: '', ultimoAcceso: '' },
@@ -1126,34 +1124,6 @@ function nubeNexaComponente() {
 
         closeRenameModal() {
             this.renameModalOpen = false;
-        },
-
-        openShareModal(nombre) {
-            this.nodeName = nombre;
-            let randomId = Math.random().toString(36).substring(2, 10);
-            this.shareLink = window.location.origin + '/nube-nexa/compartido/' + randomId;
-            this.shareModalOpen = true;
-            this.activeContextMenu = null;
-        },
-
-        closeShareModal() {
-            this.shareModalOpen = false;
-        },
-
-        copiarEnlace() {
-            var copyText = document.getElementById("shareLinkInput");
-            if (copyText) {
-                copyText.select();
-                copyText.setSelectionRange(0, 99999);
-                navigator.clipboard.writeText(copyText.value);
-
-                let btn = document.getElementById('btnCopiar');
-                if (btn) {
-                    let originalText = btn.innerText;
-                    btn.innerText = '¡Copiado!';
-                    setTimeout(() => { btn.innerText = originalText; }, 2000);
-                }
-            }
         },
 
         openSendModal() {
