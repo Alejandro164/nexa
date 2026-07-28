@@ -40,6 +40,9 @@ public class NubeNodo {
     private Long tamanoBytes;
     private String extension;
 
+    @Column(length = 800)
+    private String descripcion;
+
     // Self-referencing parent
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "padre_id")
@@ -127,6 +130,14 @@ public class NubeNodo {
 
     public void setExtension(String extension) {
         this.extension = extension;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 
     public NubeNodo getPadre() {

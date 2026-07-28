@@ -68,6 +68,17 @@ public class NubeAccesoService {
         return accesoRepository.findByNodoIdOrderByFechaCompartidoDesc(nodoId);
     }
 
+    // Elementos compartidos directamente con el usuario (no incluye lo heredado de carpetas
+    // ancestras compartidas, ni lo que ya está en la papelera de su dueño).
+    public List<NubeNodoAcceso> listarCompartidosConmigo(Usuario usuario) {
+        if (usuario == null) {
+            return List.of();
+        }
+        return accesoRepository.findByUsuarioIdOrderByFechaCompartidoDesc(usuario.getId()).stream()
+                .filter(a -> a.getNodo().getFechaEliminacion() == null)
+                .toList();
+    }
+
     @Transactional
     public NubeNodoAcceso compartir(NubeNodo nodo, Long usuarioId, NivelAcceso nivel, Usuario compartidoPor) {
         Usuario usuario = usuarioRepository.findById(usuarioId)

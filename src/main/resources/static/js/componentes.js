@@ -971,7 +971,13 @@ function nubeNexaComponente() {
         nodeName: '',
 
         detailsPanelOpen: false,
-        detailsData: { nombre: '', esCarpeta: false, extension: '', tamanoBytes: null, itemCount: null, fecha: '', propietario: '', ultimoAcceso: '' },
+        detailsData: { id: null, nombre: '', esCarpeta: false, extension: '', tamanoBytes: null, itemCount: null, fecha: '', propietario: '', ultimoAcceso: '', descripcion: '', puedeEditar: false, iconoHtml: '' },
+        detailsAccesos: [],
+        detailsAccesosCargando: false,
+        detailsDescripcionEditando: false,
+        detailsDescripcionBorrador: '',
+        detailsDescripcionGuardando: false,
+        detailsVideoThumb: null,
 
         previewModalOpen: false,
         previewId: null,
@@ -1074,7 +1080,19 @@ function nubeNexaComponente() {
 
         openDetailsPanel(el) {
             const d = el.dataset;
+
+            // El ícono por extensión (color/forma según PDF, DOCX, ZIP, etc.) ya está resuelto
+            // server-side en la tarjeta de la que se abrió este panel; se clona en vez de
+            // duplicar todo ese mapeo de extensión→ícono acá.
+            let iconoHtml = '';
+            if (d.esCarpeta !== 'true') {
+                const card = el.closest('.item-card');
+                const iconSvg = card ? card.querySelector('.item-icon svg') : null;
+                if (iconSvg) iconoHtml = iconSvg.outerHTML;
+            }
+
             this.detailsData = {
+                id: d.id,
                 nombre: d.nombre,
                 esCarpeta: d.esCarpeta === 'true',
                 extension: d.extension || '',
@@ -1082,18 +1100,108 @@ function nubeNexaComponente() {
                 itemCount: d.itemCount !== undefined ? parseInt(d.itemCount, 10) : null,
                 fecha: d.fecha || '',
                 propietario: d.propietario || '',
-                ultimoAcceso: d.ultimoAcceso || ''
+                ultimoAcceso: d.ultimoAcceso || '',
+                descripcion: d.descripcion || '',
+                puedeEditar: d.puedeEditar === 'true',
+                iconoHtml: iconoHtml
             };
             this.detailsPanelOpen = true;
+            this.detailsDescripcionEditando = false;
+
+            this.detailsVideoThumb = null;
+            if (this.detailsPreviewTipo() === 'video') {
+                this.capturarFrameVideo(d.id);
+            }
+
+            this.detailsAccesos = [];
+            this.detailsAccesosCargando = true;
+            fetch('/nube-nexa/accesos/' + d.id)
+                .then(r => r.ok ? r.json() : [])
+                .then(data => { this.detailsAccesos = data; })
+                .catch(() => { this.detailsAccesos = []; })
+                .finally(() => { this.detailsAccesosCargando = false; });
+        },
+
+        // Captura un frame aleatorio del video en un <canvas> oculto para usarlo como miniatura
+        // estática, en vez de embeber el <video> completo (que invita a reproducirlo ahí mismo).
+        capturarFrameVideo(id) {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.muted = true;
+            video.src = '/archivos/ver/' + id;
+
+            video.addEventListener('loadedmetadata', () => {
+                const dur = video.duration;
+                video.currentTime = (isFinite(dur) && dur > 0) ? (dur * 0.1 + Math.random() * dur * 0.8) : 0;
+            });
+
+            video.addEventListener('seeked', () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth || 320;
+                canvas.height = video.videoHeight || 180;
+                try {
+                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                    this.detailsVideoThumb = canvas.toDataURL('image/jpeg', 0.8);
+                } catch (e) {
+                    this.detailsVideoThumb = null;
+                }
+            }, { once: true });
+
+            video.addEventListener('error', () => { this.detailsVideoThumb = null; });
         },
 
         closeDetailsPanel() {
             this.detailsPanelOpen = false;
+            this.detailsDescripcionEditando = false;
+        },
+
+        iniciarEdicionDescripcion() {
+            this.detailsDescripcionBorrador = this.detailsData.descripcion;
+            this.detailsDescripcionEditando = true;
+            setTimeout(() => {
+                let input = document.getElementById('detailsDescripcionInput');
+                if (input) input.focus();
+            }, 50);
+        },
+
+        cancelarEdicionDescripcion() {
+            this.detailsDescripcionEditando = false;
+        },
+
+        guardarDescripcion() {
+            const id = this.detailsData.id;
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            this.detailsDescripcionGuardando = true;
+            fetch('/nube-nexa/descripcion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    [csrfHeader]: csrfToken
+                },
+                body: 'id=' + encodeURIComponent(id) + '&descripcion=' + encodeURIComponent(this.detailsDescripcionBorrador || '')
+            })
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(data => {
+                    this.detailsData.descripcion = data.descripcion || '';
+                    this.detailsDescripcionEditando = false;
+                })
+                .finally(() => { this.detailsDescripcionGuardando = false; });
         },
 
         detailsTipoTexto() {
             if (this.detailsData.esCarpeta) return 'Carpeta';
             return this.detailsData.extension ? 'Archivo ' + this.detailsData.extension.toUpperCase() : 'Archivo';
+        },
+
+        detailsPreviewTipo() {
+            if (this.detailsData.esCarpeta || !this.detailsData.id) return null;
+            const ext = (this.detailsData.extension || '').toLowerCase();
+            if (ext === 'pdf') return 'pdf';
+            if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return 'image';
+            if (['mp4', 'webm'].includes(ext)) return 'video';
+            return null;
         },
 
         detailsTamanoTexto() {

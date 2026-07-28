@@ -5,7 +5,7 @@
     <div th:fragment="modal-content">
         <div class="modal-backdrop"
             @click.self="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
-            <div class="modal-dialog" style="max-width: 480px;">
+            <div class="modal-dialog" style="max-width: 560px;">
                 <div class="modal-header">
                     <h3 class="modal-title">Compartir <span th:text="${nodo.nombre}">elemento</span></h3>
                     <button type="button" class="close-btn"
@@ -15,25 +15,26 @@
                 </div>
 
                 <div class="modal-body">
-                    <form hx-post="/nube-nexa/compartir" hx-target="#modal-container" hx-swap="innerHTML"
-                        style="display: flex; gap: 8px; align-items: flex-end;">
+                    <form hx-post="/nube-nexa/compartir" hx-target="#modal-container" hx-swap="innerHTML">
                         <input type="hidden" name="id" th:value="${nodo.id}">
-                        <div style="flex: 1; min-width: 0;">
+                        <div style="margin-bottom: 0.75rem;">
                             <label class="form-label">Agregar persona</label>
-                            <select class="form-input" name="usuarioId" required>
+                            <select class="form-input" name="usuarioId" required style="width: 100%;">
                                 <option value="" disabled selected>Selecciona una persona</option>
                                 <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}"
                                     th:text="${u.nombre + ' (' + u.email + ')'}">Usuario</option>
                             </select>
                         </div>
-                        <div style="width: 110px;">
-                            <label class="form-label">Nivel</label>
-                            <select class="form-input" name="nivel">
-                                <option value="LECTOR">Lector</option>
-                                <option value="EDITOR">Editor</option>
-                            </select>
+                        <div style="display: flex; gap: 8px; align-items: flex-end;">
+                            <div style="width: 140px;">
+                                <label class="form-label">Nivel</label>
+                                <select class="form-input" name="nivel" style="width: 100%; height: 38px;">
+                                    <option value="LECTOR">Lector</option>
+                                    <option value="EDITOR">Editor</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="height: 38px;" th:if="${!usuariosDisponibles.isEmpty()}">Compartir</button>
                         </div>
-                        <button type="submit" class="btn btn-primary" th:if="${!usuariosDisponibles.isEmpty()}">Compartir</button>
                     </form>
                     <p th:if="${usuariosDisponibles.isEmpty()}"
                         style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">

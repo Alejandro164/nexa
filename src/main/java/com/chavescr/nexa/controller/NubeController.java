@@ -2,7 +2,10 @@ package com.chavescr.nexa.controller;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +69,16 @@ public class NubeController {
         model.addAttribute("archivos",
                 nodos.stream().filter(n -> n.getTipo().name().equals("ARCHIVO")).collect(Collectors.toList()));
         model.addAttribute("carpetaActual", null);
+        model.addAttribute("idsEditables", idsEditables(nodos, usuario, admin));
+    }
+
+    // Nodos sobre los que el usuario actual puede compartir/renombrar/mover/eliminar; se usa en
+    // la plantilla para ocultar "Compartir" en elementos donde solo tiene acceso de Lector.
+    private Set<Long> idsEditables(List<NubeNodo> nodos, Usuario usuario, boolean admin) {
+        return nodos.stream()
+                .filter(n -> accesoService.puedeEditar(n, usuario, admin))
+                .map(NubeNodo::getId)
+                .collect(Collectors.toSet());
     }
 
     // Vista Principal (Raíz)
@@ -88,10 +101,12 @@ public class NubeController {
     // Vista de una Carpeta Específica
     @GetMapping("/carpeta/{id}")
     public String verCarpeta(@PathVariable Long id, Model model, HttpSession session, HttpServletRequest request) {
+        Usuario usuario = usuarioActual(session);
+        boolean admin = esAdmin(request);
         NubeNodo carpetaActual = nubeNodoService.obtenerNodo(id)
                 .orElseThrow(() -> new IllegalArgumentException("Carpeta no encontrada"));
 
-        if (!accesoService.puedeVer(carpetaActual, usuarioActual(session), esAdmin(request))) {
+        if (!accesoService.puedeVer(carpetaActual, usuario, admin)) {
             throw new IllegalArgumentException("No tienes acceso a esta carpeta");
         }
 
@@ -110,6 +125,7 @@ public class NubeController {
         model.addAttribute("archivos", archivos);
         model.addAttribute("carpetaActual", carpetaActual);
         model.addAttribute("breadcrumbs", breadcrumbs);
+        model.addAttribute("idsEditables", idsEditables(nodos, usuario, admin));
 
         return "nube/index :: nube-content-area";
     }
@@ -363,6 +379,22 @@ public class NubeController {
         model.addAttribute("carpetas", List.of());
         model.addAttribute("archivos", List.of());
         model.addAttribute("carpetaActual", null);
+        model.addAttribute("idsEditables", idsEditables(items, usuario, admin));
+
+        return "nube/index :: nube-content-area";
+    }
+
+    // Vista de "Compartidos conmigo" (compartidos directamente con el usuario actual)
+    @GetMapping("/compartidos")
+    public String compartidos(Model model, HttpSession session, HttpServletRequest request) {
+        Usuario usuario = usuarioActual(session);
+        List<NubeNodoAcceso> items = accesoService.listarCompartidosConmigo(usuario);
+
+        model.addAttribute("compartidosItems", items);
+        model.addAttribute("vistaCompartidos", true);
+        model.addAttribute("carpetas", List.of());
+        model.addAttribute("archivos", List.of());
+        model.addAttribute("carpetaActual", null);
 
         return "nube/index :: nube-content-area";
     }
@@ -434,6 +466,53 @@ public class NubeController {
         } else {
             return nubeNexa(false, null, model, session, request).replace("nube/index", "nube/index :: nube-content-area");
         }
+    }
+
+    // Lista de quién tiene acceso a un nodo y con qué nivel (usada por el panel de "Ver
+    // detalles"); solo requiere poder ver el nodo, no editarlo, para que también un Lector
+    // pueda saber con quién más está compartido.
+    @GetMapping("/accesos/{id}")
+    @ResponseBody
+    public List<Map<String, Object>> listarAccesos(@PathVariable Long id, HttpSession session,
+            HttpServletRequest request) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.puedeVer(nodo, usuarioActual(session), esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes acceso a este elemento");
+        }
+
+        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
+                .ofPattern("dd MMM yyyy, HH:mm", new java.util.Locale("es"));
+        return accesoService.listarAccesos(id).stream()
+                .map(a -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("nombre", a.getUsuario().getNombre());
+                    m.put("email", a.getUsuario().getEmail());
+                    m.put("nivel", a.getNivel().name());
+                    m.put("fechaCompartido", a.getFechaCompartido() != null ? a.getFechaCompartido().format(fmt) : "");
+                    return m;
+                })
+                .collect(Collectors.toList());
+    }
+
+    // Actualiza la descripción opcional de un archivo/carpeta (se edita desde el panel de
+    // "Ver detalles"); requiere poder editar el nodo, igual que renombrar.
+    @PostMapping("/descripcion")
+    @ResponseBody
+    public Map<String, Object> actualizarDescripcion(@RequestParam Long id,
+            @RequestParam(required = false) String descripcion, HttpSession session, HttpServletRequest request) {
+        NubeNodo nodo = nubeNodoService.obtenerNodo(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        if (!accesoService.puedeEditar(nodo, usuarioActual(session), esAdmin(request))) {
+            throw new IllegalArgumentException("No tienes permiso para editar este elemento");
+        }
+
+        nubeNodoService.actualizarDescripcion(id, descripcion);
+
+        String guardada = descripcion != null && !descripcion.isBlank() ? descripcion.trim() : null;
+        Map<String, Object> m = new HashMap<>();
+        m.put("descripcion", guardada);
+        return m;
     }
 
     // Vista del modal de "Compartir"

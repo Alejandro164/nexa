@@ -13,9 +13,13 @@ public interface NubeNodoAccesoRepository extends JpaRepository<NubeNodoAcceso, 
 
     List<NubeNodoAcceso> findByNodoIdOrderByFechaCompartidoDesc(Long nodoId);
 
+    List<NubeNodoAcceso> findByUsuarioIdOrderByFechaCompartidoDesc(Long usuarioId);
+
     Optional<NubeNodoAcceso> findByNodoIdAndUsuarioId(Long nodoId, Long usuarioId);
 
     boolean existsByNodoIdAndUsuarioId(Long nodoId, Long usuarioId);
 
     void deleteByNodoIdAndUsuarioId(Long nodoId, Long usuarioId);
+
+    void deleteByNodoId(Long nodoId);
 }

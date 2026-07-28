@@ -237,7 +237,7 @@
                 top: 0;
                 right: 0;
                 bottom: 0;
-                width: 320px;
+                width: 380px;
                 background: var(--surface-solid, #ffffff);
                 border-left: 1px solid var(--border);
                 box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
@@ -282,6 +282,33 @@
             .nube-details-icon svg {
                 width: 36px;
                 height: 36px;
+            }
+
+            .nube-details-preview {
+                width: 100%;
+                height: 200px;
+                margin-bottom: 1rem;
+                border-radius: 12px;
+                overflow: hidden;
+                background: #0f172a;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .nube-details-preview img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                background: #f1f5f9;
+            }
+
+            .nube-details-preview iframe,
+            .nube-details-preview video {
+                width: 100%;
+                height: 100%;
+                border: none;
+                background: #f1f5f9;
             }
 
             .nube-details-name {
@@ -350,7 +377,18 @@
                         <span class="active">Recientes</span>
                     </div>
 
-                    <div class="nube-breadcrumbs" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false)}">
+                    <div class="nube-breadcrumbs" th:if="${vistaCompartidos}">
+                        <a hx-get="/nube-nexa" hx-target="#nube-content-area" hx-swap="outerHTML"
+                            hx-indicator="#nube-loading">Mi Unidad</a>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                        <span class="active">Compartidos conmigo</span>
+                    </div>
+
+                    <div class="nube-breadcrumbs"
+                        th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false) or (vistaCompartidos ?: false)}">
                         <a hx-get="/nube-nexa" hx-target="#nube-content-area" hx-swap="outerHTML"
                             hx-indicator="#nube-loading" data-nodo-id=""
                             :class="{ 'drag-over': draggingId && dragOverId === '' }"
@@ -377,7 +415,7 @@
                         </th:block>
                     </div>
 
-                    <div class="nube-actions" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false)}">
+                    <div class="nube-actions" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false) or (vistaCompartidos ?: false)}">
 
 
                         <!-- Dropdown Button Nuevo -->
@@ -434,7 +472,7 @@
                 </div>
 
                 <!-- Content Area -->
-                <div style="margin-top: 1.5rem;" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false)}">
+                <div style="margin-top: 1.5rem;" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false) or (vistaCompartidos ?: false)}">
 
                     <!-- Buscador -->
                     <div class="search-box" style="margin-bottom: 1.5rem; width: 100%; max-width: none;">
@@ -517,7 +555,7 @@
                                     </svg>
                                     Cambiar nombre
                                 </button>
-                                <button type="button" class="dropdown-item"
+                                <button type="button" class="dropdown-item" th:if="${idsEditables.contains(carpeta.id)}"
                                     th:hx-get="@{/nube-nexa/compartir/{id}(id=${carpeta.id})}"
                                     hx-target="#modal-container" hx-swap="innerHTML"
                                     @click="activeContextMenu = null; document.getElementById('modal-container').classList.add('show')">
@@ -543,11 +581,14 @@
                                     Mover a...
                                 </button>
                                 <button type="button" class="dropdown-item"
+                                    th:data-id="${carpeta.id}"
                                     th:data-nombre="${carpeta.nombre}" data-es-carpeta="true"
                                     th:data-item-count="${carpeta.hijos.size()}"
                                     th:data-fecha="${#temporals.format(carpeta.fechaCreacion, 'dd MMM yyyy, HH:mm')}"
                                     th:data-propietario="${carpeta.propietario != null ? carpeta.propietario.nombre : ''}"
                                     th:data-ultimo-acceso="${carpeta.ultimoAcceso != null ? #temporals.format(carpeta.ultimoAcceso, 'dd MMM yyyy, HH:mm') : ''}"
+                                    th:data-descripcion="${carpeta.descripcion ?: ''}"
+                                    th:data-puede-editar="${idsEditables.contains(carpeta.id)}"
                                     @click.prevent.stop="activeContextMenu = null; openDetailsPanel($el)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <circle cx="12" cy="12" r="10"></circle>
@@ -817,7 +858,7 @@
                                     </svg>
                                     Cambiar nombre
                                 </button>
-                                <button type="button" class="dropdown-item"
+                                <button type="button" class="dropdown-item" th:if="${idsEditables.contains(archivo.id)}"
                                     th:hx-get="@{/nube-nexa/compartir/{id}(id=${archivo.id})}"
                                     hx-target="#modal-container" hx-swap="innerHTML"
                                     @click="activeContextMenu = null; document.getElementById('modal-container').classList.add('show')">
@@ -843,12 +884,15 @@
                                     Mover a...
                                 </button>
                                 <button type="button" class="dropdown-item"
+                                    th:data-id="${archivo.id}"
                                     th:data-nombre="${archivo.nombre}" data-es-carpeta="false"
                                     th:data-extension="${archivo.extension}"
                                     th:data-tamano-bytes="${archivo.tamanoBytes}"
                                     th:data-fecha="${#temporals.format(archivo.fechaCreacion, 'dd MMM yyyy, HH:mm')}"
                                     th:data-propietario="${archivo.propietario != null ? archivo.propietario.nombre : ''}"
                                     th:data-ultimo-acceso="${archivo.ultimoAcceso != null ? #temporals.format(archivo.ultimoAcceso, 'dd MMM yyyy, HH:mm') : ''}"
+                                    th:data-descripcion="${archivo.descripcion ?: ''}"
+                                    th:data-puede-editar="${idsEditables.contains(archivo.id)}"
                                     @click.prevent.stop="activeContextMenu = null; openDetailsPanel($el)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <circle cx="12" cy="12" r="10"></circle>
@@ -1061,6 +1105,7 @@
                                     Descargar
                                 </button>
                                 <button type="button" class="dropdown-item"
+                                    th:data-id="${item.id}"
                                     th:data-nombre="${item.nombre}"
                                     th:data-es-carpeta="${item.tipo.name() == 'CARPETA'}"
                                     th:data-extension="${item.extension}"
@@ -1069,6 +1114,8 @@
                                     th:data-fecha="${#temporals.format(item.fechaCreacion, 'dd MMM yyyy, HH:mm')}"
                                     th:data-propietario="${item.propietario != null ? item.propietario.nombre : ''}"
                                     th:data-ultimo-acceso="${#temporals.format(item.ultimoAcceso, 'dd MMM yyyy, HH:mm')}"
+                                    th:data-descripcion="${item.descripcion ?: ''}"
+                                    th:data-puede-editar="${idsEditables.contains(item.id)}"
                                     @click.prevent.stop="activeContextMenu = null; openDetailsPanel($el)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <circle cx="12" cy="12" r="10"></circle>
@@ -1088,6 +1135,126 @@
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                         <p style="font-size: 1.1rem; font-weight: 500;">No tienes archivos recientes</p>
+                    </div>
+                </div>
+
+                <!-- Compartidos conmigo -->
+                <div style="margin-top: 1.5rem;" th:if="${vistaCompartidos}">
+                    <div class="nube-section-title">Compartidos conmigo</div>
+                    <div class="nube-grid" th:if="${!compartidosItems.isEmpty()}">
+                        <div class="item-card" th:each="acceso : ${compartidosItems}"
+                            th:with="item=${acceso.nodo}"
+                            th:classappend="${item.tipo.name() == 'CARPETA'} ? 'folder-card' : 'file-card'"
+                            th:data-ctx-id="${'shared-' + item.id}"
+                            :class="{ 'menu-abierto': activeContextMenu === $el.dataset.ctxId }"
+                            th:hx-get="${item.tipo.name() == 'CARPETA'} ? @{/nube-nexa/carpeta/{id}(id=${item.id})} : null"
+                            th:hx-target="${item.tipo.name() == 'CARPETA'} ? '#nube-content-area' : null"
+                            th:hx-swap="${item.tipo.name() == 'CARPETA'} ? 'outerHTML' : null"
+                            hx-indicator="#nube-loading" style="position: relative; padding-bottom: 2.75rem;">
+
+                            <th:block th:if="${item.tipo.name() == 'CARPETA'}">
+                                <div class="item-icon">
+                                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path
+                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="item-details">
+                                    <div class="item-name" th:text="${item.nombre}">Nombre</div>
+                                    <div class="item-meta"
+                                        th:text="${'Compartido por ' + (acceso.compartidoPor != null ? acceso.compartidoPor.nombre : '?')}">
+                                    </div>
+                                </div>
+                            </th:block>
+
+                            <a th:unless="${item.tipo.name() == 'CARPETA'}" href="#" th:data-id="${item.id}"
+                                th:data-nombre="${item.nombre}" th:data-ext="${item.extension}"
+                                @click.prevent="openPreviewModal($el.getAttribute('data-id'), $el.getAttribute('data-nombre'), $el.getAttribute('data-ext'))"
+                                style="text-decoration: none; color: inherit; display: block; width: 100%;">
+                                <div class="item-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.5"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    </svg>
+                                </div>
+                                <div class="item-details">
+                                    <div class="item-name" th:title="${item.nombre}" th:text="${item.nombre}">Nombre
+                                    </div>
+                                    <div class="item-meta"
+                                        th:text="${'Compartido por ' + (acceso.compartidoPor != null ? acceso.compartidoPor.nombre : '?')}">
+                                    </div>
+                                </div>
+                            </a>
+
+                            <span class="nube-badge-nivel"
+                                th:text="${acceso.nivel.name() == 'EDITOR' ? 'Editor' : 'Lector'}"
+                                style="position: absolute; left: 12px; bottom: 10px; font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: var(--input-bg); color: var(--text-secondary);">Nivel</span>
+
+                            <!-- Options Menu -->
+                            <div class="item-options" th:data-ctx-id="${'shared-' + item.id}"
+                                @click.prevent.stop="toggleContextMenu($el.dataset.ctxId)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </div>
+                            <div class="profile-dropdown" th:data-ctx-id="${'shared-' + item.id}"
+                                x-show="activeContextMenu === $el.dataset.ctxId"
+                                @click.outside="if(activeContextMenu === $el.dataset.ctxId) activeContextMenu = null"
+                                x-transition:enter="dropdown-enter" x-transition:enter-start="dropdown-enter-start"
+                                x-transition:enter-end="dropdown-enter-end" x-transition:leave="dropdown-leave"
+                                x-transition:leave-start="dropdown-leave-start" x-transition:leave-end="dropdown-leave-end"
+                                style="display: none; position: absolute; right: 8px; top: 36px; z-index: 100;">
+                                <button type="button" class="dropdown-item"
+                                    th:data-url="${item.tipo.name() == 'CARPETA'} ? @{/nube-nexa/descargar-carpeta/{id}(id=${item.id})} : @{/nube-nexa/descargar/{id}(id=${item.id})}"
+                                    @click.prevent.stop="activeContextMenu = null; window.location.href=$el.dataset.url">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Descargar
+                                </button>
+                                <button type="button" class="dropdown-item"
+                                    th:data-id="${item.id}"
+                                    th:data-nombre="${item.nombre}"
+                                    th:data-es-carpeta="${item.tipo.name() == 'CARPETA'}"
+                                    th:data-extension="${item.extension}"
+                                    th:data-tamano-bytes="${item.tamanoBytes}"
+                                    th:data-item-count="${item.tipo.name() == 'CARPETA'} ? ${item.hijos.size()} : null"
+                                    th:data-fecha="${#temporals.format(item.fechaCreacion, 'dd MMM yyyy, HH:mm')}"
+                                    th:data-propietario="${item.propietario != null ? item.propietario.nombre : ''}"
+                                    th:data-ultimo-acceso="${item.ultimoAcceso != null ? #temporals.format(item.ultimoAcceso, 'dd MMM yyyy, HH:mm') : ''}"
+                                    th:data-descripcion="${item.descripcion ?: ''}"
+                                    th:data-puede-editar="${acceso.nivel.name() == 'EDITOR'}"
+                                    @click.prevent.stop="activeContextMenu = null; openDetailsPanel($el)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    Ver detalles
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${compartidosItems.isEmpty()}"
+                        style="text-align: center; padding: 4rem 2rem; color: var(--text-secondary);">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" style="margin-bottom: 1rem; opacity: 0.5;">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <p style="font-size: 1.1rem; font-weight: 500;">Nadie compartió nada contigo todavía</p>
                     </div>
                 </div>
 
@@ -1149,7 +1316,7 @@
                 <!-- Modal Preview inyectado directamente desde fragments -->
                 <div th:replace="~{fragments/preview-archivo :: modal}"></div>
                 <!-- Floating Action Button for Recientes -->
-                <button type="button" class="btn-fab" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false)}"
+                <button type="button" class="btn-fab" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false) or (vistaCompartidos ?: false)}"
                     hx-get="/nube-nexa/recientes" hx-target="#nube-content-area" hx-swap="outerHTML"
                     hx-indicator="#nube-loading" style="right: 6rem;" title="Recientes">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1160,7 +1327,7 @@
                 </button>
 
                 <!-- Floating Action Button for Papelera -->
-                <button type="button" class="btn-fab" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false)}"
+                <button type="button" class="btn-fab" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false) or (vistaCompartidos ?: false)}"
                     hx-get="/nube-nexa/papelera" hx-target="#nube-content-area" hx-swap="outerHTML"
                     hx-indicator="#nube-loading"
                     style="background: linear-gradient(135deg, #d93025, #b3271f); box-shadow: 0 4px 14px rgba(217, 48, 37, 0.4);"
@@ -1172,10 +1339,26 @@
                     </svg>
                 </button>
 
+                <!-- Floating Action Button for Compartidos conmigo -->
+                <button type="button" class="btn-fab" th:unless="${(vistaPapelera ?: false) or (vistaRecientes ?: false) or (vistaCompartidos ?: false)}"
+                    hx-get="/nube-nexa/compartidos" hx-target="#nube-content-area" hx-swap="outerHTML"
+                    hx-indicator="#nube-loading"
+                    style="right: 10rem; background: linear-gradient(135deg, #7e57c2, #5e35b1); box-shadow: 0 4px 14px rgba(94, 53, 177, 0.4);"
+                    title="Compartidos conmigo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </button>
+
             </div>
 
             <!-- Panel de Detalles (estilo Google Drive) -->
             <div class="nube-details-panel" x-show="detailsPanelOpen" x-cloak
+                @click.outside="closeDetailsPanel()"
                 x-transition:enter="nube-details-enter" x-transition:enter-start="nube-details-enter-start"
                 x-transition:enter-end="nube-details-enter-end" x-transition:leave="nube-details-leave"
                 x-transition:leave-start="nube-details-leave-start" x-transition:leave-end="nube-details-leave-end"
@@ -1184,13 +1367,39 @@
                     <h3 class="modal-title">Detalles</h3>
                     <button type="button" class="close-btn" @click="closeDetailsPanel()">&times;</button>
                 </div>
-                <div class="nube-details-icon" :class="{ 'is-folder': detailsData.esCarpeta }">
+                <div class="nube-details-preview" x-show="detailsPreviewTipo()">
+                    <template x-if="detailsPreviewTipo() === 'image'">
+                        <img :src="'/archivos/ver/' + detailsData.id" :alt="detailsData.nombre">
+                    </template>
+                    <template x-if="detailsPreviewTipo() === 'pdf'">
+                        <iframe :src="'/archivos/ver/' + detailsData.id"></iframe>
+                    </template>
+                    <template x-if="detailsPreviewTipo() === 'video'">
+                        <div style="position: relative; width: 100%; height: 100%;">
+                            <img x-show="detailsVideoThumb" :src="detailsVideoThumb" :alt="detailsData.nombre">
+                            <div x-show="!detailsVideoThumb"
+                                style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem;">
+                                Generando miniatura...
+                            </div>
+                            <div x-show="detailsVideoThumb"
+                                style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+                                <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                                        <path d="M8 5v14l11-7z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="nube-details-icon" x-show="!detailsPreviewTipo()" :class="{ 'is-folder': detailsData.esCarpeta }">
                     <svg x-show="detailsData.esCarpeta" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="1.5">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    <svg x-show="!detailsData.esCarpeta" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.5">
+                    <span x-show="!detailsData.esCarpeta && detailsData.iconoHtml" x-html="detailsData.iconoHtml"></span>
+                    <svg x-show="!detailsData.esCarpeta && !detailsData.iconoHtml" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
                     </svg>
@@ -1218,6 +1427,55 @@
                         <span class="nube-details-value" x-text="detailsData.ultimoAcceso || 'Nunca'"></span>
                     </div>
                 </div>
+
+                <div style="margin: 1.25rem 0 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Descripción</span>
+                    <button type="button" class="btn-xs btn-ghost" x-show="detailsData.puedeEditar && !detailsDescripcionEditando"
+                        @click="iniciarEdicionDescripcion()">
+                        <span x-text="detailsData.descripcion ? 'Editar' : 'Agregar'"></span>
+                    </button>
+                </div>
+                <div x-show="!detailsDescripcionEditando">
+                    <p style="font-size: 0.85rem; color: var(--text-primary); white-space: pre-wrap; margin: 0;"
+                        x-show="detailsData.descripcion" x-text="detailsData.descripcion"></p>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;"
+                        x-show="!detailsData.descripcion">Sin descripción.</p>
+                </div>
+                <div x-show="detailsDescripcionEditando" x-cloak>
+                    <textarea id="detailsDescripcionInput" class="form-input" rows="3" maxlength="800"
+                        style="width: 100%; resize: vertical; padding-left: 0.75rem;"
+                        x-model="detailsDescripcionBorrador"></textarea>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 0.5rem;">
+                        <button type="button" class="btn-secondary" :disabled="detailsDescripcionGuardando"
+                            @click="cancelarEdicionDescripcion()">Cancelar</button>
+                        <button type="button" class="btn-primary" :disabled="detailsDescripcionGuardando"
+                            @click="guardarDescripcion()">Guardar</button>
+                    </div>
+                </div>
+
+                <div style="margin: 1.25rem 0 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">
+                    Quién tiene acceso
+                </div>
+                <div x-show="detailsAccesosCargando" style="font-size: 0.85rem; color: var(--text-secondary);">
+                    Cargando...
+                </div>
+                <div x-show="!detailsAccesosCargando && detailsAccesos.length === 0"
+                    style="font-size: 0.85rem; color: var(--text-secondary);">
+                    Solo el propietario tiene acceso.
+                </div>
+                <template x-for="acceso in detailsAccesos" :key="acceso.email">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0.4rem 0;">
+                        <div style="min-width: 0;">
+                            <div style="font-size: 0.85rem; font-weight: 500;" x-text="acceso.nombre"></div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);" x-text="acceso.email"></div>
+                            <div style="font-size: 0.72rem; color: var(--text-light);"
+                                x-text="'Acceso desde ' + acceso.fechaCompartido"></div>
+                        </div>
+                        <span
+                            style="font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: var(--input-bg); color: var(--text-secondary); flex-shrink: 0;"
+                            x-text="acceso.nivel === 'EDITOR' ? 'Editor' : 'Lector'"></span>
+                    </div>
+                </template>
             </div>
         </div>
     </main>

@@ -26,6 +26,7 @@ import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.NubeNodo;
 import com.chavescr.nexa.entity.TipoNodo;
 import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.NubeNodoAccesoRepository;
 import com.chavescr.nexa.repository.NubeNodoRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -43,15 +44,18 @@ public class NubeNodoService {
     private final InstitucionRepository institucionRepository;
     private final DocumentConversionService conversionService;
     private final UsuarioRepository usuarioRepository;
+    private final NubeNodoAccesoRepository accesoRepository;
 
     public NubeNodoService(NubeNodoRepository repository,
             InstitucionRepository institucionRepository,
             DocumentConversionService conversionService,
-            UsuarioRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository,
+            NubeNodoAccesoRepository accesoRepository) {
         this.repository = repository;
         this.institucionRepository = institucionRepository;
         this.conversionService = conversionService;
         this.usuarioRepository = usuarioRepository;
+        this.accesoRepository = accesoRepository;
     }
 
     public String getRutaRecursos() {
@@ -274,6 +278,14 @@ public class NubeNodoService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    public void actualizarDescripcion(Long id, String descripcion) {
+        NubeNodo nodo = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
+        nodo.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion.trim() : null);
+        repository.save(nodo);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public void renombrarNodo(Long id, String nuevoNombre) {
         NubeNodo nodo = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
@@ -314,7 +326,20 @@ public class NubeNodoService {
                 .orElseThrow(() -> new IllegalArgumentException("Nodo no encontrado"));
 
         eliminarFisicamente(nodo);
+        eliminarAccesos(nodo);
         repository.delete(nodo);
+    }
+
+    // Los accesos compartidos (nube_nodo_accesos) no tienen ON DELETE CASCADE hacia nube_nodos,
+    // así que hay que borrarlos explícitamente antes de purgar el nodo (y sus descendientes)
+    // o la eliminación física falla por violación de llave foránea.
+    private void eliminarAccesos(NubeNodo nodo) {
+        accesoRepository.deleteByNodoId(nodo.getId());
+        if (nodo.getTipo() == TipoNodo.CARPETA) {
+            for (NubeNodo hijo : nodo.getHijos()) {
+                eliminarAccesos(hijo);
+            }
+        }
     }
 
     private void eliminarFisicamente(NubeNodo nodo) {
