@@ -4,8 +4,6 @@ import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -15,8 +13,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "tareas_estudiantiles")
-public class TareaEstudiantil {
+@Table(name = "tareas_definicion")
+public class TareaDefinicion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,16 +25,12 @@ public class TareaEstudiantil {
     private Institucion institucion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "periodo_id", nullable = false)
-    private PeriodoAcademico periodo;
+    @JoinColumn(name = "nivel_id", nullable = false)
+    private NivelAcademico nivel;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "materia_id", nullable = false)
     private Materia materia;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "estudiante_id", nullable = false)
-    private Usuario estudiante;
 
     @Column(nullable = false, length = 200)
     private String titulo;
@@ -49,17 +43,6 @@ public class TareaEstudiantil {
 
     @Column(nullable = false)
     private Integer porcentaje;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 15)
-    private EstadoTareaEstudiantil estado = EstadoTareaEstudiantil.PENDIENTE;
-
-    @Column(nullable = true)
-    private Integer calificacion;
-
-    public enum EstadoTareaEstudiantil {
-        PENDIENTE, ENTREGADA, CALIFICADA, ATRASADA
-    }
 
     public Long getId() {
         return id;
@@ -77,12 +60,12 @@ public class TareaEstudiantil {
         this.institucion = institucion;
     }
 
-    public PeriodoAcademico getPeriodo() {
-        return periodo;
+    public NivelAcademico getNivel() {
+        return nivel;
     }
 
-    public void setPeriodo(PeriodoAcademico periodo) {
-        this.periodo = periodo;
+    public void setNivel(NivelAcademico nivel) {
+        this.nivel = nivel;
     }
 
     public Materia getMateria() {
@@ -91,14 +74,6 @@ public class TareaEstudiantil {
 
     public void setMateria(Materia materia) {
         this.materia = materia;
-    }
-
-    public Usuario getEstudiante() {
-        return estudiante;
-    }
-
-    public void setEstudiante(Usuario estudiante) {
-        this.estudiante = estudiante;
     }
 
     public String getTitulo() {
@@ -131,21 +106,5 @@ public class TareaEstudiantil {
 
     public void setPorcentaje(Integer porcentaje) {
         this.porcentaje = porcentaje;
-    }
-
-    public EstadoTareaEstudiantil getEstado() {
-        return estado;
-    }
-
-    public void setEstado(EstadoTareaEstudiantil estado) {
-        this.estado = estado;
-    }
-
-    public Integer getCalificacion() {
-        return calificacion;
-    }
-
-    public void setCalificacion(Integer calificacion) {
-        this.calificacion = calificacion;
     }
 }

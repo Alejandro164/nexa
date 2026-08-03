@@ -1,0 +1,92 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+            <div>
+                <h3 class="card-title">Tareas Asignadas</h3>
+                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
+                    Defina las tareas que asignará a la sección durante el período.
+                </p>
+            </div>
+            <div style="border-top: 1px solid var(--border);"></div>
+            <div class="filters-bar">
+                <select class="form-input" style="max-width: 200px;" name="nivelId"
+                        hx-get="/gestion-academica/tareas/definiciones"
+                        hx-target="#tareas-definiciones-panel" hx-swap="innerHTML"
+                        hx-include="[name='materiaId']">
+                    <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
+                    <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
+                            th:selected="${nivelId != null and nivelId == n.id}"></option>
+                </select>
+                <select class="form-input" style="max-width: 220px;" name="materiaId"
+                        hx-get="/gestion-academica/tareas/definiciones"
+                        hx-target="#tareas-definiciones-panel" hx-swap="innerHTML"
+                        hx-include="[name='nivelId']">
+                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
+                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${materiaId != null and materiaId == m.id}"></option>
+                </select>
+                <button class="btn btn-primary" style="width: 220px; height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap;"
+                        th:if="${nivelId != null and materiaId != null}"
+                        th:attr="hx-get='/gestion-academica/tareas/definiciones/form?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                        hx-target="#modal-container" hx-swap="innerHTML"
+                        onclick="abrirModalAcademico()">Nueva Tarea</button>
+            </div>
+        </div>
+
+        <div th:if="${nivelId == null or materiaId == null}"
+             style="padding: 2rem; text-align:center; color: var(--text-secondary);">
+            Debes crear al menos una sección y una materia para asignar tareas.
+        </div>
+
+        <th:block th:if="${nivelId != null and materiaId != null}">
+            <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tarea</th>
+                            <th>Descripción</th>
+                            <th>Entrega</th>
+                            <th>Porcentaje</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${tareas == null or tareas.empty}">
+                            <td colspan="5" class="table-empty">No hay tareas asignadas.</td>
+                        </tr>
+                        <tr th:each="t : ${tareas}">
+                            <td><strong th:text="${t.titulo}">Tarea</strong></td>
+                            <td th:text="${t.descripcion}">Descripción</td>
+                            <td th:text="${#temporals.format(t.fechaEntrega, 'dd/MM/yyyy')}">01/01/2028</td>
+                            <td><span class="badge badge-primary" th:text="${t.porcentaje} + '%'">15%</span></td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn-xs btn-ghost"
+                                            th:attr="hx-get='/gestion-academica/tareas/definiciones/form/' + ${t.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                                            hx-target="#modal-container" hx-swap="innerHTML"
+                                            onclick="abrirModalAcademico()"
+                                            title="Editar">✏️</button>
+                                    <button class="btn-xs btn-danger-ghost"
+                                            onclick="abrirConfirmacionAcademica(this)"
+                                            th:attr="data-delete-url='/gestion-academica/tareas/definiciones/' + ${t.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId},
+                                                     data-delete-target='#tareas-definiciones-panel',
+                                                     data-delete-title='Eliminar tarea',
+                                                     data-delete-message='¿Deseas eliminar ' + ${t.titulo} + '? Esta acción no se puede deshacer.'"
+                                            title="Eliminar">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
+                            <td colspan="3">Total asignado</td>
+                            <td><span style="color: var(--primary);" th:text="${totalAsignado} + '%'">0%</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </th:block>
+    </div>
+</div>

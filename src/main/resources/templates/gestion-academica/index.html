@@ -198,12 +198,38 @@
             </div>
 
             <!-- Tareas -->
-            <div x-show="activeTab === 'tareas'" class="tab-pane" x-cloak>
-                <div id="tareas-est-panel" hx-get="/gestion-academica/tareas" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="card">
-                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando tareas…</div>
+            <div x-show="activeTab === 'tareas'" class="tab-pane" x-cloak
+                 x-data="{ subTabTareas: 'definiciones' }">
+
+                <div class="reg-tabs">
+                    <button class="reg-tab" :class="{ 'active': subTabTareas === 'definiciones' }"
+                            @click="subTabTareas = 'definiciones'">
+                        📚 Tareas Asignadas
+                    </button>
+                    <button class="reg-tab" :class="{ 'active': subTabTareas === 'evaluacion' }"
+                            @click="subTabTareas = 'evaluacion'">
+                        ✍️ Evaluación de Tareas
+                    </button>
+                </div>
+
+                <!-- Sub-tab: Tareas Asignadas -->
+                <div x-show="subTabTareas === 'definiciones'">
+                    <div id="tareas-definiciones-panel" hx-get="/gestion-academica/tareas/definiciones" hx-trigger="load" hx-swap="innerHTML">
+                        <div class="card">
+                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando tareas…</div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Sub-tab: Evaluación -->
+                <div x-show="subTabTareas === 'evaluacion'">
+                    <div id="tareas-evaluacion-panel" hx-get="/gestion-academica/tareas/evaluacion" hx-trigger="load" hx-swap="innerHTML">
+                        <div class="card">
+                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando evaluaciones…</div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Proyectos -->
@@ -260,6 +286,12 @@
                 var panel = document.getElementById('evaluacion-panel');
                 if (panel) {
                     htmx.ajax('GET', '/gestion-academica/cotidiano/evaluacion', { target: '#evaluacion-panel', swap: 'innerHTML' });
+                }
+            });
+            document.body.addEventListener('tareaDefinicionActualizada', function () {
+                var panel = document.getElementById('tareas-evaluacion-panel');
+                if (panel) {
+                    htmx.ajax('GET', '/gestion-academica/tareas/evaluacion', { target: '#tareas-evaluacion-panel', swap: 'innerHTML' });
                 }
             });
         </script>
