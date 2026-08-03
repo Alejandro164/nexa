@@ -10,12 +10,12 @@ import com.chavescr.nexa.entity.AsistenciaEstudiante;
 
 public interface AsistenciaEstudianteRepository extends JpaRepository<AsistenciaEstudiante, Long> {
 
-    List<AsistenciaEstudiante> findByInstitucionIdAndNivelAcademicoIdAndFecha(Long institucionId, Long nivelId,
-            LocalDate fecha);
+    List<AsistenciaEstudiante> findByInstitucionIdAndNivelAcademicoIdAndFechaAndMateriaIdAndNumeroLeccion(
+            Long institucionId, Long nivelId, LocalDate fecha, Long materiaId, Integer numeroLeccion);
 
-    Optional<AsistenciaEstudiante> findByInstitucionIdAndEstudianteIdAndFecha(Long institucionId, Long estudianteId,
-            LocalDate fecha);
+    Optional<AsistenciaEstudiante> findByInstitucionIdAndEstudianteIdAndFechaAndMateriaIdAndNumeroLeccion(
+            Long institucionId, Long estudianteId, LocalDate fecha, Long materiaId, Integer numeroLeccion);
 
-    List<AsistenciaEstudiante> findByInstitucionIdAndEstudianteIdAndFechaBetween(Long institucionId,
-            Long estudianteId, LocalDate desde, LocalDate hasta);
+    List<AsistenciaEstudiante> findByInstitucionIdAndEstudianteIdAndMateriaIdAndFechaBetween(Long institucionId,
+            Long estudianteId, Long materiaId, LocalDate desde, LocalDate hasta);
 }

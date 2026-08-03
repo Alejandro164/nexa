@@ -45,4 +45,30 @@ public class AlcanceDocenteService {
         }
         return horarioLeccionRepository.findNivelesDistinctByInstitucionIdAndDocenteId(institucionId, docenteId);
     }
+
+    /** Materias que efectivamente se imparten en esta sección según el horario (no todas las de la institución). */
+    public List<Materia> materiasVisiblesEnNivel(Long institucionId, Long nivelId, Long docenteId) {
+        if (nivelId == null) {
+            return List.of();
+        }
+        if (docenteId == null) {
+            return horarioLeccionRepository.findMateriasDistinctByInstitucionIdAndNivelId(institucionId, nivelId);
+        }
+        return horarioLeccionRepository.findMateriasDistinctByInstitucionIdAndNivelIdAndDocenteId(
+                institucionId, nivelId, docenteId);
+    }
+
+    /** Números de lección en los que esta materia realmente se imparte en esta sección, ese día de la semana. */
+    public List<Integer> leccionesVisibles(Long institucionId, Long nivelId, Long materiaId, String dia,
+            Long docenteId) {
+        if (nivelId == null || materiaId == null || dia == null) {
+            return List.of();
+        }
+        if (docenteId == null) {
+            return horarioLeccionRepository.findNumerosLeccionByInstitucionIdAndNivelIdAndMateriaIdAndDia(
+                    institucionId, nivelId, materiaId, dia);
+        }
+        return horarioLeccionRepository.findNumerosLeccionByInstitucionIdAndNivelIdAndMateriaIdAndDiaAndDocenteId(
+                institucionId, nivelId, materiaId, dia, docenteId);
+    }
 }

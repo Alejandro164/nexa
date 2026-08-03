@@ -1,20 +1,47 @@
 <div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Pase de Lista Diario</h3>
-            <div style="display: flex; gap: 0.75rem;">
+    <div class="card" style="position: relative;">
+        <div id="asistencia-loading" class="htmx-indicator panel-loading-overlay">
+            <div class="spinner"></div>
+            <span>Cargando...</span>
+        </div>
+        <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+            <h3 class="card-title">Pase de Lista</h3>
+            <div style="border-top: 1px solid var(--border);"></div>
+            <div class="filters-bar">
                 <select class="form-input" style="max-width: 180px;" name="nivelId"
                         hx-get="/gestion-academica/asistencia"
-                        hx-target="#asistencia-panel" hx-swap="innerHTML"
-                        hx-include="[name='fecha']">
+                        hx-target="#asistencia-panel" hx-swap="innerHTML" hx-indicator="#asistencia-loading"
+                        hx-include="[name='fecha'],[name='materiaId'],[name='numeroLeccion']">
                     <option value="" th:if="${secciones == null or secciones.empty}" disabled selected>Sin secciones</option>
                     <option th:each="s : ${secciones}" th:value="${s.id}" th:text="'Sección ' + ${s.nombreCompleto}"
                             th:selected="${nivelId != null and nivelId == s.id}"></option>
                 </select>
+                <select class="form-input" style="max-width: 200px;" name="materiaId"
+                        hx-get="/gestion-academica/asistencia"
+                        hx-target="#asistencia-panel" hx-swap="innerHTML" hx-indicator="#asistencia-loading"
+                        hx-include="[name='fecha'],[name='nivelId'],[name='numeroLeccion']">
+                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
+                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${materiaId != null and materiaId == m.id}"></option>
+                </select>
+                <select class="form-input" style="max-width: 130px;" name="numeroLeccion"
+                        hx-get="/gestion-academica/asistencia"
+                        hx-target="#asistencia-panel" hx-swap="innerHTML" hx-indicator="#asistencia-loading"
+                        hx-include="[name='fecha'],[name='nivelId'],[name='materiaId']">
+                    <option value="" th:if="${lecciones == null or lecciones.empty}" disabled selected>Sin lecciones ese día</option>
+                    <option th:each="l : ${lecciones}" th:value="${l}" th:text="'Lección ' + ${l}"
+                            th:selected="${numeroLeccion != null and numeroLeccion == l}"></option>
+                </select>
                 <input type="date" class="form-input" style="max-width: 160px;" name="fecha" th:value="${fecha}"
                        hx-get="/gestion-academica/asistencia"
-                       hx-target="#asistencia-panel" hx-swap="innerHTML"
-                       hx-include="[name='nivelId']" hx-trigger="change" />
+                       hx-target="#asistencia-panel" hx-swap="innerHTML" hx-indicator="#asistencia-loading"
+                       hx-include="[name='nivelId'],[name='materiaId'],[name='numeroLeccion']" hx-trigger="change" />
+                <button type="button" class="btn btn-secondary" style="padding:0.5rem 0.9rem;font-size:0.8rem;"
+                        th:if="${leccionAnterior != null}"
+                        hx-post="/gestion-academica/asistencia/copiar-leccion-anterior"
+                        hx-target="#asistencia-panel" hx-swap="innerHTML" hx-indicator="#asistencia-loading"
+                        th:attr="hx-vals=|js:{nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}'}|"
+                        th:text="'Copiar asistencia de Lección ' + ${leccionAnterior}">Copiar asistencia de la lección anterior</button>
             </div>
         </div>
         <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
@@ -29,7 +56,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:if="${filas == null or filas.empty}">
+                        <tr th:if="${(filas == null or filas.empty) and (lecciones == null or lecciones.empty)}">
+                            <td colspan="3" class="table-empty">Esta materia no tiene lección programada ese día en esta sección.</td>
+                        </tr>
+                        <tr th:if="${(filas == null or filas.empty) and not (lecciones == null or lecciones.empty)}">
                             <td colspan="3" class="table-empty">No hay estudiantes activos en esta sección.</td>
                         </tr>
                         <tr th:each="f : ${filas}">
@@ -39,28 +69,28 @@
                                     <button type="button" class="btn"
                                             th:style="${f.estado != null and f.estado.name() == 'PRESENTE'} ? 'padding:4px 10px;font-size:0.75rem;background-color:var(--success);color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
                                             hx-post="/gestion-academica/asistencia/registrar"
-                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, fecha: '${fecha}', estado: 'PRESENTE'}|"
+                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: 'PRESENTE'}|"
                                             hx-target="#asistencia-panel" hx-swap="innerHTML">Presente</button>
                                     <button type="button" class="btn"
                                             th:style="${f.estado != null and f.estado.name() == 'AUSENTE'} ? 'padding:4px 10px;font-size:0.75rem;background-color:var(--danger);color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
                                             hx-post="/gestion-academica/asistencia/registrar"
-                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, fecha: '${fecha}', estado: 'AUSENTE'}|"
+                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: 'AUSENTE'}|"
                                             hx-target="#asistencia-panel" hx-swap="innerHTML">Ausente</button>
                                     <button type="button" class="btn"
                                             th:style="${f.estado != null and f.estado.name() == 'TARDIA'} ? 'padding:4px 10px;font-size:0.75rem;background-color:#d97706;color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
                                             hx-post="/gestion-academica/asistencia/registrar"
-                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, fecha: '${fecha}', estado: 'TARDIA'}|"
+                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: 'TARDIA'}|"
                                             hx-target="#asistencia-panel" hx-swap="innerHTML">Tardía</button>
                                     <button type="button" class="btn"
                                             th:style="${f.estado != null and f.estado.name() == 'JUSTIFICADA'} ? 'padding:4px 10px;font-size:0.75rem;background-color:var(--primary);color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
-                                            th:attr="onclick=|registrarJustificada(this, ${f.estudiante.id}, ${nivelId}, '${fecha}')|">Justificada</button>
+                                            th:attr="onclick=|registrarJustificada(this, ${f.estudiante.id}, ${nivelId}, ${materiaId}, ${numeroLeccion}, '${fecha}')|">Justificada</button>
                                 </div>
                             </td>
                             <td>
                                 <input type="text" class="form-input" name="observaciones" style="padding-left:10px; height: 32px;"
                                        placeholder="Agregar nota..." th:value="${f.observaciones}"
                                        hx-post="/gestion-academica/asistencia/registrar" hx-trigger="change"
-                                       th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, fecha: '${fecha}'}|"
+                                       th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}'}|"
                                        hx-target="#asistencia-panel" hx-swap="innerHTML">
                             </td>
                         </tr>
@@ -70,7 +100,7 @@
         </div>
     </div>
     <script>
-        function registrarJustificada(btn, estudianteId, nivelId, fecha) {
+        function registrarJustificada(btn, estudianteId, nivelId, materiaId, numeroLeccion, fecha) {
             var fila = btn.closest('tr');
             var nota = fila.querySelector('input[name="observaciones"]');
             if (!nota || !nota.value.trim()) {
@@ -84,7 +114,7 @@
             htmx.ajax('POST', '/gestion-academica/asistencia/registrar', {
                 target: '#asistencia-panel',
                 swap: 'innerHTML',
-                values: { estudianteId: estudianteId, nivelId: nivelId, fecha: fecha, estado: 'JUSTIFICADA', observaciones: nota.value.trim() }
+                values: { estudianteId: estudianteId, nivelId: nivelId, materiaId: materiaId, numeroLeccion: numeroLeccion, fecha: fecha, estado: 'JUSTIFICADA', observaciones: nota.value.trim() }
             });
         }
     </script>

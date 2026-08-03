@@ -18,8 +18,8 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "asistencias_estudiantes", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_asistencia_institucion_estudiante_fecha",
-                columnNames = {"institucion_id", "estudiante_id", "fecha"})
+        @UniqueConstraint(name = "uk_asistencia_institucion_estudiante_fecha_materia_leccion",
+                columnNames = {"institucion_id", "estudiante_id", "fecha", "materia_id", "numero_leccion"})
 })
 public class AsistenciaEstudiante {
 
@@ -38,6 +38,13 @@ public class AsistenciaEstudiante {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "estudiante_id", nullable = false)
     private Usuario estudiante;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "materia_id", nullable = false)
+    private Materia materia;
+
+    @Column(name = "numero_leccion", nullable = false)
+    private Integer numeroLeccion;
 
     @Column(nullable = false)
     private LocalDate fecha;
@@ -89,6 +96,22 @@ public class AsistenciaEstudiante {
 
     public void setEstudiante(Usuario estudiante) {
         this.estudiante = estudiante;
+    }
+
+    public Materia getMateria() {
+        return materia;
+    }
+
+    public void setMateria(Materia materia) {
+        this.materia = materia;
+    }
+
+    public Integer getNumeroLeccion() {
+        return numeroLeccion;
+    }
+
+    public void setNumeroLeccion(Integer numeroLeccion) {
+        this.numeroLeccion = numeroLeccion;
     }
 
     public LocalDate getFecha() {

@@ -1521,6 +1521,34 @@
 .chevron-icon { transition: transform 0.2s ease; }
 .chevron-rotated { transform: rotate(180deg); }
 
+/* ── Overlay de carga reutilizable (spinner + .htmx-indicator ya son globales, ver index.html) ── */
+.panel-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(2px);
+    pointer-events: none;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.htmx-request.panel-loading-overlay,
+.htmx-request .panel-loading-overlay {
+    pointer-events: auto;
+}
+
+.panel-loading-overlay .spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+}
+
 /* ── Participación ───────────────────────────────────────────── */
 .filters-bar { display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap;align-items:center; }
 

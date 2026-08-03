@@ -127,7 +127,6 @@ public class PromedioService {
             Long institucionId, List<TareaEstudiantil> tareas, List<ProyectoEstudiantil> proyectos,
             List<NotaExamen> notas, Map<Long, Examen> examenesPorId, List<TrabajoExtraclase> extraclase,
             List<EvaluacionCotidiana> evaluaciones, DistribucionPorcentual distribucion) {
-
         Integer cotidiano = promedioPonderado(evaluaciones.stream()
                 .map(ev -> new double[] { ev.getCalificacion(), ev.getIndicador().getPorcentaje() })
                 .toList());
@@ -152,7 +151,7 @@ public class PromedioService {
                 .map(t -> new double[] { t.getCalificacion(), t.getPorcentaje() })
                 .toList());
 
-        Integer asistenciaScore = calcularAsistencia(institucionId, estudiante.getId(), periodo);
+        Integer asistenciaScore = calcularAsistencia(institucionId, estudiante.getId(), materiaId, periodo);
 
         Double promedioFinal = promedioFinal(distribucion, cotidiano, tareasScore, proyectosScore,
                 examenesScore, asistenciaScore, extraclaseScore);
@@ -161,10 +160,11 @@ public class PromedioService {
                 extraclaseScore, asistenciaScore, promedioFinal);
     }
 
-    private Integer calcularAsistencia(Long institucionId, Long estudianteId, PeriodoAcademico periodo) {
+    private Integer calcularAsistencia(Long institucionId, Long estudianteId, Long materiaId,
+            PeriodoAcademico periodo) {
         List<AsistenciaEstudiante> registros = asistenciaRepository
-                .findByInstitucionIdAndEstudianteIdAndFechaBetween(institucionId, estudianteId,
-                        periodo.getFechaInicio(), periodo.getFechaFin());
+                .findByInstitucionIdAndEstudianteIdAndMateriaIdAndFechaBetween(institucionId, estudianteId,
+                        materiaId, periodo.getFechaInicio(), periodo.getFechaFin());
         if (registros.isEmpty()) {
             return null;
         }

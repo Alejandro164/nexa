@@ -27,6 +27,34 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
     List<NivelAcademico> findNivelesDistinctByInstitucionIdAndDocenteId(
             @Param("institucionId") Long institucionId, @Param("docenteId") Long docenteId);
 
+    @Query("SELECT DISTINCT h.materia FROM HorarioLeccion h " +
+            "WHERE h.institucion.id = :institucionId AND h.nivel.id = :nivelId " +
+            "ORDER BY h.materia.nombre")
+    List<Materia> findMateriasDistinctByInstitucionIdAndNivelId(
+            @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId);
+
+    @Query("SELECT DISTINCT h.materia FROM HorarioLeccion h " +
+            "WHERE h.institucion.id = :institucionId AND h.nivel.id = :nivelId AND h.docente.id = :docenteId " +
+            "ORDER BY h.materia.nombre")
+    List<Materia> findMateriasDistinctByInstitucionIdAndNivelIdAndDocenteId(
+            @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId,
+            @Param("docenteId") Long docenteId);
+
+    @Query("SELECT DISTINCT h.numeroLeccion FROM HorarioLeccion h " +
+            "WHERE h.institucion.id = :institucionId AND h.nivel.id = :nivelId " +
+            "AND h.materia.id = :materiaId AND h.dia = :dia ORDER BY h.numeroLeccion")
+    List<Integer> findNumerosLeccionByInstitucionIdAndNivelIdAndMateriaIdAndDia(
+            @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId,
+            @Param("materiaId") Long materiaId, @Param("dia") String dia);
+
+    @Query("SELECT DISTINCT h.numeroLeccion FROM HorarioLeccion h " +
+            "WHERE h.institucion.id = :institucionId AND h.nivel.id = :nivelId " +
+            "AND h.materia.id = :materiaId AND h.dia = :dia AND h.docente.id = :docenteId " +
+            "ORDER BY h.numeroLeccion")
+    List<Integer> findNumerosLeccionByInstitucionIdAndNivelIdAndMateriaIdAndDiaAndDocenteId(
+            @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId,
+            @Param("materiaId") Long materiaId, @Param("dia") String dia, @Param("docenteId") Long docenteId);
+
     List<HorarioLeccion> findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccionOrderByIdAsc(
             Long institucionId, Long periodoId, Long nivelId, String dia, Integer numeroLeccion);
 
