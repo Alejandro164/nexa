@@ -97,7 +97,7 @@ public class PromedioService {
                 .stream().collect(Collectors.groupingBy(p -> p.getEstudiante().getId()));
 
         Map<Long, Examen> examenesPorId = examenRepository
-                .findByInstitucionIdAndPeriodoIdAndMateriaIdOrderByFechaAsc(institucionId, periodoId, materiaId)
+                .findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(institucionId, nivelId, materiaId, periodoId)
                 .stream().collect(Collectors.toMap(Examen::getId, e -> e));
         Map<Long, List<NotaExamen>> notasPorEstudiante = notaExamenRepository
                 .findByExamen_PeriodoIdAndExamen_MateriaId(periodoId, materiaId)
@@ -141,7 +141,8 @@ public class PromedioService {
                 .toList());
 
         Integer examenesScore = promedioPonderado(notas.stream()
-                .filter(n -> examenesPorId.containsKey(n.getExamen().getId()))
+                .filter(n -> examenesPorId.containsKey(n.getExamen().getId())
+                        && examenesPorId.get(n.getExamen().getId()).getPorcentaje() != null)
                 .map(n -> new double[] { n.getCalificacion(), examenesPorId.get(n.getExamen().getId()).getPorcentaje() })
                 .toList());
 

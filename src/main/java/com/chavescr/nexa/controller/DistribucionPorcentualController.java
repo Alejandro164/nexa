@@ -11,6 +11,7 @@ import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.DistribucionPorcentualService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -44,12 +45,13 @@ public class DistribucionPorcentualController {
             @RequestParam(required = false) Integer examenes,
             @RequestParam(required = false) Integer asistencia,
             @RequestParam(required = false) Integer trabajosExtraclase,
-            Model model, HttpSession session, HttpServletRequest request) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
             service.guardarDistribucion(institucionId, periodoId, materiaId, cotidiano, tareas, proyectos,
                     examenes, asistencia, trabajosExtraclase);
             model.addAttribute("guardadoOk", true);
+            response.setHeader("HX-Trigger", "promedioDesactualizado");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
         }

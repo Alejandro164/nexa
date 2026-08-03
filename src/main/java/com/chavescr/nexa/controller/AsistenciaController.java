@@ -19,6 +19,7 @@ import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.AsistenciaService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -52,18 +53,20 @@ public class AsistenciaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String observaciones,
-            Model model, HttpSession session, HttpServletRequest request) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         exigirDocenteODirectorOAdmin(request);
         Long institucionId = requerirInstitucion(session);
         Long registradoPorId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         try {
             service.registrarEstado(institucionId, estudianteId, nivelId, materiaId, numeroLeccion, fecha, estado,
                     observaciones, registradoPorId);
+            notificarPromedioDesactualizado(response);
         } catch (DataIntegrityViolationException e) {
             // otra petición concurrente insertó el registro primero; reintentar una vez ya que existe
             try {
                 service.registrarEstado(institucionId, estudianteId, nivelId, materiaId, numeroLeccion, fecha, estado,
                         observaciones, registradoPorId);
+                notificarPromedioDesactualizado(response);
             } catch (IllegalArgumentException e2) {
                 model.addAttribute("error", e2.getMessage());
             }
@@ -79,7 +82,7 @@ public class AsistenciaController {
             @RequestParam Long materiaId,
             @RequestParam Integer numeroLeccion,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
-            Model model, HttpSession session, HttpServletRequest request) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         exigirDocenteODirectorOAdmin(request);
         Long institucionId = requerirInstitucion(session);
         Long docenteId = docenteIdSiAplica(request, session);
@@ -94,10 +97,16 @@ public class AsistenciaController {
                     numeroLeccion, registradoPorId);
             if (copiados == 0) {
                 model.addAttribute("error", "No hay asistencia registrada en la lección anterior para copiar.");
+            } else {
+                notificarPromedioDesactualizado(response);
             }
         }
         cargarPanel(model, institucionId, nivelId, materiaId, numeroLeccion, fecha, docenteId);
         return "gestion-academica/asistencia/asistencia :: content";
+    }
+
+    private void notificarPromedioDesactualizado(HttpServletResponse response) {
+        response.setHeader("HX-Trigger", "promedioDesactualizado");
     }
 
     private static final Map<DayOfWeek, String> DIA_ES = Map.of(

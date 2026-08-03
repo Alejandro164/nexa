@@ -85,9 +85,9 @@ public class IndicadorCotidianoController {
         return "gestion-academica/cotidiano/indicadores :: content";
     }
 
-    /** Avisa a la pestaña de Evaluación (ya cargada aparte) que los indicadores cambiaron, para que se refresque. */
+    /** Avisa a la pestaña de Evaluación (ya cargada aparte) y a Promedio que los indicadores cambiaron. */
     private void notificarIndicadoresActualizados(HttpServletResponse response) {
-        response.setHeader("HX-Trigger", "indicadorCotidianoActualizado");
+        response.setHeader("HX-Trigger", "indicadorCotidianoActualizado, promedioDesactualizado");
     }
 
     private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long docenteId) {

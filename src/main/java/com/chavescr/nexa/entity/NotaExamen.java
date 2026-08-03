@@ -32,6 +32,12 @@ public class NotaExamen {
     @Column(nullable = false)
     private Integer calificacion;
 
+    @Column(name = "puntos_obtenidos")
+    private Integer puntosObtenidos;
+
+    @Column(length = 500)
+    private String observacion;
+
     public Long getId() {
         return id;
     }
@@ -62,5 +68,21 @@ public class NotaExamen {
 
     public void setCalificacion(Integer calificacion) {
         this.calificacion = calificacion;
+    }
+
+    public Integer getPuntosObtenidos() {
+        return puntosObtenidos;
+    }
+
+    public void setPuntosObtenidos(Integer puntosObtenidos) {
+        this.puntosObtenidos = puntosObtenidos;
+    }
+
+    public String getObservacion() {
+        return observacion;
+    }
+
+    public void setObservacion(String observacion) {
+        this.observacion = observacion;
     }
 }

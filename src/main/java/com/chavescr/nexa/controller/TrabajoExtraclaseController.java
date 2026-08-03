@@ -17,6 +17,7 @@ import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.TrabajoExtraclaseService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -66,18 +67,20 @@ public class TrabajoExtraclaseController {
     @PostMapping
     public String guardar(@RequestParam Long periodoId, @RequestParam Long materiaId,
             @RequestParam Long estudianteId, @ModelAttribute TrabajoExtraclase trabajo, Model model,
-            HttpSession session, HttpServletRequest request) {
+            HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         service.guardarTrabajo(institucionId, periodoId, materiaId, estudianteId, trabajo);
+        response.setHeader("HX-Trigger", "promedioDesactualizado");
         cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/extraclase/extraclase :: content";
     }
 
     @DeleteMapping("/{id}")
     public String eliminar(@PathVariable Long id, @RequestParam Long periodoId, @RequestParam Long materiaId,
-            Model model, HttpSession session, HttpServletRequest request) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         service.eliminarTrabajo(institucionId, id);
+        response.setHeader("HX-Trigger", "promedioDesactualizado");
         cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/extraclase/extraclase :: content";
     }

@@ -1566,6 +1566,19 @@
 /* Selector de Período (Distribución Porcentual, Exámenes): suficientemente ancho para no cortar el texto */
 .periodo-select-wide .academic-select { width: 300px; }
 
+/* Input numérico con sufijo de unidad (%, pts) superpuesto a la derecha */
+.input-suffix-wrap { position: relative; display: inline-block; }
+.input-suffix-wrap .form-input { padding-right: 2.1rem; width: 100%; }
+.input-suffix-wrap .input-suffix {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    pointer-events: none;
+}
+
 .filter-input {
     padding: 7px 12px;
     min-height: 38px;

@@ -16,6 +16,7 @@ import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.TareaCalificacionService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -46,7 +47,7 @@ public class TareaCalificacionController {
             @RequestParam(required = false) List<Long> estudianteId,
             @RequestParam(required = false) List<String> calificacion,
             @RequestParam(required = false) List<String> observacion,
-            Model model, HttpSession session, HttpServletRequest request) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         exigirDocenteODirectorOAdmin(request);
         Long institucionId = requerirInstitucion(session);
         Long periodoId = service.obtenerPeriodoActivo(institucionId).getId();
@@ -73,6 +74,7 @@ public class TareaCalificacionController {
             model.addAttribute("error",
                     errores.size() + " calificación(es) no se guardaron: " + String.join("; ", errores.stream().distinct().toList()));
         }
+        response.setHeader("HX-Trigger", "promedioDesactualizado");
         cargarPanel(model, institucionId, nivelId, materiaId, tareaId, docenteIdSiAplica(request, session));
         return "gestion-academica/tareas/evaluacion :: content";
     }

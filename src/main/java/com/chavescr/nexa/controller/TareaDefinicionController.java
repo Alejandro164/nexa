@@ -86,7 +86,7 @@ public class TareaDefinicionController {
 
     /** Avisa a la pestaña de Evaluación (ya cargada aparte) que las tareas cambiaron, para que se refresque. */
     private void notificarTareasActualizadas(HttpServletResponse response) {
-        response.setHeader("HX-Trigger", "tareaDefinicionActualizada");
+        response.setHeader("HX-Trigger", "tareaDefinicionActualizada, promedioDesactualizado");
     }
 
     private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long docenteId) {

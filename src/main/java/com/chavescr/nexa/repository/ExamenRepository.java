@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.chavescr.nexa.entity.Examen;
 
 public interface ExamenRepository extends JpaRepository<Examen, Long> {
-    List<Examen> findByInstitucionIdAndPeriodoIdAndMateriaIdOrderByFechaAsc(
-            Long institucionId, Long periodoId, Long materiaId);
+    List<Examen> findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
+            Long institucionId, Long nivelId, Long materiaId, Long periodoId);
 
     Optional<Examen> findByIdAndInstitucionId(Long id, Long institucionId);
 }

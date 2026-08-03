@@ -1,11 +1,7 @@
 package com.chavescr.nexa.entity;
 
-import java.time.LocalDateTime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,36 +27,18 @@ public class Examen {
     private PeriodoAcademico periodo;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "nivel_id", nullable = false)
+    private NivelAcademico nivel;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "materia_id", nullable = false)
     private Materia materia;
 
-    @Column(nullable = false, length = 200)
-    private String titulo;
-
-    @Column(length = 1000)
-    private String descripcion;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
-    private TipoExamen tipo = TipoExamen.EXAMEN;
-
-    @Column(nullable = false)
-    private LocalDateTime fecha;
-
-    @Column(nullable = false)
+    @Column
     private Integer porcentaje;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 15)
-    private EstadoExamen estado = EstadoExamen.PROGRAMADO;
-
-    public enum TipoExamen {
-        EXAMEN, QUIZ, PRUEBA
-    }
-
-    public enum EstadoExamen {
-        PROGRAMADO, APLICADO, CALIFICADO
-    }
+    @Column(name = "puntos_totales")
+    private Integer puntosTotales;
 
     public Long getId() {
         return id;
@@ -86,44 +64,20 @@ public class Examen {
         this.periodo = periodo;
     }
 
+    public NivelAcademico getNivel() {
+        return nivel;
+    }
+
+    public void setNivel(NivelAcademico nivel) {
+        this.nivel = nivel;
+    }
+
     public Materia getMateria() {
         return materia;
     }
 
     public void setMateria(Materia materia) {
         this.materia = materia;
-    }
-
-    public String getTitulo() {
-        return titulo;
-    }
-
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public TipoExamen getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(TipoExamen tipo) {
-        this.tipo = tipo;
-    }
-
-    public LocalDateTime getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDateTime fecha) {
-        this.fecha = fecha;
     }
 
     public Integer getPorcentaje() {
@@ -134,11 +88,11 @@ public class Examen {
         this.porcentaje = porcentaje;
     }
 
-    public EstadoExamen getEstado() {
-        return estado;
+    public Integer getPuntosTotales() {
+        return puntosTotales;
     }
 
-    public void setEstado(EstadoExamen estado) {
-        this.estado = estado;
+    public void setPuntosTotales(Integer puntosTotales) {
+        this.puntosTotales = puntosTotales;
     }
 }

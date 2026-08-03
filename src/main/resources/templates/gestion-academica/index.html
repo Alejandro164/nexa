@@ -294,6 +294,15 @@
                     htmx.ajax('GET', '/gestion-academica/tareas/evaluacion', { target: '#tareas-evaluacion-panel', swap: 'innerHTML' });
                 }
             });
+            // El promedio depende de asistencia, cotidiano, tareas, proyectos, exámenes, extraclase y
+            // la distribución porcentual; cualquier cambio en esas pestañas desactualiza la pestaña de
+            // Promedio (ya cargada aparte), así que se refresca cuando cualquiera de ellas avisa un cambio.
+            document.body.addEventListener('promedioDesactualizado', function () {
+                var panel = document.getElementById('promedio-panel');
+                if (panel) {
+                    htmx.ajax('GET', '/gestion-academica/promedio', { target: '#promedio-panel', swap: 'innerHTML' });
+                }
+            });
         </script>
     </main>
 
