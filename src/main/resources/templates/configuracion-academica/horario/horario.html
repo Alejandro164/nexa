@@ -1,4 +1,8 @@
-<div th:fragment="content" id="horario-panel" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="content" id="horario-panel" xmlns:th="http://www.thymeleaf.org" style="position: relative;">
+    <div id="horario-loading" class="htmx-indicator panel-loading-overlay" style="align-items: center; justify-content: flex-start; padding-top: 4rem;">
+        <div class="spinner"></div>
+        <span>Cargando...</span>
+    </div>
     <div class="card">
         <div class="card-header">
             <div>
@@ -16,6 +20,7 @@
                         hx-trigger="change"
                         hx-target="#horario-panel"
                         hx-swap="outerHTML"
+                        hx-indicator="#horario-loading"
                         hx-include="closest form">
                     <option value="" disabled hidden th:selected="${periodoSeleccionado == null}">
                         Seleccione un período
@@ -33,6 +38,7 @@
                         hx-trigger="change"
                         hx-target="#horario-panel"
                         hx-swap="outerHTML"
+                        hx-indicator="#horario-loading"
                         hx-include="closest form">
                     <option value="" disabled hidden th:selected="${nivelSeleccionado == null}">
                         Seleccione un nivel / sección
