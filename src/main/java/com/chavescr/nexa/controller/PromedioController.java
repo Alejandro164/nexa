@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.dto.FilaPromedio;
+import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.PromedioService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -18,17 +20,21 @@ import jakarta.servlet.http.HttpSession;
 public class PromedioController {
 
     private final PromedioService service;
+    private final AlcanceDocenteService alcanceDocenteService;
 
-    public PromedioController(PromedioService service) {
+    public PromedioController(PromedioService service, AlcanceDocenteService alcanceDocenteService) {
         this.service = service;
+        this.alcanceDocenteService = alcanceDocenteService;
     }
 
     @GetMapping
     public String promedio(@RequestParam(required = false) Long nivelId,
-            @RequestParam(required = false) Long materiaId, Model model, HttpSession session) {
+            @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
+            HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
-        var niveles = service.listarNivelesActivos(institucionId);
-        var materias = service.listarMateriasActivas(institucionId);
+        Long docenteId = docenteIdSiAplica(request, session);
+        var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
+        var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
         if (nivelId == null && !niveles.isEmpty()) {
             nivelId = niveles.get(0).getId();
         }
@@ -61,5 +67,12 @@ public class PromedioController {
             throw new IllegalArgumentException("No hay institución seleccionada");
         }
         return id;
+    }
+
+    private Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {
+        boolean soloDocente = request.isUserInRole("ROLE_DOCENTE")
+                && !request.isUserInRole("ROLE_ADMIN")
+                && !request.isUserInRole("ROLE_DIRECTOR");
+        return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
     }
 }

@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.EvaluacionCotidiana;
+import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.EvaluacionCotidianaService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -22,16 +24,20 @@ import jakarta.servlet.http.HttpSession;
 public class EvaluacionCotidianaController {
 
     private final EvaluacionCotidianaService service;
+    private final AlcanceDocenteService alcanceDocenteService;
 
-    public EvaluacionCotidianaController(EvaluacionCotidianaService service) {
+    public EvaluacionCotidianaController(EvaluacionCotidianaService service,
+            AlcanceDocenteService alcanceDocenteService) {
         this.service = service;
+        this.alcanceDocenteService = alcanceDocenteService;
     }
 
     @GetMapping
     public String evaluaciones(@RequestParam(required = false) Long nivelId,
-            @RequestParam(required = false) Long materiaId, Model model, HttpSession session) {
+            @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
+            HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, nivelId, materiaId);
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/cotidiano/evaluacion :: content";
     }
 
@@ -62,25 +68,26 @@ public class EvaluacionCotidianaController {
     @PostMapping
     public String guardar(@RequestParam Long nivelId, @RequestParam Long materiaId,
             @RequestParam Long indicadorId, @RequestParam Long estudianteId,
-            @ModelAttribute EvaluacionCotidiana evaluacion, Model model, HttpSession session) {
+            @ModelAttribute EvaluacionCotidiana evaluacion, Model model, HttpSession session,
+            HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
         service.guardarEvaluacion(institucionId, indicadorId, estudianteId, evaluacion);
-        cargarPanel(model, institucionId, nivelId, materiaId);
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/cotidiano/evaluacion :: content";
     }
 
     @DeleteMapping("/{id}")
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
-            Model model, HttpSession session) {
+            Model model, HttpSession session, HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
         service.eliminarEvaluacion(institucionId, id);
-        cargarPanel(model, institucionId, nivelId, materiaId);
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/cotidiano/evaluacion :: content";
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId) {
-        var niveles = service.listarNivelesActivos(institucionId);
-        var materias = service.listarMateriasActivas(institucionId);
+    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long docenteId) {
+        var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
+        var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
         if (nivelId == null && !niveles.isEmpty()) {
             nivelId = niveles.get(0).getId();
         }
@@ -102,5 +109,12 @@ public class EvaluacionCotidianaController {
             throw new IllegalArgumentException("No hay institución seleccionada");
         }
         return id;
+    }
+
+    private Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {
+        boolean soloDocente = request.isUserInRole("ROLE_DOCENTE")
+                && !request.isUserInRole("ROLE_ADMIN")
+                && !request.isUserInRole("ROLE_DIRECTOR");
+        return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
     }
 }

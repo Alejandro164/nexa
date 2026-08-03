@@ -7,8 +7,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.DistribucionPorcentualService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -16,16 +18,20 @@ import jakarta.servlet.http.HttpSession;
 public class DistribucionPorcentualController {
 
     private final DistribucionPorcentualService service;
+    private final AlcanceDocenteService alcanceDocenteService;
 
-    public DistribucionPorcentualController(DistribucionPorcentualService service) {
+    public DistribucionPorcentualController(DistribucionPorcentualService service,
+            AlcanceDocenteService alcanceDocenteService) {
         this.service = service;
+        this.alcanceDocenteService = alcanceDocenteService;
     }
 
     @GetMapping
     public String distribucion(@RequestParam(required = false) Long periodoId,
-            @RequestParam(required = false) Long materiaId, Model model, HttpSession session) {
+            @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
+            HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, periodoId, materiaId);
+        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/distribucion/distribucion :: content";
     }
 
@@ -38,7 +44,7 @@ public class DistribucionPorcentualController {
             @RequestParam(required = false) Integer examenes,
             @RequestParam(required = false) Integer asistencia,
             @RequestParam(required = false) Integer trabajosExtraclase,
-            Model model, HttpSession session) {
+            Model model, HttpSession session, HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
         try {
             service.guardarDistribucion(institucionId, periodoId, materiaId, cotidiano, tareas, proyectos,
@@ -47,13 +53,13 @@ public class DistribucionPorcentualController {
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
         }
-        cargarPanel(model, institucionId, periodoId, materiaId);
+        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/distribucion/distribucion :: content";
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long periodoId, Long materiaId) {
+    private void cargarPanel(Model model, Long institucionId, Long periodoId, Long materiaId, Long docenteId) {
         var periodos = service.listarPeriodosActivos(institucionId);
-        var materias = service.listarMateriasActivas(institucionId);
+        var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
         if (periodoId == null && !periodos.isEmpty()) {
             periodoId = periodos.get(0).getId();
         }
@@ -75,5 +81,12 @@ public class DistribucionPorcentualController {
             throw new IllegalArgumentException("No hay institución seleccionada");
         }
         return id;
+    }
+
+    private Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {
+        boolean soloDocente = request.isUserInRole("ROLE_DOCENTE")
+                && !request.isUserInRole("ROLE_ADMIN")
+                && !request.isUserInRole("ROLE_DIRECTOR");
+        return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
     }
 }

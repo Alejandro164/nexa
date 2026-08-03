@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.TareaEstudiantil;
+import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.TareaEstudiantilService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -22,16 +24,19 @@ import jakarta.servlet.http.HttpSession;
 public class TareaEstudiantilController {
 
     private final TareaEstudiantilService service;
+    private final AlcanceDocenteService alcanceDocenteService;
 
-    public TareaEstudiantilController(TareaEstudiantilService service) {
+    public TareaEstudiantilController(TareaEstudiantilService service, AlcanceDocenteService alcanceDocenteService) {
         this.service = service;
+        this.alcanceDocenteService = alcanceDocenteService;
     }
 
     @GetMapping
     public String tareas(@RequestParam(required = false) Long periodoId,
-            @RequestParam(required = false) Long materiaId, Model model, HttpSession session) {
+            @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
+            HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, periodoId, materiaId);
+        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/tareas/tareas :: content";
     }
 
@@ -60,25 +65,25 @@ public class TareaEstudiantilController {
     @PostMapping
     public String guardar(@RequestParam Long periodoId, @RequestParam Long materiaId,
             @RequestParam Long estudianteId, @ModelAttribute TareaEstudiantil tarea, Model model,
-            HttpSession session) {
+            HttpSession session, HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
         service.guardarTarea(institucionId, periodoId, materiaId, estudianteId, tarea);
-        cargarPanel(model, institucionId, periodoId, materiaId);
+        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/tareas/tareas :: content";
     }
 
     @DeleteMapping("/{id}")
     public String eliminar(@PathVariable Long id, @RequestParam Long periodoId, @RequestParam Long materiaId,
-            Model model, HttpSession session) {
+            Model model, HttpSession session, HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
         service.eliminarTarea(institucionId, id);
-        cargarPanel(model, institucionId, periodoId, materiaId);
+        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/tareas/tareas :: content";
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long periodoId, Long materiaId) {
+    private void cargarPanel(Model model, Long institucionId, Long periodoId, Long materiaId, Long docenteId) {
         var periodos = service.listarPeriodosActivos(institucionId);
-        var materias = service.listarMateriasActivas(institucionId);
+        var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
         if (periodoId == null && !periodos.isEmpty()) {
             periodoId = periodos.get(0).getId();
         }
@@ -100,5 +105,12 @@ public class TareaEstudiantilController {
             throw new IllegalArgumentException("No hay institución seleccionada");
         }
         return id;
+    }
+
+    private Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {
+        boolean soloDocente = request.isUserInRole("ROLE_DOCENTE")
+                && !request.isUserInRole("ROLE_ADMIN")
+                && !request.isUserInRole("ROLE_DIRECTOR");
+        return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
     }
 }

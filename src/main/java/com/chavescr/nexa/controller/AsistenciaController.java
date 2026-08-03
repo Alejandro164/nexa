@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.AsistenciaService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,17 +24,19 @@ import jakarta.servlet.http.HttpSession;
 public class AsistenciaController {
 
     private final AsistenciaService service;
+    private final AlcanceDocenteService alcanceDocenteService;
 
-    public AsistenciaController(AsistenciaService service) {
+    public AsistenciaController(AsistenciaService service, AlcanceDocenteService alcanceDocenteService) {
         this.service = service;
+        this.alcanceDocenteService = alcanceDocenteService;
     }
 
     @GetMapping
     public String asistencia(@RequestParam(required = false) Long nivelId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
-            Model model, HttpSession session) {
+            Model model, HttpSession session, HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, nivelId, fecha);
+        cargarPanel(model, institucionId, nivelId, fecha, docenteIdSiAplica(request, session));
         return "gestion-academica/asistencia/asistencia :: content";
     }
 
@@ -61,12 +64,12 @@ public class AsistenciaController {
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
         }
-        cargarPanel(model, institucionId, nivelId, fecha);
+        cargarPanel(model, institucionId, nivelId, fecha, docenteIdSiAplica(request, session));
         return "gestion-academica/asistencia/asistencia :: content";
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long nivelId, LocalDate fecha) {
-        var secciones = service.listarSeccionesActivas(institucionId);
+    private void cargarPanel(Model model, Long institucionId, Long nivelId, LocalDate fecha, Long docenteId) {
+        var secciones = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
         if (nivelId == null && !secciones.isEmpty()) {
             nivelId = secciones.get(0).getId();
         }
@@ -96,5 +99,12 @@ public class AsistenciaController {
                 && !request.isUserInRole("ROLE_ADMIN")) {
             throw new AccessDeniedException("Solo docentes, directores o administradores pueden registrar asistencia");
         }
+    }
+
+    private Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {
+        boolean soloDocente = request.isUserInRole("ROLE_DOCENTE")
+                && !request.isUserInRole("ROLE_ADMIN")
+                && !request.isUserInRole("ROLE_DIRECTOR");
+        return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
     }
 }
