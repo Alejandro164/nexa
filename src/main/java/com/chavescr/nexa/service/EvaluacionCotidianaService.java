@@ -1,19 +1,19 @@
 package com.chavescr.nexa.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.dto.FilaEvaluacionCotidiana;
 import com.chavescr.nexa.entity.EvaluacionCotidiana;
 import com.chavescr.nexa.entity.IndicadorCotidiano;
-import com.chavescr.nexa.entity.Materia;
-import com.chavescr.nexa.entity.NivelAcademico;
+import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.EvaluacionCotidianaRepository;
 import com.chavescr.nexa.repository.IndicadorCotidianoRepository;
-import com.chavescr.nexa.repository.MateriaRepository;
-import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -23,80 +23,93 @@ public class EvaluacionCotidianaService {
 
     private final EvaluacionCotidianaRepository evaluacionRepository;
     private final IndicadorCotidianoRepository indicadorRepository;
-    private final NivelAcademicoRepository nivelRepository;
-    private final MateriaRepository materiaRepository;
     private final PeriodoAcademicoRepository periodoRepository;
     private final UsuarioRepository usuarioRepository;
 
     public EvaluacionCotidianaService(EvaluacionCotidianaRepository evaluacionRepository,
-            IndicadorCotidianoRepository indicadorRepository, NivelAcademicoRepository nivelRepository,
-            MateriaRepository materiaRepository, PeriodoAcademicoRepository periodoRepository,
+            IndicadorCotidianoRepository indicadorRepository, PeriodoAcademicoRepository periodoRepository,
             UsuarioRepository usuarioRepository) {
         this.evaluacionRepository = evaluacionRepository;
         this.indicadorRepository = indicadorRepository;
-        this.nivelRepository = nivelRepository;
-        this.materiaRepository = materiaRepository;
         this.periodoRepository = periodoRepository;
         this.usuarioRepository = usuarioRepository;
     }
 
+    /** Indicadores definidos para esta sección y materia. */
     @Transactional(readOnly = true)
-    public List<NivelAcademico> listarNivelesActivos(Long institucionId) {
-        return nivelRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId);
+    public List<IndicadorCotidiano> listarIndicadoresDisponibles(Long institucionId, Long nivelId, Long materiaId) {
+        return indicadorRepository.findByInstitucionIdAndNivelIdAndMateriaIdOrderByIdAsc(
+                institucionId, nivelId, materiaId);
     }
 
     @Transactional(readOnly = true)
-    public List<Materia> listarMateriasActivas(Long institucionId) {
-        return materiaRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
+    public IndicadorCotidiano obtenerIndicador(Long institucionId, Long id) {
+        return indicadorRepository.findByIdAndInstitucionId(id, institucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Indicador no encontrado"));
     }
 
-    /** Indicadores de la materia en el período académico activo más reciente. */
+    /** El período activo más reciente de la institución; la evaluación de cotidiano se lleva a ese nivel, no diario. */
     @Transactional(readOnly = true)
-    public List<IndicadorCotidiano> listarIndicadoresDisponibles(Long institucionId, Long materiaId) {
+    public PeriodoAcademico obtenerPeriodoActivo(Long institucionId) {
         return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
                 .findFirst()
-                .map(periodo -> indicadorRepository.findByInstitucionIdAndPeriodoIdAndMateriaIdOrderByIdAsc(
-                        institucionId, periodo.getId(), materiaId))
-                .orElseGet(List::of);
+                .orElseThrow(() -> new IllegalArgumentException("No hay un período académico activo"));
     }
 
+    /** Una fila por cada estudiante activo de la sección, con su calificación de ese indicador en el período activo. */
     @Transactional(readOnly = true)
-    public List<Usuario> listarEstudiantesDeSeccion(Long nivelId) {
-        return usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
+    public List<FilaEvaluacionCotidiana> listarFilas(Long institucionId, Long nivelId, Long indicadorId,
+            Long periodoId) {
+        List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
+        Map<Long, EvaluacionCotidiana> registros = evaluacionRepository
+                .findByInstitucionIdAndIndicadorIdAndPeriodoId(institucionId, indicadorId, periodoId).stream()
+                .collect(Collectors.toMap(e -> e.getEstudiante().getId(), e -> e));
+        return estudiantes.stream()
+                .map(e -> construirFila(e, registros.get(e.getId())))
+                .toList();
     }
 
-    @Transactional(readOnly = true)
-    public List<EvaluacionCotidiana> listarEvaluaciones(Long institucionId, Long nivelId, Long materiaId) {
-        return evaluacionRepository.findByInstitucionIdAndNivelIdAndMateriaId(institucionId, nivelId, materiaId);
-    }
-
-    @Transactional(readOnly = true)
-    public EvaluacionCotidiana obtenerEvaluacion(Long institucionId, Long id) {
-        return evaluacionRepository.findByIdAndInstitucionId(id, institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Evaluación no encontrada"));
-    }
-
-    public EvaluacionCotidiana guardarEvaluacion(Long institucionId, Long indicadorId, Long estudianteId,
-            EvaluacionCotidiana datos) {
+    public FilaEvaluacionCotidiana registrarCalificacion(Long institucionId, Long estudianteId, Long indicadorId,
+            Long periodoId, Integer calificacion, String observacion) {
         IndicadorCotidiano indicador = indicadorRepository.findByIdAndInstitucionId(indicadorId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Indicador no encontrado"));
+        PeriodoAcademico periodo = periodoRepository.findByIdAndInstitucionId(periodoId, institucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
         Usuario estudiante = usuarioRepository.findActivoByIdAndInstitucionId(estudianteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
 
-        EvaluacionCotidiana evaluacion = datos.getId() != null
-                ? obtenerEvaluacion(institucionId, datos.getId())
-                : new EvaluacionCotidiana();
+        EvaluacionCotidiana evaluacion = evaluacionRepository
+                .findByInstitucionIdAndEstudianteIdAndIndicadorIdAndPeriodoId(institucionId, estudianteId, indicadorId, periodoId)
+                .orElseGet(EvaluacionCotidiana::new);
+
+        // Cada input (calificación / observación) guarda por separado; se conserva el valor existente
+        // del otro campo cuando no viene en esta petición, igual que en Asistencia.
+        Integer calificacionFinal = calificacion != null ? calificacion : evaluacion.getCalificacion();
+        if (calificacionFinal == null) {
+            throw new IllegalArgumentException("Debes asignar primero una calificación");
+        }
+        if (calificacionFinal < 0 || calificacionFinal > 100) {
+            throw new IllegalArgumentException("La calificación debe estar entre 0 y 100");
+        }
+        String observacionFinal = evaluacion.getObservacion();
+        if (observacion != null) {
+            observacionFinal = observacion.isBlank() ? null : observacion.trim();
+        }
+
         evaluacion.setInstitucion(indicador.getInstitucion());
         evaluacion.setIndicador(indicador);
         evaluacion.setEstudiante(estudiante);
-        evaluacion.setCalificacion(datos.getCalificacion());
-        evaluacion.setObservacion(datos.getObservacion() != null ? datos.getObservacion().trim() : null);
-        evaluacion.setFecha(datos.getFecha());
-        return evaluacionRepository.save(evaluacion);
+        evaluacion.setPeriodo(periodo);
+        evaluacion.setCalificacion(calificacionFinal);
+        evaluacion.setObservacion(observacionFinal);
+        evaluacionRepository.save(evaluacion);
+
+        return construirFila(estudiante, evaluacion);
     }
 
-    public void eliminarEvaluacion(Long institucionId, Long id) {
-        EvaluacionCotidiana evaluacion = obtenerEvaluacion(institucionId, id);
-        evaluacionRepository.delete(evaluacion);
+    private FilaEvaluacionCotidiana construirFila(Usuario estudiante, EvaluacionCotidiana registro) {
+        return new FilaEvaluacionCotidiana(estudiante,
+                registro != null ? registro.getCalificacion() : null,
+                registro != null ? registro.getObservacion() : null);
     }
 }

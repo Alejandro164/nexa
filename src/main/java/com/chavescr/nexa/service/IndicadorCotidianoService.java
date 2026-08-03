@@ -7,29 +7,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.IndicadorCotidiano;
 import com.chavescr.nexa.entity.Materia;
-import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.repository.IndicadorCotidianoRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
-import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
+import com.chavescr.nexa.repository.NivelAcademicoRepository;
 
 @Service
 @Transactional
 public class IndicadorCotidianoService {
 
     private final IndicadorCotidianoRepository indicadorRepository;
-    private final PeriodoAcademicoRepository periodoRepository;
+    private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
 
     public IndicadorCotidianoService(IndicadorCotidianoRepository indicadorRepository,
-            PeriodoAcademicoRepository periodoRepository, MateriaRepository materiaRepository) {
+            NivelAcademicoRepository nivelRepository, MateriaRepository materiaRepository) {
         this.indicadorRepository = indicadorRepository;
-        this.periodoRepository = periodoRepository;
+        this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<PeriodoAcademico> listarPeriodosActivos(Long institucionId) {
-        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId);
+    public List<NivelAcademico> listarNivelesActivos(Long institucionId) {
+        return nivelRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId);
     }
 
     @Transactional(readOnly = true)
@@ -38,9 +38,9 @@ public class IndicadorCotidianoService {
     }
 
     @Transactional(readOnly = true)
-    public List<IndicadorCotidiano> listarIndicadores(Long institucionId, Long periodoId, Long materiaId) {
-        return indicadorRepository.findByInstitucionIdAndPeriodoIdAndMateriaIdOrderByIdAsc(
-                institucionId, periodoId, materiaId);
+    public List<IndicadorCotidiano> listarIndicadores(Long institucionId, Long nivelId, Long materiaId) {
+        return indicadorRepository.findByInstitucionIdAndNivelIdAndMateriaIdOrderByIdAsc(
+                institucionId, nivelId, materiaId);
     }
 
     @Transactional(readOnly = true)
@@ -49,15 +49,15 @@ public class IndicadorCotidianoService {
                 .orElseThrow(() -> new IllegalArgumentException("Indicador no encontrado"));
     }
 
-    public IndicadorCotidiano guardarIndicador(Long institucionId, Long periodoId, Long materiaId,
+    public IndicadorCotidiano guardarIndicador(Long institucionId, Long nivelId, Long materiaId,
             IndicadorCotidiano datos) {
-        PeriodoAcademico periodo = periodoRepository.findByIdAndInstitucionId(periodoId, institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
+        NivelAcademico nivel = nivelRepository.findByIdAndInstitucionId(nivelId, institucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
         Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
 
         int porcentaje = datos.getPorcentaje() != null ? datos.getPorcentaje() : 0;
-        int sumaExistente = listarIndicadores(institucionId, periodoId, materiaId).stream()
+        int sumaExistente = listarIndicadores(institucionId, nivelId, materiaId).stream()
                 .filter(i -> !i.getId().equals(datos.getId()))
                 .mapToInt(IndicadorCotidiano::getPorcentaje)
                 .sum();
@@ -69,8 +69,8 @@ public class IndicadorCotidianoService {
         IndicadorCotidiano indicador = datos.getId() != null
                 ? obtenerIndicador(institucionId, datos.getId())
                 : new IndicadorCotidiano();
-        indicador.setInstitucion(periodo.getInstitucion());
-        indicador.setPeriodo(periodo);
+        indicador.setInstitucion(nivel.getInstitucion());
+        indicador.setNivel(nivel);
         indicador.setMateria(materia);
         indicador.setTitulo(datos.getTitulo().trim());
         indicador.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);

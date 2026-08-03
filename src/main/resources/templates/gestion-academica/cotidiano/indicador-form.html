@@ -10,7 +10,7 @@
                       hx-target="#indicadores-panel" hx-swap="innerHTML"
                       hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()">
                     <input type="hidden" name="id" th:value="${indicador.id}">
-                    <input type="hidden" name="periodoId" th:value="${periodoId}">
+                    <input type="hidden" name="nivelId" th:value="${nivelId}">
                     <input type="hidden" name="materiaId" th:value="${materiaId}">
 
                     <div class="form-group">

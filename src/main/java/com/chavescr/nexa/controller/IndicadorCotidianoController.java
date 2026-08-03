@@ -17,6 +17,7 @@ import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.IndicadorCotidianoService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -33,71 +34,78 @@ public class IndicadorCotidianoController {
     }
 
     @GetMapping
-    public String indicadores(@RequestParam(required = false) Long periodoId,
+    public String indicadores(@RequestParam(required = false) Long nivelId,
             @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
             HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/cotidiano/indicadores :: content";
     }
 
     @GetMapping("/form")
-    public String nuevoIndicador(@RequestParam Long periodoId, @RequestParam Long materiaId, Model model) {
+    public String nuevoIndicador(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model) {
         model.addAttribute("indicador", new IndicadorCotidiano());
-        model.addAttribute("periodoId", periodoId);
+        model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         return "gestion-academica/cotidiano/indicador-form :: form-content";
     }
 
     @GetMapping("/form/{id}")
-    public String editarIndicador(@PathVariable Long id, @RequestParam Long periodoId, @RequestParam Long materiaId,
+    public String editarIndicador(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         model.addAttribute("indicador", service.obtenerIndicador(institucionId, id));
-        model.addAttribute("periodoId", periodoId);
+        model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         return "gestion-academica/cotidiano/indicador-form :: form-content";
     }
 
     @PostMapping
-    public String guardar(@RequestParam Long periodoId, @RequestParam Long materiaId,
+    public String guardar(@RequestParam Long nivelId, @RequestParam Long materiaId,
             @ModelAttribute IndicadorCotidiano indicador, Model model, HttpSession session,
-            HttpServletRequest request) {
+            HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
-            service.guardarIndicador(institucionId, periodoId, materiaId, indicador);
+            service.guardarIndicador(institucionId, nivelId, materiaId, indicador);
+            notificarIndicadoresActualizados(response);
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
         }
-        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/cotidiano/indicadores :: content";
     }
 
     @DeleteMapping("/{id}")
-    public String eliminar(@PathVariable Long id, @RequestParam Long periodoId, @RequestParam Long materiaId,
-            Model model, HttpSession session, HttpServletRequest request) {
+    public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         service.eliminarIndicador(institucionId, id);
-        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
+        notificarIndicadoresActualizados(response);
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/cotidiano/indicadores :: content";
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long periodoId, Long materiaId, Long docenteId) {
-        var periodos = service.listarPeriodosActivos(institucionId);
+    /** Avisa a la pestaña de Evaluación (ya cargada aparte) que los indicadores cambiaron, para que se refresque. */
+    private void notificarIndicadoresActualizados(HttpServletResponse response) {
+        response.setHeader("HX-Trigger", "indicadorCotidianoActualizado");
+    }
+
+    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long docenteId) {
+        var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
         var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
-        if (periodoId == null && !periodos.isEmpty()) {
-            periodoId = periodos.get(0).getId();
+        if (nivelId == null && !niveles.isEmpty()) {
+            nivelId = niveles.get(0).getId();
         }
         if (materiaId == null && !materias.isEmpty()) {
             materiaId = materias.get(0).getId();
         }
-        List<IndicadorCotidiano> indicadores = periodoId != null && materiaId != null
-                ? service.listarIndicadores(institucionId, periodoId, materiaId)
+        List<IndicadorCotidiano> indicadores = nivelId != null && materiaId != null
+                ? service.listarIndicadores(institucionId, nivelId, materiaId)
                 : List.of();
         int total = indicadores.stream().mapToInt(IndicadorCotidiano::getPorcentaje).sum();
-        model.addAttribute("periodos", periodos);
+        model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
-        model.addAttribute("periodoId", periodoId);
+        model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("indicadores", indicadores);
         model.addAttribute("totalAsignado", total);

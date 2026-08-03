@@ -1,7 +1,5 @@
 package com.chavescr.nexa.entity;
 
-import java.time.LocalDate;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -38,8 +36,9 @@ public class EvaluacionCotidiana {
     @Column(length = 500)
     private String observacion;
 
-    @Column(nullable = false)
-    private LocalDate fecha;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "periodo_id", nullable = false)
+    private PeriodoAcademico periodo;
 
     public Long getId() {
         return id;
@@ -89,11 +88,11 @@ public class EvaluacionCotidiana {
         this.observacion = observacion;
     }
 
-    public LocalDate getFecha() {
-        return fecha;
+    public PeriodoAcademico getPeriodo() {
+        return periodo;
     }
 
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
+    public void setPeriodo(PeriodoAcademico periodo) {
+        this.periodo = periodo;
     }
 }

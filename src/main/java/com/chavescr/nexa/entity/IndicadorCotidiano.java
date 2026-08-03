@@ -23,8 +23,8 @@ public class IndicadorCotidiano {
     private Institucion institucion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "periodo_id", nullable = false)
-    private PeriodoAcademico periodo;
+    @JoinColumn(name = "nivel_id", nullable = false)
+    private NivelAcademico nivel;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "materia_id", nullable = false)
@@ -55,12 +55,12 @@ public class IndicadorCotidiano {
         this.institucion = institucion;
     }
 
-    public PeriodoAcademico getPeriodo() {
-        return periodo;
+    public NivelAcademico getNivel() {
+        return nivel;
     }
 
-    public void setPeriodo(PeriodoAcademico periodo) {
-        this.periodo = periodo;
+    public void setNivel(NivelAcademico nivel) {
+        this.nivel = nivel;
     }
 
     public Materia getMateria() {

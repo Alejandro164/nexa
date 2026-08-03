@@ -11,18 +11,15 @@ import com.chavescr.nexa.entity.EvaluacionCotidiana;
 
 public interface EvaluacionCotidianaRepository extends JpaRepository<EvaluacionCotidiana, Long> {
 
-    @Query("SELECT e FROM EvaluacionCotidiana e WHERE e.institucion.id = :institucionId " +
-            "AND e.estudiante.nivelAcademico.id = :nivelId AND e.indicador.materia.id = :materiaId " +
-            "ORDER BY e.fecha DESC")
-    List<EvaluacionCotidiana> findByInstitucionIdAndNivelIdAndMateriaId(
-            @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId,
-            @Param("materiaId") Long materiaId);
+    List<EvaluacionCotidiana> findByInstitucionIdAndIndicadorIdAndPeriodoId(
+            Long institucionId, Long indicadorId, Long periodoId);
 
-    Optional<EvaluacionCotidiana> findByIdAndInstitucionId(Long id, Long institucionId);
+    Optional<EvaluacionCotidiana> findByInstitucionIdAndEstudianteIdAndIndicadorIdAndPeriodoId(
+            Long institucionId, Long estudianteId, Long indicadorId, Long periodoId);
 
     @Query("SELECT e FROM EvaluacionCotidiana e WHERE e.institucion.id = :institucionId " +
             "AND e.estudiante.nivelAcademico.id = :nivelId AND e.indicador.materia.id = :materiaId " +
-            "AND e.indicador.periodo.id = :periodoId")
+            "AND e.periodo.id = :periodoId")
     List<EvaluacionCotidiana> findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoId(
             @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId,
             @Param("materiaId") Long materiaId, @Param("periodoId") Long periodoId);

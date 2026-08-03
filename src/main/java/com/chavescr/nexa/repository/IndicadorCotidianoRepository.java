@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.chavescr.nexa.entity.IndicadorCotidiano;
 
 public interface IndicadorCotidianoRepository extends JpaRepository<IndicadorCotidiano, Long> {
-    List<IndicadorCotidiano> findByInstitucionIdAndPeriodoIdAndMateriaIdOrderByIdAsc(
-            Long institucionId, Long periodoId, Long materiaId);
+    List<IndicadorCotidiano> findByInstitucionIdAndNivelIdAndMateriaIdOrderByIdAsc(
+            Long institucionId, Long nivelId, Long materiaId);
 
     Optional<IndicadorCotidiano> findByIdAndInstitucionId(Long id, Long institucionId);
 }

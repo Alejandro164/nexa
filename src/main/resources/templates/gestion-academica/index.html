@@ -252,6 +252,17 @@
             </div>
 
         </div>
+        <script>
+            // Indicadores y Evaluación de trabajo cotidiano se cargan por separado desde el arranque
+            // de la página (ambos hx-trigger="load"); si se crea/edita/elimina un indicador, la pestaña
+            // de Evaluación (ya cargada) queda desactualizada hasta que se refresque explícitamente.
+            document.body.addEventListener('indicadorCotidianoActualizado', function () {
+                var panel = document.getElementById('evaluacion-panel');
+                if (panel) {
+                    htmx.ajax('GET', '/gestion-academica/cotidiano/evaluacion', { target: '#evaluacion-panel', swap: 'innerHTML' });
+                }
+            });
+        </script>
     </main>
 
 </body>

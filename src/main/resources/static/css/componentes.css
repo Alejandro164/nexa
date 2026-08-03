@@ -1552,6 +1552,10 @@
 /* ── Participación ───────────────────────────────────────────── */
 .filters-bar { display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap;align-items:center; }
 
+/* Dentro de un card-header apilado (título / divider / filtros) el espaciado ya lo da el
+   gap del contenedor; el margin-bottom propio duplicaría el espacio. */
+.card-header .filters-bar { margin-bottom: 0; }
+
 /* El wrapper .academic-select no debe expandirse a 100% dentro de la barra de filtros */
 .filters-bar .academic-select { width: auto; min-width: 180px; }
 
