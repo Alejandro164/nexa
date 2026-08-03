@@ -230,6 +230,15 @@ public class ConfiguracionAcademicaService {
             throw new IllegalArgumentException("La hora final debe ser posterior a la hora inicial");
         }
 
+        boolean docenteOcupado = horarioRepository
+                .findByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
+                        institucionId, periodoId, docenteId, dia, numeroLeccion)
+                .stream()
+                .anyMatch(e -> !e.getId().equals(id));
+        if (docenteOcupado) {
+            throw new IllegalArgumentException("El docente ya tiene otra lección asignada en este horario");
+        }
+
         HorarioLeccion leccion;
         if (id != null) {
             leccion = obtenerLeccionPorId(institucionId, id);

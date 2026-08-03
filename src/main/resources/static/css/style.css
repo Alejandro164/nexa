@@ -461,6 +461,11 @@ body {
     box-shadow: var(--shadow-lg);
     font-weight: 500;
     font-size: 0.875rem;
+    border-left: 4px solid var(--success);
+}
+
+.toast-error {
+    border-left-color: var(--danger);
 }
 
 /* --- Utilidades HTMX --- */

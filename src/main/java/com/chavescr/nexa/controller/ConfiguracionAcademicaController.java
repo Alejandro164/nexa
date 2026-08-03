@@ -215,8 +215,14 @@ public class ConfiguracionAcademicaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime horaFin,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        service.guardarLeccion(institucionId, id, periodoId, nivelId, materiaId, docenteId, aulaId,
-                dia, numeroLeccion, horaInicio, horaFin);
+        try {
+            service.guardarLeccion(institucionId, id, periodoId, nivelId, materiaId, docenteId, aulaId,
+                    dia, numeroLeccion, horaInicio, horaFin);
+        } catch (IllegalArgumentException e) {
+            cargarHorario(model, institucionId, periodoId, nivelId);
+            notificarError(response, e.getMessage());
+            return "configuracion-academica/horario/horario :: content";
+        }
         cargarHorario(model, institucionId, periodoId, nivelId);
         notificarGuardado(response, "Lección asignada correctamente");
         return "configuracion-academica/horario/horario :: content";
@@ -276,5 +282,9 @@ public class ConfiguracionAcademicaController {
 
     private void notificarGuardado(HttpServletResponse response, String mensaje) {
         response.setHeader("HX-Trigger", "{\"academicoGuardado\":{\"mensaje\":\"" + mensaje + "\"}}");
+    }
+
+    private void notificarError(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoError\":{\"mensaje\":\"" + mensaje + "\"}}");
     }
 }

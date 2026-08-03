@@ -350,8 +350,8 @@ function copyToClipboard(text, successMessage) {
     });
 }
 
-function showNotification(message) {
-    var event = new CustomEvent('notify', { detail: message });
+function showNotification(message, type) {
+    var event = new CustomEvent('notify', { detail: { message: message, type: type || 'success' } });
     window.dispatchEvent(event);
 }
 

@@ -914,6 +914,12 @@
                         showNotification(event.detail.mensaje);
                     }
                 });
+                document.addEventListener('academicoError', function (event) {
+                    // No se cierra el modal: se deja abierto para que el usuario corrija el formulario.
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje, 'error');
+                    }
+                });
                 window.academicoEventsRegistrados = true;
             }
         </script>

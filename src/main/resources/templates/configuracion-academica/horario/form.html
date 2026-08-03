@@ -29,7 +29,7 @@
                     <div class="form-group">
                         <label class="form-label">Materia</label>
                         <select class="form-input" name="materiaId" required>
-                            <option value="">Seleccione una materia</option>
+                            <option value="" hidden>Seleccione una materia</option>
                             <option th:each="materia : ${materias}"
                                     th:value="${materia.id}"
                                     th:selected="${leccion.materia != null and leccion.materia.id == materia.id}"
@@ -39,7 +39,7 @@
                     <div class="form-group">
                         <label class="form-label">Profesor</label>
                         <select class="form-input" name="docenteId" required>
-                            <option value="">Seleccione un profesor</option>
+                            <option value="" hidden>Seleccione un profesor</option>
                             <option th:each="docente : ${docentes}"
                                     th:value="${docente.id}"
                                     th:selected="${leccion.docente != null and leccion.docente.id == docente.id}"
@@ -49,7 +49,7 @@
                     <div class="form-group">
                         <label class="form-label">Aula</label>
                         <select class="form-input" name="aulaId" required>
-                            <option value="">Seleccione un aula</option>
+                            <option value="" hidden>Seleccione un aula</option>
                             <option th:each="aula : ${aulas}"
                                     th:value="${aula.id}"
                                     th:selected="${leccion.aula != null and leccion.aula.id == aula.id}"
