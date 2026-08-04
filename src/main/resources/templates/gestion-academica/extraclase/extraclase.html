@@ -1,98 +1,142 @@
 <div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
-    <div class="card">
-        <div class="card-header">
+    <div class="card" style="position: relative;">
+        <div id="extraclase-loading" class="htmx-indicator panel-loading-overlay">
+            <div class="spinner"></div>
+            <span>Cargando...</span>
+        </div>
+        <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
             <div>
                 <h3 class="card-title">Trabajos Extraclase</h3>
-                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
-                    Trabajos asignados para realizar fuera del horario de clase.
-                </p>
+                <p class="text-muted text-sm" style="margin:4px 0 0 0;" th:if="${periodoActivo != null}"
+                   th:text="'Período activo: ' + ${periodoActivo.codigo}">Período activo: 2028-2</p>
             </div>
-            <div style="display: flex; gap: 0.75rem; align-items: center;">
-                <div class="periodo-select-wide">
-                    <select class="form-input" name="periodoId"
-                            hx-get="/gestion-academica/extraclase"
-                            hx-target="#extraclase-panel" hx-swap="innerHTML"
-                            hx-include="[name='materiaId']">
-                        <option value="" th:if="${periodos == null or periodos.empty}" disabled selected>Sin períodos</option>
-                        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
-                                th:selected="${periodoId != null and periodoId == p.id}"></option>
-                    </select>
-                </div>
-                <select class="form-input" style="max-width: 220px;" name="materiaId"
+            <div style="border-top: 1px solid var(--border);"></div>
+            <div class="filters-bar">
+                <select class="form-input" style="max-width: 180px;" name="nivelId"
                         hx-get="/gestion-academica/extraclase"
-                        hx-target="#extraclase-panel" hx-swap="innerHTML"
-                        hx-include="[name='periodoId']">
+                        hx-target="#extraclase-panel" hx-swap="innerHTML" hx-indicator="#extraclase-loading"
+                        hx-include="[name='materiaId'],[name='trabajoId']">
+                    <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
+                    <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
+                            th:selected="${nivelId != null and nivelId == n.id}"></option>
+                </select>
+                <select class="form-input" style="max-width: 200px;" name="materiaId"
+                        hx-get="/gestion-academica/extraclase"
+                        hx-target="#extraclase-panel" hx-swap="innerHTML" hx-indicator="#extraclase-loading"
+                        hx-include="[name='nivelId'],[name='trabajoId']">
                     <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
                     <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
                             th:selected="${materiaId != null and materiaId == m.id}"></option>
                 </select>
-                <button class="btn btn-primary" style="width: 220px; white-space: nowrap;"
-                        th:if="${periodoId != null and materiaId != null}"
-                        th:attr="hx-get='/gestion-academica/extraclase/form?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
-                        hx-target="#modal-container" hx-swap="innerHTML"
-                        onclick="abrirModalAcademico()">Nuevo Trabajo</button>
+                <select class="form-input" style="max-width: 160px;" name="trabajoId"
+                        hx-get="/gestion-academica/extraclase"
+                        hx-target="#extraclase-panel" hx-swap="innerHTML" hx-indicator="#extraclase-loading"
+                        hx-include="[name='nivelId'],[name='materiaId']">
+                    <option value="" th:if="${trabajos == null or trabajos.empty}" disabled selected>Sin trabajos</option>
+                    <option th:each="t, iter : ${trabajos}" th:value="${t.id}" th:text="'Trabajo ' + ${iter.count}"
+                            th:selected="${trabajoId != null and trabajoId == t.id}"></option>
+                </select>
+                <div class="input-suffix-wrap" style="max-width: 120px;" th:if="${trabajoSeleccionado != null}">
+                    <input type="number" class="form-input" style="padding-left: 10px;" min="0" max="100" title="Porcentaje"
+                           name="porcentaje"
+                           th:value="${trabajoSeleccionado.porcentaje}"
+                           hx-trigger="change"
+                           th:attr="hx-post='/gestion-academica/extraclase/' + ${trabajoSeleccionado.id} + '/actualizar?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                           hx-target="#extraclase-panel" hx-swap="innerHTML" hx-indicator="#extraclase-loading">
+                    <span class="input-suffix">%</span>
+                </div>
+                <div class="input-suffix-wrap" style="max-width: 165px;" th:if="${trabajoSeleccionado != null}">
+                    <input type="number" class="form-input" style="padding-left: 10px;" min="0" title="Puntos totales"
+                           name="puntosTotales"
+                           th:value="${trabajoSeleccionado.puntosTotales}"
+                           hx-trigger="change"
+                           th:attr="hx-post='/gestion-academica/extraclase/' + ${trabajoSeleccionado.id} + '/actualizar?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                           hx-target="#extraclase-panel" hx-swap="innerHTML" hx-indicator="#extraclase-loading">
+                    <span class="input-suffix">pts</span>
+                </div>
+                <button type="button" class="btn-xs btn-danger-ghost" th:if="${trabajoSeleccionado != null}"
+                        onclick="abrirConfirmacionAcademica(this)"
+                        th:attr="data-delete-url='/gestion-academica/extraclase/' + ${trabajoSeleccionado.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId},
+                                 data-delete-target='#extraclase-panel',
+                                 data-delete-title='Eliminar trabajo',
+                                 data-delete-message='¿Deseas eliminar este trabajo? Esta acción no se puede deshacer.'"
+                        title="Eliminar trabajo">🗑️</button>
+                <button type="button" class="btn btn-primary" style="height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap;"
+                        th:if="${nivelId != null and materiaId != null}"
+                        th:attr="hx-post='/gestion-academica/extraclase/nuevo?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                        hx-target="#extraclase-panel" hx-swap="innerHTML" hx-indicator="#extraclase-loading">Nuevo Trabajo</button>
+                <button type="button" class="btn btn-primary"
+                        style="margin-left: auto; height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap;"
+                        th:if="${trabajoSeleccionado != null and trabajoSeleccionado.puntosTotales != null}"
+                        hx-post="/gestion-academica/extraclase/guardar-lote"
+                        hx-include="#trabajo-calificaciones-form"
+                        th:attr="hx-vals=|js:{nivelId: ${nivelId}, materiaId: ${materiaId}, trabajoId: ${trabajoSeleccionado.id}}|"
+                        hx-target="#extraclase-panel" hx-swap="innerHTML" hx-indicator="#extraclase-loading">Guardar calificaciones</button>
             </div>
         </div>
 
-        <div th:if="${periodoId == null or materiaId == null}"
+        <div th:if="${nivelId == null or materiaId == null}"
              style="padding: 2rem; text-align:center; color: var(--text-secondary);">
-            Debes crear al menos un período académico y una materia para asignar trabajos extraclase.
+            Debes crear al menos una sección y una materia para asignar trabajos extraclase.
         </div>
 
-        <div th:if="${periodoId != null and materiaId != null}" class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Título</th>
-                        <th>Estudiante</th>
-                        <th>Entrega</th>
-                        <th>%</th>
-                        <th>Estado</th>
-                        <th>Calif.</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:if="${trabajos == null or trabajos.empty}">
-                        <td colspan="7" class="table-empty">No hay trabajos extraclase asignados.</td>
-                    </tr>
-                    <tr th:each="t : ${trabajos}">
-                        <td>
-                            <strong th:text="${t.titulo}">Título</strong>
-                            <div class="text-muted text-sm" th:if="${t.descripcion != null and !t.descripcion.isBlank()}" th:text="${t.descripcion}"></div>
-                        </td>
-                        <td th:text="${t.estudiante.nombre}">Estudiante</td>
-                        <td th:text="${#temporals.format(t.fechaEntrega, 'dd/MM/yyyy')}">Entrega</td>
-                        <td th:text="${t.porcentaje} + '%'">10%</td>
-                        <td>
-                            <span th:if="${t.estado.name() == 'PENDIENTE'}" class="badge badge-warning">PENDIENTE</span>
-                            <span th:if="${t.estado.name() == 'ENTREGADA'}" class="badge badge-primary">ENTREGADA</span>
-                            <span th:if="${t.estado.name() == 'CALIFICADA'}" class="badge badge-success">CALIFICADA</span>
-                            <span th:if="${t.estado.name() == 'ATRASADA'}" class="badge badge-danger">ATRASADA</span>
-                        </td>
-                        <td>
-                            <span th:if="${t.calificacion != null}" class="badge badge-success" th:text="${t.calificacion}">88</span>
-                            <span th:unless="${t.calificacion != null}">—</span>
-                        </td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="btn-xs btn-ghost"
-                                        th:attr="hx-get='/gestion-academica/extraclase/form/' + ${t.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
-                                        hx-target="#modal-container" hx-swap="innerHTML"
-                                        onclick="abrirModalAcademico()"
-                                        title="Editar">✏️</button>
-                                <button class="btn-xs btn-danger-ghost"
-                                        onclick="abrirConfirmacionAcademica(this)"
-                                        th:attr="data-delete-url='/gestion-academica/extraclase/' + ${t.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId},
-                                                 data-delete-target='#extraclase-panel',
-                                                 data-delete-title='Eliminar trabajo',
-                                                 data-delete-message='¿Deseas eliminar ' + ${t.titulo} + '? Esta acción no se puede deshacer.'"
-                                        title="Eliminar">🗑️</button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div th:if="${nivelId != null and materiaId != null and (trabajos == null or trabajos.empty)}"
+             class="form-alert-error" style="margin: 1rem 1.5rem;">
+            No hay trabajos creados para esta sección y materia. Crea uno con el botón "Nuevo Trabajo".
         </div>
+
+        <div th:if="${trabajoSeleccionado != null and trabajoSeleccionado.puntosTotales == null}"
+             class="form-alert-error" style="margin: 1rem 1.5rem;">
+            Debes definir los puntos totales del trabajo antes de calificar.
+        </div>
+
+        <th:block th:if="${trabajoSeleccionado != null and trabajoSeleccionado.puntosTotales != null}">
+            <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
+            <form id="trabajo-calificaciones-form" onsubmit="event.preventDefault();">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>Puntos obtenidos</th>
+                                <th>Calificación</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${filas == null or filas.empty}">
+                                <td colspan="4" class="table-empty">No hay estudiantes activos en esta sección.</td>
+                            </tr>
+                            <tr th:each="f : ${filas}">
+                                <td style="font-weight:600;">
+                                    <input type="hidden" name="estudianteId" th:value="${f.estudiante.id}">
+                                    <span th:text="${f.estudiante.nombre}">Nombre</span>
+                                </td>
+                                <td>
+                                    <div class="input-suffix-wrap" style="max-width: 130px;">
+                                        <input type="number" class="form-input" name="puntosObtenidos" min="0"
+                                               th:max="${trabajoSeleccionado.puntosTotales}"
+                                               style="padding-left: 10px;"
+                                               th:value="${f.puntosObtenidos}"
+                                               hx-trigger="blur, keyup[key=='Enter']"
+                                               th:attr="hx-post='/gestion-academica/extraclase/guardar-lote?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId} + '&trabajoId=' + ${trabajoSeleccionado.id} + '&estudianteId=' + ${f.estudiante.id}"
+                                               hx-target="#extraclase-panel" hx-swap="innerHTML" hx-indicator="#extraclase-loading">
+                                        <span class="input-suffix">pts</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span th:text="${f.calificacion != null ? f.calificacion + '%' : '—'}">—</span>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-input" name="observacion"
+                                           style="padding-left:10px; height: 32px;"
+                                           placeholder="Agregar nota..." th:value="${f.observacion}">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </th:block>
     </div>
 </div>

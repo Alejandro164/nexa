@@ -16,9 +16,9 @@ import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.NotaExamen;
 import com.chavescr.nexa.entity.PeriodoAcademico;
-import com.chavescr.nexa.entity.ProyectoEstudiantil;
+import com.chavescr.nexa.entity.ProyectoCalificacion;
 import com.chavescr.nexa.entity.TareaCalificacion;
-import com.chavescr.nexa.entity.TrabajoExtraclase;
+import com.chavescr.nexa.entity.TrabajoCalificacion;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.EvaluacionCotidianaRepository;
@@ -27,9 +27,9 @@ import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.NotaExamenRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
-import com.chavescr.nexa.repository.ProyectoEstudiantilRepository;
+import com.chavescr.nexa.repository.ProyectoCalificacionRepository;
 import com.chavescr.nexa.repository.TareaCalificacionRepository;
-import com.chavescr.nexa.repository.TrabajoExtraclaseRepository;
+import com.chavescr.nexa.repository.TrabajoCalificacionRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
 @Service
@@ -41,19 +41,19 @@ public class PromedioService {
     private final MateriaRepository materiaRepository;
     private final PeriodoAcademicoRepository periodoRepository;
     private final TareaCalificacionRepository tareaRepository;
-    private final ProyectoEstudiantilRepository proyectoRepository;
+    private final ProyectoCalificacionRepository proyectoRepository;
     private final ExamenRepository examenRepository;
     private final NotaExamenRepository notaExamenRepository;
-    private final TrabajoExtraclaseRepository trabajoRepository;
+    private final TrabajoCalificacionRepository trabajoRepository;
     private final EvaluacionCotidianaRepository evaluacionRepository;
     private final AsistenciaEstudianteRepository asistenciaRepository;
     private final DistribucionPorcentualService distribucionService;
 
     public PromedioService(UsuarioRepository usuarioRepository, NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository, PeriodoAcademicoRepository periodoRepository,
-            TareaCalificacionRepository tareaRepository, ProyectoEstudiantilRepository proyectoRepository,
+            TareaCalificacionRepository tareaRepository, ProyectoCalificacionRepository proyectoRepository,
             ExamenRepository examenRepository, NotaExamenRepository notaExamenRepository,
-            TrabajoExtraclaseRepository trabajoRepository, EvaluacionCotidianaRepository evaluacionRepository,
+            TrabajoCalificacionRepository trabajoRepository, EvaluacionCotidianaRepository evaluacionRepository,
             AsistenciaEstudianteRepository asistenciaRepository, DistribucionPorcentualService distribucionService) {
         this.usuarioRepository = usuarioRepository;
         this.nivelRepository = nivelRepository;
@@ -92,8 +92,8 @@ public class PromedioService {
                 .findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoId(institucionId, nivelId, materiaId, periodoId)
                 .stream().collect(Collectors.groupingBy(t -> t.getEstudiante().getId()));
 
-        Map<Long, List<ProyectoEstudiantil>> proyectosPorEstudiante = proyectoRepository
-                .findByInstitucionIdAndPeriodoIdAndMateriaIdOrderByFechaInicioAsc(institucionId, periodoId, materiaId)
+        Map<Long, List<ProyectoCalificacion>> proyectosPorEstudiante = proyectoRepository
+                .findByProyectoDefinicion_PeriodoIdAndProyectoDefinicion_MateriaId(periodoId, materiaId)
                 .stream().collect(Collectors.groupingBy(p -> p.getEstudiante().getId()));
 
         Map<Long, Examen> examenesPorId = examenRepository
@@ -103,8 +103,8 @@ public class PromedioService {
                 .findByExamen_PeriodoIdAndExamen_MateriaId(periodoId, materiaId)
                 .stream().collect(Collectors.groupingBy(n -> n.getEstudiante().getId()));
 
-        Map<Long, List<TrabajoExtraclase>> extraclasePorEstudiante = trabajoRepository
-                .findByInstitucionIdAndPeriodoIdAndMateriaIdOrderByFechaEntregaAsc(institucionId, periodoId, materiaId)
+        Map<Long, List<TrabajoCalificacion>> extraclasePorEstudiante = trabajoRepository
+                .findByTrabajoDefinicion_PeriodoIdAndTrabajoDefinicion_MateriaId(periodoId, materiaId)
                 .stream().collect(Collectors.groupingBy(t -> t.getEstudiante().getId()));
 
         Map<Long, List<EvaluacionCotidiana>> evaluacionesPorEstudiante = evaluacionRepository
@@ -124,8 +124,8 @@ public class PromedioService {
     }
 
     private FilaPromedio calcularFila(Usuario estudiante, PeriodoAcademico periodo, Long materiaId,
-            Long institucionId, List<TareaCalificacion> tareas, List<ProyectoEstudiantil> proyectos,
-            List<NotaExamen> notas, Map<Long, Examen> examenesPorId, List<TrabajoExtraclase> extraclase,
+            Long institucionId, List<TareaCalificacion> tareas, List<ProyectoCalificacion> proyectos,
+            List<NotaExamen> notas, Map<Long, Examen> examenesPorId, List<TrabajoCalificacion> extraclase,
             List<EvaluacionCotidiana> evaluaciones, DistribucionPorcentual distribucion) {
         Integer cotidiano = promedioPonderado(evaluaciones.stream()
                 .map(ev -> new double[] { ev.getCalificacion(), ev.getIndicador().getPorcentaje() })
@@ -136,8 +136,8 @@ public class PromedioService {
                 .toList());
 
         Integer proyectosScore = promedioPonderado(proyectos.stream()
-                .filter(p -> p.getCalificacion() != null)
-                .map(p -> new double[] { p.getCalificacion(), p.getPorcentaje() })
+                .filter(p -> p.getProyectoDefinicion().getPorcentaje() != null)
+                .map(p -> new double[] { p.getCalificacion(), p.getProyectoDefinicion().getPorcentaje() })
                 .toList());
 
         Integer examenesScore = promedioPonderado(notas.stream()
@@ -147,8 +147,8 @@ public class PromedioService {
                 .toList());
 
         Integer extraclaseScore = promedioPonderado(extraclase.stream()
-                .filter(t -> t.getCalificacion() != null)
-                .map(t -> new double[] { t.getCalificacion(), t.getPorcentaje() })
+                .filter(t -> t.getTrabajoDefinicion().getPorcentaje() != null)
+                .map(t -> new double[] { t.getCalificacion(), t.getTrabajoDefinicion().getPorcentaje() })
                 .toList());
 
         Integer asistenciaScore = calcularAsistencia(institucionId, estudiante.getId(), materiaId, periodo);

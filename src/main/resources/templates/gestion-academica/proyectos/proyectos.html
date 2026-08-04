@@ -1,90 +1,142 @@
 <div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Proyectos Estudiantiles</h3>
-            <div style="display: flex; gap: 0.75rem; align-items: center;">
-                <div class="periodo-select-wide">
-                    <select class="form-input" name="periodoId"
-                            hx-get="/gestion-academica/proyectos"
-                            hx-target="#proyectos-panel" hx-swap="innerHTML"
-                            hx-include="[name='materiaId']">
-                        <option value="" th:if="${periodos == null or periodos.empty}" disabled selected>Sin períodos</option>
-                        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
-                                th:selected="${periodoId != null and periodoId == p.id}"></option>
-                    </select>
-                </div>
-                <select class="form-input" style="max-width: 220px;" name="materiaId"
+    <div class="card" style="position: relative;">
+        <div id="proyectos-loading" class="htmx-indicator panel-loading-overlay">
+            <div class="spinner"></div>
+            <span>Cargando...</span>
+        </div>
+        <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+            <div>
+                <h3 class="card-title">Proyectos Estudiantiles</h3>
+                <p class="text-muted text-sm" style="margin:4px 0 0 0;" th:if="${periodoActivo != null}"
+                   th:text="'Período activo: ' + ${periodoActivo.codigo}">Período activo: 2028-2</p>
+            </div>
+            <div style="border-top: 1px solid var(--border);"></div>
+            <div class="filters-bar">
+                <select class="form-input" style="max-width: 180px;" name="nivelId"
                         hx-get="/gestion-academica/proyectos"
-                        hx-target="#proyectos-panel" hx-swap="innerHTML"
-                        hx-include="[name='periodoId']">
+                        hx-target="#proyectos-panel" hx-swap="innerHTML" hx-indicator="#proyectos-loading"
+                        hx-include="[name='materiaId'],[name='proyectoId']">
+                    <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
+                    <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
+                            th:selected="${nivelId != null and nivelId == n.id}"></option>
+                </select>
+                <select class="form-input" style="max-width: 200px;" name="materiaId"
+                        hx-get="/gestion-academica/proyectos"
+                        hx-target="#proyectos-panel" hx-swap="innerHTML" hx-indicator="#proyectos-loading"
+                        hx-include="[name='nivelId'],[name='proyectoId']">
                     <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
                     <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
                             th:selected="${materiaId != null and materiaId == m.id}"></option>
                 </select>
-                <button class="btn btn-primary" style="width: 220px; white-space: nowrap;"
-                        th:if="${periodoId != null and materiaId != null}"
-                        th:attr="hx-get='/gestion-academica/proyectos/form?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
-                        hx-target="#modal-container" hx-swap="innerHTML"
-                        onclick="abrirModalAcademico()">Nuevo Proyecto</button>
+                <select class="form-input" style="max-width: 160px;" name="proyectoId"
+                        hx-get="/gestion-academica/proyectos"
+                        hx-target="#proyectos-panel" hx-swap="innerHTML" hx-indicator="#proyectos-loading"
+                        hx-include="[name='nivelId'],[name='materiaId']">
+                    <option value="" th:if="${proyectos == null or proyectos.empty}" disabled selected>Sin proyectos</option>
+                    <option th:each="p, iter : ${proyectos}" th:value="${p.id}" th:text="'Proyecto ' + ${iter.count}"
+                            th:selected="${proyectoId != null and proyectoId == p.id}"></option>
+                </select>
+                <div class="input-suffix-wrap" style="max-width: 120px;" th:if="${proyectoSeleccionado != null}">
+                    <input type="number" class="form-input" style="padding-left: 10px;" min="0" max="100" title="Porcentaje"
+                           name="porcentaje"
+                           th:value="${proyectoSeleccionado.porcentaje}"
+                           hx-trigger="change"
+                           th:attr="hx-post='/gestion-academica/proyectos/' + ${proyectoSeleccionado.id} + '/actualizar?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                           hx-target="#proyectos-panel" hx-swap="innerHTML" hx-indicator="#proyectos-loading">
+                    <span class="input-suffix">%</span>
+                </div>
+                <div class="input-suffix-wrap" style="max-width: 165px;" th:if="${proyectoSeleccionado != null}">
+                    <input type="number" class="form-input" style="padding-left: 10px;" min="0" title="Puntos totales"
+                           name="puntosTotales"
+                           th:value="${proyectoSeleccionado.puntosTotales}"
+                           hx-trigger="change"
+                           th:attr="hx-post='/gestion-academica/proyectos/' + ${proyectoSeleccionado.id} + '/actualizar?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                           hx-target="#proyectos-panel" hx-swap="innerHTML" hx-indicator="#proyectos-loading">
+                    <span class="input-suffix">pts</span>
+                </div>
+                <button type="button" class="btn-xs btn-danger-ghost" th:if="${proyectoSeleccionado != null}"
+                        onclick="abrirConfirmacionAcademica(this)"
+                        th:attr="data-delete-url='/gestion-academica/proyectos/' + ${proyectoSeleccionado.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId},
+                                 data-delete-target='#proyectos-panel',
+                                 data-delete-title='Eliminar proyecto',
+                                 data-delete-message='¿Deseas eliminar este proyecto? Esta acción no se puede deshacer.'"
+                        title="Eliminar proyecto">🗑️</button>
+                <button type="button" class="btn btn-primary" style="height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap;"
+                        th:if="${nivelId != null and materiaId != null}"
+                        th:attr="hx-post='/gestion-academica/proyectos/nuevo?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                        hx-target="#proyectos-panel" hx-swap="innerHTML" hx-indicator="#proyectos-loading">Nuevo Proyecto</button>
+                <button type="button" class="btn btn-primary"
+                        style="margin-left: auto; height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap;"
+                        th:if="${proyectoSeleccionado != null and proyectoSeleccionado.puntosTotales != null}"
+                        hx-post="/gestion-academica/proyectos/guardar-lote"
+                        hx-include="#proyecto-calificaciones-form"
+                        th:attr="hx-vals=|js:{nivelId: ${nivelId}, materiaId: ${materiaId}, proyectoId: ${proyectoSeleccionado.id}}|"
+                        hx-target="#proyectos-panel" hx-swap="innerHTML" hx-indicator="#proyectos-loading">Guardar calificaciones</button>
             </div>
         </div>
 
-        <div th:if="${periodoId == null or materiaId == null}"
+        <div th:if="${nivelId == null or materiaId == null}"
              style="padding: 2rem; text-align:center; color: var(--text-secondary);">
-            Debes crear al menos un período académico y una materia para registrar proyectos.
+            Debes crear al menos una sección y una materia para asignar proyectos.
         </div>
 
-        <div th:if="${periodoId != null and materiaId != null}" class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Estudiante</th>
-                        <th>Fechas</th>
-                        <th>%</th>
-                        <th>Estado</th>
-                        <th>Calif.</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:if="${proyectos == null or proyectos.empty}">
-                        <td colspan="7" class="table-empty">No hay proyectos registrados.</td>
-                    </tr>
-                    <tr th:each="p : ${proyectos}">
-                        <td>
-                            <strong th:text="${p.titulo}">Título</strong>
-                            <div class="text-muted text-sm" th:if="${p.descripcion != null and !p.descripcion.isBlank()}" th:text="${p.descripcion}"></div>
-                        </td>
-                        <td th:text="${p.estudiante.nombre}">Estudiante</td>
-                        <td th:text="${#temporals.format(p.fechaInicio, 'dd/MM')} + ' – ' + ${#temporals.format(p.fechaFin, 'dd/MM')}">Fechas</td>
-                        <td th:text="${p.porcentaje} + '%'">25%</td>
-                        <td>
-                            <span th:if="${p.estado.name() == 'ABIERTO'}" class="badge badge-primary">ABIERTO</span>
-                            <span th:if="${p.estado.name() == 'EN_PROGRESO'}" class="badge badge-warning">EN_PROGRESO</span>
-                            <span th:if="${p.estado.name() == 'CERRADO'}" class="badge badge-secondary">CERRADO</span>
-                            <span th:if="${p.estado.name() == 'CALIFICADO'}" class="badge badge-success">CALIFICADO</span>
-                        </td>
-                        <td th:text="${p.calificacion != null ? p.calificacion : '—'}">—</td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="btn-xs btn-ghost"
-                                        th:attr="hx-get='/gestion-academica/proyectos/form/' + ${p.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId}"
-                                        hx-target="#modal-container" hx-swap="innerHTML"
-                                        onclick="abrirModalAcademico()"
-                                        title="Editar">✏️</button>
-                                <button class="btn-xs btn-danger-ghost"
-                                        onclick="abrirConfirmacionAcademica(this)"
-                                        th:attr="data-delete-url='/gestion-academica/proyectos/' + ${p.id} + '?periodoId=' + ${periodoId} + '&materiaId=' + ${materiaId},
-                                                 data-delete-target='#proyectos-panel',
-                                                 data-delete-title='Eliminar proyecto',
-                                                 data-delete-message='¿Deseas eliminar ' + ${p.titulo} + '? Esta acción no se puede deshacer.'"
-                                        title="Eliminar">🗑️</button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div th:if="${nivelId != null and materiaId != null and (proyectos == null or proyectos.empty)}"
+             class="form-alert-error" style="margin: 1rem 1.5rem;">
+            No hay proyectos creados para esta sección y materia. Crea uno con el botón "Nuevo Proyecto".
         </div>
+
+        <div th:if="${proyectoSeleccionado != null and proyectoSeleccionado.puntosTotales == null}"
+             class="form-alert-error" style="margin: 1rem 1.5rem;">
+            Debes definir los puntos totales del proyecto antes de calificar.
+        </div>
+
+        <th:block th:if="${proyectoSeleccionado != null and proyectoSeleccionado.puntosTotales != null}">
+            <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
+            <form id="proyecto-calificaciones-form" onsubmit="event.preventDefault();">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>Puntos obtenidos</th>
+                                <th>Calificación</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${filas == null or filas.empty}">
+                                <td colspan="4" class="table-empty">No hay estudiantes activos en esta sección.</td>
+                            </tr>
+                            <tr th:each="f : ${filas}">
+                                <td style="font-weight:600;">
+                                    <input type="hidden" name="estudianteId" th:value="${f.estudiante.id}">
+                                    <span th:text="${f.estudiante.nombre}">Nombre</span>
+                                </td>
+                                <td>
+                                    <div class="input-suffix-wrap" style="max-width: 130px;">
+                                        <input type="number" class="form-input" name="puntosObtenidos" min="0"
+                                               th:max="${proyectoSeleccionado.puntosTotales}"
+                                               style="padding-left: 10px;"
+                                               th:value="${f.puntosObtenidos}"
+                                               hx-trigger="blur, keyup[key=='Enter']"
+                                               th:attr="hx-post='/gestion-academica/proyectos/guardar-lote?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId} + '&proyectoId=' + ${proyectoSeleccionado.id} + '&estudianteId=' + ${f.estudiante.id}"
+                                               hx-target="#proyectos-panel" hx-swap="innerHTML" hx-indicator="#proyectos-loading">
+                                        <span class="input-suffix">pts</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span th:text="${f.calificacion != null ? f.calificacion + '%' : '—'}">—</span>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-input" name="observacion"
+                                           style="padding-left:10px; height: 32px;"
+                                           placeholder="Agregar nota..." th:value="${f.observacion}">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </th:block>
     </div>
 </div>
