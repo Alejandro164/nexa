@@ -57,6 +57,24 @@ public class UsuarioService {
                 .orElse(Collections.emptyList());
     }
 
+    /** La última institución con la que trabajó el usuario autenticado, o null si nunca eligió una. */
+    @Transactional(readOnly = true)
+    public Long obtenerUltimaInstitucionIdDelUsuarioActual() {
+        String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepository.findByIdentifier(identifier)
+                .map(Usuario::getUltimaInstitucion)
+                .map(Institucion::getId)
+                .orElse(null);
+    }
+
+    /** Recuerda la institución elegida para que se auto-seleccione en el próximo login. */
+    public void actualizarUltimaInstitucion(Long usuarioId, Institucion institucion) {
+        usuarioRepository.findById(usuarioId).ifPresent(usuario -> {
+            usuario.setUltimaInstitucion(institucion);
+            usuarioRepository.save(usuario);
+        });
+    }
+
     @Transactional(readOnly = true)
     public List<UsuarioDTO> obtenerEstudiantesDelUsuarioActual() {
         String identifier = SecurityContextHolder.getContext().getAuthentication().getName();

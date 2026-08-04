@@ -14,6 +14,7 @@ import com.chavescr.nexa.dto.InstitucionDTO;
 import com.chavescr.nexa.dto.UsuarioDTO;
 import com.chavescr.nexa.security.CustomUserDetails;
 import com.chavescr.nexa.service.InstitucionService;
+import com.chavescr.nexa.service.SesionInstitucionService;
 import com.chavescr.nexa.service.UsuarioService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,37 +31,26 @@ public class MainController {
     @Autowired
     private InstitucionService institucionService;
 
+    @Autowired
+    private SesionInstitucionService sesionInstitucionService;
+
     @GetMapping("/")
     public String index(@AuthenticationPrincipal CustomUserDetails usuario, Model model,
             HttpServletRequest request, HttpSession session) {
 
         session.setAttribute("SESSION_USUARIO_ID", usuario.getId());
 
-        if (session.getAttribute("SESSION_INSTITUCION_ID") != null) {
-            cargarDashboard(model, session);
-            return "inicio/inicio";
+        var resultado = sesionInstitucionService.resolver(session, request.isUserInRole("ROLE_ADMIN"));
+        if (resultado.estado() != SesionInstitucionService.Estado.RESUELTA) {
+            // La selección de institución ahora se resuelve en el login (modal por AJAX); si se
+            // llega aquí sin institución resuelta (JS deshabilitado, navegación directa a /, etc.)
+            // se cierra la sesión y se manda de vuelta al login para que pase por ese flujo.
+            session.invalidate();
+            return "redirect:/login";
         }
 
-        if (request.isUserInRole("ROLE_ADMIN")) {
-            model.addAttribute("instituciones", institucionService.obtenerTodasDTO());
-            return "inicio/lista-instituciones";
-        }
-
-        List<InstitucionDTO> instituciones = usuarioService.obtenerInstitucionesDelUsuarioActual();
-        if (instituciones.isEmpty()) {
-            model.addAttribute("instituciones", instituciones);
-            model.addAttribute("errorNoInstituciones", "No tienes instituciones asociadas.");
-            return "inicio/lista-instituciones";
-        } else if (instituciones.size() == 1) {
-            InstitucionDTO inst = instituciones.get(0);
-            session.setAttribute("SESSION_INSTITUCION_ID", inst.getId());
-            session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
-            cargarDashboard(model, session);
-            return "inicio/inicio";
-        } else {
-            model.addAttribute("instituciones", instituciones);
-            return "inicio/lista-instituciones";
-        }
+        cargarDashboard(model, session);
+        return "inicio/inicio";
     }
 
     @GetMapping("/inicio")
@@ -73,14 +63,16 @@ public class MainController {
     }
 
     @GetMapping("/inicio/instituciones-modal")
-    public String institucionesModal(Model model, HttpServletRequest request) {
-
-        System.out.println("Hola mundo");
+    public String institucionesModal(@RequestParam(required = false) String origen, Model model,
+            HttpServletRequest request, HttpSession session) {
         if (request.isUserInRole("ROLE_ADMIN")) {
-            System.out.println("Admin");
             model.addAttribute("instituciones", institucionService.obtenerTodasDTO());
         } else {
             model.addAttribute("instituciones", usuarioService.obtenerInstitucionesDelUsuarioActual());
+        }
+        model.addAttribute("institucionActualId", session.getAttribute("SESSION_INSTITUCION_ID"));
+        if ("login".equals(origen)) {
+            return "auth/seleccionar-institucion-modal :: modal-content";
         }
         return "inicio/instituciones-modal :: modal-content";
     }
@@ -90,10 +82,13 @@ public class MainController {
             HttpServletRequest request,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+
         if (request.isUserInRole("ROLE_ADMIN")) {
             institucionService.findById(institucionId).ifPresent(inst -> {
                 session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
                 session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
+                usuarioService.actualizarUltimaInstitucion(usuarioId, inst);
             });
             return "redirect:/inicio";
         }
@@ -104,6 +99,8 @@ public class MainController {
                 .ifPresent(inst -> {
                     session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
                     session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
+                    institucionService.findById(institucionId)
+                            .ifPresent(entidad -> usuarioService.actualizarUltimaInstitucion(usuarioId, entidad));
                 });
         return "redirect:/inicio";
     }

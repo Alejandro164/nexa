@@ -73,6 +73,11 @@ public class Usuario implements UserDetails {
     @JoinColumn(name = "nivel_academico_id")
     private NivelAcademico nivelAcademico;
 
+    // Última institución con la que trabajó, para auto-seleccionarla en el próximo login
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ultima_institucion_id")
+    private Institucion ultimaInstitucion;
+
     public Usuario() {
     }
 
@@ -211,6 +216,14 @@ public class Usuario implements UserDetails {
 
     public void setNivelAcademico(NivelAcademico nivelAcademico) {
         this.nivelAcademico = nivelAcademico;
+    }
+
+    public Institucion getUltimaInstitucion() {
+        return ultimaInstitucion;
+    }
+
+    public void setUltimaInstitucion(Institucion ultimaInstitucion) {
+        this.ultimaInstitucion = ultimaInstitucion;
     }
 
     @Override

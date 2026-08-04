@@ -514,6 +514,159 @@
                 padding: 32px 24px;
             }
         }
+
+        /* ── Modal de selección de institución (inyectado tras un login por AJAX) ── */
+        .inst-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .inst-modal-card {
+            width: 100%;
+            max-width: 440px;
+            max-height: 85vh;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s cubic-bezier(.22, 1, .36, 1) both;
+        }
+
+        .inst-modal-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .inst-modal-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .inst-modal-header h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--title);
+            margin-bottom: 6px;
+        }
+
+        .inst-modal-header p {
+            font-size: 0.85rem;
+            color: var(--subtitle);
+            line-height: 1.5;
+        }
+
+        .inst-modal-empty {
+            text-align: center;
+            padding: 24px;
+            color: var(--subtitle);
+            font-size: 0.9rem;
+        }
+
+        .inst-modal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .inst-modal-item-form {
+            margin: 0;
+        }
+
+        .inst-modal-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--input-border);
+            border-radius: 14px;
+            background: var(--input-bg);
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .inst-modal-item:hover {
+            border-color: var(--accent);
+            background: #ffffff;
+        }
+
+        .inst-modal-item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2d5a87, #60a5fa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .inst-modal-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .inst-modal-item-name {
+            font-weight: 600;
+            color: var(--title);
+            font-size: 0.9rem;
+        }
+
+        .inst-modal-item-code {
+            font-size: 0.75rem;
+            color: var(--subtitle);
+        }
+
+        .inst-modal-footer {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--divider);
+        }
+
+        .inst-modal-cancel {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: none;
+            color: var(--subtitle);
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .inst-modal-cancel:hover {
+            background: var(--input-bg);
+            color: var(--error-text);
+        }
     </style>
 </head>
 
@@ -703,19 +856,73 @@
 
     </div>
 
+    <div id="institucion-modal-container"></div>
+
     <script>
-        document.getElementById('login-form').addEventListener('submit', function (event) {
-            if (this.dataset.submitting === 'true') {
-                event.preventDefault();
+        var loginForm = document.getElementById('login-form');
+        var loginButton = document.getElementById('btn-iniciar-sesion');
+        var loginButtonText = document.getElementById('login-button-text');
+
+        loginForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (loginForm.dataset.submitting === 'true') {
                 return;
             }
+            loginForm.dataset.submitting = 'true';
+            loginButton.disabled = true;
+            loginButton.setAttribute('aria-busy', 'true');
+            loginButtonText.textContent = 'Iniciando sesión...';
 
-            this.dataset.submitting = 'true';
-            var button = document.getElementById('btn-iniciar-sesion');
-            button.disabled = true;
-            button.setAttribute('aria-busy', 'true');
-            document.getElementById('login-button-text').textContent = 'Iniciando sesión...';
+            fetch('/login', {
+                method: 'POST',
+                body: new URLSearchParams(new FormData(loginForm)),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else if (data.seleccionarInstitucion) {
+                        mostrarSelectorInstitucion();
+                        restaurarBoton();
+                    } else if (data.error) {
+                        mostrarErrorLogin(data.error);
+                        restaurarBoton();
+                    }
+                })
+                .catch(function () {
+                    mostrarErrorLogin('Ocurrió un error al iniciar sesión. Intenta de nuevo.');
+                    restaurarBoton();
+                });
         });
+
+        function restaurarBoton() {
+            loginForm.dataset.submitting = 'false';
+            loginButton.disabled = false;
+            loginButton.removeAttribute('aria-busy');
+            loginButtonText.textContent = 'Iniciar Sesión';
+        }
+
+        function mostrarErrorLogin(mensaje) {
+            var existente = document.getElementById('login-ajax-error');
+            if (existente) {
+                existente.remove();
+            }
+            var div = document.createElement('div');
+            div.id = 'login-ajax-error';
+            div.className = 'alert alert-error';
+            div.setAttribute('role', 'alert');
+            div.textContent = mensaje;
+            loginForm.parentNode.insertBefore(div, loginForm);
+        }
+
+        function mostrarSelectorInstitucion() {
+            fetch('/inicio/instituciones-modal?origen=login')
+                .then(function (response) { return response.text(); })
+                .then(function (html) {
+                    document.getElementById('institucion-modal-container').innerHTML = html;
+                });
+        }
     </script>
 
 </body>

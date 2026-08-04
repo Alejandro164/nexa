@@ -23,9 +23,14 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
+    private final LoginSuccessHandler loginSuccessHandler;
+    private final LoginFailureHandler loginFailureHandler;
 
-    public SecurityConfig(UserDetailsServiceImpl userDetailsService) {
+    public SecurityConfig(UserDetailsServiceImpl userDetailsService, LoginSuccessHandler loginSuccessHandler,
+            LoginFailureHandler loginFailureHandler) {
         this.userDetailsService = userDetailsService;
+        this.loginSuccessHandler = loginSuccessHandler;
+        this.loginFailureHandler = loginFailureHandler;
     }
 
     @Bean
@@ -80,8 +85,8 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login") // Nuestra página de login personalizada
                         .loginProcessingUrl("/login") // Spring Security procesa el POST aquí
-                        .defaultSuccessUrl("/", true) // Redirige al inicio tras login exitoso
-                        .failureUrl("/login?error") // Redirige al login con parámetro de error
+                        .successHandler(loginSuccessHandler) // JSON si es AJAX, redirect si no
+                        .failureHandler(loginFailureHandler)
                         .usernameParameter("email") // Campo del formulario (acepta email/usuario/cédula)
                         .passwordParameter("password")
                         .permitAll())

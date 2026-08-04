@@ -1,5 +1,7 @@
 package com.chavescr.nexa.controller;
 
+import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -123,7 +125,7 @@ public class PortalPadresController {
     private Long requerirInstitucion(HttpSession session) {
         Long id = institucionId(session);
         if (id == null) {
-            throw new IllegalArgumentException("No hay institución seleccionada");
+            throw new InstitucionNoSeleccionadaException();
         }
         return id;
     }

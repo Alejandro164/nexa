@@ -1,5 +1,7 @@
 package com.chavescr.nexa.controller;
 
+import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
@@ -180,7 +182,7 @@ public class AsistenciaController {
     private Long requerirInstitucion(HttpSession session) {
         Long id = institucionId(session);
         if (id == null) {
-            throw new IllegalArgumentException("No hay institución seleccionada");
+            throw new InstitucionNoSeleccionadaException();
         }
         return id;
     }

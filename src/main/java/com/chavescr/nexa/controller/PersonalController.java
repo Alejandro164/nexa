@@ -1,5 +1,7 @@
 package com.chavescr.nexa.controller;
 
+import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+
 import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -278,7 +280,7 @@ public class PersonalController {
 
     private Long requerirInstitucion(HttpSession session) {
         Long id = institucionId(session);
-        if (id == null) throw new IllegalArgumentException("No hay institución seleccionada");
+        if (id == null) throw new InstitucionNoSeleccionadaException();
         return id;
     }
 

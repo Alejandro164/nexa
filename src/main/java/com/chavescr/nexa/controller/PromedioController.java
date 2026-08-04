@@ -1,5 +1,7 @@
 package com.chavescr.nexa.controller;
 
+import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+
 import java.util.List;
 
 import org.springframework.stereotype.Controller;
@@ -64,7 +66,7 @@ public class PromedioController {
     private Long requerirInstitucion(HttpSession session) {
         Long id = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
         if (id == null) {
-            throw new IllegalArgumentException("No hay institución seleccionada");
+            throw new InstitucionNoSeleccionadaException();
         }
         return id;
     }
