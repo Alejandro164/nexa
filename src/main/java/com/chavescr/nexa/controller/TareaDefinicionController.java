@@ -128,6 +128,9 @@ public class TareaDefinicionController {
         var evaluadosPorTarea = evaluacionService.contarEvaluadosPorTarea(institucionId,
                 tareas.stream().map(TareaDefinicion::getId).toList(),
                 periodoActivo != null ? periodoActivo.getId() : null);
+        var promedioPorTarea = evaluacionService.calcularPromedioPorTarea(institucionId,
+                tareas.stream().map(TareaDefinicion::getId).toList(),
+                periodoActivo != null ? periodoActivo.getId() : null);
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
@@ -138,6 +141,7 @@ public class TareaDefinicionController {
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorTarea", evaluadosPorTarea);
+        model.addAttribute("promedioPorTarea", promedioPorTarea);
     }
 
     private Long requerirInstitucion(HttpSession session) {

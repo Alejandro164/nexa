@@ -128,6 +128,9 @@ public class IndicadorCotidianoController {
         var evaluadosPorIndicador = evaluacionService.contarEvaluadosPorIndicador(institucionId,
                 indicadores.stream().map(IndicadorCotidiano::getId).toList(),
                 periodoActivo != null ? periodoActivo.getId() : null);
+        var promedioPorIndicador = evaluacionService.calcularPromedioPorIndicador(institucionId,
+                indicadores.stream().map(IndicadorCotidiano::getId).toList(),
+                periodoActivo != null ? periodoActivo.getId() : null);
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
@@ -138,6 +141,7 @@ public class IndicadorCotidianoController {
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorIndicador", evaluadosPorIndicador);
+        model.addAttribute("promedioPorIndicador", promedioPorIndicador);
     }
 
     private Long requerirInstitucion(HttpSession session) {

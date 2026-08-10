@@ -52,7 +52,7 @@
                     <thead>
                         <tr>
                             <th>Prueba</th>
-                            <th>Descripción</th>
+                            <th>Promedio</th>
                             <th>Porcentaje</th>
                             <th>Puntos Totales</th>
                             <th>Evaluados</th>
@@ -65,7 +65,11 @@
                         </tr>
                         <tr th:each="ex : ${examenes}">
                             <td><strong th:text="${ex.titulo}">Prueba</strong></td>
-                            <td th:text="${ex.descripcion}">Descripción</td>
+                            <td>
+                                <span th:if="${promedioPorExamen.get(ex.id)} != null"
+                                      th:text="${#numbers.formatDecimal(promedioPorExamen.get(ex.id), 1, 1)} + '%'">85.0%</span>
+                                <span th:unless="${promedioPorExamen.get(ex.id)} != null" class="text-muted">—</span>
+                            </td>
                             <td><span class="badge badge-primary" th:text="${ex.porcentaje} + '%'">15%</span></td>
                             <td th:text="${ex.puntosTotales} + ' pts'">50 pts</td>
                             <td>

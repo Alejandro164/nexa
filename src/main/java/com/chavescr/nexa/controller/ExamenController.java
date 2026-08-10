@@ -123,6 +123,7 @@ public class ExamenController {
 
         int totalEstudiantesSeccion = nivelId != null ? service.contarEstudiantesActivos(nivelId) : 0;
         var evaluadosPorExamen = service.contarEvaluadosPorExamen(examenes.stream().map(Examen::getId).toList());
+        var promedioPorExamen = service.calcularPromedioPorExamen(examenes.stream().map(Examen::getId).toList());
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
@@ -133,6 +134,7 @@ public class ExamenController {
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorExamen", evaluadosPorExamen);
+        model.addAttribute("promedioPorExamen", promedioPorExamen);
     }
 
     private Long requerirInstitucion(HttpSession session) {

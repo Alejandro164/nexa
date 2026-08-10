@@ -124,6 +124,7 @@ public class TrabajoExtraclaseController {
 
         int totalEstudiantesSeccion = nivelId != null ? service.contarEstudiantesActivos(nivelId) : 0;
         var evaluadosPorTrabajo = service.contarEvaluadosPorTrabajo(trabajos.stream().map(TrabajoDefinicion::getId).toList());
+        var promedioPorTrabajo = service.calcularPromedioPorTrabajo(trabajos.stream().map(TrabajoDefinicion::getId).toList());
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
@@ -134,6 +135,7 @@ public class TrabajoExtraclaseController {
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorTrabajo", evaluadosPorTrabajo);
+        model.addAttribute("promedioPorTrabajo", promedioPorTrabajo);
     }
 
     private Long requerirInstitucion(HttpSession session) {

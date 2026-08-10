@@ -88,6 +88,17 @@ public class ProyectoEstudiantilService {
                 .collect(Collectors.groupingBy(c -> c.getProyectoDefinicion().getId(), Collectors.counting()));
     }
 
+    /** Promedio de las calificaciones ya registradas, por proyecto; solo en memoria, no se persiste. */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> calcularPromedioPorProyecto(List<Long> proyectoIds) {
+        if (proyectoIds == null || proyectoIds.isEmpty()) {
+            return Map.of();
+        }
+        return calificacionRepository.findByProyectoDefinicionIdIn(proyectoIds).stream()
+                .collect(Collectors.groupingBy(c -> c.getProyectoDefinicion().getId(),
+                        Collectors.averagingInt(ProyectoCalificacion::getCalificacion)));
+    }
+
     /**
      * A diferencia de indicadores/tareas, en los proyectos los puntos totales son obligatorios: la
      * calificación siempre se deriva de puntosObtenidos/puntosTotales, nunca se ingresa directamente.

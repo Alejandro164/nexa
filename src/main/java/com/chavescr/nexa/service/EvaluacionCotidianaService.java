@@ -74,6 +74,18 @@ public class EvaluacionCotidianaService {
                 .collect(Collectors.groupingBy(e -> e.getIndicador().getId(), Collectors.counting()));
     }
 
+    /** Promedio de las calificaciones ya registradas, por indicador, en ese período; solo en memoria, no se persiste. */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> calcularPromedioPorIndicador(Long institucionId, List<Long> indicadorIds, Long periodoId) {
+        if (indicadorIds == null || indicadorIds.isEmpty() || periodoId == null) {
+            return Map.of();
+        }
+        return evaluacionRepository.findByInstitucionIdAndIndicadorIdInAndPeriodoId(institucionId, indicadorIds, periodoId)
+                .stream()
+                .collect(Collectors.groupingBy(e -> e.getIndicador().getId(),
+                        Collectors.averagingInt(EvaluacionCotidiana::getCalificacion)));
+    }
+
     /** Una fila por cada estudiante activo de la sección, con su calificación de ese indicador en el período activo. */
     @Transactional(readOnly = true)
     public List<FilaEvaluacionCotidiana> listarFilas(Long institucionId, Long nivelId, Long indicadorId,

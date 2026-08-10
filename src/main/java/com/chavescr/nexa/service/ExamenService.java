@@ -87,6 +87,17 @@ public class ExamenService {
                 .collect(Collectors.groupingBy(n -> n.getExamen().getId(), Collectors.counting()));
     }
 
+    /** Promedio de las calificaciones ya registradas, por prueba; solo en memoria, no se persiste. */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> calcularPromedioPorExamen(List<Long> examenIds) {
+        if (examenIds == null || examenIds.isEmpty()) {
+            return Map.of();
+        }
+        return notaExamenRepository.findByExamenIdIn(examenIds).stream()
+                .collect(Collectors.groupingBy(n -> n.getExamen().getId(),
+                        Collectors.averagingInt(NotaExamen::getCalificacion)));
+    }
+
     /**
      * A diferencia de indicadores/tareas, en las pruebas los puntos totales son obligatorios: la
      * calificación siempre se deriva de puntosObtenidos/puntosTotales, nunca se ingresa directamente.

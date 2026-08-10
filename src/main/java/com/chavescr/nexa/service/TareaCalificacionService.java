@@ -74,6 +74,18 @@ public class TareaCalificacionService {
                 .collect(Collectors.groupingBy(c -> c.getTareaDefinicion().getId(), Collectors.counting()));
     }
 
+    /** Promedio de las calificaciones ya registradas, por tarea, en ese período; solo en memoria, no se persiste. */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> calcularPromedioPorTarea(Long institucionId, List<Long> tareaIds, Long periodoId) {
+        if (tareaIds == null || tareaIds.isEmpty() || periodoId == null) {
+            return Map.of();
+        }
+        return calificacionRepository.findByInstitucionIdAndTareaDefinicionIdInAndPeriodoId(institucionId, tareaIds, periodoId)
+                .stream()
+                .collect(Collectors.groupingBy(c -> c.getTareaDefinicion().getId(),
+                        Collectors.averagingInt(TareaCalificacion::getCalificacion)));
+    }
+
     /** Una fila por cada estudiante activo de la sección, con su calificación de esa tarea en el período activo. */
     @Transactional(readOnly = true)
     public List<FilaTareaCalificacion> listarFilas(Long institucionId, Long nivelId, Long tareaDefinicionId,

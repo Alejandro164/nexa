@@ -124,6 +124,7 @@ public class ProyectoEstudiantilController {
 
         int totalEstudiantesSeccion = nivelId != null ? service.contarEstudiantesActivos(nivelId) : 0;
         var evaluadosPorProyecto = service.contarEvaluadosPorProyecto(proyectos.stream().map(ProyectoDefinicion::getId).toList());
+        var promedioPorProyecto = service.calcularPromedioPorProyecto(proyectos.stream().map(ProyectoDefinicion::getId).toList());
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
@@ -134,6 +135,7 @@ public class ProyectoEstudiantilController {
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorProyecto", evaluadosPorProyecto);
+        model.addAttribute("promedioPorProyecto", promedioPorProyecto);
     }
 
     private Long requerirInstitucion(HttpSession session) {

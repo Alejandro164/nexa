@@ -88,6 +88,17 @@ public class TrabajoExtraclaseService {
                 .collect(Collectors.groupingBy(c -> c.getTrabajoDefinicion().getId(), Collectors.counting()));
     }
 
+    /** Promedio de las calificaciones ya registradas, por trabajo; solo en memoria, no se persiste. */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> calcularPromedioPorTrabajo(List<Long> trabajoIds) {
+        if (trabajoIds == null || trabajoIds.isEmpty()) {
+            return Map.of();
+        }
+        return calificacionRepository.findByTrabajoDefinicionIdIn(trabajoIds).stream()
+                .collect(Collectors.groupingBy(c -> c.getTrabajoDefinicion().getId(),
+                        Collectors.averagingInt(TrabajoCalificacion::getCalificacion)));
+    }
+
     /**
      * A diferencia de indicadores/tareas, en los trabajos extraclase los puntos totales son
      * obligatorios: la calificación siempre se deriva de puntosObtenidos/puntosTotales, nunca se
