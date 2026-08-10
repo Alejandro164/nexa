@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.dto.FilaNotaTrabajo;
+import com.chavescr.nexa.entity.AccionHistorial;
+import com.chavescr.nexa.entity.ModuloAcademico;
+import com.chavescr.nexa.security.CustomUserDetails;
+import com.chavescr.nexa.service.HistorialCambioService;
 import com.chavescr.nexa.service.TrabajoExtraclaseService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,9 +30,11 @@ import jakarta.servlet.http.HttpSession;
 public class TrabajoCalificacionController {
 
     private final TrabajoExtraclaseService service;
+    private final HistorialCambioService historialService;
 
-    public TrabajoCalificacionController(TrabajoExtraclaseService service) {
+    public TrabajoCalificacionController(TrabajoExtraclaseService service, HistorialCambioService historialService) {
         this.service = service;
+        this.historialService = historialService;
     }
 
     @GetMapping("/modal")
@@ -42,11 +50,13 @@ public class TrabajoCalificacionController {
             @RequestParam(required = false) List<Long> estudianteId,
             @RequestParam(required = false) List<String> puntosObtenidos,
             @RequestParam(required = false) List<String> observacion,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response,
+            @AuthenticationPrincipal CustomUserDetails usuario) {
         exigirDocenteODirectorOAdmin(request);
         Long institucionId = requerirInstitucion(session);
 
         List<String> errores = new ArrayList<>();
+        List<String> calificados = new ArrayList<>();
         if (estudianteId != null) {
             for (int i = 0; i < estudianteId.size(); i++) {
                 String puntosStr = puntosObtenidos != null && i < puntosObtenidos.size() ? puntosObtenidos.get(i) : null;
@@ -56,13 +66,21 @@ public class TrabajoCalificacionController {
                 String obs = observacion != null && i < observacion.size() ? observacion.get(i) : null;
                 try {
                     Integer puntos = Integer.valueOf(puntosStr.trim());
-                    service.registrarCalificacion(institucionId, trabajoId, estudianteId.get(i), puntos, obs);
+                    FilaNotaTrabajo fila = service.registrarCalificacion(institucionId, trabajoId, estudianteId.get(i),
+                            puntos, obs);
+                    calificados.add(fila.getEstudiante().getNombre() + ": " + fila.getCalificacion() + "%");
                 } catch (NumberFormatException e) {
                     errores.add("unos puntos obtenidos inválidos");
                 } catch (IllegalArgumentException e) {
                     errores.add(e.getMessage());
                 }
             }
+        }
+        if (!calificados.isEmpty()) {
+            String trabajoTitulo = service.obtenerTrabajo(institucionId, trabajoId).getTitulo();
+            historialService.registrar(institucionId, nivelId, materiaId, ModuloAcademico.EXTRACLASE, trabajoId,
+                    trabajoTitulo, AccionHistorial.CALIFICAR, usuario != null ? usuario.getId() : null,
+                    usuario != null ? usuario.getNombre() : null, String.join(", ", calificados));
         }
         String trabajoCalificado = "\"trabajoExtraclaseCalificado\":{\"nivelId\":" + nivelId + ",\"materiaId\":" + materiaId + "}";
         if (!errores.isEmpty()) {

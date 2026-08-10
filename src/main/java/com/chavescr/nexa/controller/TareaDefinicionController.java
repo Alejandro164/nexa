@@ -4,6 +4,7 @@ import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 
 import java.util.List;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,8 +15,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.entity.AccionHistorial;
+import com.chavescr.nexa.entity.ModuloAcademico;
 import com.chavescr.nexa.entity.TareaDefinicion;
+import com.chavescr.nexa.security.CustomUserDetails;
 import com.chavescr.nexa.service.AlcanceDocenteService;
+import com.chavescr.nexa.service.HistorialCambioService;
 import com.chavescr.nexa.service.TareaCalificacionService;
 import com.chavescr.nexa.service.TareaDefinicionService;
 
@@ -30,12 +35,14 @@ public class TareaDefinicionController {
     private final TareaDefinicionService service;
     private final AlcanceDocenteService alcanceDocenteService;
     private final TareaCalificacionService evaluacionService;
+    private final HistorialCambioService historialService;
 
     public TareaDefinicionController(TareaDefinicionService service, AlcanceDocenteService alcanceDocenteService,
-            TareaCalificacionService evaluacionService) {
+            TareaCalificacionService evaluacionService, HistorialCambioService historialService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
         this.evaluacionService = evaluacionService;
+        this.historialService = historialService;
     }
 
     @GetMapping
@@ -68,11 +75,15 @@ public class TareaDefinicionController {
     @PostMapping
     public String guardar(@RequestParam Long nivelId, @RequestParam Long materiaId,
             @ModelAttribute TareaDefinicion tarea, Model model, HttpSession session,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletRequest request, HttpServletResponse response,
+            @AuthenticationPrincipal CustomUserDetails usuario) {
         Long institucionId = requerirInstitucion(session);
         boolean esNueva = tarea.getId() == null;
         try {
-            service.guardarTarea(institucionId, nivelId, materiaId, tarea);
+            TareaDefinicion guardada = service.guardarTarea(institucionId, nivelId, materiaId, tarea);
+            historialService.registrar(institucionId, nivelId, materiaId, ModuloAcademico.TAREA, guardada.getId(),
+                    guardada.getTitulo(), esNueva ? AccionHistorial.CREAR : AccionHistorial.EDITAR,
+                    usuario != null ? usuario.getId() : null, usuario != null ? usuario.getNombre() : null);
             notificarGuardado(response, esNueva ? "Tarea creada correctamente" : "Tarea actualizada correctamente");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -84,10 +95,15 @@ public class TareaDefinicionController {
 
     @DeleteMapping("/{id}")
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response,
+            @AuthenticationPrincipal CustomUserDetails usuario) {
         Long institucionId = requerirInstitucion(session);
         try {
+            TareaDefinicion tarea = service.obtenerTarea(institucionId, id);
             service.eliminarTarea(institucionId, id);
+            historialService.registrar(institucionId, nivelId, materiaId, ModuloAcademico.TAREA, tarea.getId(),
+                    tarea.getTitulo(), AccionHistorial.ELIMINAR,
+                    usuario != null ? usuario.getId() : null, usuario != null ? usuario.getNombre() : null);
             notificarGuardado(response, "Tarea eliminada correctamente");
         } catch (IllegalArgumentException e) {
             notificarError(response, e.getMessage());

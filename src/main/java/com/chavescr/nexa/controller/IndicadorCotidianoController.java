@@ -4,6 +4,7 @@ import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 
 import java.util.List;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,9 +15,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.entity.AccionHistorial;
 import com.chavescr.nexa.entity.IndicadorCotidiano;
+import com.chavescr.nexa.entity.ModuloAcademico;
+import com.chavescr.nexa.security.CustomUserDetails;
 import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.EvaluacionCotidianaService;
+import com.chavescr.nexa.service.HistorialCambioService;
 import com.chavescr.nexa.service.IndicadorCotidianoService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,12 +35,15 @@ public class IndicadorCotidianoController {
     private final IndicadorCotidianoService service;
     private final AlcanceDocenteService alcanceDocenteService;
     private final EvaluacionCotidianaService evaluacionService;
+    private final HistorialCambioService historialService;
 
     public IndicadorCotidianoController(IndicadorCotidianoService service,
-            AlcanceDocenteService alcanceDocenteService, EvaluacionCotidianaService evaluacionService) {
+            AlcanceDocenteService alcanceDocenteService, EvaluacionCotidianaService evaluacionService,
+            HistorialCambioService historialService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
         this.evaluacionService = evaluacionService;
+        this.historialService = historialService;
     }
 
     @GetMapping
@@ -68,11 +76,15 @@ public class IndicadorCotidianoController {
     @PostMapping
     public String guardar(@RequestParam Long nivelId, @RequestParam Long materiaId,
             @ModelAttribute IndicadorCotidiano indicador, Model model, HttpSession session,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletRequest request, HttpServletResponse response,
+            @AuthenticationPrincipal CustomUserDetails usuario) {
         Long institucionId = requerirInstitucion(session);
         boolean esNuevo = indicador.getId() == null;
         try {
-            service.guardarIndicador(institucionId, nivelId, materiaId, indicador);
+            IndicadorCotidiano guardado = service.guardarIndicador(institucionId, nivelId, materiaId, indicador);
+            historialService.registrar(institucionId, nivelId, materiaId, ModuloAcademico.COTIDIANO, guardado.getId(),
+                    guardado.getTitulo(), esNuevo ? AccionHistorial.CREAR : AccionHistorial.EDITAR,
+                    usuario != null ? usuario.getId() : null, usuario != null ? usuario.getNombre() : null);
             notificarGuardado(response, esNuevo ? "Indicador creado correctamente" : "Indicador actualizado correctamente");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -84,10 +96,15 @@ public class IndicadorCotidianoController {
 
     @DeleteMapping("/{id}")
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response,
+            @AuthenticationPrincipal CustomUserDetails usuario) {
         Long institucionId = requerirInstitucion(session);
         try {
+            IndicadorCotidiano indicador = service.obtenerIndicador(institucionId, id);
             service.eliminarIndicador(institucionId, id);
+            historialService.registrar(institucionId, nivelId, materiaId, ModuloAcademico.COTIDIANO, indicador.getId(),
+                    indicador.getTitulo(), AccionHistorial.ELIMINAR,
+                    usuario != null ? usuario.getId() : null, usuario != null ? usuario.getNombre() : null);
             notificarGuardado(response, "Indicador eliminado correctamente");
         } catch (IllegalArgumentException e) {
             notificarError(response, e.getMessage());

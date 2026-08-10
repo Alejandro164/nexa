@@ -151,6 +151,10 @@
                         @click="activeTab = 'promedio'">
                         ✅ Promedio
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'historial' }"
+                        @click="activeTab = 'historial'">
+                        🕘 Historial
+                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'componentes' }"
                         @click="activeTab = 'componentes'">
                         ⚖️ Distribución Porcentual
@@ -221,6 +225,15 @@
                 </div>
             </div>
 
+            <!-- Historial de cambios -->
+            <div x-show="activeTab === 'historial'" class="tab-pane" x-cloak>
+                <div id="historial-panel" hx-get="/gestion-academica/historial" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando historial…</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Componentes de Calificación / Distribución Porcentual -->
             <div x-show="activeTab === 'componentes'" class="tab-pane" x-cloak>
                 <div id="distribucion-panel" hx-get="/gestion-academica/distribucion" hx-trigger="load" hx-swap="innerHTML">
@@ -232,64 +245,68 @@
 
         </div>
         <script>
-            // El promedio depende de asistencia, cotidiano, tareas, proyectos, exámenes, extraclase y
-            // la distribución porcentual; cualquier cambio en esas pestañas desactualiza la pestaña de
-            // Promedio (ya cargada aparte), así que se refresca cuando cualquiera de ellas avisa un cambio.
-            document.body.addEventListener('promedioDesactualizado', function () {
-                var panel = document.getElementById('promedio-panel');
-                if (panel) {
-                    htmx.ajax('GET', '/gestion-academica/promedio', { target: '#promedio-panel', swap: 'innerHTML' });
-                }
-            });
-            // Al guardar calificaciones de Cotidiano se refresca la tabla de indicadores para que
-            // la columna "Evaluados" muestre el conteo actualizado, manteniendo la sección/materia elegida.
-            document.body.addEventListener('cotidianoCalificado', function (event) {
-                var panel = document.getElementById('indicadores-panel');
-                if (panel && event.detail) {
-                    htmx.ajax('GET', '/gestion-academica/cotidiano/indicadores?nivelId=' + event.detail.nivelId
-                        + '&materiaId=' + event.detail.materiaId,
-                        { target: '#indicadores-panel', swap: 'innerHTML' });
-                }
-            });
-            // Igual que 'cotidianoCalificado', pero para la tabla de tareas asignadas.
-            document.body.addEventListener('tareaCalificada', function (event) {
-                var panel = document.getElementById('tareas-definiciones-panel');
-                if (panel && event.detail) {
-                    htmx.ajax('GET', '/gestion-academica/tareas/definiciones?nivelId=' + event.detail.nivelId
-                        + '&materiaId=' + event.detail.materiaId,
-                        { target: '#tareas-definiciones-panel', swap: 'innerHTML' });
-                }
-            });
-            // Igual que 'cotidianoCalificado', pero para la tabla de proyectos estudiantiles.
-            document.body.addEventListener('proyectoCalificado', function (event) {
-                var panel = document.getElementById('proyectos-panel');
-                if (panel && event.detail) {
-                    htmx.ajax('GET', '/gestion-academica/proyectos?nivelId=' + event.detail.nivelId
-                        + '&materiaId=' + event.detail.materiaId,
-                        { target: '#proyectos-panel', swap: 'innerHTML' });
-                }
-            });
-            // Igual que 'cotidianoCalificado', pero para la tabla de pruebas y exámenes.
-            document.body.addEventListener('examenCalificado', function (event) {
-                var panel = document.getElementById('examenes-panel');
-                if (panel && event.detail) {
-                    htmx.ajax('GET', '/gestion-academica/examenes?nivelId=' + event.detail.nivelId
-                        + '&materiaId=' + event.detail.materiaId,
-                        { target: '#examenes-panel', swap: 'innerHTML' });
-                }
-            });
-            // Igual que 'cotidianoCalificado', pero para la tabla de trabajos extraclase.
-            document.body.addEventListener('trabajoExtraclaseCalificado', function (event) {
-                var panel = document.getElementById('extraclase-panel');
-                if (panel && event.detail) {
-                    htmx.ajax('GET', '/gestion-academica/extraclase?nivelId=' + event.detail.nivelId
-                        + '&materiaId=' + event.detail.materiaId,
-                        { target: '#extraclase-panel', swap: 'innerHTML' });
-                }
-            });
-            // Guardado por lote en modales (ej. Evaluar indicador de Cotidiano): cierra el modal y
-            // muestra la notificación tanto si la operación fue exitosa como si falló.
+            // Todos estos listeners se registran en document.body/document, que persiste entre
+            // navegaciones htmx (a diferencia de esta página, que se recarga cada vez que se visita
+            // Gestión Académica) — sin este guard se acumularían duplicados en cada visita y cada
+            // evento dispararía múltiples peticiones redundantes.
             if (!window.gestionAcademicaEventsRegistrados) {
+                // El promedio depende de asistencia, cotidiano, tareas, proyectos, exámenes, extraclase y
+                // la distribución porcentual; cualquier cambio en esas pestañas desactualiza la pestaña de
+                // Promedio (ya cargada aparte), así que se refresca cuando cualquiera de ellas avisa un cambio.
+                document.body.addEventListener('promedioDesactualizado', function () {
+                    var panel = document.getElementById('promedio-panel');
+                    if (panel) {
+                        htmx.ajax('GET', '/gestion-academica/promedio', { target: '#promedio-panel', swap: 'innerHTML' });
+                    }
+                });
+                // Al guardar calificaciones de Cotidiano se refresca la tabla de indicadores para que
+                // la columna "Evaluados" muestre el conteo actualizado, manteniendo la sección/materia elegida.
+                document.body.addEventListener('cotidianoCalificado', function (event) {
+                    var panel = document.getElementById('indicadores-panel');
+                    if (panel && event.detail) {
+                        htmx.ajax('GET', '/gestion-academica/cotidiano/indicadores?nivelId=' + event.detail.nivelId
+                            + '&materiaId=' + event.detail.materiaId,
+                            { target: '#indicadores-panel', swap: 'innerHTML' });
+                    }
+                });
+                // Igual que 'cotidianoCalificado', pero para la tabla de tareas asignadas.
+                document.body.addEventListener('tareaCalificada', function (event) {
+                    var panel = document.getElementById('tareas-definiciones-panel');
+                    if (panel && event.detail) {
+                        htmx.ajax('GET', '/gestion-academica/tareas/definiciones?nivelId=' + event.detail.nivelId
+                            + '&materiaId=' + event.detail.materiaId,
+                            { target: '#tareas-definiciones-panel', swap: 'innerHTML' });
+                    }
+                });
+                // Igual que 'cotidianoCalificado', pero para la tabla de proyectos estudiantiles.
+                document.body.addEventListener('proyectoCalificado', function (event) {
+                    var panel = document.getElementById('proyectos-panel');
+                    if (panel && event.detail) {
+                        htmx.ajax('GET', '/gestion-academica/proyectos?nivelId=' + event.detail.nivelId
+                            + '&materiaId=' + event.detail.materiaId,
+                            { target: '#proyectos-panel', swap: 'innerHTML' });
+                    }
+                });
+                // Igual que 'cotidianoCalificado', pero para la tabla de pruebas y exámenes.
+                document.body.addEventListener('examenCalificado', function (event) {
+                    var panel = document.getElementById('examenes-panel');
+                    if (panel && event.detail) {
+                        htmx.ajax('GET', '/gestion-academica/examenes?nivelId=' + event.detail.nivelId
+                            + '&materiaId=' + event.detail.materiaId,
+                            { target: '#examenes-panel', swap: 'innerHTML' });
+                    }
+                });
+                // Igual que 'cotidianoCalificado', pero para la tabla de trabajos extraclase.
+                document.body.addEventListener('trabajoExtraclaseCalificado', function (event) {
+                    var panel = document.getElementById('extraclase-panel');
+                    if (panel && event.detail) {
+                        htmx.ajax('GET', '/gestion-academica/extraclase?nivelId=' + event.detail.nivelId
+                            + '&materiaId=' + event.detail.materiaId,
+                            { target: '#extraclase-panel', swap: 'innerHTML' });
+                    }
+                });
+                // Guardado por lote en modales (ej. Evaluar indicador de Cotidiano): cierra el modal y
+                // muestra la notificación tanto si la operación fue exitosa como si falló.
                 document.addEventListener('academicoGuardado', function (event) {
                     cerrarModalAcademico();
                     if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
@@ -300,6 +317,23 @@
                     cerrarModalAcademico();
                     if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
                         showNotification(event.detail.mensaje, 'error');
+                    }
+                });
+                // 'academicoGuardado' se dispara en cualquier creación/edición/eliminación/calificación
+                // exitosa de los 5 módulos, así que basta con escucharlo una vez para refrescar el
+                // historial; como el evento no trae nivelId/materiaId, se toman de los selects propios
+                // del panel (o se omite si el historial no está cargado o no tiene sección/materia elegida).
+                document.body.addEventListener('academicoGuardado', function () {
+                    var panel = document.getElementById('historial-panel');
+                    if (!panel) {
+                        return;
+                    }
+                    var nivelSelect = panel.querySelector('select[name="nivelId"]');
+                    var materiaSelect = panel.querySelector('select[name="materiaId"]');
+                    if (nivelSelect && materiaSelect && nivelSelect.value && materiaSelect.value) {
+                        htmx.ajax('GET', '/gestion-academica/historial?nivelId=' + nivelSelect.value
+                            + '&materiaId=' + materiaSelect.value,
+                            { target: '#historial-panel', swap: 'innerHTML' });
                     }
                 });
                 window.gestionAcademicaEventsRegistrados = true;

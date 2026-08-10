@@ -1,0 +1,77 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+            <div>
+                <h3 class="card-title">Historial de Cambios</h3>
+                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
+                    Creaciones, ediciones, eliminaciones y calificaciones de indicadores, tareas, proyectos, exámenes y trabajos extraclase.
+                </p>
+            </div>
+            <div style="border-top: 1px solid var(--border);"></div>
+            <div class="filters-bar">
+                <select class="form-input" style="max-width: 200px;" name="nivelId"
+                        hx-get="/gestion-academica/historial"
+                        hx-target="#historial-panel" hx-swap="innerHTML"
+                        hx-include="[name='materiaId']">
+                    <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
+                    <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
+                            th:selected="${nivelId != null and nivelId == n.id}"></option>
+                </select>
+                <select class="form-input" style="max-width: 220px;" name="materiaId"
+                        hx-get="/gestion-academica/historial"
+                        hx-target="#historial-panel" hx-swap="innerHTML"
+                        hx-include="[name='nivelId']">
+                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
+                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
+                            th:selected="${materiaId != null and materiaId == m.id}"></option>
+                </select>
+            </div>
+        </div>
+
+        <div th:if="${nivelId == null or materiaId == null}"
+             style="padding: 2rem; text-align:center; color: var(--text-secondary);">
+            Debes crear al menos una sección y una materia para ver el historial de cambios.
+        </div>
+
+        <th:block th:if="${nivelId != null and materiaId != null}">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Módulo</th>
+                            <th>Ítem</th>
+                            <th>Acción</th>
+                            <th>Usuario</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${eventos == null or eventos.empty}">
+                            <td colspan="6" class="table-empty">Aún no hay cambios registrados.</td>
+                        </tr>
+                        <tr th:each="e : ${eventos}">
+                            <td class="text-sm" th:text="${#temporals.format(e.fecha, 'dd/MM/yyyy HH:mm')}">01/01/2028 08:00</td>
+                            <td th:switch="${e.modulo.name()}">
+                                <span th:case="'COTIDIANO'">Cotidiano</span>
+                                <span th:case="'TAREA'">Tarea</span>
+                                <span th:case="'PROYECTO'">Proyecto</span>
+                                <span th:case="'EXAMEN'">Examen</span>
+                                <span th:case="'EXTRACLASE'">Extraclase</span>
+                            </td>
+                            <td><strong th:text="${e.itemTitulo}">Ítem</strong></td>
+                            <td th:switch="${e.accion.name()}">
+                                <span class="badge badge-success" th:case="'CREAR'">Creado</span>
+                                <span class="badge badge-primary" th:case="'EDITAR'">Editado</span>
+                                <span class="badge badge-warning" th:case="'ELIMINAR'">Eliminado</span>
+                                <span class="badge badge-info" th:case="'CALIFICAR'">Calificado</span>
+                            </td>
+                            <td th:text="${e.usuarioNombre != null ? e.usuarioNombre : 'Sistema'}">Usuario</td>
+                            <td class="text-sm text-muted" style="max-width: 320px;" th:text="${e.detalle != null ? e.detalle : '—'}">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </th:block>
+    </div>
+</div>

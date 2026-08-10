@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +14,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.dto.FilaEvaluacionCotidiana;
+import com.chavescr.nexa.entity.AccionHistorial;
+import com.chavescr.nexa.entity.ModuloAcademico;
+import com.chavescr.nexa.security.CustomUserDetails;
 import com.chavescr.nexa.service.EvaluacionCotidianaService;
+import com.chavescr.nexa.service.HistorialCambioService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,9 +30,11 @@ import jakarta.servlet.http.HttpSession;
 public class EvaluacionCotidianaController {
 
     private final EvaluacionCotidianaService service;
+    private final HistorialCambioService historialService;
 
-    public EvaluacionCotidianaController(EvaluacionCotidianaService service) {
+    public EvaluacionCotidianaController(EvaluacionCotidianaService service, HistorialCambioService historialService) {
         this.service = service;
+        this.historialService = historialService;
     }
 
     @GetMapping("/modal")
@@ -43,12 +51,14 @@ public class EvaluacionCotidianaController {
             @RequestParam(required = false) List<String> calificacion,
             @RequestParam(required = false) List<String> puntosObtenidos,
             @RequestParam(required = false) List<String> observacion,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response,
+            @AuthenticationPrincipal CustomUserDetails usuario) {
         exigirDocenteODirectorOAdmin(request);
         Long institucionId = requerirInstitucion(session);
         Long periodoId = service.obtenerPeriodoActivo(institucionId).getId();
 
         List<String> errores = new ArrayList<>();
+        List<String> calificados = new ArrayList<>();
         if (estudianteId != null) {
             for (int i = 0; i < estudianteId.size(); i++) {
                 String calStr = calificacion != null && i < calificacion.size() ? calificacion.get(i) : null;
@@ -60,13 +70,21 @@ public class EvaluacionCotidianaController {
                 try {
                     Integer cal = calStr != null && !calStr.isBlank() ? Integer.valueOf(calStr.trim()) : null;
                     Integer puntos = puntosStr != null && !puntosStr.isBlank() ? Integer.valueOf(puntosStr.trim()) : null;
-                    service.registrarCalificacion(institucionId, estudianteId.get(i), indicadorId, periodoId, cal, puntos, obs);
+                    FilaEvaluacionCotidiana fila = service.registrarCalificacion(institucionId, estudianteId.get(i),
+                            indicadorId, periodoId, cal, puntos, obs);
+                    calificados.add(fila.getEstudiante().getNombre() + ": " + fila.getCalificacion() + "%");
                 } catch (NumberFormatException e) {
                     errores.add("un valor inválido");
                 } catch (IllegalArgumentException e) {
                     errores.add(e.getMessage());
                 }
             }
+        }
+        if (!calificados.isEmpty()) {
+            String indicadorTitulo = service.obtenerIndicador(institucionId, indicadorId).getTitulo();
+            historialService.registrar(institucionId, nivelId, materiaId, ModuloAcademico.COTIDIANO, indicadorId,
+                    indicadorTitulo, AccionHistorial.CALIFICAR, usuario != null ? usuario.getId() : null,
+                    usuario != null ? usuario.getNombre() : null, String.join(", ", calificados));
         }
         String cotidianoCalificado = "\"cotidianoCalificado\":{\"nivelId\":" + nivelId + ",\"materiaId\":" + materiaId + "}";
         if (!errores.isEmpty()) {

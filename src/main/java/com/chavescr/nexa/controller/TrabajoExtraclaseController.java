@@ -4,6 +4,7 @@ import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 
 import java.util.List;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,8 +15,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.entity.AccionHistorial;
+import com.chavescr.nexa.entity.ModuloAcademico;
 import com.chavescr.nexa.entity.TrabajoDefinicion;
+import com.chavescr.nexa.security.CustomUserDetails;
 import com.chavescr.nexa.service.AlcanceDocenteService;
+import com.chavescr.nexa.service.HistorialCambioService;
 import com.chavescr.nexa.service.TrabajoExtraclaseService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,11 +33,13 @@ public class TrabajoExtraclaseController {
 
     private final TrabajoExtraclaseService service;
     private final AlcanceDocenteService alcanceDocenteService;
+    private final HistorialCambioService historialService;
 
     public TrabajoExtraclaseController(TrabajoExtraclaseService service,
-            AlcanceDocenteService alcanceDocenteService) {
+            AlcanceDocenteService alcanceDocenteService, HistorialCambioService historialService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
+        this.historialService = historialService;
     }
 
     @GetMapping
@@ -65,11 +72,15 @@ public class TrabajoExtraclaseController {
     @PostMapping
     public String guardar(@RequestParam Long nivelId, @RequestParam Long materiaId,
             @ModelAttribute TrabajoDefinicion trabajo, Model model, HttpSession session,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletRequest request, HttpServletResponse response,
+            @AuthenticationPrincipal CustomUserDetails usuario) {
         Long institucionId = requerirInstitucion(session);
         boolean esNuevo = trabajo.getId() == null;
         try {
-            service.guardarTrabajo(institucionId, nivelId, materiaId, trabajo);
+            TrabajoDefinicion guardado = service.guardarTrabajo(institucionId, nivelId, materiaId, trabajo);
+            historialService.registrar(institucionId, nivelId, materiaId, ModuloAcademico.EXTRACLASE, guardado.getId(),
+                    guardado.getTitulo(), esNuevo ? AccionHistorial.CREAR : AccionHistorial.EDITAR,
+                    usuario != null ? usuario.getId() : null, usuario != null ? usuario.getNombre() : null);
             notificarGuardado(response, esNuevo ? "Trabajo creado correctamente" : "Trabajo actualizado correctamente");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -81,10 +92,15 @@ public class TrabajoExtraclaseController {
 
     @DeleteMapping("/{id}")
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response,
+            @AuthenticationPrincipal CustomUserDetails usuario) {
         Long institucionId = requerirInstitucion(session);
         try {
+            TrabajoDefinicion trabajo = service.obtenerTrabajo(institucionId, id);
             service.eliminarTrabajo(institucionId, id);
+            historialService.registrar(institucionId, nivelId, materiaId, ModuloAcademico.EXTRACLASE, trabajo.getId(),
+                    trabajo.getTitulo(), AccionHistorial.ELIMINAR,
+                    usuario != null ? usuario.getId() : null, usuario != null ? usuario.getNombre() : null);
             notificarGuardado(response, "Trabajo eliminado correctamente");
         } catch (IllegalArgumentException e) {
             notificarError(response, e.getMessage());
