@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.chavescr.nexa.entity.IndicadorCotidiano;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
+import com.chavescr.nexa.repository.EvaluacionCotidianaRepository;
 import com.chavescr.nexa.repository.IndicadorCotidianoRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
@@ -19,12 +20,15 @@ public class IndicadorCotidianoService {
     private final IndicadorCotidianoRepository indicadorRepository;
     private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
+    private final EvaluacionCotidianaRepository evaluacionRepository;
 
     public IndicadorCotidianoService(IndicadorCotidianoRepository indicadorRepository,
-            NivelAcademicoRepository nivelRepository, MateriaRepository materiaRepository) {
+            NivelAcademicoRepository nivelRepository, MateriaRepository materiaRepository,
+            EvaluacionCotidianaRepository evaluacionRepository) {
         this.indicadorRepository = indicadorRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
+        this.evaluacionRepository = evaluacionRepository;
     }
 
     @Transactional(readOnly = true)
@@ -66,6 +70,11 @@ public class IndicadorCotidianoService {
                     "La suma de los indicadores no puede superar 100% (actual: " + sumaExistente + "%)");
         }
 
+        Integer puntosTotales = datos.getPuntosTotales();
+        if (puntosTotales != null && puntosTotales < 0) {
+            throw new IllegalArgumentException("Los puntos totales no pueden ser negativos");
+        }
+
         IndicadorCotidiano indicador = datos.getId() != null
                 ? obtenerIndicador(institucionId, datos.getId())
                 : new IndicadorCotidiano();
@@ -75,11 +84,16 @@ public class IndicadorCotidianoService {
         indicador.setTitulo(datos.getTitulo().trim());
         indicador.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
         indicador.setPorcentaje(porcentaje);
+        indicador.setPuntosTotales(puntosTotales);
         return indicadorRepository.save(indicador);
     }
 
     public void eliminarIndicador(Long institucionId, Long id) {
         IndicadorCotidiano indicador = obtenerIndicador(institucionId, id);
+        if (evaluacionRepository.existsByIndicadorId(id)) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar: el indicador ya tiene calificaciones registradas");
+        }
         indicadorRepository.delete(indicador);
     }
 }

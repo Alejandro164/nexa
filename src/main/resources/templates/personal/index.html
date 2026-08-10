@@ -9,10 +9,15 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Módulo de Personal</th:block>
-    <th:block layout:fragment="page-subtitle">Gestiona la asistencia, tareas, evaluaciones y el estado de presencia de docentes y administrativos</th:block>
+    <h2 layout:fragment="page-title">Módulo de Personal</h2>
+    <p layout:fragment="page-subtitle">Gestiona la asistencia, tareas, evaluaciones y el estado de presencia de docentes y administrativos</p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Módulo de Personal</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestiona la asistencia, tareas, evaluaciones y el estado de presencia de docentes y administrativos</p>
+    <main layout:fragment="content">
         <style>
             .config-tabs-container {
                 margin-bottom: 2rem;
@@ -184,6 +189,7 @@
             }
         </script>
     </main>
+    </th:block>
 
 </body>
 

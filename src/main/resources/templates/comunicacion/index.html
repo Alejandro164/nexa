@@ -8,10 +8,15 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Canal de Comunicación</th:block>
-    <th:block layout:fragment="page-subtitle">Comunícate con docentes, estudiantes y padres mediante mensajes internos, circulares y notificaciones globales</th:block>
+    <h2 layout:fragment="page-title">Canal de Comunicación</h2>
+    <p layout:fragment="page-subtitle">Comunícate con docentes, estudiantes y padres mediante mensajes internos, circulares y notificaciones globales</p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Canal de Comunicación</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Comunícate con docentes, estudiantes y padres mediante mensajes internos, circulares y notificaciones globales</p>
+    <main layout:fragment="content">
         <style>
             .config-tabs-container {
                 margin-bottom: 2rem;
@@ -154,6 +159,7 @@
 
         </div>
     </main>
+    </th:block>
 
 </body>
 

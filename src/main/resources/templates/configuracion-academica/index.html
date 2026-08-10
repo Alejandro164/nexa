@@ -8,10 +8,15 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Configuración Académica</th:block>
-    <th:block layout:fragment="page-subtitle">Administra la estructura académica y los programas de estudio</th:block>
+    <h2 layout:fragment="page-title">Configuración Académica</h2>
+    <p layout:fragment="page-subtitle">Administra la estructura académica y los programas de estudio</p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Configuración Académica</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Administra la estructura académica y los programas de estudio</p>
+    <main layout:fragment="content">
         <style>
             .config-tabs-container {
                 margin-bottom: 2rem;
@@ -924,5 +929,6 @@
             }
         </script>
     </main>
+    </th:block>
 </body>
 </html>

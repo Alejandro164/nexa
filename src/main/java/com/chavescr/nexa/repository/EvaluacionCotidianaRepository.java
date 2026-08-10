@@ -14,8 +14,13 @@ public interface EvaluacionCotidianaRepository extends JpaRepository<EvaluacionC
     List<EvaluacionCotidiana> findByInstitucionIdAndIndicadorIdAndPeriodoId(
             Long institucionId, Long indicadorId, Long periodoId);
 
+    List<EvaluacionCotidiana> findByInstitucionIdAndIndicadorIdInAndPeriodoId(
+            Long institucionId, List<Long> indicadorIds, Long periodoId);
+
     Optional<EvaluacionCotidiana> findByInstitucionIdAndEstudianteIdAndIndicadorIdAndPeriodoId(
             Long institucionId, Long estudianteId, Long indicadorId, Long periodoId);
+
+    boolean existsByIndicadorId(Long indicadorId);
 
     @Query("SELECT e FROM EvaluacionCotidiana e WHERE e.institucion.id = :institucionId " +
             "AND e.estudiante.nivelAcademico.id = :nivelId AND e.indicador.materia.id = :materiaId " +

@@ -9,10 +9,15 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Dashboard</th:block>
-    <th:block layout:fragment="page-subtitle">Panel de control de Nexa</th:block>
+    <h2 layout:fragment="page-title">Dashboard</h2>
+    <p layout:fragment="page-subtitle">Panel de control de Nexa</p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Dashboard</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Panel de control de Nexa</p>
+    <main layout:fragment="content">
 
         <style>
             .institucion-selector {
@@ -472,6 +477,7 @@
         </div>
 
     </main>
+    </th:block>
 
 </body>
 

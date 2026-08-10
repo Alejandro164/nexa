@@ -9,10 +9,15 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Instituciones</th:block>
-    <th:block layout:fragment="page-subtitle">Gestión central de instituciones educativas</th:block>
+    <h2 layout:fragment="page-title">Instituciones</h2>
+    <p layout:fragment="page-subtitle">Gestión central de instituciones educativas</p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Instituciones</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestión central de instituciones educativas</p>
+    <main layout:fragment="content">
 
         <div class="card" style="margin-bottom: 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -43,6 +48,7 @@
         <div id="modal-container" class="modal-overlay"></div>
 
     </main>
+    </th:block>
 
 </body>
 </html>

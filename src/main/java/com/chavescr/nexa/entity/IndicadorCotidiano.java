@@ -39,6 +39,9 @@ public class IndicadorCotidiano {
     @Column(nullable = false)
     private Integer porcentaje;
 
+    @Column(name = "puntos_totales")
+    private Integer puntosTotales;
+
     public Long getId() {
         return id;
     }
@@ -93,5 +96,13 @@ public class IndicadorCotidiano {
 
     public void setPorcentaje(Integer porcentaje) {
         this.porcentaje = porcentaje;
+    }
+
+    public Integer getPuntosTotales() {
+        return puntosTotales;
+    }
+
+    public void setPuntosTotales(Integer puntosTotales) {
+        this.puntosTotales = puntosTotales;
     }
 }

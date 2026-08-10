@@ -10,11 +10,17 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Sistema de Diseño & Componentes</th:block>
-    <th:block layout:fragment="page-subtitle">Biblioteca de elementos interactivos de alto nivel para la interfaz de
-        Nexa</th:block>
+    <h2 layout:fragment="page-title">Sistema de Diseño & Componentes</h2>
+    <p layout:fragment="page-subtitle">Biblioteca de elementos interactivos de alto nivel para la interfaz de
+        Nexa</p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Sistema de Diseño & Componentes</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Biblioteca de elementos interactivos de alto nivel para la interfaz de
+        Nexa</p>
+    <main layout:fragment="content">
 
         <!-- ═══════════════════════════════════════════
              PALETA DE COLORES
@@ -1642,6 +1648,7 @@
         </button>
 
     </main>
+    </th:block>
 
 </body>
 

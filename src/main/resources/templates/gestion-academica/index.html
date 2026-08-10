@@ -8,11 +8,16 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Gestión Académica</th:block>
-    <th:block layout:fragment="page-subtitle">Controla la asistencia, trabajo cotidiano, tareas, proyectos y exámenes
-    </th:block>
+    <h2 layout:fragment="page-title">Gestión Académica</h2>
+    <p layout:fragment="page-subtitle">Controla la asistencia, trabajo cotidiano, tareas, proyectos y exámenes
+    </p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Gestión Académica</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Controla la asistencia, trabajo cotidiano, tareas, proyectos y exámenes</p>
+    <main layout:fragment="content">
         <style>
             .config-tabs-container {
                 margin-bottom: 2rem;
@@ -163,38 +168,12 @@
             </div>
 
             <!-- Cotidiano -->
-            <div x-show="activeTab === 'cotidiano'" class="tab-pane" x-cloak
-                 x-data="{ subTabCotidiano: 'indicadores' }">
-
-                <div class="reg-tabs">
-                    <button class="reg-tab" :class="{ 'active': subTabCotidiano === 'indicadores' }"
-                            @click="subTabCotidiano = 'indicadores'">
-                        📌 Indicadores de Trabajo Cotidiano
-                    </button>
-                    <button class="reg-tab" :class="{ 'active': subTabCotidiano === 'evaluacion' }"
-                            @click="subTabCotidiano = 'evaluacion'">
-                        ✍️ Evaluación de Trabajo Cotidiano
-                    </button>
-                </div>
-
-                <!-- Sub-tab: Indicadores -->
-                <div x-show="subTabCotidiano === 'indicadores'">
-                    <div id="indicadores-panel" hx-get="/gestion-academica/cotidiano/indicadores" hx-trigger="load" hx-swap="innerHTML">
-                        <div class="card">
-                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando indicadores…</div>
-                        </div>
+            <div x-show="activeTab === 'cotidiano'" class="tab-pane" x-cloak>
+                <div id="indicadores-panel" hx-get="/gestion-academica/cotidiano/indicadores" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando indicadores…</div>
                     </div>
                 </div>
-
-                <!-- Sub-tab: Evaluación -->
-                <div x-show="subTabCotidiano === 'evaluacion'">
-                    <div id="evaluacion-panel" hx-get="/gestion-academica/cotidiano/evaluacion" hx-trigger="load" hx-swap="innerHTML">
-                        <div class="card">
-                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando evaluaciones…</div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
             <!-- Tareas -->
@@ -279,15 +258,6 @@
 
         </div>
         <script>
-            // Indicadores y Evaluación de trabajo cotidiano se cargan por separado desde el arranque
-            // de la página (ambos hx-trigger="load"); si se crea/edita/elimina un indicador, la pestaña
-            // de Evaluación (ya cargada) queda desactualizada hasta que se refresque explícitamente.
-            document.body.addEventListener('indicadorCotidianoActualizado', function () {
-                var panel = document.getElementById('evaluacion-panel');
-                if (panel) {
-                    htmx.ajax('GET', '/gestion-academica/cotidiano/evaluacion', { target: '#evaluacion-panel', swap: 'innerHTML' });
-                }
-            });
             document.body.addEventListener('tareaDefinicionActualizada', function () {
                 var panel = document.getElementById('tareas-evaluacion-panel');
                 if (panel) {
@@ -303,8 +273,36 @@
                     htmx.ajax('GET', '/gestion-academica/promedio', { target: '#promedio-panel', swap: 'innerHTML' });
                 }
             });
+            // Al guardar calificaciones de Cotidiano se refresca la tabla de indicadores para que
+            // la columna "Evaluados" muestre el conteo actualizado, manteniendo la sección/materia elegida.
+            document.body.addEventListener('cotidianoCalificado', function (event) {
+                var panel = document.getElementById('indicadores-panel');
+                if (panel && event.detail) {
+                    htmx.ajax('GET', '/gestion-academica/cotidiano/indicadores?nivelId=' + event.detail.nivelId
+                        + '&materiaId=' + event.detail.materiaId,
+                        { target: '#indicadores-panel', swap: 'innerHTML' });
+                }
+            });
+            // Guardado por lote en modales (ej. Evaluar indicador de Cotidiano): cierra el modal y
+            // muestra la notificación tanto si la operación fue exitosa como si falló.
+            if (!window.gestionAcademicaEventsRegistrados) {
+                document.addEventListener('academicoGuardado', function (event) {
+                    cerrarModalAcademico();
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje);
+                    }
+                });
+                document.addEventListener('academicoError', function (event) {
+                    cerrarModalAcademico();
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje, 'error');
+                    }
+                });
+                window.gestionAcademicaEventsRegistrados = true;
+            }
         </script>
     </main>
+    </th:block>
 
 </body>
 

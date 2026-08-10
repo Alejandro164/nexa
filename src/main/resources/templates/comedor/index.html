@@ -8,10 +8,15 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Módulo de Comedor</th:block>
-    <th:block layout:fragment="page-subtitle">Gestiona el menú diario de alimentación, control de asistencia al comedor y restricciones de salud</th:block>
+    <h2 layout:fragment="page-title">Módulo de Comedor</h2>
+    <p layout:fragment="page-subtitle">Gestiona el menú diario de alimentación, control de asistencia al comedor y restricciones de salud</p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Módulo de Comedor</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestiona el menú diario de alimentación, control de asistencia al comedor y restricciones de salud</p>
+    <main layout:fragment="content">
         <style>
             .config-tabs-container {
                 margin-bottom: 2rem;
@@ -172,6 +177,7 @@
 
         </div>
     </main>
+    </th:block>
 
 </body>
 

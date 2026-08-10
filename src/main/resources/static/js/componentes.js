@@ -756,6 +756,43 @@ function cerrarModalAcademico() {
     }, 180);
 }
 
+// Recalcula en el cliente la calificación (puntos obtenidos / puntos totales * 100) de una fila de
+// evaluación, sin ida y vuelta al servidor, y valida que los puntos ingresados no superen el total
+// del indicador (borde rojo en el input + mensaje arriba del modal). El guardado real ocurre solo
+// al pulsar "Guardar calificaciones".
+function calcularCalificacionDesdeInput(input, puntosTotales) {
+    var fila = input.closest('tr');
+    var span = fila ? fila.querySelector('.calificacion-calculada') : null;
+    var puntos = parseFloat(input.value);
+    var excede = !isNaN(puntos) && !!puntosTotales && puntos > puntosTotales;
+
+    input.classList.toggle('input-invalido', excede);
+
+    if (span) {
+        span.textContent = (!isNaN(puntos) && puntosTotales) ? Math.round((puntos / puntosTotales) * 100) + '%' : '—';
+    }
+
+    var dialog = input.closest('.modal-dialog');
+    if (!dialog) return;
+    var hayInvalidos = dialog.querySelectorAll('.input-invalido').length > 0;
+
+    var errorBox = dialog.querySelector('.validacion-puntos-error');
+    if (errorBox) {
+        if (hayInvalidos) {
+            errorBox.textContent = 'Los puntos obtenidos no pueden superar el total de ' + puntosTotales + ' puntos.';
+            errorBox.style.display = '';
+        } else {
+            errorBox.style.display = 'none';
+        }
+    }
+
+    var btnGuardar = dialog.querySelector('.btn-guardar-calificaciones');
+    if (btnGuardar) {
+        btnGuardar.disabled = hayInvalidos;
+        btnGuardar.classList.toggle('btn-disabled', hayInvalidos);
+    }
+}
+
 // Close modal on backdrop click or Escape
 if (!window._modalGlobalEventsRegistered) {
     document.addEventListener('keydown', function (e) {

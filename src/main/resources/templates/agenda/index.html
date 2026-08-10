@@ -8,11 +8,17 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Agenda y Actividades</th:block>
-    <th:block layout:fragment="page-subtitle">Organiza tu calendario de clases, programa citas de atención a padres y
-        gestiona aulas virtuales</th:block>
+    <h2 layout:fragment="page-title">Agenda y Actividades</h2>
+    <p layout:fragment="page-subtitle">Organiza tu calendario de clases, programa citas de atención a padres y
+        gestiona aulas virtuales</p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Agenda y Actividades</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Organiza tu calendario de clases, programa citas de atención a padres y
+        gestiona aulas virtuales</p>
+    <main layout:fragment="content">
         <style>
             .config-tabs-container {
                 margin-bottom: 2rem;
@@ -163,6 +169,7 @@
             </div>
         </div>
     </main>
+    </th:block>
 
 </body>
 

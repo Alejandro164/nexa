@@ -47,19 +47,40 @@
                             <th>Indicador</th>
                             <th>Descripción</th>
                             <th>Porcentaje</th>
+                            <th>Puntos Totales</th>
+                            <th>Evaluados</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:if="${indicadores == null or indicadores.empty}">
-                            <td colspan="4" class="table-empty">No hay indicadores definidos.</td>
+                            <td colspan="6" class="table-empty">No hay indicadores definidos.</td>
                         </tr>
                         <tr th:each="i : ${indicadores}">
                             <td><strong th:text="${i.titulo}">Indicador</strong></td>
                             <td th:text="${i.descripcion}">Descripción</td>
                             <td><span class="badge badge-primary" th:text="${i.porcentaje} + '%'">15%</span></td>
                             <td>
+                                <span th:if="${i.puntosTotales != null}" th:text="${i.puntosTotales} + ' pts'">50 pts</span>
+                                <span th:unless="${i.puntosTotales != null}" class="text-muted">N/A</span>
+                            </td>
+                            <td>
+                                <span th:if="${periodoActivo == null}" class="text-muted">Sin período activo</span>
+                                <th:block th:if="${periodoActivo != null}"
+                                          th:with="evaluados=${evaluadosPorIndicador.get(i.id) != null ? evaluadosPorIndicador.get(i.id) : 0},
+                                                    pendientes=${totalEstudiantesSeccion - evaluados}">
+                                    <span th:text="${evaluados} + ' / ' + ${totalEstudiantesSeccion}">0 / 20</span>
+                                    <div class="text-muted text-sm"
+                                         th:text="${pendientes} + (${pendientes} == 1 ? ' pendiente' : ' pendientes')">0 pendientes</div>
+                                </th:block>
+                            </td>
+                            <td>
                                 <div class="table-actions">
+                                    <button class="btn-xs btn-ghost"
+                                            th:attr="hx-get='/gestion-academica/cotidiano/evaluacion/modal?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId} + '&indicadorId=' + ${i.id}"
+                                            hx-target="#modal-container" hx-swap="innerHTML"
+                                            onclick="abrirModalAcademico()"
+                                            title="Evaluar">📝</button>
                                     <button class="btn-xs btn-ghost"
                                             th:attr="hx-get='/gestion-academica/cotidiano/indicadores/form/' + ${i.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
                                             hx-target="#modal-container" hx-swap="innerHTML"
@@ -80,6 +101,8 @@
                         <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
                             <td colspan="2">Total asignado</td>
                             <td><span style="color: var(--primary);" th:text="${totalAsignado} + '%'">0%</span></td>
+                            <td></td>
+                            <td></td>
                             <td></td>
                         </tr>
                     </tfoot>

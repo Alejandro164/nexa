@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.IndicadorCotidiano;
 import com.chavescr.nexa.service.AlcanceDocenteService;
+import com.chavescr.nexa.service.EvaluacionCotidianaService;
 import com.chavescr.nexa.service.IndicadorCotidianoService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,11 +29,13 @@ public class IndicadorCotidianoController {
 
     private final IndicadorCotidianoService service;
     private final AlcanceDocenteService alcanceDocenteService;
+    private final EvaluacionCotidianaService evaluacionService;
 
     public IndicadorCotidianoController(IndicadorCotidianoService service,
-            AlcanceDocenteService alcanceDocenteService) {
+            AlcanceDocenteService alcanceDocenteService, EvaluacionCotidianaService evaluacionService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
+        this.evaluacionService = evaluacionService;
     }
 
     @GetMapping
@@ -67,11 +70,13 @@ public class IndicadorCotidianoController {
             @ModelAttribute IndicadorCotidiano indicador, Model model, HttpSession session,
             HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
+        boolean esNuevo = indicador.getId() == null;
         try {
             service.guardarIndicador(institucionId, nivelId, materiaId, indicador);
-            notificarIndicadoresActualizados(response);
+            notificarGuardado(response, esNuevo ? "Indicador creado correctamente" : "Indicador actualizado correctamente");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
+            notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/cotidiano/indicadores :: content";
@@ -81,15 +86,27 @@ public class IndicadorCotidianoController {
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        service.eliminarIndicador(institucionId, id);
-        notificarIndicadoresActualizados(response);
+        try {
+            service.eliminarIndicador(institucionId, id);
+            notificarGuardado(response, "Indicador eliminado correctamente");
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
+        }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/cotidiano/indicadores :: content";
     }
 
-    /** Avisa a la pestaña de Evaluación (ya cargada aparte) y a Promedio que los indicadores cambiaron. */
-    private void notificarIndicadoresActualizados(HttpServletResponse response) {
-        response.setHeader("HX-Trigger", "indicadorCotidianoActualizado, promedioDesactualizado");
+    private void notificarGuardado(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoGuardado\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"},"
+                + "\"promedioDesactualizado\":\"\"}");
+    }
+
+    private void notificarError(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoError\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"}}");
+    }
+
+    private String escaparJson(String texto) {
+        return texto.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long docenteId) {
@@ -105,12 +122,22 @@ public class IndicadorCotidianoController {
                 ? service.listarIndicadores(institucionId, nivelId, materiaId)
                 : List.of();
         int total = indicadores.stream().mapToInt(IndicadorCotidiano::getPorcentaje).sum();
+
+        var periodoActivo = evaluacionService.obtenerPeriodoActivoOpcional(institucionId);
+        int totalEstudiantesSeccion = nivelId != null ? evaluacionService.contarEstudiantesActivos(nivelId) : 0;
+        var evaluadosPorIndicador = evaluacionService.contarEvaluadosPorIndicador(institucionId,
+                indicadores.stream().map(IndicadorCotidiano::getId).toList(),
+                periodoActivo != null ? periodoActivo.getId() : null);
+
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("indicadores", indicadores);
         model.addAttribute("totalAsignado", total);
+        model.addAttribute("periodoActivo", periodoActivo);
+        model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
+        model.addAttribute("evaluadosPorIndicador", evaluadosPorIndicador);
     }
 
     private Long requerirInstitucion(HttpSession session) {

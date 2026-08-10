@@ -8,11 +8,16 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">☁️ Nube Nexa</th:block>
-    <th:block layout:fragment="page-subtitle">Gestiona tus documentos, plantillas y archivos institucionales en la nube
-    </th:block>
+    <h2 layout:fragment="page-title">☁️ Nube Nexa</h2>
+    <p layout:fragment="page-subtitle">Gestiona tus documentos, plantillas y archivos institucionales en la nube
+    </p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">☁️ Nube Nexa</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestiona tus documentos, plantillas y archivos institucionales en la nube</p>
+    <main layout:fragment="content">
         <style>
             /* Nube Nexa UI Styles */
             .nube-container {
@@ -1479,6 +1484,7 @@
             </div>
         </div>
     </main>
+    </th:block>
 
 </body>
 

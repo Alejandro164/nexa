@@ -1374,6 +1374,15 @@
 
 .btn-primary:hover { background-color: #1e3a5f; }
 
+.btn-primary:disabled,
+.btn-primary.btn-disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+.btn-primary:disabled:hover,
+.btn-primary.btn-disabled:hover { background-color: #94a3b8; }
+
 .btn-secondary {
     display: inline-flex;
     align-items: center;
@@ -1400,25 +1409,33 @@
     overflow-y: auto;
 }
 
-.modal-dialog .modal-footer {
+/* Caso 1: .modal-footer anidado dentro de .modal-body (la mayoría de formularios). Se descuenta
+   el padding del body con margen negativo para que quede a ras del diálogo, y se repone su propio
+   padding. */
+.modal-body .modal-footer,
+.modal-body .modal-form-footer {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
     padding: 1rem 1.5rem;
     border-top: 1px solid #e2e8f0;
     background: #f8fafc;
-    margin: 0 -1.5rem -1.5rem;
+    margin: 1.5rem -1.5rem -1.5rem;
 }
 
-/* Alias para compatibilidad (equivalente a .modal-footer) */
-.modal-form-footer {
+/* Caso 2: .modal-footer como hermano directo de .modal-body, fuera de ella (modales con contenido
+   scrollable donde el footer debe quedar fijo, ej. listas largas de estudiantes). Al no estar
+   anidado no hay padding del padre que descontar, así que NO lleva margen negativo: usar ese mismo
+   margen aquí lo saca del .modal-dialog y "overflow: hidden" lo recorta, dejando los botones sin
+   espacio abajo/derecha. */
+.modal-dialog > .modal-footer,
+.modal-dialog > .modal-form-footer {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
     padding: 1rem 1.5rem;
     border-top: 1px solid #e2e8f0;
     background: #f8fafc;
-    margin: 0 -1.5rem -1.5rem;
 }
 
 /* ── Banner de alerta en formulario ──────────────────────────── */
@@ -1577,6 +1594,80 @@
     color: var(--text-secondary);
     font-size: 0.78rem;
     pointer-events: none;
+}
+
+/* Botón de información con tooltip: reemplaza texto de ayuda siempre visible bajo un campo
+   por un ícono al lado que muestra el mismo texto al pasar el mouse o enfocar con teclado. */
+.info-tooltip {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+}
+.info-tooltip-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: var(--input-bg, #f1f5f9);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.15s, color 0.15s;
+}
+.info-tooltip-btn svg { width: 14px; height: 14px; }
+.info-tooltip-btn:hover,
+.info-tooltip-btn:focus-visible {
+    background: var(--primary);
+    color: #fff;
+    outline: none;
+}
+.info-tooltip-text {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    width: 240px;
+    background: #1e293b;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.45;
+    padding: 8px 10px;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+    z-index: 30;
+    pointer-events: none;
+}
+.info-tooltip-text::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 10px;
+    border: 6px solid transparent;
+    border-top-color: #1e293b;
+}
+.info-tooltip:hover .info-tooltip-text,
+.info-tooltip-btn:focus-visible + .info-tooltip-text {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s;
+}
+
+/* Validación en vivo (ej. puntos obtenidos > puntos totales): borde y anillo de foco en rojo
+   en vez del azul por defecto de .form-input:focus. */
+.form-input.input-invalido {
+    border-color: #dc2626;
+}
+.form-input.input-invalido:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
 }
 
 .filter-input {

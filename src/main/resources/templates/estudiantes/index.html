@@ -8,10 +8,15 @@
 
 <body>
 
-    <th:block layout:fragment="page-title">Módulo de Estudiantes</th:block>
-    <th:block layout:fragment="page-subtitle">Administra los expedientes estudiantiles, matrículas, encargados y adecuaciones especiales</th:block>
+    <h2 layout:fragment="page-title">Módulo de Estudiantes</h2>
+    <p layout:fragment="page-subtitle">Administra los expedientes estudiantiles, matrículas, encargados y adecuaciones especiales</p>
 
-    <main layout:fragment="content" th:fragment="htmx-content">
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Módulo de Estudiantes</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Administra los expedientes estudiantiles, matrículas, encargados y adecuaciones especiales</p>
+    <main layout:fragment="content">
         <style>
             .config-tabs-container {
                 margin-bottom: 2rem;
@@ -234,6 +239,7 @@
 
         <div th:replace="~{configuracion-academica/components/confirmar-eliminacion :: modal}"></div>
     </main>
+    </th:block>
 
 </body>
 
