@@ -260,6 +260,15 @@
                         { target: '#tareas-definiciones-panel', swap: 'innerHTML' });
                 }
             });
+            // Igual que 'cotidianoCalificado', pero para la tabla de proyectos estudiantiles.
+            document.body.addEventListener('proyectoCalificado', function (event) {
+                var panel = document.getElementById('proyectos-panel');
+                if (panel && event.detail) {
+                    htmx.ajax('GET', '/gestion-academica/proyectos?nivelId=' + event.detail.nivelId
+                        + '&materiaId=' + event.detail.materiaId,
+                        { target: '#proyectos-panel', swap: 'innerHTML' });
+                }
+            });
             // Guardado por lote en modales (ej. Evaluar indicador de Cotidiano): cierra el modal y
             // muestra la notificación tanto si la operación fue exitosa como si falló.
             if (!window.gestionAcademicaEventsRegistrados) {

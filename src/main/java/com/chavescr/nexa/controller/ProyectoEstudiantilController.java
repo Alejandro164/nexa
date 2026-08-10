@@ -2,14 +2,13 @@ package com.chavescr.nexa.controller;
 
 import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,36 +37,45 @@ public class ProyectoEstudiantilController {
 
     @GetMapping
     public String proyectos(@RequestParam(required = false) Long nivelId,
-            @RequestParam(required = false) Long materiaId,
-            @RequestParam(required = false) Long proyectoId,
-            Model model, HttpSession session, HttpServletRequest request) {
+            @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
+            HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, nivelId, materiaId, proyectoId, docenteIdSiAplica(request, session));
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/proyectos/proyectos :: content";
     }
 
-    @PostMapping("/nuevo")
-    public String nuevoProyecto(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
-            HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
-        ProyectoDefinicion creado = service.crearProyecto(institucionId, nivelId, materiaId);
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, creado.getId(), docenteIdSiAplica(request, session));
-        return "gestion-academica/proyectos/proyectos :: content";
+    @GetMapping("/form")
+    public String nuevoProyecto(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model) {
+        model.addAttribute("proyecto", new ProyectoDefinicion());
+        model.addAttribute("nivelId", nivelId);
+        model.addAttribute("materiaId", materiaId);
+        return "gestion-academica/proyectos/proyecto-form :: form-content";
     }
 
-    @PostMapping("/{id}/actualizar")
-    public String actualizarProyecto(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
-            @RequestParam(required = false) Integer porcentaje, @RequestParam(required = false) Integer puntosTotales,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+    @GetMapping("/form/{id}")
+    public String editarProyecto(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
+            Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
+        model.addAttribute("proyecto", service.obtenerProyecto(institucionId, id));
+        model.addAttribute("nivelId", nivelId);
+        model.addAttribute("materiaId", materiaId);
+        return "gestion-academica/proyectos/proyecto-form :: form-content";
+    }
+
+    @PostMapping
+    public String guardar(@RequestParam Long nivelId, @RequestParam Long materiaId,
+            @ModelAttribute ProyectoDefinicion proyecto, Model model, HttpSession session,
+            HttpServletRequest request, HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        boolean esNuevo = proyecto.getId() == null;
         try {
-            service.actualizarProyecto(institucionId, id, porcentaje, puntosTotales);
-            response.setHeader("HX-Trigger", "promedioDesactualizado");
+            service.guardarProyecto(institucionId, nivelId, materiaId, proyecto);
+            notificarGuardado(response, esNuevo ? "Proyecto creado correctamente" : "Proyecto actualizado correctamente");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
+            notificarError(response, e.getMessage());
         }
-        cargarPanel(model, institucionId, nivelId, materiaId, id, docenteIdSiAplica(request, session));
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/proyectos/proyectos :: content";
     }
 
@@ -75,50 +83,30 @@ public class ProyectoEstudiantilController {
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        service.eliminarProyecto(institucionId, id);
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, null, docenteIdSiAplica(request, session));
+        try {
+            service.eliminarProyecto(institucionId, id);
+            notificarGuardado(response, "Proyecto eliminado correctamente");
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
+        }
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/proyectos/proyectos :: content";
     }
 
-    @PostMapping("/guardar-lote")
-    public String guardarLote(@RequestParam Long nivelId, @RequestParam Long materiaId, @RequestParam Long proyectoId,
-            @RequestParam(required = false) List<Long> estudianteId,
-            @RequestParam(required = false) List<String> puntosObtenidos,
-            @RequestParam(required = false) List<String> observacion,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        exigirDocenteODirectorOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
-
-        List<String> errores = new ArrayList<>();
-        if (estudianteId != null) {
-            for (int i = 0; i < estudianteId.size(); i++) {
-                String puntosStr = puntosObtenidos != null && i < puntosObtenidos.size() ? puntosObtenidos.get(i) : null;
-                if (puntosStr == null || puntosStr.isBlank()) {
-                    continue;
-                }
-                String obs = observacion != null && i < observacion.size() ? observacion.get(i) : null;
-                try {
-                    Integer puntos = Integer.valueOf(puntosStr.trim());
-                    service.guardarNota(institucionId, proyectoId, estudianteId.get(i), puntos, obs);
-                } catch (NumberFormatException e) {
-                    errores.add("unos puntos obtenidos inválidos");
-                } catch (IllegalArgumentException e) {
-                    errores.add(e.getMessage());
-                }
-            }
-        }
-        if (!errores.isEmpty()) {
-            model.addAttribute("error",
-                    errores.size() + " calificación(es) no se guardaron: " + String.join("; ", errores.stream().distinct().toList()));
-        }
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, proyectoId, docenteIdSiAplica(request, session));
-        return "gestion-academica/proyectos/proyectos :: content";
+    private void notificarGuardado(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoGuardado\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"},"
+                + "\"promedioDesactualizado\":\"\"}");
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long proyectoId,
-            Long docenteId) {
+    private void notificarError(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoError\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"}}");
+    }
+
+    private String escaparJson(String texto) {
+        return texto.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long docenteId) {
         var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
         var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
         if (nivelId == null && !niveles.isEmpty()) {
@@ -127,30 +115,25 @@ public class ProyectoEstudiantilController {
         if (materiaId == null && !materias.isEmpty()) {
             materiaId = materias.get(0).getId();
         }
-        var periodoActivo = service.obtenerPeriodoActivo(institucionId);
-        var proyectos = nivelId != null && materiaId != null
+
+        var periodoActivo = service.obtenerPeriodoActivoOpcional(institucionId);
+        List<ProyectoDefinicion> proyectos = nivelId != null && materiaId != null && periodoActivo != null
                 ? service.listarProyectos(institucionId, nivelId, materiaId, periodoActivo.getId())
-                : List.<ProyectoDefinicion>of();
-        Long proyectoSolicitado = proyectoId;
-        if (proyectoSolicitado == null || proyectos.stream().noneMatch(p -> p.getId().equals(proyectoSolicitado))) {
-            proyectoId = proyectos.isEmpty() ? null : proyectos.get(0).getId();
-        }
-        Long proyectoFinal = proyectoId;
-        ProyectoDefinicion proyectoSeleccionado = proyectoFinal != null
-                ? proyectos.stream().filter(p -> p.getId().equals(proyectoFinal)).findFirst().orElse(null)
-                : null;
+                : List.of();
+        int total = proyectos.stream().mapToInt(ProyectoDefinicion::getPorcentaje).sum();
+
+        int totalEstudiantesSeccion = nivelId != null ? service.contarEstudiantesActivos(nivelId) : 0;
+        var evaluadosPorProyecto = service.contarEvaluadosPorProyecto(proyectos.stream().map(ProyectoDefinicion::getId).toList());
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
-        model.addAttribute("proyectos", proyectos);
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
-        model.addAttribute("proyectoId", proyectoId);
-        model.addAttribute("proyectoSeleccionado", proyectoSeleccionado);
+        model.addAttribute("proyectos", proyectos);
+        model.addAttribute("totalAsignado", total);
         model.addAttribute("periodoActivo", periodoActivo);
-        model.addAttribute("filas", proyectoSeleccionado != null
-                ? service.listarNotas(institucionId, proyectoSeleccionado.getId())
-                : List.of());
+        model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
+        model.addAttribute("evaluadosPorProyecto", evaluadosPorProyecto);
     }
 
     private Long requerirInstitucion(HttpSession session) {
@@ -159,13 +142,6 @@ public class ProyectoEstudiantilController {
             throw new InstitucionNoSeleccionadaException();
         }
         return id;
-    }
-
-    private void exigirDocenteODirectorOAdmin(HttpServletRequest request) {
-        if (!request.isUserInRole("ROLE_DOCENTE") && !request.isUserInRole("ROLE_DIRECTOR")
-                && !request.isUserInRole("ROLE_ADMIN")) {
-            throw new AccessDeniedException("Solo docentes, directores o administradores pueden evaluar");
-        }
     }
 
     private Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {

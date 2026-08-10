@@ -10,7 +10,11 @@ import com.chavescr.nexa.entity.ProyectoCalificacion;
 public interface ProyectoCalificacionRepository extends JpaRepository<ProyectoCalificacion, Long> {
     List<ProyectoCalificacion> findByProyectoDefinicionId(Long proyectoDefinicionId);
 
+    List<ProyectoCalificacion> findByProyectoDefinicionIdIn(List<Long> proyectoDefinicionIds);
+
     Optional<ProyectoCalificacion> findByProyectoDefinicionIdAndEstudianteId(Long proyectoDefinicionId, Long estudianteId);
 
     List<ProyectoCalificacion> findByProyectoDefinicion_PeriodoIdAndProyectoDefinicion_MateriaId(Long periodoId, Long materiaId);
+
+    boolean existsByProyectoDefinicionId(Long proyectoDefinicionId);
 }

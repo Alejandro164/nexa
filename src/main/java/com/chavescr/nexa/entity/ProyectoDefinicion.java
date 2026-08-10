@@ -34,10 +34,16 @@ public class ProyectoDefinicion {
     @JoinColumn(name = "materia_id", nullable = false)
     private Materia materia;
 
-    @Column
+    @Column(nullable = false, length = 200)
+    private String titulo;
+
+    @Column(length = 1000)
+    private String descripcion;
+
+    @Column(nullable = false)
     private Integer porcentaje;
 
-    @Column(name = "puntos_totales")
+    @Column(name = "puntos_totales", nullable = false)
     private Integer puntosTotales;
 
     public Long getId() {
@@ -78,6 +84,22 @@ public class ProyectoDefinicion {
 
     public void setMateria(Materia materia) {
         this.materia = materia;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 
     public Integer getPorcentaje() {

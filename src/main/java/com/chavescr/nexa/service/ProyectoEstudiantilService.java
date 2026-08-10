@@ -52,6 +52,14 @@ public class ProyectoEstudiantilService {
                 .orElseThrow(() -> new IllegalArgumentException("No hay un período académico activo"));
     }
 
+    /** Igual que {@link #obtenerPeriodoActivo}, pero null en vez de lanzar si no hay ninguno activo. */
+    @Transactional(readOnly = true)
+    public PeriodoAcademico obtenerPeriodoActivoOpcional(Long institucionId) {
+        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
+                .findFirst()
+                .orElse(null);
+    }
+
     @Transactional(readOnly = true)
     public List<ProyectoDefinicion> listarProyectos(Long institucionId, Long nivelId, Long materiaId, Long periodoId) {
         return proyectoRepository.findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
@@ -64,50 +72,78 @@ public class ProyectoEstudiantilService {
                 .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado"));
     }
 
-    public ProyectoDefinicion crearProyecto(Long institucionId, Long nivelId, Long materiaId) {
+    /** Cuántos estudiantes activos tiene la sección; para mostrar "evaluados / total" junto a los proyectos. */
+    @Transactional(readOnly = true)
+    public int contarEstudiantesActivos(Long nivelId) {
+        return usuarioRepository.findEstudiantesActivosByNivelId(nivelId).size();
+    }
+
+    /** Cuántos estudiantes distintos ya tienen una calificación registrada, por proyecto. */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> contarEvaluadosPorProyecto(List<Long> proyectoIds) {
+        if (proyectoIds == null || proyectoIds.isEmpty()) {
+            return Map.of();
+        }
+        return calificacionRepository.findByProyectoDefinicionIdIn(proyectoIds).stream()
+                .collect(Collectors.groupingBy(c -> c.getProyectoDefinicion().getId(), Collectors.counting()));
+    }
+
+    /**
+     * A diferencia de indicadores/tareas, en los proyectos los puntos totales son obligatorios: la
+     * calificación siempre se deriva de puntosObtenidos/puntosTotales, nunca se ingresa directamente.
+     */
+    public ProyectoDefinicion guardarProyecto(Long institucionId, Long nivelId, Long materiaId,
+            ProyectoDefinicion datos) {
         NivelAcademico nivel = nivelRepository.findByIdAndInstitucionId(nivelId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
         Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
-        PeriodoAcademico periodo = obtenerPeriodoActivo(institucionId);
+        PeriodoAcademico periodoActivo = obtenerPeriodoActivo(institucionId);
 
-        ProyectoDefinicion proyecto = new ProyectoDefinicion();
+        if (datos.getTitulo() == null || datos.getTitulo().isBlank()) {
+            throw new IllegalArgumentException("Debes indicar el nombre del proyecto");
+        }
+        if (datos.getPorcentaje() == null) {
+            throw new IllegalArgumentException("Debes indicar el porcentaje del proyecto");
+        }
+        if (datos.getPorcentaje() < 0 || datos.getPorcentaje() > 100) {
+            throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
+        }
+        int sumaExistente = listarProyectos(institucionId, nivelId, materiaId, periodoActivo.getId()).stream()
+                .filter(p -> !p.getId().equals(datos.getId()))
+                .mapToInt(ProyectoDefinicion::getPorcentaje)
+                .sum();
+        if (sumaExistente + datos.getPorcentaje() > 100) {
+            throw new IllegalArgumentException(
+                    "La suma de los proyectos no puede superar 100% (actual: " + sumaExistente + "%)");
+        }
+
+        if (datos.getPuntosTotales() == null || datos.getPuntosTotales() <= 0) {
+            throw new IllegalArgumentException("Debes indicar los puntos totales del proyecto");
+        }
+
+        ProyectoDefinicion proyecto = datos.getId() != null
+                ? obtenerProyecto(institucionId, datos.getId())
+                : new ProyectoDefinicion();
         proyecto.setInstitucion(nivel.getInstitucion());
         proyecto.setNivel(nivel);
         proyecto.setMateria(materia);
-        proyecto.setPeriodo(periodo);
-        return proyectoRepository.save(proyecto);
-    }
-
-    /** El porcentaje de cada proyecto se descuenta del 100% disponible entre los proyectos de esa sección/materia/período. */
-    public ProyectoDefinicion actualizarProyecto(Long institucionId, Long id, Integer porcentaje, Integer puntosTotales) {
-        ProyectoDefinicion proyecto = obtenerProyecto(institucionId, id);
-        if (porcentaje != null) {
-            if (porcentaje < 0 || porcentaje > 100) {
-                throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
-            }
-            int sumaExistente = listarProyectos(institucionId, proyecto.getNivel().getId(), proyecto.getMateria().getId(),
-                    proyecto.getPeriodo().getId()).stream()
-                    .filter(p -> !p.getId().equals(id) && p.getPorcentaje() != null)
-                    .mapToInt(ProyectoDefinicion::getPorcentaje)
-                    .sum();
-            if (sumaExistente + porcentaje > 100) {
-                throw new IllegalArgumentException(
-                        "La suma de los proyectos no puede superar 100% (actual: " + sumaExistente + "%)");
-            }
-            proyecto.setPorcentaje(porcentaje);
+        if (proyecto.getPeriodo() == null) {
+            proyecto.setPeriodo(periodoActivo);
         }
-        if (puntosTotales != null) {
-            if (puntosTotales < 0) {
-                throw new IllegalArgumentException("Los puntos totales no pueden ser negativos");
-            }
-            proyecto.setPuntosTotales(puntosTotales);
-        }
+        proyecto.setTitulo(datos.getTitulo().trim());
+        proyecto.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
+        proyecto.setPorcentaje(datos.getPorcentaje());
+        proyecto.setPuntosTotales(datos.getPuntosTotales());
         return proyectoRepository.save(proyecto);
     }
 
     public void eliminarProyecto(Long institucionId, Long id) {
         ProyectoDefinicion proyecto = obtenerProyecto(institucionId, id);
+        if (calificacionRepository.existsByProyectoDefinicionId(id)) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar: el proyecto ya tiene calificaciones registradas");
+        }
         proyectoRepository.delete(proyecto);
     }
 
@@ -123,12 +159,9 @@ public class ProyectoEstudiantilService {
     }
 
     /** La calificación (0-100) se deriva de puntosObtenidos/puntosTotales del proyecto; no se ingresa directamente. */
-    public FilaNotaProyecto guardarNota(Long institucionId, Long proyectoId, Long estudianteId, Integer puntosObtenidos,
-            String observacion) {
+    public FilaNotaProyecto registrarCalificacion(Long institucionId, Long proyectoId, Long estudianteId,
+            Integer puntosObtenidos, String observacion) {
         ProyectoDefinicion proyecto = obtenerProyecto(institucionId, proyectoId);
-        if (proyecto.getPuntosTotales() == null || proyecto.getPuntosTotales() <= 0) {
-            throw new IllegalArgumentException("Debes definir los puntos totales del proyecto antes de calificar");
-        }
         Usuario estudiante = usuarioRepository.findActivoByIdAndInstitucionId(estudianteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
         ProyectoCalificacion nota = calificacionRepository
