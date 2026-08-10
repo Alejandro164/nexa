@@ -52,6 +52,14 @@ public class TrabajoExtraclaseService {
                 .orElseThrow(() -> new IllegalArgumentException("No hay un período académico activo"));
     }
 
+    /** Igual que {@link #obtenerPeriodoActivo}, pero null en vez de lanzar si no hay ninguno activo. */
+    @Transactional(readOnly = true)
+    public PeriodoAcademico obtenerPeriodoActivoOpcional(Long institucionId) {
+        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
+                .findFirst()
+                .orElse(null);
+    }
+
     @Transactional(readOnly = true)
     public List<TrabajoDefinicion> listarTrabajos(Long institucionId, Long nivelId, Long materiaId, Long periodoId) {
         return trabajoRepository.findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
@@ -64,50 +72,78 @@ public class TrabajoExtraclaseService {
                 .orElseThrow(() -> new IllegalArgumentException("Trabajo extraclase no encontrado"));
     }
 
-    public TrabajoDefinicion crearTrabajo(Long institucionId, Long nivelId, Long materiaId) {
+    /** Cuántos estudiantes activos tiene la sección; para mostrar "evaluados / total" junto a los trabajos. */
+    @Transactional(readOnly = true)
+    public int contarEstudiantesActivos(Long nivelId) {
+        return usuarioRepository.findEstudiantesActivosByNivelId(nivelId).size();
+    }
+
+    /** Cuántos estudiantes distintos ya tienen una calificación registrada, por trabajo. */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> contarEvaluadosPorTrabajo(List<Long> trabajoIds) {
+        if (trabajoIds == null || trabajoIds.isEmpty()) {
+            return Map.of();
+        }
+        return calificacionRepository.findByTrabajoDefinicionIdIn(trabajoIds).stream()
+                .collect(Collectors.groupingBy(c -> c.getTrabajoDefinicion().getId(), Collectors.counting()));
+    }
+
+    /**
+     * A diferencia de indicadores/tareas, en los trabajos extraclase los puntos totales son
+     * obligatorios: la calificación siempre se deriva de puntosObtenidos/puntosTotales, nunca se
+     * ingresa directamente.
+     */
+    public TrabajoDefinicion guardarTrabajo(Long institucionId, Long nivelId, Long materiaId, TrabajoDefinicion datos) {
         NivelAcademico nivel = nivelRepository.findByIdAndInstitucionId(nivelId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
         Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
-        PeriodoAcademico periodo = obtenerPeriodoActivo(institucionId);
+        PeriodoAcademico periodoActivo = obtenerPeriodoActivo(institucionId);
 
-        TrabajoDefinicion trabajo = new TrabajoDefinicion();
+        if (datos.getTitulo() == null || datos.getTitulo().isBlank()) {
+            throw new IllegalArgumentException("Debes indicar el nombre del trabajo");
+        }
+        if (datos.getPorcentaje() == null) {
+            throw new IllegalArgumentException("Debes indicar el porcentaje del trabajo");
+        }
+        if (datos.getPorcentaje() < 0 || datos.getPorcentaje() > 100) {
+            throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
+        }
+        int sumaExistente = listarTrabajos(institucionId, nivelId, materiaId, periodoActivo.getId()).stream()
+                .filter(t -> !t.getId().equals(datos.getId()))
+                .mapToInt(TrabajoDefinicion::getPorcentaje)
+                .sum();
+        if (sumaExistente + datos.getPorcentaje() > 100) {
+            throw new IllegalArgumentException(
+                    "La suma de los trabajos no puede superar 100% (actual: " + sumaExistente + "%)");
+        }
+
+        if (datos.getPuntosTotales() == null || datos.getPuntosTotales() <= 0) {
+            throw new IllegalArgumentException("Debes indicar los puntos totales del trabajo");
+        }
+
+        TrabajoDefinicion trabajo = datos.getId() != null
+                ? obtenerTrabajo(institucionId, datos.getId())
+                : new TrabajoDefinicion();
         trabajo.setInstitucion(nivel.getInstitucion());
         trabajo.setNivel(nivel);
         trabajo.setMateria(materia);
-        trabajo.setPeriodo(periodo);
-        return trabajoRepository.save(trabajo);
-    }
-
-    /** El porcentaje de cada trabajo se descuenta del 100% disponible entre los trabajos de esa sección/materia/período. */
-    public TrabajoDefinicion actualizarTrabajo(Long institucionId, Long id, Integer porcentaje, Integer puntosTotales) {
-        TrabajoDefinicion trabajo = obtenerTrabajo(institucionId, id);
-        if (porcentaje != null) {
-            if (porcentaje < 0 || porcentaje > 100) {
-                throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
-            }
-            int sumaExistente = listarTrabajos(institucionId, trabajo.getNivel().getId(), trabajo.getMateria().getId(),
-                    trabajo.getPeriodo().getId()).stream()
-                    .filter(t -> !t.getId().equals(id) && t.getPorcentaje() != null)
-                    .mapToInt(TrabajoDefinicion::getPorcentaje)
-                    .sum();
-            if (sumaExistente + porcentaje > 100) {
-                throw new IllegalArgumentException(
-                        "La suma de los trabajos no puede superar 100% (actual: " + sumaExistente + "%)");
-            }
-            trabajo.setPorcentaje(porcentaje);
+        if (trabajo.getPeriodo() == null) {
+            trabajo.setPeriodo(periodoActivo);
         }
-        if (puntosTotales != null) {
-            if (puntosTotales < 0) {
-                throw new IllegalArgumentException("Los puntos totales no pueden ser negativos");
-            }
-            trabajo.setPuntosTotales(puntosTotales);
-        }
+        trabajo.setTitulo(datos.getTitulo().trim());
+        trabajo.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
+        trabajo.setPorcentaje(datos.getPorcentaje());
+        trabajo.setPuntosTotales(datos.getPuntosTotales());
         return trabajoRepository.save(trabajo);
     }
 
     public void eliminarTrabajo(Long institucionId, Long id) {
         TrabajoDefinicion trabajo = obtenerTrabajo(institucionId, id);
+        if (calificacionRepository.existsByTrabajoDefinicionId(id)) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar: el trabajo ya tiene calificaciones registradas");
+        }
         trabajoRepository.delete(trabajo);
     }
 
@@ -123,12 +159,9 @@ public class TrabajoExtraclaseService {
     }
 
     /** La calificación (0-100) se deriva de puntosObtenidos/puntosTotales del trabajo; no se ingresa directamente. */
-    public FilaNotaTrabajo guardarNota(Long institucionId, Long trabajoId, Long estudianteId, Integer puntosObtenidos,
+    public FilaNotaTrabajo registrarCalificacion(Long institucionId, Long trabajoId, Long estudianteId, Integer puntosObtenidos,
             String observacion) {
         TrabajoDefinicion trabajo = obtenerTrabajo(institucionId, trabajoId);
-        if (trabajo.getPuntosTotales() == null || trabajo.getPuntosTotales() <= 0) {
-            throw new IllegalArgumentException("Debes definir los puntos totales del trabajo antes de calificar");
-        }
         Usuario estudiante = usuarioRepository.findActivoByIdAndInstitucionId(estudianteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
         TrabajoCalificacion nota = calificacionRepository

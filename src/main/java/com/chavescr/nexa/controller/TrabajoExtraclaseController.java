@@ -2,14 +2,13 @@ package com.chavescr.nexa.controller;
 
 import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,36 +37,45 @@ public class TrabajoExtraclaseController {
 
     @GetMapping
     public String trabajos(@RequestParam(required = false) Long nivelId,
-            @RequestParam(required = false) Long materiaId,
-            @RequestParam(required = false) Long trabajoId,
-            Model model, HttpSession session, HttpServletRequest request) {
+            @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
+            HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, nivelId, materiaId, trabajoId, docenteIdSiAplica(request, session));
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/extraclase/extraclase :: content";
     }
 
-    @PostMapping("/nuevo")
-    public String nuevoTrabajo(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
-            HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
-        TrabajoDefinicion creado = service.crearTrabajo(institucionId, nivelId, materiaId);
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, creado.getId(), docenteIdSiAplica(request, session));
-        return "gestion-academica/extraclase/extraclase :: content";
+    @GetMapping("/form")
+    public String nuevoTrabajo(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model) {
+        model.addAttribute("trabajo", new TrabajoDefinicion());
+        model.addAttribute("nivelId", nivelId);
+        model.addAttribute("materiaId", materiaId);
+        return "gestion-academica/extraclase/trabajo-form :: form-content";
     }
 
-    @PostMapping("/{id}/actualizar")
-    public String actualizarTrabajo(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
-            @RequestParam(required = false) Integer porcentaje, @RequestParam(required = false) Integer puntosTotales,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+    @GetMapping("/form/{id}")
+    public String editarTrabajo(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
+            Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
+        model.addAttribute("trabajo", service.obtenerTrabajo(institucionId, id));
+        model.addAttribute("nivelId", nivelId);
+        model.addAttribute("materiaId", materiaId);
+        return "gestion-academica/extraclase/trabajo-form :: form-content";
+    }
+
+    @PostMapping
+    public String guardar(@RequestParam Long nivelId, @RequestParam Long materiaId,
+            @ModelAttribute TrabajoDefinicion trabajo, Model model, HttpSession session,
+            HttpServletRequest request, HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        boolean esNuevo = trabajo.getId() == null;
         try {
-            service.actualizarTrabajo(institucionId, id, porcentaje, puntosTotales);
-            response.setHeader("HX-Trigger", "promedioDesactualizado");
+            service.guardarTrabajo(institucionId, nivelId, materiaId, trabajo);
+            notificarGuardado(response, esNuevo ? "Trabajo creado correctamente" : "Trabajo actualizado correctamente");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
+            notificarError(response, e.getMessage());
         }
-        cargarPanel(model, institucionId, nivelId, materiaId, id, docenteIdSiAplica(request, session));
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/extraclase/extraclase :: content";
     }
 
@@ -75,50 +83,30 @@ public class TrabajoExtraclaseController {
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        service.eliminarTrabajo(institucionId, id);
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, null, docenteIdSiAplica(request, session));
+        try {
+            service.eliminarTrabajo(institucionId, id);
+            notificarGuardado(response, "Trabajo eliminado correctamente");
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
+        }
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/extraclase/extraclase :: content";
     }
 
-    @PostMapping("/guardar-lote")
-    public String guardarLote(@RequestParam Long nivelId, @RequestParam Long materiaId, @RequestParam Long trabajoId,
-            @RequestParam(required = false) List<Long> estudianteId,
-            @RequestParam(required = false) List<String> puntosObtenidos,
-            @RequestParam(required = false) List<String> observacion,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        exigirDocenteODirectorOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
-
-        List<String> errores = new ArrayList<>();
-        if (estudianteId != null) {
-            for (int i = 0; i < estudianteId.size(); i++) {
-                String puntosStr = puntosObtenidos != null && i < puntosObtenidos.size() ? puntosObtenidos.get(i) : null;
-                if (puntosStr == null || puntosStr.isBlank()) {
-                    continue;
-                }
-                String obs = observacion != null && i < observacion.size() ? observacion.get(i) : null;
-                try {
-                    Integer puntos = Integer.valueOf(puntosStr.trim());
-                    service.guardarNota(institucionId, trabajoId, estudianteId.get(i), puntos, obs);
-                } catch (NumberFormatException e) {
-                    errores.add("unos puntos obtenidos inválidos");
-                } catch (IllegalArgumentException e) {
-                    errores.add(e.getMessage());
-                }
-            }
-        }
-        if (!errores.isEmpty()) {
-            model.addAttribute("error",
-                    errores.size() + " calificación(es) no se guardaron: " + String.join("; ", errores.stream().distinct().toList()));
-        }
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, trabajoId, docenteIdSiAplica(request, session));
-        return "gestion-academica/extraclase/extraclase :: content";
+    private void notificarGuardado(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoGuardado\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"},"
+                + "\"promedioDesactualizado\":\"\"}");
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long trabajoId,
-            Long docenteId) {
+    private void notificarError(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoError\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"}}");
+    }
+
+    private String escaparJson(String texto) {
+        return texto.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long docenteId) {
         var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
         var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
         if (nivelId == null && !niveles.isEmpty()) {
@@ -127,30 +115,25 @@ public class TrabajoExtraclaseController {
         if (materiaId == null && !materias.isEmpty()) {
             materiaId = materias.get(0).getId();
         }
-        var periodoActivo = service.obtenerPeriodoActivo(institucionId);
-        var trabajos = nivelId != null && materiaId != null
+
+        var periodoActivo = service.obtenerPeriodoActivoOpcional(institucionId);
+        List<TrabajoDefinicion> trabajos = nivelId != null && materiaId != null && periodoActivo != null
                 ? service.listarTrabajos(institucionId, nivelId, materiaId, periodoActivo.getId())
-                : List.<TrabajoDefinicion>of();
-        Long trabajoSolicitado = trabajoId;
-        if (trabajoSolicitado == null || trabajos.stream().noneMatch(t -> t.getId().equals(trabajoSolicitado))) {
-            trabajoId = trabajos.isEmpty() ? null : trabajos.get(0).getId();
-        }
-        Long trabajoFinal = trabajoId;
-        TrabajoDefinicion trabajoSeleccionado = trabajoFinal != null
-                ? trabajos.stream().filter(t -> t.getId().equals(trabajoFinal)).findFirst().orElse(null)
-                : null;
+                : List.of();
+        int total = trabajos.stream().mapToInt(TrabajoDefinicion::getPorcentaje).sum();
+
+        int totalEstudiantesSeccion = nivelId != null ? service.contarEstudiantesActivos(nivelId) : 0;
+        var evaluadosPorTrabajo = service.contarEvaluadosPorTrabajo(trabajos.stream().map(TrabajoDefinicion::getId).toList());
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
-        model.addAttribute("trabajos", trabajos);
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
-        model.addAttribute("trabajoId", trabajoId);
-        model.addAttribute("trabajoSeleccionado", trabajoSeleccionado);
+        model.addAttribute("trabajos", trabajos);
+        model.addAttribute("totalAsignado", total);
         model.addAttribute("periodoActivo", periodoActivo);
-        model.addAttribute("filas", trabajoSeleccionado != null
-                ? service.listarNotas(institucionId, trabajoSeleccionado.getId())
-                : List.of());
+        model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
+        model.addAttribute("evaluadosPorTrabajo", evaluadosPorTrabajo);
     }
 
     private Long requerirInstitucion(HttpSession session) {
@@ -159,13 +142,6 @@ public class TrabajoExtraclaseController {
             throw new InstitucionNoSeleccionadaException();
         }
         return id;
-    }
-
-    private void exigirDocenteODirectorOAdmin(HttpServletRequest request) {
-        if (!request.isUserInRole("ROLE_DOCENTE") && !request.isUserInRole("ROLE_DIRECTOR")
-                && !request.isUserInRole("ROLE_ADMIN")) {
-            throw new AccessDeniedException("Solo docentes, directores o administradores pueden evaluar");
-        }
     }
 
     private Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {

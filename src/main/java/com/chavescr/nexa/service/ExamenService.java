@@ -51,6 +51,14 @@ public class ExamenService {
                 .orElseThrow(() -> new IllegalArgumentException("No hay un período académico activo"));
     }
 
+    /** Igual que {@link #obtenerPeriodoActivo}, pero null en vez de lanzar si no hay ninguno activo. */
+    @Transactional(readOnly = true)
+    public PeriodoAcademico obtenerPeriodoActivoOpcional(Long institucionId) {
+        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
+                .findFirst()
+                .orElse(null);
+    }
+
     @Transactional(readOnly = true)
     public List<Examen> listarExamenes(Long institucionId, Long nivelId, Long materiaId, Long periodoId) {
         return examenRepository.findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
@@ -63,50 +71,77 @@ public class ExamenService {
                 .orElseThrow(() -> new IllegalArgumentException("Examen no encontrado"));
     }
 
-    public Examen crearPrueba(Long institucionId, Long nivelId, Long materiaId) {
+    /** Cuántos estudiantes activos tiene la sección; para mostrar "evaluados / total" junto a las pruebas. */
+    @Transactional(readOnly = true)
+    public int contarEstudiantesActivos(Long nivelId) {
+        return usuarioRepository.findEstudiantesActivosByNivelId(nivelId).size();
+    }
+
+    /** Cuántos estudiantes distintos ya tienen una calificación registrada, por prueba. */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> contarEvaluadosPorExamen(List<Long> examenIds) {
+        if (examenIds == null || examenIds.isEmpty()) {
+            return Map.of();
+        }
+        return notaExamenRepository.findByExamenIdIn(examenIds).stream()
+                .collect(Collectors.groupingBy(n -> n.getExamen().getId(), Collectors.counting()));
+    }
+
+    /**
+     * A diferencia de indicadores/tareas, en las pruebas los puntos totales son obligatorios: la
+     * calificación siempre se deriva de puntosObtenidos/puntosTotales, nunca se ingresa directamente.
+     */
+    public Examen guardarPrueba(Long institucionId, Long nivelId, Long materiaId, Examen datos) {
         NivelAcademico nivel = nivelRepository.findByIdAndInstitucionId(nivelId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
         Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
-        PeriodoAcademico periodo = obtenerPeriodoActivo(institucionId);
+        PeriodoAcademico periodoActivo = obtenerPeriodoActivo(institucionId);
 
-        Examen examen = new Examen();
+        if (datos.getTitulo() == null || datos.getTitulo().isBlank()) {
+            throw new IllegalArgumentException("Debes indicar el nombre de la prueba");
+        }
+        if (datos.getPorcentaje() == null) {
+            throw new IllegalArgumentException("Debes indicar el porcentaje de la prueba");
+        }
+        if (datos.getPorcentaje() < 0 || datos.getPorcentaje() > 100) {
+            throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
+        }
+        int sumaExistente = listarExamenes(institucionId, nivelId, materiaId, periodoActivo.getId()).stream()
+                .filter(e -> !e.getId().equals(datos.getId()))
+                .mapToInt(Examen::getPorcentaje)
+                .sum();
+        if (sumaExistente + datos.getPorcentaje() > 100) {
+            throw new IllegalArgumentException(
+                    "La suma de las pruebas no puede superar 100% (actual: " + sumaExistente + "%)");
+        }
+
+        if (datos.getPuntosTotales() == null || datos.getPuntosTotales() <= 0) {
+            throw new IllegalArgumentException("Debes indicar los puntos totales de la prueba");
+        }
+
+        Examen examen = datos.getId() != null
+                ? obtenerExamen(institucionId, datos.getId())
+                : new Examen();
         examen.setInstitucion(nivel.getInstitucion());
         examen.setNivel(nivel);
         examen.setMateria(materia);
-        examen.setPeriodo(periodo);
-        return examenRepository.save(examen);
-    }
-
-    /** El porcentaje de cada prueba se descuenta del 100% disponible entre las pruebas de esa sección/materia/período. */
-    public Examen actualizarPrueba(Long institucionId, Long id, Integer porcentaje, Integer puntosTotales) {
-        Examen examen = obtenerExamen(institucionId, id);
-        if (porcentaje != null) {
-            if (porcentaje < 0 || porcentaje > 100) {
-                throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
-            }
-            int sumaExistente = listarExamenes(institucionId, examen.getNivel().getId(), examen.getMateria().getId(),
-                    examen.getPeriodo().getId()).stream()
-                    .filter(e -> !e.getId().equals(id) && e.getPorcentaje() != null)
-                    .mapToInt(Examen::getPorcentaje)
-                    .sum();
-            if (sumaExistente + porcentaje > 100) {
-                throw new IllegalArgumentException(
-                        "La suma de las pruebas no puede superar 100% (actual: " + sumaExistente + "%)");
-            }
-            examen.setPorcentaje(porcentaje);
+        if (examen.getPeriodo() == null) {
+            examen.setPeriodo(periodoActivo);
         }
-        if (puntosTotales != null) {
-            if (puntosTotales < 0) {
-                throw new IllegalArgumentException("Los puntos totales no pueden ser negativos");
-            }
-            examen.setPuntosTotales(puntosTotales);
-        }
+        examen.setTitulo(datos.getTitulo().trim());
+        examen.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
+        examen.setPorcentaje(datos.getPorcentaje());
+        examen.setPuntosTotales(datos.getPuntosTotales());
         return examenRepository.save(examen);
     }
 
     public void eliminarExamen(Long institucionId, Long id) {
         Examen examen = obtenerExamen(institucionId, id);
+        if (notaExamenRepository.existsByExamenId(id)) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar: la prueba ya tiene calificaciones registradas");
+        }
         examenRepository.delete(examen);
     }
 
@@ -122,12 +157,9 @@ public class ExamenService {
     }
 
     /** La calificación (0-100) se deriva de puntosObtenidos/puntosTotales de la prueba; no se ingresa directamente. */
-    public FilaNotaExamen guardarNota(Long institucionId, Long examenId, Long estudianteId, Integer puntosObtenidos,
+    public FilaNotaExamen registrarCalificacion(Long institucionId, Long examenId, Long estudianteId, Integer puntosObtenidos,
             String observacion) {
         Examen examen = obtenerExamen(institucionId, examenId);
-        if (examen.getPuntosTotales() == null || examen.getPuntosTotales() <= 0) {
-            throw new IllegalArgumentException("Debes definir los puntos totales de la prueba antes de calificar");
-        }
         Usuario estudiante = usuarioRepository.findActivoByIdAndInstitucionId(estudianteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
         NotaExamen nota = notaExamenRepository.findByExamenIdAndEstudianteId(examen.getId(), estudianteId)

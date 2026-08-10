@@ -2,14 +2,13 @@ package com.chavescr.nexa.controller;
 
 import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,36 +36,45 @@ public class ExamenController {
 
     @GetMapping
     public String examenes(@RequestParam(required = false) Long nivelId,
-            @RequestParam(required = false) Long materiaId,
-            @RequestParam(required = false) Long examenId,
-            Model model, HttpSession session, HttpServletRequest request) {
+            @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
+            HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, nivelId, materiaId, examenId, docenteIdSiAplica(request, session));
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/examenes/examenes :: content";
     }
 
-    @PostMapping("/nueva")
-    public String nuevaPrueba(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
-            HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
-        Examen creado = service.crearPrueba(institucionId, nivelId, materiaId);
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, creado.getId(), docenteIdSiAplica(request, session));
-        return "gestion-academica/examenes/examenes :: content";
+    @GetMapping("/form")
+    public String nuevaPrueba(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model) {
+        model.addAttribute("examen", new Examen());
+        model.addAttribute("nivelId", nivelId);
+        model.addAttribute("materiaId", materiaId);
+        return "gestion-academica/examenes/examen-form :: form-content";
     }
 
-    @PostMapping("/{id}/actualizar")
-    public String actualizarPrueba(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
-            @RequestParam(required = false) Integer porcentaje, @RequestParam(required = false) Integer puntosTotales,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+    @GetMapping("/form/{id}")
+    public String editarPrueba(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
+            Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
+        model.addAttribute("examen", service.obtenerExamen(institucionId, id));
+        model.addAttribute("nivelId", nivelId);
+        model.addAttribute("materiaId", materiaId);
+        return "gestion-academica/examenes/examen-form :: form-content";
+    }
+
+    @PostMapping
+    public String guardar(@RequestParam Long nivelId, @RequestParam Long materiaId,
+            @ModelAttribute Examen examen, Model model, HttpSession session,
+            HttpServletRequest request, HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        boolean esNueva = examen.getId() == null;
         try {
-            service.actualizarPrueba(institucionId, id, porcentaje, puntosTotales);
-            response.setHeader("HX-Trigger", "promedioDesactualizado");
+            service.guardarPrueba(institucionId, nivelId, materiaId, examen);
+            notificarGuardado(response, esNueva ? "Prueba creada correctamente" : "Prueba actualizada correctamente");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
+            notificarError(response, e.getMessage());
         }
-        cargarPanel(model, institucionId, nivelId, materiaId, id, docenteIdSiAplica(request, session));
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/examenes/examenes :: content";
     }
 
@@ -74,50 +82,30 @@ public class ExamenController {
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        service.eliminarExamen(institucionId, id);
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, null, docenteIdSiAplica(request, session));
+        try {
+            service.eliminarExamen(institucionId, id);
+            notificarGuardado(response, "Prueba eliminada correctamente");
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
+        }
+        cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/examenes/examenes :: content";
     }
 
-    @PostMapping("/guardar-lote")
-    public String guardarLote(@RequestParam Long nivelId, @RequestParam Long materiaId, @RequestParam Long examenId,
-            @RequestParam(required = false) List<Long> estudianteId,
-            @RequestParam(required = false) List<String> puntosObtenidos,
-            @RequestParam(required = false) List<String> observacion,
-            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        exigirDocenteODirectorOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
-
-        List<String> errores = new ArrayList<>();
-        if (estudianteId != null) {
-            for (int i = 0; i < estudianteId.size(); i++) {
-                String puntosStr = puntosObtenidos != null && i < puntosObtenidos.size() ? puntosObtenidos.get(i) : null;
-                if (puntosStr == null || puntosStr.isBlank()) {
-                    continue;
-                }
-                String obs = observacion != null && i < observacion.size() ? observacion.get(i) : null;
-                try {
-                    Integer puntos = Integer.valueOf(puntosStr.trim());
-                    service.guardarNota(institucionId, examenId, estudianteId.get(i), puntos, obs);
-                } catch (NumberFormatException e) {
-                    errores.add("unos puntos obtenidos inválidos");
-                } catch (IllegalArgumentException e) {
-                    errores.add(e.getMessage());
-                }
-            }
-        }
-        if (!errores.isEmpty()) {
-            model.addAttribute("error",
-                    errores.size() + " calificación(es) no se guardaron: " + String.join("; ", errores.stream().distinct().toList()));
-        }
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, examenId, docenteIdSiAplica(request, session));
-        return "gestion-academica/examenes/examenes :: content";
+    private void notificarGuardado(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoGuardado\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"},"
+                + "\"promedioDesactualizado\":\"\"}");
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long examenId,
-            Long docenteId) {
+    private void notificarError(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoError\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"}}");
+    }
+
+    private String escaparJson(String texto) {
+        return texto.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long docenteId) {
         var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
         var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
         if (nivelId == null && !niveles.isEmpty()) {
@@ -126,30 +114,25 @@ public class ExamenController {
         if (materiaId == null && !materias.isEmpty()) {
             materiaId = materias.get(0).getId();
         }
-        var periodoActivo = service.obtenerPeriodoActivo(institucionId);
-        var examenes = nivelId != null && materiaId != null
+
+        var periodoActivo = service.obtenerPeriodoActivoOpcional(institucionId);
+        List<Examen> examenes = nivelId != null && materiaId != null && periodoActivo != null
                 ? service.listarExamenes(institucionId, nivelId, materiaId, periodoActivo.getId())
-                : List.<Examen>of();
-        Long examenSolicitado = examenId;
-        if (examenSolicitado == null || examenes.stream().noneMatch(e -> e.getId().equals(examenSolicitado))) {
-            examenId = examenes.isEmpty() ? null : examenes.get(0).getId();
-        }
-        Long examenFinal = examenId;
-        Examen examenSeleccionado = examenFinal != null
-                ? examenes.stream().filter(e -> e.getId().equals(examenFinal)).findFirst().orElse(null)
-                : null;
+                : List.of();
+        int total = examenes.stream().mapToInt(Examen::getPorcentaje).sum();
+
+        int totalEstudiantesSeccion = nivelId != null ? service.contarEstudiantesActivos(nivelId) : 0;
+        var evaluadosPorExamen = service.contarEvaluadosPorExamen(examenes.stream().map(Examen::getId).toList());
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
-        model.addAttribute("examenes", examenes);
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
-        model.addAttribute("examenId", examenId);
-        model.addAttribute("examenSeleccionado", examenSeleccionado);
+        model.addAttribute("examenes", examenes);
+        model.addAttribute("totalAsignado", total);
         model.addAttribute("periodoActivo", periodoActivo);
-        model.addAttribute("filas", examenSeleccionado != null
-                ? service.listarNotas(institucionId, examenSeleccionado.getId())
-                : List.of());
+        model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
+        model.addAttribute("evaluadosPorExamen", evaluadosPorExamen);
     }
 
     private Long requerirInstitucion(HttpSession session) {
@@ -158,13 +141,6 @@ public class ExamenController {
             throw new InstitucionNoSeleccionadaException();
         }
         return id;
-    }
-
-    private void exigirDocenteODirectorOAdmin(HttpServletRequest request) {
-        if (!request.isUserInRole("ROLE_DOCENTE") && !request.isUserInRole("ROLE_DIRECTOR")
-                && !request.isUserInRole("ROLE_ADMIN")) {
-            throw new AccessDeniedException("Solo docentes, directores o administradores pueden evaluar");
-        }
     }
 
     private Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {

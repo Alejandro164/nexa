@@ -269,6 +269,24 @@
                         { target: '#proyectos-panel', swap: 'innerHTML' });
                 }
             });
+            // Igual que 'cotidianoCalificado', pero para la tabla de pruebas y exámenes.
+            document.body.addEventListener('examenCalificado', function (event) {
+                var panel = document.getElementById('examenes-panel');
+                if (panel && event.detail) {
+                    htmx.ajax('GET', '/gestion-academica/examenes?nivelId=' + event.detail.nivelId
+                        + '&materiaId=' + event.detail.materiaId,
+                        { target: '#examenes-panel', swap: 'innerHTML' });
+                }
+            });
+            // Igual que 'cotidianoCalificado', pero para la tabla de trabajos extraclase.
+            document.body.addEventListener('trabajoExtraclaseCalificado', function (event) {
+                var panel = document.getElementById('extraclase-panel');
+                if (panel && event.detail) {
+                    htmx.ajax('GET', '/gestion-academica/extraclase?nivelId=' + event.detail.nivelId
+                        + '&materiaId=' + event.detail.materiaId,
+                        { target: '#extraclase-panel', swap: 'innerHTML' });
+                }
+            });
             // Guardado por lote en modales (ej. Evaluar indicador de Cotidiano): cierra el modal y
             // muestra la notificación tanto si la operación fue exitosa como si falló.
             if (!window.gestionAcademicaEventsRegistrados) {

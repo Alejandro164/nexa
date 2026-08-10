@@ -1,0 +1,51 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
+        <div class="modal-dialog" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${examen.id == null ? 'Nueva Prueba' : 'Editar Prueba'}">Prueba</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form hx-post="/gestion-academica/examenes"
+                      hx-target="#examenes-panel" hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()">
+                    <input type="hidden" name="id" th:value="${examen.id}">
+                    <input type="hidden" name="nivelId" th:value="${nivelId}">
+                    <input type="hidden" name="materiaId" th:value="${materiaId}">
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre *</label>
+                        <input class="form-input" type="text" name="titulo" required maxlength="200"
+                               th:value="${examen.titulo}" placeholder="Ej. Examen Parcial I">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-textarea" name="descripcion" maxlength="1000"
+                                  th:text="${examen.descripcion}" placeholder="¿Qué contenidos evalúa esta prueba?"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Porcentaje *</label>
+                        <input class="form-input" type="number" name="porcentaje" min="0" max="100" required
+                               th:value="${examen.porcentaje}" placeholder="Ej. 25">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Puntos totales *</label>
+                        <div class="input-suffix-wrap">
+                            <input class="form-input" type="number" name="puntosTotales" min="1" required
+                                   style="padding-left: 10px;" th:value="${examen.puntosTotales}" placeholder="Ej. 50">
+                            <span class="input-suffix">pts</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
