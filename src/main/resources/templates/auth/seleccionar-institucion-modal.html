@@ -21,9 +21,21 @@
                     No tienes instituciones asignadas.
                 </div>
 
+                <div class="inst-modal-search-wrap" th:if="${instituciones != null and instituciones.size() > 1}">
+                    <svg class="inst-modal-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                         stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input type="text" class="inst-modal-search-input" placeholder="Buscar institución por nombre o código..."
+                           oninput="filtrarInstitucionesModal(this)" autocomplete="off">
+                </div>
+
                 <div class="inst-modal-list" th:if="${instituciones != null and not instituciones.empty}">
                     <form th:each="inst : ${instituciones}" th:action="@{/inicio/cambiar-institucion}" method="post"
-                          class="inst-modal-item-form">
+                          class="inst-modal-item-form"
+                          th:attr="data-search=${#strings.toLowerCase(inst.nombre)} + '|' + ${#strings.toLowerCase(inst.codigo != null ? inst.codigo : '')}">
                         <input type="hidden" name="institucionId" th:value="${inst.id}" />
                         <button type="submit" class="inst-modal-item">
                             <div class="inst-modal-item-icon">
@@ -41,6 +53,10 @@
                         </button>
                     </form>
                 </div>
+
+                <p class="inst-modal-empty-search" id="inst-modal-empty-search" style="display:none;">
+                    No se encontraron instituciones con ese criterio.
+                </p>
 
                 <div class="inst-modal-footer">
                     <form th:action="@{/logout}" method="post" style="margin: 0;">

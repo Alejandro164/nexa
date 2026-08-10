@@ -1,5 +1,6 @@
 package com.chavescr.nexa.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -8,7 +9,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.chavescr.nexa.dto.InstitucionDTO;
 import com.chavescr.nexa.dto.UsuarioDTO;
@@ -20,6 +20,7 @@ import com.chavescr.nexa.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -78,10 +79,10 @@ public class MainController {
     }
 
     @PostMapping("/inicio/cambiar-institucion")
-    public String cambiarInstitucion(@RequestParam Long institucionId,
+    public void cambiarInstitucion(@RequestParam Long institucionId,
             HttpServletRequest request,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
+            HttpServletResponse response,
+            HttpSession session) throws IOException {
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
 
         if (request.isUserInRole("ROLE_ADMIN")) {
@@ -90,19 +91,29 @@ public class MainController {
                 session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
                 usuarioService.actualizarUltimaInstitucion(usuarioId, inst);
             });
-            return "redirect:/inicio";
+        } else {
+            usuarioService.obtenerInstitucionesDelUsuarioActual().stream()
+                    .filter(inst -> inst.getId().equals(institucionId))
+                    .findFirst()
+                    .ifPresent(inst -> {
+                        session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
+                        session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
+                        institucionService.findById(institucionId)
+                                .ifPresent(entidad -> usuarioService.actualizarUltimaInstitucion(usuarioId, entidad));
+                    });
         }
 
-        usuarioService.obtenerInstitucionesDelUsuarioActual().stream()
-                .filter(inst -> inst.getId().equals(institucionId))
-                .findFirst()
-                .ifPresent(inst -> {
-                    session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
-                    session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
-                    institucionService.findById(institucionId)
-                            .ifPresent(entidad -> usuarioService.actualizarUltimaInstitucion(usuarioId, entidad));
-                });
-        return "redirect:/inicio";
+        // Este endpoint se llama tanto por htmx (modal "Cambiar de Institución", con hx-target
+        // apuntando al modal) como por un form normal (modal de selección tras login); en el caso
+        // htmx un "redirect:" de Spring solo recargaría el contenido DENTRO del modal, dejando el
+        // dashboard de fondo con los datos de la institución anterior — por eso se fuerza una
+        // recarga completa del navegador vía HX-Redirect en vez de un redirect normal.
+        if ("true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
+            response.setHeader("HX-Redirect", "/inicio");
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
+        response.sendRedirect("/inicio");
     }
 
     private void cargarDashboard(Model model, HttpSession session) {

@@ -535,7 +535,7 @@
 
         .inst-modal-card {
             width: 100%;
-            max-width: 440px;
+            max-width: 640px;
             max-height: 85vh;
             background: #ffffff;
             border-radius: 20px;
@@ -644,6 +644,43 @@
             margin-top: 4px;
             font-size: 0.75rem;
             color: var(--subtitle);
+        }
+
+        .inst-modal-search-wrap {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .inst-modal-search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--subtitle);
+            pointer-events: none;
+        }
+
+        .inst-modal-search-input {
+            width: 100%;
+            padding: 11px 14px 11px 40px;
+            border: 2px solid var(--input-border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.88rem;
+            color: var(--title);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .inst-modal-search-input:focus {
+            border-color: var(--accent);
+        }
+
+        .inst-modal-empty-search {
+            text-align: center;
+            padding: 20px;
+            color: var(--subtitle);
+            font-size: 0.85rem;
         }
 
         .inst-modal-footer {
@@ -925,6 +962,22 @@
                 .then(function (html) {
                     document.getElementById('institucion-modal-container').innerHTML = html;
                 });
+        }
+
+        function filtrarInstitucionesModal(input) {
+            var q = input.value.trim().toLowerCase();
+            var card = input.closest('.inst-modal-card');
+            var forms = card.querySelectorAll('.inst-modal-item-form');
+            var visibles = 0;
+            forms.forEach(function (form) {
+                var coincide = !q || form.getAttribute('data-search').indexOf(q) !== -1;
+                form.style.display = coincide ? '' : 'none';
+                if (coincide) visibles++;
+            });
+            var vacio = card.querySelector('#inst-modal-empty-search');
+            if (vacio) {
+                vacio.style.display = visibles === 0 ? 'block' : 'none';
+            }
         }
     </script>
 
