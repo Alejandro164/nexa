@@ -48,12 +48,14 @@
                             <th>Descripción</th>
                             <th>Entrega</th>
                             <th>Porcentaje</th>
+                            <th>Puntos Totales</th>
+                            <th>Evaluados</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:if="${tareas == null or tareas.empty}">
-                            <td colspan="5" class="table-empty">No hay tareas asignadas.</td>
+                            <td colspan="7" class="table-empty">No hay tareas asignadas.</td>
                         </tr>
                         <tr th:each="t : ${tareas}">
                             <td><strong th:text="${t.titulo}">Tarea</strong></td>
@@ -61,7 +63,26 @@
                             <td th:text="${#temporals.format(t.fechaEntrega, 'dd/MM/yyyy')}">01/01/2028</td>
                             <td><span class="badge badge-primary" th:text="${t.porcentaje} + '%'">15%</span></td>
                             <td>
+                                <span th:if="${t.puntosTotales != null}" th:text="${t.puntosTotales} + ' pts'">50 pts</span>
+                                <span th:unless="${t.puntosTotales != null}" class="text-muted">N/A</span>
+                            </td>
+                            <td>
+                                <span th:if="${periodoActivo == null}" class="text-muted">Sin período activo</span>
+                                <th:block th:if="${periodoActivo != null}"
+                                          th:with="evaluados=${evaluadosPorTarea.get(t.id) != null ? evaluadosPorTarea.get(t.id) : 0},
+                                                    pendientes=${totalEstudiantesSeccion - evaluados}">
+                                    <span th:text="${evaluados} + ' / ' + ${totalEstudiantesSeccion}">0 / 20</span>
+                                    <div class="text-muted text-sm"
+                                         th:text="${pendientes} + (${pendientes} == 1 ? ' pendiente' : ' pendientes')">0 pendientes</div>
+                                </th:block>
+                            </td>
+                            <td>
                                 <div class="table-actions">
+                                    <button class="btn-xs btn-ghost"
+                                            th:attr="hx-get='/gestion-academica/tareas/evaluacion/modal?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId} + '&tareaId=' + ${t.id}"
+                                            hx-target="#modal-container" hx-swap="innerHTML"
+                                            onclick="abrirModalAcademico()"
+                                            title="Evaluar">📝</button>
                                     <button class="btn-xs btn-ghost"
                                             th:attr="hx-get='/gestion-academica/tareas/definiciones/form/' + ${t.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
                                             hx-target="#modal-container" hx-swap="innerHTML"
@@ -82,6 +103,8 @@
                         <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
                             <td colspan="3">Total asignado</td>
                             <td><span style="color: var(--primary);" th:text="${totalAsignado} + '%'">0%</span></td>
+                            <td></td>
+                            <td></td>
                             <td></td>
                         </tr>
                     </tfoot>

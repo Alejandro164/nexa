@@ -35,13 +35,6 @@ public class TareaCalificacionService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    /** Tareas definidas para esta sección y materia. */
-    @Transactional(readOnly = true)
-    public List<TareaDefinicion> listarTareasDisponibles(Long institucionId, Long nivelId, Long materiaId) {
-        return tareaDefinicionRepository.findByInstitucionIdAndNivelIdAndMateriaIdOrderByFechaEntregaAsc(
-                institucionId, nivelId, materiaId);
-    }
-
     @Transactional(readOnly = true)
     public TareaDefinicion obtenerTareaDefinicion(Long institucionId, Long id) {
         return tareaDefinicionRepository.findByIdAndInstitucionId(id, institucionId)
@@ -54,6 +47,31 @@ public class TareaCalificacionService {
         return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No hay un período académico activo"));
+    }
+
+    /** Igual que {@link #obtenerPeriodoActivo}, pero null en vez de lanzar si no hay ninguno activo. */
+    @Transactional(readOnly = true)
+    public PeriodoAcademico obtenerPeriodoActivoOpcional(Long institucionId) {
+        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
+                .findFirst()
+                .orElse(null);
+    }
+
+    /** Cuántos estudiantes activos tiene la sección; para mostrar "evaluados / total" junto a las tareas. */
+    @Transactional(readOnly = true)
+    public int contarEstudiantesActivos(Long nivelId) {
+        return usuarioRepository.findEstudiantesActivosByNivelId(nivelId).size();
+    }
+
+    /** Cuántos estudiantes distintos ya tienen una calificación registrada, por tarea, en ese período. */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> contarEvaluadosPorTarea(Long institucionId, List<Long> tareaIds, Long periodoId) {
+        if (tareaIds == null || tareaIds.isEmpty() || periodoId == null) {
+            return Map.of();
+        }
+        return calificacionRepository.findByInstitucionIdAndTareaDefinicionIdInAndPeriodoId(institucionId, tareaIds, periodoId)
+                .stream()
+                .collect(Collectors.groupingBy(c -> c.getTareaDefinicion().getId(), Collectors.counting()));
     }
 
     /** Una fila por cada estudiante activo de la sección, con su calificación de esa tarea en el período activo. */
@@ -69,8 +87,13 @@ public class TareaCalificacionService {
                 .toList();
     }
 
+    /**
+     * Si la tarea tiene puntosTotales definidos, la calificación se calcula a partir de
+     * puntosObtenidos; si no, se ingresa directamente (0-100). Los puntos totales de la tarea son
+     * opcionales, así que este método soporta ambos modos según esa tarea en particular.
+     */
     public FilaTareaCalificacion registrarCalificacion(Long institucionId, Long estudianteId, Long tareaDefinicionId,
-            Long periodoId, Integer calificacion, String observacion) {
+            Long periodoId, Integer calificacion, Integer puntosObtenidos, String observacion) {
         TareaDefinicion tareaDefinicion = tareaDefinicionRepository.findByIdAndInstitucionId(tareaDefinicionId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Tarea no encontrada"));
         PeriodoAcademico periodo = periodoRepository.findByIdAndInstitucionId(periodoId, institucionId)
@@ -83,13 +106,28 @@ public class TareaCalificacionService {
                         institucionId, estudianteId, tareaDefinicionId, periodoId)
                 .orElseGet(TareaCalificacion::new);
 
-        Integer calificacionFinal = calificacion != null ? calificacion : calificacionRegistro.getCalificacion();
-        if (calificacionFinal == null) {
-            throw new IllegalArgumentException("Debes asignar primero una calificación");
+        Integer calificacionFinal;
+        Integer puntosFinal = null;
+        if (tareaDefinicion.getPuntosTotales() != null) {
+            puntosFinal = puntosObtenidos != null ? puntosObtenidos : calificacionRegistro.getPuntosObtenidos();
+            if (puntosFinal == null) {
+                throw new IllegalArgumentException("Debes asignar primero los puntos obtenidos");
+            }
+            if (puntosFinal < 0 || puntosFinal > tareaDefinicion.getPuntosTotales()) {
+                throw new IllegalArgumentException(
+                        "Los puntos obtenidos deben estar entre 0 y " + tareaDefinicion.getPuntosTotales());
+            }
+            calificacionFinal = (int) Math.round(puntosFinal * 100.0 / tareaDefinicion.getPuntosTotales());
+        } else {
+            calificacionFinal = calificacion != null ? calificacion : calificacionRegistro.getCalificacion();
+            if (calificacionFinal == null) {
+                throw new IllegalArgumentException("Debes asignar primero una calificación");
+            }
+            if (calificacionFinal < 0 || calificacionFinal > 100) {
+                throw new IllegalArgumentException("La calificación debe estar entre 0 y 100");
+            }
         }
-        if (calificacionFinal < 0 || calificacionFinal > 100) {
-            throw new IllegalArgumentException("La calificación debe estar entre 0 y 100");
-        }
+
         String observacionFinal = calificacionRegistro.getObservacion();
         if (observacion != null) {
             observacionFinal = observacion.isBlank() ? null : observacion.trim();
@@ -100,6 +138,7 @@ public class TareaCalificacionService {
         calificacionRegistro.setEstudiante(estudiante);
         calificacionRegistro.setPeriodo(periodo);
         calificacionRegistro.setCalificacion(calificacionFinal);
+        calificacionRegistro.setPuntosObtenidos(puntosFinal);
         calificacionRegistro.setObservacion(observacionFinal);
         calificacionRepository.save(calificacionRegistro);
 
@@ -108,6 +147,7 @@ public class TareaCalificacionService {
 
     private FilaTareaCalificacion construirFila(Usuario estudiante, TareaCalificacion registro) {
         return new FilaTareaCalificacion(estudiante,
+                registro != null ? registro.getPuntosObtenidos() : null,
                 registro != null ? registro.getCalificacion() : null,
                 registro != null ? registro.getObservacion() : null);
     }

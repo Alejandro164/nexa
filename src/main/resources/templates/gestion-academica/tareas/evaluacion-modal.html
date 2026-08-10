@@ -1,0 +1,70 @@
+<div th:fragment="modal-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
+        <div class="modal-dialog" style="max-width: 720px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="'Evaluar: ' + ${tarea.titulo}">Evaluar tarea</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 65vh; overflow-y: auto;">
+                <p class="text-muted text-sm" style="margin: 0 0 1rem;">
+                    <span th:if="${periodoActivo != null}" th:text="'Período activo: ' + ${periodoActivo.codigo}">Período activo: 2028-2</span>
+                    <span th:if="${tarea.puntosTotales != null}" th:text="' · Puntos totales: ' + ${tarea.puntosTotales}"> · Puntos totales: 50</span>
+                </p>
+                <div class="validacion-puntos-error form-alert-error" style="display:none; margin-bottom: 1rem;"></div>
+                <form id="calificaciones-modal-form" onsubmit="event.preventDefault();">
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th th:if="${tarea.puntosTotales != null}">Puntos obtenidos</th>
+                                <th>Calificación</th>
+                                <th>Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${filas == null or filas.empty}">
+                                <td th:attr="colspan=${tarea.puntosTotales != null ? 4 : 3}" class="table-empty">No hay estudiantes activos en esta sección.</td>
+                            </tr>
+                            <tr th:each="f : ${filas}">
+                                <td style="font-weight:600;">
+                                    <input type="hidden" name="estudianteId" th:value="${f.estudiante.id}">
+                                    <span th:text="${f.estudiante.nombre}">Nombre</span>
+                                </td>
+                                <td th:if="${tarea.puntosTotales != null}">
+                                    <div class="input-suffix-wrap" style="max-width: 110px;">
+                                        <input type="number" class="form-input" name="puntosObtenidos" min="0"
+                                               th:max="${tarea.puntosTotales}"
+                                               style="padding-left: 10px;" th:value="${f.puntosObtenidos}"
+                                               th:attr="oninput=|calcularCalificacionDesdeInput(this, ${tarea.puntosTotales})|"
+                                               onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+                                        <span class="input-suffix">pts</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input th:if="${tarea.puntosTotales == null}" type="number" class="form-input"
+                                           name="calificacion" min="0" max="100"
+                                           style="max-width: 100px;" th:value="${f.calificacion}">
+                                    <span th:unless="${tarea.puntosTotales == null}" class="calificacion-calculada"
+                                          th:text="${f.calificacion != null ? f.calificacion + '%' : '—'}">—</span>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-input" name="observacion"
+                                           style="padding-left:10px; height: 32px;"
+                                           placeholder="Agregar nota..." th:value="${f.observacion}">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cerrar</button>
+                <button type="button" class="btn-primary btn-guardar-calificaciones"
+                        hx-post="/gestion-academica/tareas/evaluacion/guardar-lote"
+                        hx-include="#calificaciones-modal-form"
+                        th:attr="hx-vals=|js:{nivelId: ${nivelId}, materiaId: ${materiaId}, tareaId: ${tarea.id}}|"
+                        hx-swap="none">Guardar calificaciones</button>
+            </div>
+        </div>
+    </div>
+</div>

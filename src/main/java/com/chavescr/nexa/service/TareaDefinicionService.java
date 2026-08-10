@@ -10,6 +10,7 @@ import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.TareaDefinicion;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
+import com.chavescr.nexa.repository.TareaCalificacionRepository;
 import com.chavescr.nexa.repository.TareaDefinicionRepository;
 
 @Service
@@ -19,12 +20,15 @@ public class TareaDefinicionService {
     private final TareaDefinicionRepository tareaDefinicionRepository;
     private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
+    private final TareaCalificacionRepository calificacionRepository;
 
     public TareaDefinicionService(TareaDefinicionRepository tareaDefinicionRepository,
-            NivelAcademicoRepository nivelRepository, MateriaRepository materiaRepository) {
+            NivelAcademicoRepository nivelRepository, MateriaRepository materiaRepository,
+            TareaCalificacionRepository calificacionRepository) {
         this.tareaDefinicionRepository = tareaDefinicionRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
+        this.calificacionRepository = calificacionRepository;
     }
 
     @Transactional(readOnly = true)
@@ -65,6 +69,11 @@ public class TareaDefinicionService {
                     "La suma de las tareas no puede superar 100% (actual: " + sumaExistente + "%)");
         }
 
+        Integer puntosTotales = datos.getPuntosTotales();
+        if (puntosTotales != null && puntosTotales < 0) {
+            throw new IllegalArgumentException("Los puntos totales no pueden ser negativos");
+        }
+
         TareaDefinicion tarea = datos.getId() != null
                 ? obtenerTarea(institucionId, datos.getId())
                 : new TareaDefinicion();
@@ -75,11 +84,16 @@ public class TareaDefinicionService {
         tarea.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
         tarea.setFechaEntrega(datos.getFechaEntrega());
         tarea.setPorcentaje(porcentaje);
+        tarea.setPuntosTotales(puntosTotales);
         return tareaDefinicionRepository.save(tarea);
     }
 
     public void eliminarTarea(Long institucionId, Long id) {
         TareaDefinicion tarea = obtenerTarea(institucionId, id);
+        if (calificacionRepository.existsByTareaDefinicionId(id)) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar: la tarea ya tiene calificaciones registradas");
+        }
         tareaDefinicionRepository.delete(tarea);
     }
 }

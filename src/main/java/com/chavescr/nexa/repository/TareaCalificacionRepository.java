@@ -13,8 +13,13 @@ public interface TareaCalificacionRepository extends JpaRepository<TareaCalifica
     List<TareaCalificacion> findByInstitucionIdAndTareaDefinicionIdAndPeriodoId(
             Long institucionId, Long tareaDefinicionId, Long periodoId);
 
+    List<TareaCalificacion> findByInstitucionIdAndTareaDefinicionIdInAndPeriodoId(
+            Long institucionId, List<Long> tareaDefinicionIds, Long periodoId);
+
     Optional<TareaCalificacion> findByInstitucionIdAndEstudianteIdAndTareaDefinicionIdAndPeriodoId(
             Long institucionId, Long estudianteId, Long tareaDefinicionId, Long periodoId);
+
+    boolean existsByTareaDefinicionId(Long tareaDefinicionId);
 
     @Query("SELECT t FROM TareaCalificacion t WHERE t.institucion.id = :institucionId " +
             "AND t.estudiante.nivelAcademico.id = :nivelId AND t.tareaDefinicion.materia.id = :materiaId " +

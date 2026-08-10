@@ -177,38 +177,12 @@
             </div>
 
             <!-- Tareas -->
-            <div x-show="activeTab === 'tareas'" class="tab-pane" x-cloak
-                 x-data="{ subTabTareas: 'definiciones' }">
-
-                <div class="reg-tabs">
-                    <button class="reg-tab" :class="{ 'active': subTabTareas === 'definiciones' }"
-                            @click="subTabTareas = 'definiciones'">
-                        📚 Tareas Asignadas
-                    </button>
-                    <button class="reg-tab" :class="{ 'active': subTabTareas === 'evaluacion' }"
-                            @click="subTabTareas = 'evaluacion'">
-                        ✍️ Evaluación de Tareas
-                    </button>
-                </div>
-
-                <!-- Sub-tab: Tareas Asignadas -->
-                <div x-show="subTabTareas === 'definiciones'">
-                    <div id="tareas-definiciones-panel" hx-get="/gestion-academica/tareas/definiciones" hx-trigger="load" hx-swap="innerHTML">
-                        <div class="card">
-                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando tareas…</div>
-                        </div>
+            <div x-show="activeTab === 'tareas'" class="tab-pane" x-cloak>
+                <div id="tareas-definiciones-panel" hx-get="/gestion-academica/tareas/definiciones" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando tareas…</div>
                     </div>
                 </div>
-
-                <!-- Sub-tab: Evaluación -->
-                <div x-show="subTabTareas === 'evaluacion'">
-                    <div id="tareas-evaluacion-panel" hx-get="/gestion-academica/tareas/evaluacion" hx-trigger="load" hx-swap="innerHTML">
-                        <div class="card">
-                            <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando evaluaciones…</div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
             <!-- Proyectos -->
@@ -258,12 +232,6 @@
 
         </div>
         <script>
-            document.body.addEventListener('tareaDefinicionActualizada', function () {
-                var panel = document.getElementById('tareas-evaluacion-panel');
-                if (panel) {
-                    htmx.ajax('GET', '/gestion-academica/tareas/evaluacion', { target: '#tareas-evaluacion-panel', swap: 'innerHTML' });
-                }
-            });
             // El promedio depende de asistencia, cotidiano, tareas, proyectos, exámenes, extraclase y
             // la distribución porcentual; cualquier cambio en esas pestañas desactualiza la pestaña de
             // Promedio (ya cargada aparte), así que se refresca cuando cualquiera de ellas avisa un cambio.
@@ -281,6 +249,15 @@
                     htmx.ajax('GET', '/gestion-academica/cotidiano/indicadores?nivelId=' + event.detail.nivelId
                         + '&materiaId=' + event.detail.materiaId,
                         { target: '#indicadores-panel', swap: 'innerHTML' });
+                }
+            });
+            // Igual que 'cotidianoCalificado', pero para la tabla de tareas asignadas.
+            document.body.addEventListener('tareaCalificada', function (event) {
+                var panel = document.getElementById('tareas-definiciones-panel');
+                if (panel && event.detail) {
+                    htmx.ajax('GET', '/gestion-academica/tareas/definiciones?nivelId=' + event.detail.nivelId
+                        + '&materiaId=' + event.detail.materiaId,
+                        { target: '#tareas-definiciones-panel', swap: 'innerHTML' });
                 }
             });
             // Guardado por lote en modales (ej. Evaluar indicador de Cotidiano): cierra el modal y

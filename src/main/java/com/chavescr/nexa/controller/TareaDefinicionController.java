@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.TareaDefinicion;
 import com.chavescr.nexa.service.AlcanceDocenteService;
+import com.chavescr.nexa.service.TareaCalificacionService;
 import com.chavescr.nexa.service.TareaDefinicionService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,10 +29,13 @@ public class TareaDefinicionController {
 
     private final TareaDefinicionService service;
     private final AlcanceDocenteService alcanceDocenteService;
+    private final TareaCalificacionService evaluacionService;
 
-    public TareaDefinicionController(TareaDefinicionService service, AlcanceDocenteService alcanceDocenteService) {
+    public TareaDefinicionController(TareaDefinicionService service, AlcanceDocenteService alcanceDocenteService,
+            TareaCalificacionService evaluacionService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
+        this.evaluacionService = evaluacionService;
     }
 
     @GetMapping
@@ -66,11 +70,13 @@ public class TareaDefinicionController {
             @ModelAttribute TareaDefinicion tarea, Model model, HttpSession session,
             HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
+        boolean esNueva = tarea.getId() == null;
         try {
             service.guardarTarea(institucionId, nivelId, materiaId, tarea);
-            notificarTareasActualizadas(response);
+            notificarGuardado(response, esNueva ? "Tarea creada correctamente" : "Tarea actualizada correctamente");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
+            notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/tareas/definiciones :: content";
@@ -80,15 +86,27 @@ public class TareaDefinicionController {
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        service.eliminarTarea(institucionId, id);
-        notificarTareasActualizadas(response);
+        try {
+            service.eliminarTarea(institucionId, id);
+            notificarGuardado(response, "Tarea eliminada correctamente");
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
+        }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/tareas/definiciones :: content";
     }
 
-    /** Avisa a la pestaña de Evaluación (ya cargada aparte) que las tareas cambiaron, para que se refresque. */
-    private void notificarTareasActualizadas(HttpServletResponse response) {
-        response.setHeader("HX-Trigger", "tareaDefinicionActualizada, promedioDesactualizado");
+    private void notificarGuardado(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoGuardado\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"},"
+                + "\"promedioDesactualizado\":\"\"}");
+    }
+
+    private void notificarError(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"academicoError\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"}}");
+    }
+
+    private String escaparJson(String texto) {
+        return texto.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long docenteId) {
@@ -104,12 +122,22 @@ public class TareaDefinicionController {
                 ? service.listarTareas(institucionId, nivelId, materiaId)
                 : List.of();
         int total = tareas.stream().mapToInt(TareaDefinicion::getPorcentaje).sum();
+
+        var periodoActivo = evaluacionService.obtenerPeriodoActivoOpcional(institucionId);
+        int totalEstudiantesSeccion = nivelId != null ? evaluacionService.contarEstudiantesActivos(nivelId) : 0;
+        var evaluadosPorTarea = evaluacionService.contarEvaluadosPorTarea(institucionId,
+                tareas.stream().map(TareaDefinicion::getId).toList(),
+                periodoActivo != null ? periodoActivo.getId() : null);
+
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("tareas", tareas);
         model.addAttribute("totalAsignado", total);
+        model.addAttribute("periodoActivo", periodoActivo);
+        model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
+        model.addAttribute("evaluadosPorTarea", evaluadosPorTarea);
     }
 
     private Long requerirInstitucion(HttpSession session) {

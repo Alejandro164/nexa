@@ -5,17 +5,23 @@ import com.chavescr.nexa.entity.Usuario;
 public class FilaTareaCalificacion {
 
     private final Usuario estudiante;
+    private final Integer puntosObtenidos;
     private final Integer calificacion;
     private final String observacion;
 
-    public FilaTareaCalificacion(Usuario estudiante, Integer calificacion, String observacion) {
+    public FilaTareaCalificacion(Usuario estudiante, Integer puntosObtenidos, Integer calificacion, String observacion) {
         this.estudiante = estudiante;
+        this.puntosObtenidos = puntosObtenidos;
         this.calificacion = calificacion;
         this.observacion = observacion;
     }
 
     public Usuario getEstudiante() {
         return estudiante;
+    }
+
+    public Integer getPuntosObtenidos() {
+        return puntosObtenidos;
     }
 
     public Integer getCalificacion() {

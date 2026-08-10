@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.chavescr.nexa.entity.TareaDefinicion;
-import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.TareaCalificacionService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,28 +24,24 @@ import jakarta.servlet.http.HttpSession;
 public class TareaCalificacionController {
 
     private final TareaCalificacionService service;
-    private final AlcanceDocenteService alcanceDocenteService;
 
-    public TareaCalificacionController(TareaCalificacionService service,
-            AlcanceDocenteService alcanceDocenteService) {
+    public TareaCalificacionController(TareaCalificacionService service) {
         this.service = service;
-        this.alcanceDocenteService = alcanceDocenteService;
     }
 
-    @GetMapping
-    public String evaluaciones(@RequestParam(required = false) Long nivelId,
-            @RequestParam(required = false) Long materiaId,
-            @RequestParam(required = false) Long tareaId,
-            Model model, HttpSession session, HttpServletRequest request) {
+    @GetMapping("/modal")
+    public String modal(@RequestParam Long nivelId, @RequestParam Long materiaId, @RequestParam Long tareaId,
+            Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, nivelId, materiaId, tareaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/tareas/evaluacion :: content";
+        cargarModal(model, institucionId, nivelId, materiaId, tareaId);
+        return "gestion-academica/tareas/evaluacion-modal :: modal-content";
     }
 
     @PostMapping("/guardar-lote")
     public String guardarLote(@RequestParam Long nivelId, @RequestParam Long materiaId, @RequestParam Long tareaId,
             @RequestParam(required = false) List<Long> estudianteId,
             @RequestParam(required = false) List<String> calificacion,
+            @RequestParam(required = false) List<String> puntosObtenidos,
             @RequestParam(required = false) List<String> observacion,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         exigirDocenteODirectorOAdmin(request);
@@ -58,61 +52,49 @@ public class TareaCalificacionController {
         if (estudianteId != null) {
             for (int i = 0; i < estudianteId.size(); i++) {
                 String calStr = calificacion != null && i < calificacion.size() ? calificacion.get(i) : null;
-                if (calStr == null || calStr.isBlank()) {
+                String puntosStr = puntosObtenidos != null && i < puntosObtenidos.size() ? puntosObtenidos.get(i) : null;
+                if ((calStr == null || calStr.isBlank()) && (puntosStr == null || puntosStr.isBlank())) {
                     continue;
                 }
                 String obs = observacion != null && i < observacion.size() ? observacion.get(i) : null;
                 try {
-                    Integer cal = Integer.valueOf(calStr.trim());
-                    service.registrarCalificacion(institucionId, estudianteId.get(i), tareaId, periodoId, cal, obs);
+                    Integer cal = calStr != null && !calStr.isBlank() ? Integer.valueOf(calStr.trim()) : null;
+                    Integer puntos = puntosStr != null && !puntosStr.isBlank() ? Integer.valueOf(puntosStr.trim()) : null;
+                    service.registrarCalificacion(institucionId, estudianteId.get(i), tareaId, periodoId, cal, puntos, obs);
                 } catch (NumberFormatException e) {
-                    errores.add("una calificación inválida");
+                    errores.add("un valor inválido");
                 } catch (IllegalArgumentException e) {
                     errores.add(e.getMessage());
                 }
             }
         }
+        String tareaCalificada = "\"tareaCalificada\":{\"nivelId\":" + nivelId + ",\"materiaId\":" + materiaId + "}";
         if (!errores.isEmpty()) {
-            model.addAttribute("error",
-                    errores.size() + " calificación(es) no se guardaron: " + String.join("; ", errores.stream().distinct().toList()));
+            String mensaje = errores.size() + " calificación(es) no se guardaron: "
+                    + String.join("; ", errores.stream().distinct().toList());
+            response.setHeader("HX-Trigger", "{\"academicoError\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"},"
+                    + "\"promedioDesactualizado\":\"\"," + tareaCalificada + "}");
+        } else {
+            response.setHeader("HX-Trigger",
+                    "{\"academicoGuardado\":{\"mensaje\":\"Calificaciones guardadas correctamente\"},"
+                            + "\"promedioDesactualizado\":\"\"," + tareaCalificada + "}");
         }
-        response.setHeader("HX-Trigger", "promedioDesactualizado");
-        cargarPanel(model, institucionId, nivelId, materiaId, tareaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/tareas/evaluacion :: content";
+        cargarModal(model, institucionId, nivelId, materiaId, tareaId);
+        return "gestion-academica/tareas/evaluacion-modal :: modal-content";
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Long tareaId,
-            Long docenteId) {
-        var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
-        if (nivelId == null && !niveles.isEmpty()) {
-            nivelId = niveles.get(0).getId();
-        }
+    private String escaparJson(String texto) {
+        return texto.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 
-        var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
-        if (materiaId == null && !materias.isEmpty()) {
-            materiaId = materias.get(0).getId();
-        }
-
-        var tareas = nivelId != null && materiaId != null
-                ? service.listarTareasDisponibles(institucionId, nivelId, materiaId)
-                : List.<TareaDefinicion>of();
-        Long tareaSolicitada = tareaId;
-        if (tareaSolicitada == null || tareas.stream().noneMatch(t -> t.getId().equals(tareaSolicitada))) {
-            tareaId = tareas.isEmpty() ? null : tareas.get(0).getId();
-        }
-
+    private void cargarModal(Model model, Long institucionId, Long nivelId, Long materiaId, Long tareaId) {
+        var tarea = service.obtenerTareaDefinicion(institucionId, tareaId);
         var periodoActivo = service.obtenerPeriodoActivo(institucionId);
-
-        model.addAttribute("niveles", niveles);
-        model.addAttribute("materias", materias);
-        model.addAttribute("tareas", tareas);
+        model.addAttribute("tarea", tarea);
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
-        model.addAttribute("tareaId", tareaId);
         model.addAttribute("periodoActivo", periodoActivo);
-        model.addAttribute("filas", nivelId != null && tareaId != null
-                ? service.listarFilas(institucionId, nivelId, tareaId, periodoActivo.getId())
-                : List.of());
+        model.addAttribute("filas", service.listarFilas(institucionId, nivelId, tareaId, periodoActivo.getId()));
     }
 
     private Long requerirInstitucion(HttpSession session) {
@@ -128,12 +110,5 @@ public class TareaCalificacionController {
                 && !request.isUserInRole("ROLE_ADMIN")) {
             throw new AccessDeniedException("Solo docentes, directores o administradores pueden evaluar");
         }
-    }
-
-    private Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {
-        boolean soloDocente = request.isUserInRole("ROLE_DOCENTE")
-                && !request.isUserInRole("ROLE_ADMIN")
-                && !request.isUserInRole("ROLE_DIRECTOR");
-        return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
     }
 }
