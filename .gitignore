@@ -47,10 +47,8 @@ Thumbs.db
 ### Environment Variables ###
 .env
 .env.*
+!.env.example
+!.env.prod.example
 
 ### Sensitive Configs and IDE folders ###
-application-prod.properties
 .opencode/
-
-### Production Docker ###
-Dockerfile.prod

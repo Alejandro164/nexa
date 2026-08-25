@@ -1,0 +1,56 @@
+name: Deploy a producción
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cargar llave SSH de despliegue
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Confiar en el host remoto
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.DEPLOY_PORT || 22 }}" -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sincronizar código (sin secretos ni build)
+        run: |
+          rsync -az --delete \
+            -e "ssh -p ${{ secrets.DEPLOY_PORT || 22 }}" \
+            --exclude '.git/' \
+            --exclude 'target/' \
+            --exclude '.idea/' \
+            --exclude '.vscode/' \
+            --exclude '.env' \
+            --exclude '.env.*' \
+            --exclude '*.log' \
+            ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.REMOTE_DIR }}/"
+
+      - name: Escribir .env de producción en el servidor
+        run: |
+          ssh -p "${{ secrets.DEPLOY_PORT || 22 }}" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "umask 077; cat > '${{ secrets.REMOTE_DIR }}/.env' <<'EOF'
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          APP_PORT=${{ vars.APP_PORT || '8082' }}
+          EOF
+          chmod 600 '${{ secrets.REMOTE_DIR }}/.env'"
+
+      - name: Build y arranque (docker compose)
+        run: |
+          ssh -p "${{ secrets.DEPLOY_PORT || 22 }}" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd '${{ secrets.REMOTE_DIR }}' && \
+             docker compose -f docker-compose.prod.yml --env-file .env up -d --build --remove-orphans && \
+             docker compose -f docker-compose.prod.yml ps"
