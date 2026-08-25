@@ -1,24 +1,4 @@
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: nexa_db_prod
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "127.0.0.1:5433:5432"
-    volumes:
-      - postgres_data_prod:/var/lib/postgresql/data
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - nexa_prod_net
-
   redis:
     image: redis:7-alpine
     container_name: nexa_redis_prod
@@ -40,13 +20,13 @@ services:
       dockerfile: Dockerfile
     container_name: nexa_prod
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_DATA_REDIS_HOST: redis
@@ -64,6 +44,5 @@ networks:
   nexa_prod_net:
 
 volumes:
-  postgres_data_prod:
   redis_data_prod:
   datos_nexa_prod:
