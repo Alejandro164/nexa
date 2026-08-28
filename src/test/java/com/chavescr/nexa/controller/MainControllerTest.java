@@ -13,9 +13,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import com.chavescr.nexa.dto.InstitucionDTO;
 import com.chavescr.nexa.entity.Institucion;
@@ -41,7 +41,7 @@ class MainControllerTest {
     }
 
     @Test
-    void noPermiteCambiarAUnaInstitucionALaQueElUsuarioNoPertenece() {
+    void noPermiteCambiarAUnaInstitucionALaQueElUsuarioNoPertenece() throws Exception {
         InstitucionDTO propia = new InstitucionDTO();
         propia.setId(1L);
         propia.setNombre("Institución Propia");
@@ -49,15 +49,15 @@ class MainControllerTest {
 
         MockHttpSession session = new MockHttpSession();
 
-        controller.cambiarInstitucion(99L, new MockHttpServletRequest(), session,
-                new RedirectAttributesModelMap());
+        controller.cambiarInstitucion(99L, new MockHttpServletRequest(), new MockHttpServletResponse(),
+                session);
 
         assertNull(session.getAttribute("SESSION_INSTITUCION_ID"));
         assertNull(session.getAttribute("SESSION_INSTITUCION_NOMBRE"));
     }
 
     @Test
-    void permiteCambiarAUnaInstitucionALaQueElUsuarioSiPertenece() {
+    void permiteCambiarAUnaInstitucionALaQueElUsuarioSiPertenece() throws Exception {
         InstitucionDTO propia = new InstitucionDTO();
         propia.setId(1L);
         propia.setNombre("Institución Propia");
@@ -68,15 +68,15 @@ class MainControllerTest {
 
         MockHttpSession session = new MockHttpSession();
 
-        controller.cambiarInstitucion(2L, new MockHttpServletRequest(), session,
-                new RedirectAttributesModelMap());
+        controller.cambiarInstitucion(2L, new MockHttpServletRequest(), new MockHttpServletResponse(),
+                session);
 
         assertEquals(2L, session.getAttribute("SESSION_INSTITUCION_ID"));
         assertEquals("Segunda Institución", session.getAttribute("SESSION_INSTITUCION_NOMBRE"));
     }
 
     @Test
-    void adminPuedeCambiarACualquierInstitucionExistenteSinPertenecerAElla() {
+    void adminPuedeCambiarACualquierInstitucionExistenteSinPertenecerAElla() throws Exception {
         Institucion otra = new Institucion();
         otra.setId(5L);
         otra.setNombre("Otra Institución");
@@ -86,7 +86,7 @@ class MainControllerTest {
         request.addUserRole("ROLE_ADMIN");
         MockHttpSession session = new MockHttpSession();
 
-        controller.cambiarInstitucion(5L, request, session, new RedirectAttributesModelMap());
+        controller.cambiarInstitucion(5L, request, new MockHttpServletResponse(), session);
 
         assertEquals(5L, session.getAttribute("SESSION_INSTITUCION_ID"));
         assertEquals("Otra Institución", session.getAttribute("SESSION_INSTITUCION_NOMBRE"));
