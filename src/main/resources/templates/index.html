@@ -588,6 +588,29 @@
             border: 2px solid var(--surface-solid);
         }
 
+        .notification-dot-hidden {
+            display: none;
+        }
+
+        .notif-dropdown {
+            width: 340px;
+            max-height: 420px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .notif-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+
+        .notif-item:hover {
+            background: var(--input-bg);
+        }
+
         /* Fixed collapsed sidebar user menu */
         .sidebar.collapsed .user-dropdown-menu {
             width: 220px;

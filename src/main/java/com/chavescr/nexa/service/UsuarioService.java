@@ -86,6 +86,13 @@ public class UsuarioService {
         return usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, rolNombre).size();
     }
 
+    /** Personal (admin/director/docente) activo de una institución, para selectores como el de Control de Acceso. */
+    @Transactional(readOnly = true)
+    public List<Usuario> obtenerPersonalActivoPorInstitucion(Long institucionId) {
+        return usuarioRepository.findActivosByInstitucionIdAndRolIn(institucionId,
+                List.of("ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_DOCENTE"));
+    }
+
     @Transactional(readOnly = true)
     public List<InstitucionDTO> obtenerInstitucionesDelUsuarioActual() {
         String identifier = SecurityContextHolder.getContext().getAuthentication().getName();

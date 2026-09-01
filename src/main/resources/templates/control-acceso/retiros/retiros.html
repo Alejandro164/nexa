@@ -34,6 +34,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Solicitudes de Retiro de Estudiantes</h3>
+            <a class="btn btn-secondary" style="padding:0.4rem 0.9rem;" href="/control-de-acceso/retiros/exportar">⬇️ Exportar CSV</a>
         </div>
         <div style="padding: 0 1.5rem 1.5rem 1.5rem;">
             <div th:if="${retiros != null && !retiros.empty}">
@@ -52,7 +53,13 @@
                         <tbody>
                             <tr th:each="r : ${retiros}">
                                 <td style="font-weight:600;" th:text="${r.estudiante.nombre}">Estudiante</td>
-                                <td th:text="${r.padre.nombre}">Padre</td>
+                                <td>
+                                    <span th:text="${r.padre.nombre}">Padre</span>
+                                    <div th:if="${r.retiradoPorNombre != null and !r.retiradoPorNombre.equals(r.padre.nombre)}"
+                                         style="font-size:0.72rem; color:var(--text-light); margin-top:2px;">
+                                        Retiró: <span th:text="${r.retiradoPorNombre}"></span>
+                                    </div>
+                                </td>
                                 <td th:text="${r.motivo != null and !r.motivo.isBlank() ? r.motivo : '—'}">Motivo</td>
                                 <td style="font-size:0.85rem;" th:text="${#temporals.format(r.fechaHoraSolicitud, 'HH:mm')}">Hora</td>
                                 <td>
@@ -71,8 +78,12 @@
                                             <input type="hidden" name="retiroId" th:value="${r.id}" />
                                             <button type="submit" class="btn-accion btn-denegar" style="padding:0.3rem 0.65rem; font-size:0.7rem;">✕</button>
                                         </form>
-                                        <form th:if="${r.estado.toString() == 'AUTORIZADO'}" th:action="@{/control-de-acceso/retiros/salida}" method="post" style="margin:0;">
+                                        <form th:if="${r.estado.toString() == 'AUTORIZADO'}" th:action="@{/control-de-acceso/retiros/salida}" method="post"
+                                              style="margin:0; display:flex; gap:4px; align-items:center;">
                                             <input type="hidden" name="retiroId" th:value="${r.id}" />
+                                            <input type="text" name="retiradoPorNombre" th:value="${r.padre.nombre}" placeholder="¿Quién retira?"
+                                                   title="Nombre de quien retira al estudiante"
+                                                   style="width:110px; padding:0.25rem 0.4rem; font-size:0.7rem; border:1px solid var(--border); border-radius:6px; font-family:inherit;">
                                             <button type="submit" class="btn-accion btn-salida" style="padding:0.3rem 0.65rem; font-size:0.7rem;">Salida</button>
                                         </form>
                                     </div>

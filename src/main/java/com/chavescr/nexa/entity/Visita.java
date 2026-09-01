@@ -36,8 +36,9 @@ public class Visita {
     @Column(nullable = false, length = 20)
     private TipoDestinatario tipoDestinatario = TipoDestinatario.DOCENTE;
 
-    @Column(nullable = false, length = 150)
-    private String personaAVisitar;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "persona_visitada_id")
+    private Usuario personaVisitada;
 
     @Column(nullable = false)
     private Boolean tieneCita = false;
@@ -119,12 +120,12 @@ public class Visita {
         this.tipoDestinatario = tipoDestinatario;
     }
 
-    public String getPersonaAVisitar() {
-        return personaAVisitar;
+    public Usuario getPersonaVisitada() {
+        return personaVisitada;
     }
 
-    public void setPersonaAVisitar(String personaAVisitar) {
-        this.personaAVisitar = personaAVisitar;
+    public void setPersonaVisitada(Usuario personaVisitada) {
+        this.personaVisitada = personaVisitada;
     }
 
     public Boolean getTieneCita() {
