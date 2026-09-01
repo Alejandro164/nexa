@@ -21,7 +21,7 @@
         <div class="nav-section-title">Gestión y Personas</div>
 
         <a href="/contacto" class="nav-item" hx-get="/contacto" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path
@@ -31,7 +31,7 @@
         </a>
 
         <a href="/estudiantes" class="nav-item" hx-get="/estudiantes" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -40,7 +40,7 @@
             <span class="nav-item-text">Estudiantes</span>
         </a>
         <a href="/docentes" class="nav-item" hx-get="/docentes" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -51,7 +51,7 @@
             <span class="nav-item-text">Docentes</span>
         </a>
         <a href="/personal" class="nav-item" hx-get="/personal" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
@@ -60,7 +60,7 @@
             <span class="nav-item-text">Personal</span>
         </a>
         <a href="/padres" class="nav-item" hx-get="/padres" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -71,7 +71,7 @@
             <span class="nav-item-text">Padres</span>
         </a>
         <a href="/control-de-acceso" class="nav-item" hx-get="/control-de-acceso" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true">
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -85,7 +85,7 @@
     <div class="nav-section">
         <div class="nav-section-title">Academia y Servicios</div>
         <a href="/gestion-academica" class="nav-item" hx-get="/gestion-academica" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true">
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -94,7 +94,7 @@
             <span class="nav-item-text">Gestión Académica</span>
         </a>
         <a href="/gestion-especial" class="nav-item" hx-get="/gestion-especial" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true">
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -102,7 +102,7 @@
             <span class="nav-item-text">Gestión Especial</span>
         </a>
         <a href="/coordinacion-academica" class="nav-item" hx-get="/coordinacion-academica" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true">
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
@@ -112,7 +112,7 @@
             <span class="nav-item-text">Coordinación Acad.</span>
         </a>
         <a href="/evaluacion-academica" class="nav-item" hx-get="/evaluacion-academica" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true">
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -120,7 +120,7 @@
             <span class="nav-item-text">Evaluación Académica</span>
         </a>
         <a href="/conducta" class="nav-item" hx-get="/conducta" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 20h9" />
@@ -130,7 +130,7 @@
             <span class="nav-item-text">Conducta</span>
         </a>
         <a href="/comedor" class="nav-item" hx-get="/comedor" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
@@ -147,7 +147,7 @@
     <div class="nav-section">
         <div class="nav-section-title">Gestión Documental</div>
         <a href="/nube-nexa" class="nav-item" hx-get="/nube-nexa" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
@@ -155,7 +155,7 @@
             <span class="nav-item-text"> Nube Nexa</span>
         </a>
         <a href="/archivo-graduados" class="nav-item" hx-get="/archivo-graduados" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true">
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -167,7 +167,7 @@
             <span class="nav-item-text">Archivo Graduados</span>
         </a>
         <a href="/oficios" class="nav-item" hx-get="/oficios" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true">
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
@@ -216,7 +216,7 @@
     <div class="nav-section">
         <div class="nav-section-title">Análisis e Info</div>
         <a href="/reportes" class="nav-item" hx-get="/reportes" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="20" x2="18" y2="10" />
@@ -231,7 +231,7 @@
     <div class="nav-section">
         <div class="nav-section-title">Otros</div>
         <a href="/mis-cursos" class="nav-item" hx-get="/mis-cursos" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -242,7 +242,7 @@
         </a>
 
         <a href="/componentes" class="nav-item" hx-get="/componentes" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -254,10 +254,10 @@
         </a>
     </div>
 
-    <div class="nav-section" sec:authorize="hasAuthority('ROLE_ADMIN')">
+    <div class="nav-section" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
         <div class="nav-section-title">Administración</div>
         <a href="/configuracion" class="nav-item" hx-get="/configuracion" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3" />
@@ -267,7 +267,7 @@
             <span class="nav-item-text">Configuración</span>
         </a>
         <a href="/configuracion-academica" class="nav-item" hx-get="/configuracion-academica" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true">
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -276,7 +276,7 @@
             <span class="nav-item-text">Config. Académica</span>
         </a>
         <a href="/usuarios" class="nav-item" hx-get="/usuarios" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -285,7 +285,7 @@
             <span class="nav-item-text">Usuarios</span>
         </a>
         <a href="/seguridad" class="nav-item" hx-get="/seguridad" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -294,7 +294,7 @@
             <span class="nav-item-text">Seguridad</span>
         </a>
         <a href="/instituciones" class="nav-item" hx-get="/instituciones" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true">
+            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 21h18"></path>
