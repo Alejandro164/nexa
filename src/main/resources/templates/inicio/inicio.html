@@ -249,6 +249,12 @@
                 padding: 1.25rem 1.5rem;
             }
 
+            /* Limita la altura a ~5 filas (64px c/u); si hay más, se hace scroll en vez de estirar el card. */
+            .dash-card-body-scroll {
+                max-height: 360px;
+                overflow-y: auto;
+            }
+
             .dash-list-item {
                 display: flex;
                 align-items: center;
@@ -417,7 +423,7 @@
                     <h3>Actividad Académica Reciente</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
-                <div class="dash-card-body">
+                <div class="dash-card-body dash-card-body-scroll">
                     <th:block th:each="evento : ${actividadReciente}">
                         <div class="dash-list-item">
                             <div class="dash-activity-icon"
@@ -461,7 +467,7 @@
                     <h3>Niveles Educativos</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
                 </div>
-                <div class="dash-card-body">
+                <div class="dash-card-body dash-card-body-scroll">
                     <th:block th:each="nivel, iterStat : ${niveles}">
                         <div class="dash-list-item">
                             <div class="dash-avatar" th:classappend="${iterStat.odd} ? 'alt'">
