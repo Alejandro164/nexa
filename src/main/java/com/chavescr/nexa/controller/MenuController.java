@@ -82,9 +82,4 @@ public class MenuController {
         return htmxRequest ? "archivo/index :: htmx-content" : "archivo/index";
     }
 
-    @GetMapping("/oficios")
-    public String oficios(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "oficios/index :: htmx-content" : "oficios/index";
-    }
-
 }

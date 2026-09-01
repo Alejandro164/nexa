@@ -18,62 +18,28 @@
     <p id="topbar-page-subtitle" hx-swap-oob="true">Registro y control de oficios emitidos por la institución</p>
     <main layout:fragment="content"
           x-data="{
-              tipText: '',
-              tipVisible: false,
-              tipPinned: false,
-              tipX: 0,
-              tipY: 0,
-              tipCell: null,
-
-              show(cell) {
-                  this.tipCell = cell;
-                  this.tipText = cell.getAttribute('data-tooltip') || '';
-                  this.tipVisible = true;
-                  this.positionTooltip(cell);
+              openModal(id) {
+                  const el = document.getElementById(id);
+                  el.style.display = 'block';
+                  setTimeout(() => {
+                      void el.offsetWidth;
+                      el.classList.remove('dir-modal-closing');
+                      el.classList.add('dir-modal-visible');
+                  }, 0);
               },
-
-              positionTooltip(cell) {
-                  const rect = cell.getBoundingClientRect();
-                  this.tipX = rect.left + rect.width / 2;
-                  this.tipY = rect.bottom + 6;
-              },
-
-              maybeHide() {
-                  if (this.tipPinned) return;
-                  this.tipVisible = false;
-                  this.tipCell = null;
-              },
-
-              togglePin(cell) {
-                  if (this.tipPinned && this.tipCell === cell) {
-                      this.dismiss();
-                      return;
-                  }
-                  this.tipCell = cell;
-                  this.tipText = cell.getAttribute('data-tooltip') || '';
-                  this.tipPinned = true;
-                  this.tipVisible = true;
-                  this.positionTooltip(cell);
-              },
-
-              dismiss() {
-                  this.tipVisible = false;
-                  this.tipPinned = false;
-                  this.tipCell = null;
-                  this.tipText = '';
-              },
-
-              onGlobalClick(e) {
-                  if (this.tipPinned && this.tipCell) {
-                      if (!this.tipCell.contains(e.target) && !e.target.closest('.cell-tip')) {
-                          this.dismiss();
-                      }
-                  }
+              closeModal(id) {
+                  const el = document.getElementById(id);
+                  el.classList.remove('dir-modal-visible');
+                  el.classList.add('dir-modal-closing');
+                  setTimeout(() => {
+                      el.style.display = 'none';
+                      el.classList.remove('dir-modal-closing');
+                  }, 180);
               }
           }"
-          @click.window="onGlobalClick($event)"
-          @keydown.escape.window="dismiss()"
-          @resize.window="if(tipPinned && tipCell) positionTooltip(tipCell)">
+          @open-modal.window="openModal('oficios-modal-container')"
+          @close-modal.window="closeModal('oficios-modal-container')"
+          @keydown.escape.window="closeModal('oficios-modal-container')">
 
         <style>
             .oficios-container {
@@ -181,17 +147,7 @@
             .oficios-table .col-destinatario { width: 22%; }
             .oficios-table .col-circular { width: 10%; }
             .oficios-table .col-estado { width: 8%; }
-            .oficios-table .col-doc { width: 7%; }
-
-            /* Célula con tooltip: cursor cambia */
-            .cell-tooltipped {
-                cursor: pointer;
-                position: relative;
-            }
-
-            .cell-tooltipped:hover {
-                background: rgba(45, 90, 135, 0.06) !important;
-            }
+            .oficios-table .col-doc { width: 14%; }
 
             .oficio-number {
                 font-weight: 700;
@@ -246,80 +202,6 @@
                 background: var(--primary);
                 color: #ffffff;
             }
-
-            /* ── Custom Tooltip ── */
-            .cell-tip {
-                position: fixed;
-                z-index: 9999;
-                max-width: 420px;
-                padding: 10px 16px;
-                background: #1e293b;
-                color: #f1f5f9;
-                font-size: 0.85rem;
-                line-height: 1.45;
-                border-radius: 10px;
-                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-                pointer-events: none;
-                transform: translate(-50%, 0);
-                white-space: normal;
-                word-break: break-word;
-            }
-
-            .cell-tip--pinned {
-                pointer-events: auto;
-                padding-right: 36px;
-                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-            }
-
-            .cell-tip::after {
-                content: '';
-                position: absolute;
-                bottom: 100%;
-                left: 50%;
-                transform: translateX(-50%);
-                border: 7px solid transparent;
-                border-bottom-color: #1e293b;
-            }
-
-            .cell-tip__close {
-                position: absolute;
-                top: 6px;
-                right: 8px;
-                width: 22px;
-                height: 22px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: rgba(255, 255, 255, 0.15);
-                border: none;
-                border-radius: 50%;
-                color: #cbd5e1;
-                font-size: 0.85rem;
-                cursor: pointer;
-                line-height: 1;
-                transition: background 0.15s;
-            }
-
-            .cell-tip__close:hover {
-                background: rgba(255, 255, 255, 0.3);
-                color: #fff;
-            }
-
-            /* Animación de entrada */
-            .cell-tip-enter {
-                animation: tipIn 0.15s ease-out;
-            }
-
-            @keyframes tipIn {
-                from {
-                    opacity: 0;
-                    transform: translate(-50%, -4px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translate(-50%, 0);
-                }
-            }
         </style>
 
         <div class="oficios-container">
@@ -331,10 +213,17 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input type="text" placeholder="Buscar por N° de oficio, redactor, asunto o destinatario...">
+                    <input type="text" name="q" placeholder="Buscar por N° de oficio, asunto o destinatario..."
+                           th:value="${q}"
+                           hx-get="/oficios/lista"
+                           hx-trigger="keyup changed delay:400ms, search"
+                           hx-target="#oficios-lista-content" hx-swap="outerHTML">
                 </div>
 
-                <button class="btn btn-primary" style="display: flex; align-items: center; gap: 8px; border-radius: 8px;">
+                <button class="btn btn-primary" style="display: flex; align-items: center; gap: 8px; border-radius: 8px;"
+                        hx-get="/oficios/form"
+                        hx-target="#oficios-modal-container" hx-swap="innerHTML"
+                        hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -343,144 +232,11 @@
                 </button>
             </div>
 
-            <!-- Data Table -->
-            <div class="oficios-table-container">
-                <table class="oficios-table">
-                    <thead>
-                        <tr>
-                            <th class="col-oficio">N° Oficio</th>
-                            <th class="col-redactor">Redactado por</th>
-                            <th class="col-asunto">Asunto</th>
-                            <th class="col-destinatario">Destinatario</th>
-                            <th class="col-circular">N° Circular</th>
-                            <th class="col-estado">Estado</th>
-                            <th class="col-doc">Doc.</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="col-oficio" data-tooltip="OF-2026-001"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="oficio-number">OF-2026-001</span></td>
-                            <td class="col-redactor" data-tooltip="Lic. María González Ramírez"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Lic. María González Ramírez</td>
-                            <td class="col-asunto" data-tooltip="Solicitud de autorización para actividad extracurricular del III trimestre"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Solicitud de autorización para actividad extracurricular del III trimestre</td>
-                            <td class="col-destinatario" data-tooltip="MEP - Dirección Regional de San José Norte"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">MEP - Dirección Regional de San José Norte</td>
-                            <td class="col-circular" data-tooltip="N° Circular: CIR-2026-012"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="badge-circular">CIR-2026-012</span></td>
-                            <td class="col-estado" data-tooltip="Estado: Emitido"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="badge-estado">✓ Emitido</span></td>
-                            <td class="col-doc">
-                                <button class="btn-view">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="col-oficio" data-tooltip="OF-2026-002"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="oficio-number">OF-2026-002</span></td>
-                            <td class="col-redactor" data-tooltip="Dr. Carlos Mendoza Solís"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Dr. Carlos Mendoza Solís</td>
-                            <td class="col-asunto" data-tooltip="Informe de resultados del programa de nivelación académica 2025"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Informe de resultados del programa de nivelación académica 2025</td>
-                            <td class="col-destinatario" data-tooltip="Supervisión Educativa - Circuito 03"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Supervisión Educativa - Circuito 03</td>
-                            <td class="col-circular" data-tooltip="N° Circular: CIR-2026-018"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="badge-circular">CIR-2026-018</span></td>
-                            <td class="col-estado" data-tooltip="Estado: Emitido"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="badge-estado">✓ Emitido</span></td>
-                            <td class="col-doc">
-                                <button class="btn-view">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="col-oficio" data-tooltip="OF-2026-003"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="oficio-number">OF-2026-003</span></td>
-                            <td class="col-redactor" data-tooltip="Lic. Ana Patricia Vargas"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Lic. Ana Patricia Vargas</td>
-                            <td class="col-asunto" data-tooltip="Notificación de cambio en el horario de lecciones del II semestre"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Notificación de cambio en el horario de lecciones del II semestre</td>
-                            <td class="col-destinatario" data-tooltip="Junta de Educación - Escuela Los Ángeles"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Junta de Educación - Escuela Los Ángeles</td>
-                            <td class="col-circular" data-tooltip="N° Circular: CIR-2026-025"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="badge-circular">CIR-2026-025</span></td>
-                            <td class="col-estado" data-tooltip="Estado: Pendiente"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="badge-estado pendiente">⏳ Pendiente</span></td>
-                            <td class="col-doc">
-                                <button class="btn-view">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="col-oficio" data-tooltip="OF-2026-004"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="oficio-number">OF-2026-004</span></td>
-                            <td class="col-redactor" data-tooltip="Lic. Roberto Jiménez Quirós"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Lic. Roberto Jiménez Quirós</td>
-                            <td class="col-asunto" data-tooltip="Solicitud de materiales didácticos para laboratorio de ciencias"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Solicitud de materiales didácticos para laboratorio de ciencias</td>
-                            <td class="col-destinatario" data-tooltip="Departamento de Proveeduría - MEP"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Departamento de Proveeduría - MEP</td>
-                            <td class="col-circular" data-tooltip="Sin circular asignada"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)" style="color:#94a3b8;">—</td>
-                            <td class="col-estado" data-tooltip="Estado: Pendiente"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="badge-estado pendiente">⏳ Pendiente</span></td>
-                            <td class="col-doc">
-                                <button class="btn-view">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="col-oficio" data-tooltip="OF-2026-005"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="oficio-number">OF-2026-005</span></td>
-                            <td class="col-redactor" data-tooltip="Lic. María González Ramírez"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Lic. María González Ramírez</td>
-                            <td class="col-asunto" data-tooltip="Comunicado sobre reprogramación de exámenes de bachillerato"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Comunicado sobre reprogramación de exámenes de bachillerato</td>
-                            <td class="col-destinatario" data-tooltip="Dirección de Gestión y Evaluación de la Calidad"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)">Dirección de Gestión y Evaluación de la Calidad</td>
-                            <td class="col-circular" data-tooltip="N° Circular: CIR-2026-031"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="badge-circular">CIR-2026-031</span></td>
-                            <td class="col-estado" data-tooltip="Estado: Emitido"
-                                @mouseenter="show($el)" @mouseleave="maybeHide()" @click.stop="togglePin($el)"><span class="badge-estado">✓ Emitido</span></td>
-                            <td class="col-doc">
-                                <button class="btn-view">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination Mock -->
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem;">
-                <div style="font-size: 0.85rem; color: var(--text-secondary);">Mostrando 1 a 5 de 328 registros</div>
-                <div style="display: flex; gap: 4px;">
-                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;" disabled>Anterior</button>
-                    <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">1</button>
-                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">2</button>
-                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">3</button>
-                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Siguiente</button>
-                </div>
-            </div>
+            <div th:replace="~{oficios/lista :: content}"></div>
 
         </div>
 
-        <!-- Floating tooltip (single instance for all cells) -->
-        <div class="cell-tip cell-tip-enter"
-             x-show="tipVisible"
-             x-transition
-             :class="{ 'cell-tip--pinned': tipPinned }"
-             :style="{ left: tipX + 'px', top: tipY + 'px' }"
-             @click.stop="">
-            <span x-text="tipText"></span>
-            <button x-show="tipPinned" class="cell-tip__close" @click.stop="dismiss()">&times;</button>
-        </div>
+        <div id="oficios-modal-container" style="display:none;"></div>
 
     </main>
     </th:block>

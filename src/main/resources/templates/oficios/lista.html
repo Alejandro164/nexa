@@ -1,0 +1,57 @@
+<div id="oficios-lista-content" th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="oficios-table-container">
+        <table class="oficios-table">
+            <thead>
+                <tr>
+                    <th class="col-oficio">N° Oficio</th>
+                    <th class="col-redactor">Redactado por</th>
+                    <th class="col-asunto">Asunto</th>
+                    <th class="col-destinatario">Destinatario</th>
+                    <th class="col-circular">N° Circular</th>
+                    <th class="col-estado">Estado</th>
+                    <th class="col-doc">Doc.</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${oficios == null or oficios.empty}">
+                    <td colspan="7" class="table-empty">No se encontraron oficios.</td>
+                </tr>
+                <tr th:each="o : ${oficios}">
+                    <td class="col-oficio" th:title="${o.numero}"><span class="oficio-number" th:text="${o.numero}">OF-2026-001</span></td>
+                    <td class="col-redactor" th:title="${o.redactadoPor != null ? o.redactadoPor.nombre : ''}"
+                        th:text="${o.redactadoPor != null ? o.redactadoPor.nombre : '—'}">Redactor</td>
+                    <td class="col-asunto" th:title="${o.asunto}" th:text="${o.asunto}">Asunto</td>
+                    <td class="col-destinatario" th:title="${o.destinatario}" th:text="${o.destinatario}">Destinatario</td>
+                    <td class="col-circular">
+                        <span th:if="${o.numeroCircular != null}" class="badge-circular" th:text="${o.numeroCircular}">CIR-2026-012</span>
+                        <span th:if="${o.numeroCircular == null}" style="color:#94a3b8;" title="Sin circular asignada">—</span>
+                    </td>
+                    <td class="col-estado">
+                        <span th:if="${o.estado == 'EMITIDO'}" class="badge-estado">✓ Emitido</span>
+                        <span th:if="${o.estado != 'EMITIDO'}" class="badge-estado pendiente">⏳ Pendiente</span>
+                    </td>
+                    <td class="col-doc" style="overflow:visible; white-space:normal;">
+                        <div style="display:flex; gap:6px;">
+                            <a th:if="${o.rutaArchivo != null}" class="btn-view" th:href="@{'/oficios/' + ${o.id} + '/documento'}" target="_blank" title="Ver documento">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            </a>
+                            <button class="btn-view"
+                                    th:attr="hx-get='/oficios/' + ${o.id} + '/subir-form'"
+                                    hx-target="#oficios-modal-container" hx-swap="innerHTML"
+                                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                                    th:title="${o.rutaArchivo != null ? 'Reemplazar documento' : 'Subir documento'}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </button>
+                            <button class="btn-view" style="background:rgba(220,38,38,0.1); color:#dc2626;"
+                                    onclick="abrirConfirmacionAcademica(this)"
+                                    th:attr="data-delete-url='/oficios/' + ${o.id},data-delete-target='#oficios-lista-content',data-delete-swap='outerHTML',data-delete-title='Eliminar oficio',data-delete-message='¿Deseas eliminar el oficio ' + ${o.numero} + '? Esta acción no se puede deshacer.'"
+                                    title="Eliminar">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

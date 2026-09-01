@@ -1,0 +1,46 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" @click.self="$dispatch('close-modal')">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title">Nuevo Oficio</h3>
+                <button type="button" class="close-btn" @click="$dispatch('close-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form th:action="@{/oficios}" method="post"
+                      hx-post="/oficios"
+                      hx-target="#oficios-lista-content" hx-swap="outerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
+
+                    <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
+
+                    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:1rem;">
+                        El número de oficio se asigna automáticamente. El documento (PDF) se sube después de crear el oficio.
+                    </p>
+
+                    <div class="form-group">
+                        <label class="form-label">Asunto *</label>
+                        <input class="form-input" type="text" name="asunto" required maxlength="300"
+                               th:value="${oficio.asunto}" placeholder="Ej. Solicitud de autorización para actividad extracurricular">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Destinatario *</label>
+                        <input class="form-input" type="text" name="destinatario" required maxlength="200"
+                               th:value="${oficio.destinatario}" placeholder="Ej. MEP - Dirección Regional de San José Norte">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">N° Circular (opcional)</label>
+                        <input class="form-input" type="text" name="numeroCircular" maxlength="30"
+                               th:value="${oficio.numeroCircular}" placeholder="Ej. CIR-2026-012">
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" @click="$dispatch('close-modal')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Crear Oficio</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
