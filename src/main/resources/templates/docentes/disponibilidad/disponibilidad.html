@@ -1,89 +1,117 @@
-<div th:fragment="content">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Matriz de Disponibilidad</h3>
-            <div style="display: flex; gap: 10px;">
-                <select class="form-input" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px;">
-                    <option>Carlos Mendoza Arias</option>
-                    <option>Laura Quirós Salas</option>
-                </select>
-                <button class="btn btn-primary">Guardar</button>
+<div th:fragment="content" class="tab-pane" xmlns:th="http://www.thymeleaf.org">
+    <div id="docentes-disponibilidad-container" th:fragment="disponibilidad-panel">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Disponibilidad Semanal</h3>
+                    <p class="academic-help">Horario real asignado en Configuración Académica; lo que no aparece aquí está disponible.</p>
+                </div>
             </div>
-        </div>
-        <div style="padding: 2rem;">
-            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Bloquea las horas en las que el docente <strong>NO</strong> está disponible para impartir clases.</p>
-            
-            <style>
-                .disp-grid {
-                    display: grid;
-                    grid-template-columns: 80px repeat(5, 1fr);
-                    border: 1px solid var(--border);
-                    border-radius: 8px;
-                    overflow: hidden;
-                }
-                .disp-header {
-                    background: #f1f5f9;
-                    padding: 8px;
-                    text-align: center;
-                    font-weight: 600;
-                    font-size: 0.8rem;
-                    border-right: 1px solid var(--border);
-                    border-bottom: 1px solid var(--border);
-                }
-                .disp-cell {
-                    padding: 12px;
-                    text-align: center;
-                    border-right: 1px solid var(--border);
-                    border-bottom: 1px solid var(--border);
-                    background: #ffffff;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                }
-                .disp-cell:hover { background: #f8fafc; }
-                .disp-cell.blocked {
-                    background: #fee2e2;
-                    color: #ef4444;
-                    font-weight: 600;
-                }
-                .disp-time {
-                    background: #f8fafc;
-                    font-weight: 600;
-                    color: var(--text-muted);
-                    font-size: 0.75rem;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-            </style>
 
-            <div class="disp-grid">
-                <!-- Header -->
-                <div class="disp-header">Hora</div>
-                <div class="disp-header">Lunes</div>
-                <div class="disp-header">Martes</div>
-                <div class="disp-header">Miércoles</div>
-                <div class="disp-header">Jueves</div>
-                <div class="disp-header">Viernes</div>
+            <form class="schedule-filters">
+                <div class="form-group">
+                    <label class="form-label">Docente</label>
+                    <select class="form-input" name="docenteId"
+                            hx-get="/docentes/disponibilidad"
+                            hx-trigger="change"
+                            hx-target="#docentes-disponibilidad-container"
+                            hx-swap="outerHTML"
+                            hx-include="closest form">
+                        <option value="" disabled th:selected="${docenteSeleccionado == null}">Seleccione un docente</option>
+                        <option th:each="d : ${docentesDisponibilidad}"
+                                th:value="${d.id}"
+                                th:selected="${d.id == docenteSeleccionado}"
+                                th:text="${d.nombre}">Docente</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Período</label>
+                    <select class="form-input" name="periodoId"
+                            hx-get="/docentes/disponibilidad"
+                            hx-trigger="change"
+                            hx-target="#docentes-disponibilidad-container"
+                            hx-swap="outerHTML"
+                            hx-include="closest form">
+                        <option value="" disabled th:selected="${periodoSeleccionadoDisponibilidad == null}">Seleccione un período</option>
+                        <option th:each="p : ${periodosActivosDisponibilidad}"
+                                th:value="${p.id}"
+                                th:selected="${p.id == periodoSeleccionadoDisponibilidad}"
+                                th:text="|${p.codigo} - ${p.descripcion}|">2026-I</option>
+                    </select>
+                </div>
+            </form>
 
-                <!-- Row 1 -->
-                <div class="disp-cell disp-time">07:00 - 08:20</div>
-                <div class="disp-cell">✓ Disponible</div>
-                <div class="disp-cell blocked">✕ Bloqueado</div>
-                <div class="disp-cell">✓ Disponible</div>
-                <div class="disp-cell blocked">✕ Bloqueado</div>
-                <div class="disp-cell">✓ Disponible</div>
-
-                <!-- Row 2 -->
-                <div class="disp-cell disp-time">08:40 - 10:00</div>
-                <div class="disp-cell">✓ Disponible</div>
-                <div class="disp-cell">✓ Disponible</div>
-                <div class="disp-cell">✓ Disponible</div>
-                <div class="disp-cell blocked">✕ Bloqueado</div>
-                <div class="disp-cell">✓ Disponible</div>
+            <div th:if="${docentesDisponibilidad == null or docentesDisponibilidad.empty or periodosActivosDisponibilidad == null or periodosActivosDisponibilidad.empty}"
+                 class="academic-empty academic-empty-block">
+                Debe haber al menos un docente registrado y un período activo para ver la disponibilidad.
             </div>
-            
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">
-                * Haz clic en una celda para alternar entre "Disponible" y "Bloqueado".
+
+            <div th:unless="${docentesDisponibilidad == null or docentesDisponibilidad.empty or periodosActivosDisponibilidad == null or periodosActivosDisponibilidad.empty}"
+                 class="schedule-scroll">
+                <style>
+                    .disp-grid {
+                        display: grid;
+                        grid-template-columns: 90px repeat(5, 1fr);
+                        border: 1px solid var(--border);
+                        border-radius: 8px;
+                        overflow: hidden;
+                    }
+                    .disp-header {
+                        background: #f1f5f9;
+                        padding: 8px;
+                        text-align: center;
+                        font-weight: 600;
+                        font-size: 0.8rem;
+                        border-right: 1px solid var(--border);
+                        border-bottom: 1px solid var(--border);
+                    }
+                    .disp-cell {
+                        padding: 10px;
+                        text-align: center;
+                        border-right: 1px solid var(--border);
+                        border-bottom: 1px solid var(--border);
+                        background: #ffffff;
+                    }
+                    .disp-cell.ocupado {
+                        background: #fee2e2;
+                        color: #b91c1c;
+                        font-weight: 600;
+                        font-size: 0.78rem;
+                        line-height: 1.3;
+                    }
+                    .disp-cell.libre {
+                        color: #16a34a;
+                        font-size: 0.8rem;
+                    }
+                    .disp-time {
+                        background: #f8fafc;
+                        font-weight: 600;
+                        color: var(--text-muted);
+                        font-size: 0.75rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                </style>
+
+                <div class="disp-grid">
+                    <div class="disp-header">Lección</div>
+                    <div class="disp-header" th:each="dia : ${dias}"
+                         th:text="${#strings.capitalize(#strings.toLowerCase(dia))}">Lunes</div>
+
+                    <th:block th:each="numero : ${lecciones}">
+                        <div class="disp-cell disp-time" th:text="|Lección ${numero}|">Lección 1</div>
+                        <th:block th:each="dia : ${dias}" th:with="items=${horarioDocente.get(numero + '-' + dia)}">
+                            <div th:if="${items == null or items.empty}" class="disp-cell libre">✓ Disponible</div>
+                            <div th:unless="${items == null or items.empty}" class="disp-cell ocupado">
+                                <div th:each="item : ${items}">
+                                    <div th:text="${item.materia.nombre}">Materia</div>
+                                    <div th:text="${item.nivel.nombreCompleto}" style="font-weight:400;">Sección</div>
+                                </div>
+                            </div>
+                        </th:block>
+                    </th:block>
+                </div>
             </div>
         </div>
     </div>

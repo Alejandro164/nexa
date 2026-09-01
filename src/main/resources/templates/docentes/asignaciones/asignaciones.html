@@ -1,71 +1,56 @@
-<div th:fragment="content">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Carga Laboral y Asignaciones</h3>
-        </div>
-        <div style="padding: 2rem;">
-            <div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
-                
-                <div style="border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; background: #fff;">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                        <div>
-                            <h4 style="font-weight: 600; color: var(--text-primary); font-size: 1.1rem;">Carlos Mendoza Arias</h4>
-                            <p style="font-size: 0.8rem; color: var(--text-muted);">Matemáticas</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <span class="badge" style="background: rgba(34,197,94,0.1); color: var(--success); font-size: 1rem;">24h</span>
-                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Lecciones Sem.</div>
-                        </div>
-                    </div>
-                    <hr style="border-top: 1px solid var(--border); margin: 1rem 0;">
-                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; color: var(--text-secondary);">
-                        <li style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span>Matemáticas (7-1)</span>
-                            <span style="font-weight: 600;">5 lecc.</span>
-                        </li>
-                        <li style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span>Matemáticas (7-2)</span>
-                            <span style="font-weight: 600;">5 lecc.</span>
-                        </li>
-                        <li style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span>Matemáticas (8-1)</span>
-                            <span style="font-weight: 600;">5 lecc.</span>
-                        </li>
-                        <li style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span>Estadística (10-1)</span>
-                            <span style="font-weight: 600;">4 lecc.</span>
-                        </li>
-                    </ul>
+<div th:fragment="content" class="tab-pane" xmlns:th="http://www.thymeleaf.org">
+    <div id="docentes-asignaciones-container" th:fragment="asignaciones-panel">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Carga Laboral y Asignaciones</h3>
+                <div class="form-group" style="margin-bottom:0;">
+                    <select class="form-input" name="periodoId" style="padding:6px 12px; font-size:0.85rem;"
+                            hx-get="/docentes/asignaciones"
+                            hx-trigger="change"
+                            hx-target="#docentes-asignaciones-container"
+                            hx-swap="outerHTML">
+                        <option value="" disabled th:selected="${periodoSeleccionadoAsignaciones == null}">Seleccione un período</option>
+                        <option th:each="p : ${periodosActivosAsignaciones}"
+                                th:value="${p.id}"
+                                th:selected="${p.id == periodoSeleccionadoAsignaciones}"
+                                th:text="|${p.codigo} - ${p.descripcion}|">2026-I</option>
+                    </select>
                 </div>
-
-                <div style="border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; background: #fff;">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                        <div>
-                            <h4 style="font-weight: 600; color: var(--text-primary); font-size: 1.1rem;">Laura Quirós Salas</h4>
-                            <p style="font-size: 0.8rem; color: var(--text-muted);">Español</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <span class="badge" style="background: rgba(217,119,6,0.1); color: var(--warm); font-size: 1rem;">15h</span>
-                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Lecciones Sem.</div>
-                        </div>
-                    </div>
-                    <hr style="border-top: 1px solid var(--border); margin: 1rem 0;">
-                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; color: var(--text-secondary);">
-                        <li style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span>Español (7-1)</span>
-                            <span style="font-weight: 600;">5 lecc.</span>
-                        </li>
-                        <li style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span>Español (8-1)</span>
-                            <span style="font-weight: 600;">5 lecc.</span>
-                        </li>
-                        <li style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span>Literatura (10-1)</span>
-                            <span style="font-weight: 600;">5 lecc.</span>
-                        </li>
-                    </ul>
+            </div>
+            <div style="padding: 2rem;">
+                <div th:if="${periodosActivosAsignaciones == null or periodosActivosAsignaciones.empty}" class="academic-empty academic-empty-block">
+                    Debe registrar al menos un período activo para ver la carga laboral.
                 </div>
-
+                <div th:if="${periodosActivosAsignaciones != null and !periodosActivosAsignaciones.empty and (carga == null or carga.empty)}" class="table-empty">
+                    No hay docentes registrados.
+                </div>
+                <div th:unless="${periodosActivosAsignaciones == null or periodosActivosAsignaciones.empty}"
+                     class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+                    <div th:each="c : ${carga}" style="border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; background: #fff;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                            <div>
+                                <h4 style="font-weight: 600; color: var(--text-primary); font-size: 1.1rem;" th:text="${c.docente.nombre}">Docente</h4>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);" th:text="${c.docente.email}">correo</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="badge"
+                                      th:classappend="${c.totalLecciones > 0 ? 'badge-success' : 'badge-secondary'}"
+                                      style="font-size: 1rem;" th:text="${c.totalLecciones}">0</span>
+                                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Lecciones Sem.</div>
+                            </div>
+                        </div>
+                        <hr style="border-top: 1px solid var(--border); margin: 1rem 0;">
+                        <p th:if="${c.asignaciones.empty}" style="font-size:0.85rem; color:var(--text-light);">
+                            Sin lecciones asignadas este período.
+                        </p>
+                        <ul th:unless="${c.asignaciones.empty}" style="list-style: none; padding: 0; margin: 0; font-size: 0.85rem; color: var(--text-secondary);">
+                            <li th:each="a : ${c.asignaciones}" style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span th:text="${a.materiaNombre} + ' (' + ${a.nivelNombre} + ')'">Materia (Sección)</span>
+                                <span style="font-weight: 600;" th:text="${a.lecciones} + ' lecc.'">0 lecc.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
