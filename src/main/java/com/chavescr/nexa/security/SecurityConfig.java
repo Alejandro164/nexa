@@ -9,7 +9,6 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
@@ -25,24 +24,21 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final LoginSuccessHandler loginSuccessHandler;
     private final LoginFailureHandler loginFailureHandler;
+    private final PasswordEncoder passwordEncoder;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService, LoginSuccessHandler loginSuccessHandler,
-            LoginFailureHandler loginFailureHandler) {
+            LoginFailureHandler loginFailureHandler, PasswordEncoder passwordEncoder) {
         this.userDetailsService = userDetailsService;
         this.loginSuccessHandler = loginSuccessHandler;
         this.loginFailureHandler = loginFailureHandler;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         // Spring Security 6: UserDetailsService va en el constructor
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
+        provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 

@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,9 +21,42 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    /** El usuario autenticado (entidad completa), para páginas de cuenta personal como "Mi Perfil". */
+    @Transactional(readOnly = true)
+    public Usuario obtenerUsuarioActual() {
+        String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepository.findByIdentifierWithInstituciones(identifier)
+                .orElseThrow(() -> new IllegalStateException("Usuario autenticado no encontrado"));
+    }
+
+    /** Actualiza los datos personales editables desde "Mi Perfil" (nombre y teléfono). */
+    public void actualizarDatosPersonales(Long usuarioId, String nombre, String telefono) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        usuario.setNombre(nombre.trim());
+        usuario.setTelefono(telefono != null && !telefono.isBlank() ? telefono.trim() : null);
+        usuarioRepository.save(usuario);
+    }
+
+    /** Cambio de contraseña propio: exige conocer la contraseña actual. */
+    public void cambiarPassword(Long usuarioId, String passwordActual, String passwordNueva) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        if (!passwordEncoder.matches(passwordActual, usuario.getPassword())) {
+            throw new IllegalArgumentException("La contraseña actual no es correcta");
+        }
+        if (passwordNueva == null || passwordNueva.length() < 8) {
+            throw new IllegalArgumentException("La nueva contraseña debe tener al menos 8 caracteres");
+        }
+        usuario.setPassword(passwordEncoder.encode(passwordNueva));
+        usuarioRepository.save(usuario);
     }
 
     @Transactional(readOnly = true)

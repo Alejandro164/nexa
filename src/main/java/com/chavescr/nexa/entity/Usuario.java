@@ -43,6 +43,9 @@ public class Usuario implements UserDetails {
     @Column(unique = true, length = 30)
     private String cedula; // cédula de identidad costarricense
 
+    @Column(length = 30)
+    private String telefono;
+
     @Column(nullable = false)
     private String password;
 
@@ -161,6 +164,14 @@ public class Usuario implements UserDetails {
 
     public void setCedula(String cedula) {
         this.cedula = cedula;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
     }
 
     public void setPassword(String password) {

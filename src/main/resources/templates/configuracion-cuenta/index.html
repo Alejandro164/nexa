@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Configuración de Cuenta — Nexa</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Configuración de Cuenta</h2>
+    <p layout:fragment="page-subtitle">Personalizá tu experiencia y preferencias en Nexa</p>
+
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Configuración de Cuenta</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Personalizá tu experiencia y preferencias en Nexa</p>
+    <main layout:fragment="content">
+        <style>
+            .cuenta-card-title-wrap { display: flex; align-items: center; gap: 10px; }
+            .cuenta-card-title-icon {
+                width: 32px; height: 32px; border-radius: 9px;
+                background: rgba(45,90,135,0.08); display: flex; align-items: center; justify-content: center;
+                color: var(--primary); flex-shrink: 0;
+            }
+            .cuenta-card-title-icon svg { width: 16px; height: 16px; }
+            .cuenta-pref-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 0; }
+            .cuenta-pref-row:not(:last-child) { border-bottom: 1px solid var(--border); }
+            .cuenta-pref-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+            .cuenta-pref-desc { font-size: 0.8rem; color: var(--text-secondary); margin-top: 3px; }
+
+            .cuenta-toggle { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+            .cuenta-toggle input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+            .cuenta-toggle-track { position: absolute; inset: 0; background: #e2e8f0; border-radius: 9999px; pointer-events: none; transition: background .15s; }
+            .cuenta-toggle input:checked + .cuenta-toggle-track { background: var(--primary); }
+            .cuenta-toggle-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.25); pointer-events: none; transition: transform .15s; }
+            .cuenta-toggle input:checked ~ .cuenta-toggle-thumb { transform: translateX(18px); }
+
+            .cuenta-theme-option { flex: 1; border: 2px solid var(--border); border-radius: 12px; padding: 12px; cursor: pointer; position: relative; }
+            .cuenta-theme-option.selected { border-color: var(--primary); }
+            .cuenta-theme-swatch { height: 56px; border-radius: 8px; overflow: hidden; display: flex; border: 1px solid var(--border); pointer-events: none; }
+            .cuenta-theme-check { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; }
+            .cuenta-theme-check svg { width: 11px; height: 11px; }
+            .cuenta-theme-label { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-top: 10px; text-align: center; pointer-events: none; }
+        </style>
+
+        <div id="cuenta-content" th:fragment="content">
+        <form th:action="@{/configuracion-cuenta}" method="post"
+              hx-post="/configuracion-cuenta" hx-target="#cuenta-content" hx-swap="outerHTML"
+              th:attr="data-tema-inicial=${preferencia.tema}"
+              x-data="{ tema: 'claro' }" x-init="tema = $el.dataset.temaInicial || 'claro'"
+              style="display:flex;flex-direction:column;gap:20px;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="cuenta-card-title-wrap">
+                        <div class="cuenta-card-title-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        </div>
+                        <span class="card-title">Notificaciones</span>
+                    </div>
+                </div>
+                <div style="padding:0.4rem 1.5rem 1.1rem;">
+                    <div class="cuenta-pref-row">
+                        <div><div class="cuenta-pref-title">Notificaciones por correo electrónico</div><div class="cuenta-pref-desc">Recibí avisos importantes directamente en tu correo.</div></div>
+                        <label class="cuenta-toggle">
+                            <input type="checkbox" name="notifEmail" th:checked="${preferencia.notifEmail}">
+                            <span class="cuenta-toggle-track"></span><span class="cuenta-toggle-thumb"></span>
+                        </label>
+                    </div>
+                    <div class="cuenta-pref-row">
+                        <div><div class="cuenta-pref-title">Notificaciones push en el navegador</div><div class="cuenta-pref-desc">Alertas en tiempo real mientras usás Nexa.</div></div>
+                        <label class="cuenta-toggle">
+                            <input type="checkbox" name="notifPush" th:checked="${preferencia.notifPush}">
+                            <span class="cuenta-toggle-track"></span><span class="cuenta-toggle-thumb"></span>
+                        </label>
+                    </div>
+                    <div class="cuenta-pref-row">
+                        <div><div class="cuenta-pref-title">Recordatorios de tareas pendientes</div><div class="cuenta-pref-desc">Antes de la fecha límite de entregas y evaluaciones.</div></div>
+                        <label class="cuenta-toggle">
+                            <input type="checkbox" name="notifRecordatorios" th:checked="${preferencia.notifRecordatorios}">
+                            <span class="cuenta-toggle-track"></span><span class="cuenta-toggle-thumb"></span>
+                        </label>
+                    </div>
+                    <div class="cuenta-pref-row">
+                        <div><div class="cuenta-pref-title">Resumen semanal de actividad</div><div class="cuenta-pref-desc">Un correo cada lunes con lo más relevante de tus grupos.</div></div>
+                        <label class="cuenta-toggle">
+                            <input type="checkbox" name="notifResumenSemanal" th:checked="${preferencia.notifResumenSemanal}">
+                            <span class="cuenta-toggle-track"></span><span class="cuenta-toggle-thumb"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="cuenta-card-title-wrap">
+                        <div class="cuenta-card-title-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        </div>
+                        <span class="card-title">Idioma y Zona Horaria</span>
+                    </div>
+                </div>
+                <div style="padding:1.1rem 1.5rem 1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                    <div>
+                        <label class="form-label">Idioma</label>
+                        <select class="form-input" name="idioma" style="padding-left:0.75rem;">
+                            <option value="es-CR" th:selected="${preferencia.idioma == 'es-CR'}">Español (Costa Rica)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Zona horaria</label>
+                        <select class="form-input" name="zonaHoraria" style="padding-left:0.75rem;">
+                            <option value="America/Costa_Rica" th:selected="${preferencia.zonaHoraria == 'America/Costa_Rica'}">América/Costa Rica (GMT-6:00)</option>
+                        </select>
+                    </div>
+                </div>
+                <p style="font-size:0.75rem;color:var(--text-light);padding:0 1.5rem 1.25rem;margin:0;">
+                    Por ahora Nexa solo opera en español y horario de Costa Rica; estas opciones quedan listas para cuando se agreguen más.
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="cuenta-card-title-wrap">
+                        <div class="cuenta-card-title-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        </div>
+                        <span class="card-title">Apariencia</span>
+                    </div>
+                </div>
+                <div style="padding:1.1rem 1.5rem 1.5rem;">
+                    <p style="font-size:0.82rem;color:var(--text-secondary);margin:0 0 14px;">
+                        Elegí tu tema preferido. El modo oscuro está guardándose para cuando esté disponible en Nexa.
+                    </p>
+                    <input type="hidden" name="tema" x-bind:value="tema">
+                    <div style="display:flex;gap:16px;">
+                        <div class="cuenta-theme-option" :class="{ selected: tema === 'claro' }" @click="tema = 'claro'">
+                            <div class="cuenta-theme-check" x-show="tema === 'claro'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                            <div class="cuenta-theme-swatch">
+                                <div style="width:26%;background:#ffffff;border-right:1px solid #e2e8f0;"></div>
+                                <div style="flex:1;background:#f8fafc;padding:8px;"><div style="width:70%;height:6px;border-radius:3px;background:#2d5a87;"></div><div style="width:50%;height:6px;border-radius:3px;background:#e2e8f0;margin-top:6px;"></div></div>
+                            </div>
+                            <div class="cuenta-theme-label">Claro</div>
+                        </div>
+                        <div class="cuenta-theme-option" :class="{ selected: tema === 'oscuro' }" @click="tema = 'oscuro'">
+                            <div class="cuenta-theme-check" x-show="tema === 'oscuro'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                            <div class="cuenta-theme-swatch">
+                                <div style="width:26%;background:#1e293b;border-right:1px solid #334155;"></div>
+                                <div style="flex:1;background:#0f172a;padding:8px;"><div style="width:70%;height:6px;border-radius:3px;background:#60a5fa;"></div><div style="width:50%;height:6px;border-radius:3px;background:#334155;margin-top:6px;"></div></div>
+                            </div>
+                            <div class="cuenta-theme-label">Oscuro</div>
+                        </div>
+                        <div class="cuenta-theme-option" :class="{ selected: tema === 'sistema' }" @click="tema = 'sistema'">
+                            <div class="cuenta-theme-check" x-show="tema === 'sistema'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                            <div class="cuenta-theme-swatch">
+                                <div style="width:26%;background:linear-gradient(180deg,#ffffff 50%,#1e293b 50%);border-right:1px solid #e2e8f0;"></div>
+                                <div style="flex:1;background:linear-gradient(180deg,#f8fafc 50%,#0f172a 50%);padding:8px;"><div style="width:70%;height:6px;border-radius:3px;background:#2d5a87;"></div><div style="width:50%;height:6px;border-radius:3px;background:#94a3b8;margin-top:6px;"></div></div>
+                            </div>
+                            <div class="cuenta-theme-label">Sistema</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">Guardar preferencias</button>
+            </div>
+        </form>
+
+        <div class="card" style="margin-top:20px;">
+            <div class="card-header">
+                <div class="cuenta-card-title-wrap">
+                    <div class="cuenta-card-title-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <span class="card-title">Privacidad y Sesión</span>
+                </div>
+            </div>
+            <div style="padding:1.1rem 1.5rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:0.88rem;font-weight:600;color:var(--text-primary);">Sesión actual</div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:3px;">
+                        Por seguridad, Nexa permite una sola sesión activa a la vez: si iniciás sesión en otro dispositivo, esta se cierra automáticamente.
+                    </div>
+                </div>
+                <form th:action="@{/logout}" method="post" style="margin:0;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button type="submit" class="btn btn-secondary" style="color:var(--error);border-color:#fecaca;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Cerrar sesión
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+            <div class="card-header"><span class="card-title">Datos de la Cuenta</span></div>
+            <div style="padding:1.1rem 1.5rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:0.88rem;font-weight:600;color:var(--text-primary);">Exportar mis datos</div>
+                    <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:3px;">Descargá una copia de tu información personal y preferencias.</div>
+                </div>
+                <a class="btn btn-secondary" href="/configuracion-cuenta/exportar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Exportar datos
+                </a>
+            </div>
+        </div>
+        </div>
+
+        <script th:inline="none">
+            if (!window.cuentaEventsRegistrados) {
+                document.addEventListener('perfilGuardado', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje);
+                    }
+                });
+                window.cuentaEventsRegistrados = true;
+            }
+        </script>
+    </main>
+    </th:block>
+
+</body>
+
+</html>
