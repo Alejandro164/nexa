@@ -80,6 +80,12 @@ public class UsuarioService {
         return usuarioRepository.findByNombreOrEmail(filtro.trim().toLowerCase());
     }
 
+    /** Cantidad de usuarios activos de un rol específico (ej. ROLE_ESTUDIANTE) en una institución, para el dashboard. */
+    @Transactional(readOnly = true)
+    public long contarActivosPorInstitucionYRol(Long institucionId, String rolNombre) {
+        return usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, rolNombre).size();
+    }
+
     @Transactional(readOnly = true)
     public List<InstitucionDTO> obtenerInstitucionesDelUsuarioActual() {
         String identifier = SecurityContextHolder.getContext().getAuthentication().getName();

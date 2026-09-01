@@ -2,6 +2,7 @@ package com.chavescr.nexa.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -10,10 +11,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.chavescr.nexa.dto.InstitucionDTO;
-import com.chavescr.nexa.dto.UsuarioDTO;
+import com.chavescr.nexa.entity.NivelAcademico;
+import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.security.CustomUserDetails;
+import com.chavescr.nexa.service.ConfiguracionAcademicaService;
+import com.chavescr.nexa.service.HistorialCambioService;
 import com.chavescr.nexa.service.InstitucionService;
+import com.chavescr.nexa.service.RegistroAsistenciaService;
 import com.chavescr.nexa.service.SesionInstitucionService;
 import com.chavescr.nexa.service.UsuarioService;
 
@@ -34,6 +38,15 @@ public class MainController {
 
     @Autowired
     private SesionInstitucionService sesionInstitucionService;
+
+    @Autowired
+    private ConfiguracionAcademicaService configuracionAcademicaService;
+
+    @Autowired
+    private RegistroAsistenciaService registroAsistenciaService;
+
+    @Autowired
+    private HistorialCambioService historialCambioService;
 
     @GetMapping("/")
     public String index(@AuthenticationPrincipal CustomUserDetails usuario, Model model,
@@ -117,41 +130,31 @@ public class MainController {
     }
 
     private void cargarDashboard(Model model, HttpSession session) {
-        List<UsuarioDTO> usuarios = usuarioService.obtenerTodosDTO();
-        List<InstitucionDTO> instituciones = institucionService.obtenerTodasDTO();
-
-        int totalUsuarios = usuarios.size();
-        long usuariosActivos = usuarios.stream().filter(UsuarioDTO::isActivo).count();
-        int totalInstituciones = instituciones.size();
-        long institucionesActivas = instituciones.stream().filter(InstitucionDTO::isActiva).count();
-        int porcentajeActivos = totalUsuarios > 0
-                ? (int) Math.round((double) usuariosActivos / totalUsuarios * 100)
-                : 0;
-        long totalRoles = usuarios.stream()
-                .flatMap(u -> u.getRoles().stream())
-                .distinct()
-                .count();
-
-        model.addAttribute("totalUsuarios", totalUsuarios);
-        model.addAttribute("usuariosActivos", usuariosActivos);
-        model.addAttribute("totalInstituciones", totalInstituciones);
-        model.addAttribute("institucionesActivas", institucionesActivas);
-        model.addAttribute("porcentajeActivos", porcentajeActivos);
-        model.addAttribute("totalRoles", totalRoles);
-
-        model.addAttribute("ultimosUsuarios",
-                usuarios.stream()
-                        .sorted((a, b) -> b.getId().compareTo(a.getId()))
-                        .limit(5)
-                        .toList());
-
-        model.addAttribute("ultimasInstituciones",
-                instituciones.stream()
-                        .sorted((a, b) -> b.getId().compareTo(a.getId()))
-                        .limit(5)
-                        .toList());
-
         String institucionActivaNombre = (String) session.getAttribute("SESSION_INSTITUCION_NOMBRE");
         model.addAttribute("institucionActivaNombre", institucionActivaNombre);
+
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        if (institucionId == null) {
+            model.addAttribute("sinInstitucion", true);
+            return;
+        }
+
+        long totalEstudiantes = usuarioService.contarActivosPorInstitucionYRol(institucionId, "ROLE_ESTUDIANTE");
+        long totalDocentes = usuarioService.contarActivosPorInstitucionYRol(institucionId, "ROLE_DOCENTE");
+
+        Map<String, Long> asistenciaHoy = registroAsistenciaService.obtenerConteoPersonalPresente(institucionId);
+
+        List<PeriodoAcademico> periodosActivos = configuracionAcademicaService.listarPeriodosActivos(institucionId);
+        PeriodoAcademico periodoActivo = periodosActivos.isEmpty() ? null : periodosActivos.get(0);
+
+        List<NivelAcademico> niveles = configuracionAcademicaService.listarNivelesActivos(institucionId);
+
+        model.addAttribute("totalEstudiantes", totalEstudiantes);
+        model.addAttribute("totalDocentes", totalDocentes);
+        model.addAttribute("personalPresenteHoy", asistenciaHoy.getOrDefault("presentes", 0L));
+        model.addAttribute("totalRegistrosHoy", asistenciaHoy.getOrDefault("totalRegistros", 0L));
+        model.addAttribute("periodoActivo", periodoActivo);
+        model.addAttribute("niveles", niveles);
+        model.addAttribute("actividadReciente", historialCambioService.listarRecientes(institucionId));
     }
 }
