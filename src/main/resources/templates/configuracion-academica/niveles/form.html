@@ -4,6 +4,10 @@
 <div th:fragment="form-content">
     <div class="modal-backdrop">
         <div class="modal-dialog" style="max-width: 560px;">
+            <div class="modal-loading-overlay htmx-indicator" id="modal-loading-overlay">
+                <div class="spinner"></div>
+                <span>Cargando...</span>
+            </div>
             <div class="modal-header">
                 <h3 class="modal-title" th:text="${nivel.id == null ? 'Registrar nivel' : 'Editar nivel'}">Nivel</h3>
                 <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
@@ -11,7 +15,8 @@
             <div class="modal-body">
                 <form hx-post="/configuracion-academica/niveles"
                       hx-target="#niveles-panel"
-                      hx-swap="outerHTML">
+                      hx-swap="outerHTML"
+                      hx-indicator="#modal-loading-overlay">
                     <input type="hidden" name="id" th:value="${nivel.id}">
                     <div class="academic-form-grid">
                         <div class="form-group">
