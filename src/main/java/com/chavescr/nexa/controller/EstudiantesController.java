@@ -71,7 +71,6 @@ public class EstudiantesController {
         Usuario nuevo = new Usuario();
         nuevo.setRoles(java.util.Set.of(personalService.obtenerRolPorNombre(ROL_ESTUDIANTE)));
         model.addAttribute("usuario", nuevo);
-        model.addAttribute("roles", personalService.listarRoles());
         model.addAttribute("niveles", nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId));
         return "estudiantes/expedientes/formulario :: form-content";
     }
@@ -80,7 +79,6 @@ public class EstudiantesController {
     public String expedientesFormEditar(@PathVariable Long id, Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         model.addAttribute("usuario", personalService.obtenerPorId(institucionId, id));
-        model.addAttribute("roles", personalService.listarRoles());
         model.addAttribute("niveles", nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId));
         return "estudiantes/expedientes/formulario :: form-content";
     }
@@ -94,11 +92,13 @@ public class EstudiantesController {
             @RequestParam(required = false) String cedula,
             @RequestParam(required = false) String password,
             @RequestParam(defaultValue = "false") boolean activo,
-            @RequestParam(required = false) List<Long> rolIds,
             @RequestParam(required = false) Long nivelId,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
+            // El rol de una cuenta creada desde este módulo siempre es Estudiante — no lo elige el admin
+            // (a diferencia de Personal, que sí permite cualquier combinación de roles).
+            List<Long> rolIds = List.of(personalService.obtenerRolPorNombre(ROL_ESTUDIANTE).getId());
             personalService.guardar(institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds, nivelId);
             model.addAttribute("estudiantes", personalService.listarPorRol(institucionId, ROL_ESTUDIANTE));
             return "estudiantes/expedientes/lista :: content";
@@ -107,7 +107,6 @@ public class EstudiantesController {
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
             model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id));
-            model.addAttribute("roles", personalService.listarRoles());
             model.addAttribute("niveles", nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId));
             return "estudiantes/expedientes/formulario :: form-content";
         }

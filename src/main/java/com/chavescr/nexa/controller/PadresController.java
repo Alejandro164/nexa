@@ -52,7 +52,6 @@ public class PadresController {
         Usuario nuevo = new Usuario();
         nuevo.setRoles(Set.of(personalService.obtenerRolPorNombre(ROL_PADRE)));
         model.addAttribute("usuario", nuevo);
-        model.addAttribute("roles", personalService.listarRoles());
         return "gestion-padres/registrados/formulario :: form-content";
     }
 
@@ -60,7 +59,6 @@ public class PadresController {
     public String registradosFormEditar(@PathVariable Long id, Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         model.addAttribute("usuario", personalService.obtenerPorId(institucionId, id));
-        model.addAttribute("roles", personalService.listarRoles());
         return "gestion-padres/registrados/formulario :: form-content";
     }
 
@@ -73,10 +71,12 @@ public class PadresController {
             @RequestParam(required = false) String cedula,
             @RequestParam(required = false) String password,
             @RequestParam(defaultValue = "false") boolean activo,
-            @RequestParam(required = false) List<Long> rolIds,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
+            // El rol de una cuenta creada desde este módulo siempre es Padre — no lo elige el admin
+            // (a diferencia de Personal, que sí permite cualquier combinación de roles).
+            List<Long> rolIds = List.of(personalService.obtenerRolPorNombre(ROL_PADRE).getId());
             personalService.guardar(institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
             model.addAttribute("padres", personalService.listarPorRol(institucionId, ROL_PADRE));
             return "gestion-padres/registrados/lista :: content";
@@ -85,7 +85,6 @@ public class PadresController {
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
             model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id));
-            model.addAttribute("roles", personalService.listarRoles());
             return "gestion-padres/registrados/formulario :: form-content";
         }
     }
