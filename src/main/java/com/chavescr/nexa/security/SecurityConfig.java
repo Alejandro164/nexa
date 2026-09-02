@@ -15,6 +15,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
+import com.chavescr.nexa.entity.AccionAcceso;
+import com.chavescr.nexa.entity.ResultadoAcceso;
+import com.chavescr.nexa.service.RegistroAccesoService;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -34,13 +38,16 @@ public class SecurityConfig {
     private final LoginSuccessHandler loginSuccessHandler;
     private final LoginFailureHandler loginFailureHandler;
     private final PasswordEncoder passwordEncoder;
+    private final RegistroAccesoService registroAccesoService;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService, LoginSuccessHandler loginSuccessHandler,
-            LoginFailureHandler loginFailureHandler, PasswordEncoder passwordEncoder) {
+            LoginFailureHandler loginFailureHandler, PasswordEncoder passwordEncoder,
+            RegistroAccesoService registroAccesoService) {
         this.userDetailsService = userDetailsService;
         this.loginSuccessHandler = loginSuccessHandler;
         this.loginFailureHandler = loginFailureHandler;
         this.passwordEncoder = passwordEncoder;
+        this.registroAccesoService = registroAccesoService;
     }
 
     @Bean
@@ -89,7 +96,7 @@ public class SecurityConfig {
 
                         // ── Administración: solo ADMIN, salvo Config. Académica (también DIRECTOR) ──
                         .requestMatchers("/configuracion-academica/**").hasAnyAuthority(ADMIN, DIRECTOR)
-                        .requestMatchers("/configuracion/**", "/usuarios", "/seguridad", "/instituciones/**",
+                        .requestMatchers("/configuracion/**", "/usuarios/**", "/seguridad", "/instituciones/**",
                                 "/componentes").hasAuthority(ADMIN)
 
                         // ── Personal: Solicitudes de Padres también la ve DOCENTE; el resto no ──
@@ -138,6 +145,15 @@ public class SecurityConfig {
                         .permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/logout")
+                        // LogoutHandler (no LogoutSuccessHandler): corre ANTES de invalidar la sesión,
+                        // así todavía hay Authentication disponible para saber quién cerró sesión.
+                        .addLogoutHandler((request, response, authentication) -> {
+                            if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails usuario) {
+                                registroAccesoService.registrar(usuario.getEmail(),
+                                        RegistroAccesoService.resolverIp(request), AccionAcceso.LOGOUT,
+                                        ResultadoAcceso.EXITOSO);
+                            }
+                        })
                         .logoutSuccessUrl("/login?logout")
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)

@@ -2,72 +2,50 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <body>
     <div th:fragment="tabla-instituciones">
-        <div class="table-responsive">
-            <table class="table" style="width: 100%; border-collapse: collapse;">
+        <div class="module-card">
+            <div class="module-card-header">
+                <h3 class="module-card-title" th:text="'Instituciones (' + ${instituciones != null ? #lists.size(instituciones) : 0} + ')'">Instituciones (0)</h3>
+                <button class="btn-primary"
+                        hx-get="/instituciones/form" hx-target="#modal-container" hx-swap="innerHTML"
+                        @click="document.getElementById('modal-container').classList.add('show')"
+                        style="font-size:0.85rem;padding:8px 16px;">+ Nueva Institución</button>
+            </div>
+            <table class="table">
                 <thead>
-                    <tr style="border-bottom: 2px solid var(--border); text-align: left;">
-                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">Código</th>
-                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">Nombre</th>
-                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">Ubicación</th>
-                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">Estado</th>
-                        <th style="padding: 12px; color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; text-align: right;">Acciones</th>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Ubicación</th>
+                        <th>Estado</th>
+                        <th style="text-align:right;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:if="${instituciones == null or instituciones.empty}">
-                        <td colspan="5" style="padding: 24px; text-align: center; color: var(--text-secondary);">
-                            No hay instituciones registradas.
-                        </td>
+                        <td colspan="5" class="table-empty">No hay instituciones registradas.</td>
                     </tr>
-                    <tr th:each="inst : ${instituciones}" style="border-bottom: 1px solid var(--border);">
-                        <td style="padding: 12px; font-weight: 600; color: var(--text-primary);" th:text="${inst.codigo}">001</td>
-                        <td style="padding: 12px;">
-                            <div style="font-weight: 600; color: var(--text-primary);" th:text="${inst.nombre}">Institución</div>
-                            <div style="font-size: 0.8rem; color: var(--text-secondary);" th:text="${inst.email}">email@ejemplo.com</div>
+                    <tr th:each="inst : ${instituciones}">
+                        <td><strong th:text="${inst.codigo}" style="color:#0f172a;">001</strong></td>
+                        <td>
+                            <div style="font-weight:600;color:#0f172a;" th:text="${inst.nombre}">Institución</div>
+                            <div style="font-size:0.8rem;color:#94a3b8;" th:text="${inst.email}">email@ejemplo.com</div>
                         </td>
-                        <td style="padding: 12px; color: var(--text-secondary);" th:text="${inst.direccion}">Dirección</td>
-                        <td style="padding: 12px;">
-                            <span th:if="${inst.activa}" class="badge badge-success">Activa</span>
-                            <span th:unless="${inst.activa}" class="badge badge-secondary">Inactiva</span>
+                        <td th:text="${inst.direccion}" style="color:#64748b;">Dirección</td>
+                        <td>
+                            <span class="badge-xs" th:classappend="${inst.activa ? 'badge-activo' : 'badge-inactivo'}"
+                                  th:text="${inst.activa ? 'Activa' : 'Inactiva'}">Estado</span>
                         </td>
-                        <td style="padding: 12px; text-align: right;" x-data="{ modalOpen: false }">
-                            <button class="btn btn-secondary btn-sm" 
-                                    th:attr="hx-get=@{/instituciones/form/{id}(id=${inst.id})}" 
-                                    hx-target="#modal-container" 
-                                    hx-swap="innerHTML"
-                                    @click="document.getElementById('modal-container').classList.add('show')"
-                                    style="padding: 6px 12px; margin-right: 4px;">
-                                Editar
-                            </button>
-                            <button class="btn btn-destructive btn-sm" 
-                                    @click="modalOpen = true"
-                                    style="padding: 6px 12px;">
-                                Eliminar
-                            </button>
-
-                            <!-- Modal Confirmación de Eliminación Local -->
-                            <div x-show="modalOpen" class="modal-backdrop" style="display: none; text-align: left; position: fixed; z-index: 9999;" x-cloak>
-                                <div class="modal-dialog" style="max-width: 420px; border-top: 4px solid var(--error);" @click.outside="modalOpen = false">
-                                    <div class="modal-header">
-                                        <h3 class="modal-title" style="color: var(--error);">Eliminar Institución</h3>
-                                        <button type="button" class="close-btn" @click.stop="modalOpen = false">&times;</button>
-                                    </div>
-                                    <div class="modal-body" style="white-space: normal;">
-                                        <p style="font-size: 0.925rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem; text-align: left;">
-                                            ¿Estás seguro de que deseas eliminar permanentemente la institución <strong th:text="${inst.nombre}"></strong>? Esta acción no se puede deshacer.
-                                        </p>
-                                        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                                            <button type="button" class="btn btn-secondary" @click.stop="modalOpen = false">Cancelar</button>
-                                            <button type="button" class="btn btn-destructive" 
-                                                    th:attr="hx-delete=@{/instituciones/{id}(id=${inst.id})}" 
-                                                    hx-target="#instituciones-list"
-                                                    hx-on::after-request="showNotification('Institución eliminada con éxito')"
-                                                    @click="modalOpen = false">
-                                                Confirmar y Eliminar
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get=@{/instituciones/form/{id}(id=${inst.id})}"
+                                        hx-target="#modal-container" hx-swap="innerHTML"
+                                        @click="document.getElementById('modal-container').classList.add('show')"
+                                        title="Editar">✏️</button>
+                                <button class="btn-xs btn-danger-ghost"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        th:attr="data-delete-url=@{/instituciones/{id}(id=${inst.id})},data-delete-target='#instituciones-list',data-delete-title='Eliminar institución',data-delete-message='¿Deseas eliminar permanentemente la institución ' + ${inst.nombre} + '? Esta acción no se puede deshacer.'"
+                                        title="Eliminar">🗑️</button>
                             </div>
                         </td>
                     </tr>

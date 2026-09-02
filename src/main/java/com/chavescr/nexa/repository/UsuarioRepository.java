@@ -17,6 +17,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
        boolean existsByEmail(String email);
 
+       /** Para el CRUD global de Usuarios (admin sin institución seleccionada): todos, con instituciones cargadas. */
+       @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.instituciones ORDER BY u.nombre")
+       List<Usuario> findAllWithInstituciones();
+
+       @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.instituciones WHERE u.id = :id")
+       Optional<Usuario> findByIdWithInstituciones(@Param("id") Long id);
+
        /**
         * Busca un usuario por email, nombre de usuario o cédula.
         * Usado por UserDetailsService para permitir login con cualquiera de los tres.

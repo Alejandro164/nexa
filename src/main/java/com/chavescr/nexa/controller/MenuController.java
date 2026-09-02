@@ -7,11 +7,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @Controller
 public class MenuController {
 
-    @GetMapping("/usuarios")
-    public String usuarios(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "usuarios/index :: htmx-content" : "usuarios/index";
-    }
-
     @GetMapping("/estudiantes")
     public String estudiantes(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "estudiantes/index :: htmx-content" : "estudiantes/index";
@@ -70,11 +65,6 @@ public class MenuController {
     @GetMapping("/reportes")
     public String reportes(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "reportes/index :: htmx-content" : "reportes/index";
-    }
-
-    @GetMapping("/seguridad")
-    public String seguridad(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "seguridad/index :: htmx-content" : "seguridad/index";
     }
 
     @GetMapping("/archivo-graduados")

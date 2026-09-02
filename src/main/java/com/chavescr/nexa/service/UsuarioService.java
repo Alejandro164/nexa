@@ -1,7 +1,10 @@
 package com.chavescr.nexa.service;
 
+import java.text.Normalizer;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -13,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.chavescr.nexa.dto.InstitucionDTO;
 import com.chavescr.nexa.dto.UsuarioDTO;
 import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.Usuario;
+import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.RolRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
 @Service
@@ -21,10 +27,15 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
+    private final InstitucionRepository institucionRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(UsuarioRepository usuarioRepository, RolRepository rolRepository,
+            InstitucionRepository institucionRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
+        this.rolRepository = rolRepository;
+        this.institucionRepository = institucionRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -140,5 +151,93 @@ public class UsuarioService {
     @CacheEvict(value = "usuarios", allEntries = true)
     @Transactional(rollbackFor = Exception.class)
     public void evictAllCaches() {
+    }
+
+    // ── CRUD global de Usuarios (pantalla /usuarios, admin sin institución seleccionada) ──────────
+
+    @Transactional(readOnly = true)
+    public List<Usuario> listarTodosConInstituciones(String filtro) {
+        List<Usuario> todos = usuarioRepository.findAllWithInstituciones();
+        if (filtro == null || filtro.isBlank()) {
+            return todos;
+        }
+        String f = normalizar(filtro.trim());
+        return todos.stream()
+                .filter(u -> normalizar(u.getNombre()).contains(f)
+                        || normalizar(u.getEmail()).contains(f)
+                        || (u.getUsuario() != null && normalizar(u.getUsuario()).contains(f))
+                        || (u.getCedula() != null && normalizar(u.getCedula()).contains(f)))
+                .toList();
+    }
+
+    private String normalizar(String texto) {
+        return Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("[^\\p{ASCII}]", "")
+                .toLowerCase();
+    }
+
+    @Transactional(readOnly = true)
+    public Usuario obtenerPorId(Long id) {
+        return usuarioRepository.findByIdWithInstituciones(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+    }
+
+    public Usuario guardar(Long id, String nombre, String email, String usuarioLogin, String cedula,
+            String rawPassword, boolean activo, List<Long> rolIds, List<Long> institucionIds) {
+        Usuario u;
+        if (id == null) {
+            if (rawPassword == null || rawPassword.isBlank()) {
+                throw new IllegalArgumentException("La contraseña es obligatoria al crear un usuario");
+            }
+            u = new Usuario();
+        } else {
+            u = obtenerPorId(id);
+        }
+
+        u.setNombre(nombre.trim());
+        u.setEmail(email.trim().toLowerCase());
+        u.setUsuario(usuarioLogin.trim().toLowerCase());
+        u.setCedula(cedula != null && !cedula.isBlank() ? cedula.trim() : null);
+        u.setActivo(activo);
+
+        if (rawPassword != null && !rawPassword.isBlank()) {
+            u.setPassword(passwordEncoder.encode(rawPassword));
+        }
+
+        Set<Rol> roles = rolIds == null ? Set.of() :
+                rolIds.stream()
+                        .map(rid -> rolRepository.findById(rid)
+                                .orElseThrow(() -> new IllegalArgumentException("Rol no encontrado: " + rid)))
+                        .collect(Collectors.toSet());
+        u.setRoles(roles);
+
+        Set<Institucion> instituciones = institucionIds == null ? Set.of() :
+                institucionIds.stream()
+                        .map(iid -> institucionRepository.findById(iid)
+                                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada: " + iid)))
+                        .collect(Collectors.toSet());
+        u.setInstituciones(instituciones);
+
+        Usuario guardado = usuarioRepository.save(u);
+        evictAllCaches();
+        return guardado;
+    }
+
+    public void eliminar(Long id) {
+        String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario actual = usuarioRepository.findByIdentifier(identifier).orElse(null);
+        if (actual != null && actual.getId().equals(id)) {
+            throw new IllegalArgumentException("No puedes eliminar tu propia cuenta");
+        }
+        Usuario u = obtenerPorId(id);
+        usuarioRepository.delete(u);
+        evictAllCaches();
+    }
+
+    public void toggleActivo(Long id) {
+        Usuario u = obtenerPorId(id);
+        u.setActivo(!u.getActivo());
+        usuarioRepository.save(u);
+        evictAllCaches();
     }
 }
