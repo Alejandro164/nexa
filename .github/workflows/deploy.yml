@@ -1,8 +1,9 @@
 name: Deploy a producción
 
 on:
-  push:
-    branches: [main]
+  # Sábado 00:00 hora de Costa Rica (UTC-6) = sábado 06:00 UTC
+  schedule:
+    - cron: "0 6 * * 6"
   workflow_dispatch: {}
 
 jobs:
