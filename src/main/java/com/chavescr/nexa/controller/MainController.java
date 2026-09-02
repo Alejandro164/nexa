@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.dto.InstitucionDTO;
+import com.chavescr.nexa.dto.UsuarioDTO;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.security.CustomUserDetails;
@@ -62,6 +64,12 @@ public class MainController {
             session.invalidate();
             return "redirect:/login";
         }
+
+        // El @ModelAttribute global se calculó ANTES de este handler, así que si resolver() acaba
+        // de auto-seleccionar institución (efecto secundario del propio resolver) puede haber quedado
+        // desactualizado — se recalcula aquí con el estado de sesión ya resuelto.
+        model.addAttribute("sinInstitucionAdmin",
+                request.isUserInRole("ROLE_ADMIN") && session.getAttribute("SESSION_INSTITUCION_ID") == null);
 
         cargarDashboard(model, session);
         return "inicio/inicio";
@@ -129,6 +137,30 @@ public class MainController {
         response.sendRedirect("/inicio");
     }
 
+    @PostMapping("/inicio/salir-institucion")
+    public void salirInstitucion(HttpServletRequest request, HttpServletResponse response, HttpSession session)
+            throws IOException {
+        // Solo ROLE_ADMIN puede operar sin institución seleccionada (ver SesionInstitucionService.resolver).
+        if (!request.isUserInRole("ROLE_ADMIN")) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        session.removeAttribute("SESSION_INSTITUCION_ID");
+        session.removeAttribute("SESSION_INSTITUCION_NOMBRE");
+        // Se olvida también la institución recordada: si no, el próximo login la auto-seleccionaría
+        // de nuevo (seleccionarRecordada) y "salir" no tendría efecto duradero.
+        usuarioService.actualizarUltimaInstitucion(usuarioId, null);
+
+        if ("true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
+            response.setHeader("HX-Redirect", "/inicio");
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
+        response.sendRedirect("/inicio");
+    }
+
     private void cargarDashboard(Model model, HttpSession session) {
         String institucionActivaNombre = (String) session.getAttribute("SESSION_INSTITUCION_NOMBRE");
         model.addAttribute("institucionActivaNombre", institucionActivaNombre);
@@ -136,6 +168,7 @@ public class MainController {
         Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
         if (institucionId == null) {
             model.addAttribute("sinInstitucion", true);
+            cargarResumenGlobal(model);
             return;
         }
 
@@ -156,5 +189,39 @@ public class MainController {
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("niveles", niveles);
         model.addAttribute("actividadReciente", historialCambioService.listarRecientes(institucionId));
+    }
+
+    /**
+     * Panel para el admin sin institución seleccionada: en vez del detalle de una institución
+     * (que no aplica aquí), muestra un resumen global del sistema — mismos indicadores que ya
+     * existían en el dashboard antes de que este pasara a estar scoped a una institución.
+     */
+    private void cargarResumenGlobal(Model model) {
+        List<UsuarioDTO> usuarios = usuarioService.obtenerTodosDTO();
+        List<InstitucionDTO> instituciones = institucionService.obtenerTodasDTO();
+
+        int totalUsuarios = usuarios.size();
+        long usuariosActivos = usuarios.stream().filter(UsuarioDTO::isActivo).count();
+        int totalInstituciones = instituciones.size();
+        long institucionesActivas = instituciones.stream().filter(InstitucionDTO::isActiva).count();
+        int porcentajeActivos = totalUsuarios > 0
+                ? (int) Math.round((double) usuariosActivos / totalUsuarios * 100)
+                : 0;
+        long totalRoles = usuarios.stream()
+                .flatMap(u -> u.getRoles().stream())
+                .distinct()
+                .count();
+
+        model.addAttribute("totalUsuarios", totalUsuarios);
+        model.addAttribute("usuariosActivos", usuariosActivos);
+        model.addAttribute("totalInstituciones", totalInstituciones);
+        model.addAttribute("institucionesActivas", institucionesActivas);
+        model.addAttribute("porcentajeActivos", porcentajeActivos);
+        model.addAttribute("totalRoles", totalRoles);
+
+        model.addAttribute("ultimosUsuarios",
+                usuarios.stream().sorted((a, b) -> b.getId().compareTo(a.getId())).limit(5).toList());
+        model.addAttribute("ultimasInstituciones",
+                instituciones.stream().sorted((a, b) -> b.getId().compareTo(a.getId())).limit(5).toList());
     }
 }

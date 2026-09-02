@@ -17,7 +17,7 @@
 
     </div>
 
-    <div class="nav-section">
+    <div class="nav-section" th:unless="${sinInstitucionAdmin}">
         <div class="nav-section-title">Gestión y Personas</div>
 
         <a href="/contacto" class="nav-item" hx-get="/contacto" hx-target=".content-area" hx-swap="innerHTML"
@@ -82,7 +82,7 @@
         </a>
     </div>
 
-    <div class="nav-section">
+    <div class="nav-section" th:unless="${sinInstitucionAdmin}">
         <div class="nav-section-title">Academia y Servicios</div>
         <a href="/gestion-academica" class="nav-item" hx-get="/gestion-academica" hx-target=".content-area"
             hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
@@ -144,7 +144,7 @@
 
     </div>
 
-    <div class="nav-section">
+    <div class="nav-section" th:unless="${sinInstitucionAdmin}">
         <div class="nav-section-title">Gestión Documental</div>
         <a href="/nube-nexa" class="nav-item" hx-get="/nube-nexa" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
@@ -178,7 +178,7 @@
         </a>
     </div>
 
-    <div class="nav-section">
+    <div class="nav-section" th:unless="${sinInstitucionAdmin}">
         <div class="nav-section-title">Comunicación y Enlaces</div>
         <a href="/comunicacion" class="nav-item" hx-get="/comunicacion" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true">
@@ -213,7 +213,7 @@
         </a>
     </div>
 
-    <div class="nav-section">
+    <div class="nav-section" th:unless="${sinInstitucionAdmin}">
         <div class="nav-section-title">Análisis e Info</div>
         <a href="/reportes" class="nav-item" hx-get="/reportes" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
@@ -228,7 +228,7 @@
 
     </div>
 
-    <div class="nav-section">
+    <div class="nav-section" th:unless="${sinInstitucionAdmin}">
         <div class="nav-section-title">Otros</div>
         <a href="/mis-cursos" class="nav-item" hx-get="/mis-cursos" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
@@ -257,7 +257,7 @@
     <div class="nav-section" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
         <div class="nav-section-title">Administración</div>
         <a href="/configuracion" class="nav-item" hx-get="/configuracion" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
+            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')" th:unless="${sinInstitucionAdmin}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3" />
@@ -267,7 +267,8 @@
             <span class="nav-item-text">Configuración</span>
         </a>
         <a href="/configuracion-academica" class="nav-item" hx-get="/configuracion-academica" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
+            th:unless="${sinInstitucionAdmin}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -276,7 +277,7 @@
             <span class="nav-item-text">Config. Académica</span>
         </a>
         <a href="/usuarios" class="nav-item" hx-get="/usuarios" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
+            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')" th:if="${sinInstitucionAdmin}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -294,7 +295,7 @@
             <span class="nav-item-text">Seguridad</span>
         </a>
         <a href="/instituciones" class="nav-item" hx-get="/instituciones" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
+            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')" th:if="${sinInstitucionAdmin}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 21h18"></path>

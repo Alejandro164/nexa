@@ -18,6 +18,7 @@ import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 import com.chavescr.nexa.service.ConfiguracionAcademicaService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,10 +36,7 @@ public class ConfiguracionAcademicaController {
 
     @GetMapping
     public String configuracionAcademica(Model model, HttpServletRequest request, HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) {
-            return "redirect:/";
-        }
+        Long institucionId = requerirInstitucion(session);
 
         cargarPagina(model, institucionId);
         if ("true".equals(request.getHeader("HX-Request"))) {
@@ -275,7 +273,7 @@ public class ConfiguracionAcademicaController {
     private Long requerirInstitucion(HttpSession session) {
         Long institucionId = institucionId(session);
         if (institucionId == null) {
-            throw new IllegalStateException("Debe seleccionar una institución");
+            throw new InstitucionNoSeleccionadaException();
         }
         return institucionId;
     }
