@@ -42,21 +42,18 @@ public class DistribucionPorcentualService {
         return distribucionRepository.findByInstitucionIdAndPeriodoIdAndMateriaId(institucionId, periodoId, materiaId)
                 .orElseGet(() -> {
                     DistribucionPorcentual nueva = new DistribucionPorcentual();
-                    nueva.setCotidiano(30);
+                    nueva.setCotidiano(40);
                     nueva.setTareas(15);
                     nueva.setProyectos(20);
                     nueva.setExamenes(20);
                     nueva.setAsistencia(5);
-                    nueva.setTrabajosExtraclase(10);
                     return nueva;
                 });
     }
 
     public DistribucionPorcentual guardarDistribucion(Long institucionId, Long periodoId, Long materiaId,
-            Integer cotidiano, Integer tareas, Integer proyectos, Integer examenes, Integer asistencia,
-            Integer trabajosExtraclase) {
-        int total = safe(cotidiano) + safe(tareas) + safe(proyectos) + safe(examenes) + safe(asistencia)
-                + safe(trabajosExtraclase);
+            Integer cotidiano, Integer tareas, Integer proyectos, Integer examenes, Integer asistencia) {
+        int total = safe(cotidiano) + safe(tareas) + safe(proyectos) + safe(examenes) + safe(asistencia);
         if (total != 100) {
             throw new IllegalArgumentException(
                     "La suma de los porcentajes debe ser exactamente 100% (actual: " + total + "%)");
@@ -77,7 +74,6 @@ public class DistribucionPorcentualService {
         distribucion.setProyectos(safe(proyectos));
         distribucion.setExamenes(safe(examenes));
         distribucion.setAsistencia(safe(asistencia));
-        distribucion.setTrabajosExtraclase(safe(trabajosExtraclase));
         return distribucionRepository.save(distribucion);
     }
 

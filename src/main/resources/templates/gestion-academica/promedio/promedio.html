@@ -42,14 +42,13 @@
                             <th>Tareas</th>
                             <th>Proyectos</th>
                             <th>Exámenes</th>
-                            <th>Extraclase</th>
                             <th>Asistencia</th>
                             <th style="background:rgba(45,90,135,0.08);">Promedio Final</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:if="${filas == null or filas.empty}">
-                            <td colspan="8" class="table-empty">No hay estudiantes activos en esta sección.</td>
+                            <td colspan="7" class="table-empty">No hay estudiantes activos en esta sección.</td>
                         </tr>
                         <tr th:each="fila : ${filas}">
                             <td style="font-weight:600;" th:text="${fila.estudiante.nombre}">Estudiante</td>
@@ -76,12 +75,6 @@
                                 <span th:if="${fila.examenes != null and fila.examenes >= 80}" class="badge badge-success" th:text="${fila.examenes}">95</span>
                                 <span th:if="${fila.examenes != null and fila.examenes >= 60 and fila.examenes < 80}" class="badge badge-warning" th:text="${fila.examenes}">70</span>
                                 <span th:if="${fila.examenes != null and fila.examenes < 60}" class="badge badge-danger" th:text="${fila.examenes}">50</span>
-                            </td>
-                            <td>
-                                <span th:if="${fila.extraclase == null}">—</span>
-                                <span th:if="${fila.extraclase != null and fila.extraclase >= 80}" class="badge badge-success" th:text="${fila.extraclase}">95</span>
-                                <span th:if="${fila.extraclase != null and fila.extraclase >= 60 and fila.extraclase < 80}" class="badge badge-warning" th:text="${fila.extraclase}">70</span>
-                                <span th:if="${fila.extraclase != null and fila.extraclase < 60}" class="badge badge-danger" th:text="${fila.extraclase}">50</span>
                             </td>
                             <td>
                                 <span th:if="${fila.asistencia == null}">—</span>
