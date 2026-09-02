@@ -1,89 +1,139 @@
 <div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
-    <div class="modal-backdrop" @click.self="$dispatch('close-modal')">
+    <style>
+        .modal-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .modal-tab-btn {
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .modal-tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .modal-tab-btn:disabled {
+            color: #cbd5e1;
+            cursor: not-allowed;
+        }
+    </style>
+    <div class="modal-backdrop" @click.self="$dispatch('close-modal')" x-data="{ tab: 'general' }">
         <div class="modal-dialog">
             <div class="modal-header">
                 <h3 class="modal-title" th:text="${usuario.id == null ? 'Agregar Estudiante' : 'Editar Estudiante'}">Estudiante</h3>
                 <button type="button" class="close-btn" @click="$dispatch('close-modal')">&times;</button>
             </div>
             <div class="modal-body">
-                <form th:action="@{/estudiantes/expedientes}" method="post"
-                      hx-post="/estudiantes/expedientes"
-                      hx-target="#estudiantes-dir-content" hx-swap="innerHTML"
-                      hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
-                    <input type="hidden" name="id" th:value="${usuario.id}">
 
-                    <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
+                <div class="modal-tabs">
+                    <button type="button" class="modal-tab-btn" :class="{active: tab === 'general'}" @click="tab = 'general'">
+                        Información General
+                    </button>
+                    <button type="button" class="modal-tab-btn" :class="{active: tab === 'padres'}"
+                            th:if="${usuario.id != null}"
+                            th:attr="hx-get='/estudiantes/expedientes/' + ${usuario.id} + '/padres'"
+                            hx-target="#estudiante-padres-panel" hx-swap="innerHTML"
+                            @click="tab = 'padres'">
+                        Padres
+                    </button>
+                    <button type="button" class="modal-tab-btn" disabled title="Guarda los datos generales primero"
+                            th:if="${usuario.id == null}">
+                        Padres
+                    </button>
+                </div>
 
-                    <div class="form-row">
-                        <div class="form-group" style="flex:2;">
-                            <label class="form-label">Nombre completo *</label>
-                            <input class="form-input" type="text" name="nombre" required maxlength="100"
-                                   th:value="${usuario.nombre}" placeholder="Ej. Sofía Alpízar Soto">
+                <div x-show="tab === 'general'">
+                    <form th:action="@{/estudiantes/expedientes}" method="post"
+                          hx-post="/estudiantes/expedientes"
+                          hx-target="#estudiantes-dir-content" hx-swap="innerHTML"
+                          hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
+                        <input type="hidden" name="id" th:value="${usuario.id}">
+
+                        <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="flex:2;">
+                                <label class="form-label">Nombre completo *</label>
+                                <input class="form-input" type="text" name="nombre" required maxlength="100"
+                                       th:value="${usuario.nombre}" placeholder="Ej. Sofía Alpízar Soto">
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">Cédula</label>
+                                <input class="form-input" type="text" name="cedula" maxlength="30"
+                                       th:value="${usuario.cedula}" placeholder="1-2345-6789">
+                            </div>
                         </div>
-                        <div class="form-group" style="flex:1;">
-                            <label class="form-label">Cédula</label>
-                            <input class="form-input" type="text" name="cedula" maxlength="30"
-                                   th:value="${usuario.cedula}" placeholder="1-2345-6789">
-                        </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Correo electrónico *</label>
-                        <input class="form-input" type="email" name="email" required maxlength="150"
-                               th:value="${usuario.email}" placeholder="correo@ejemplo.com">
-                    </div>
-
-                    <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Nombre de usuario *</label>
-                            <input class="form-input" type="text" name="usuario" required maxlength="60"
-                                   th:value="${usuario.usuario}" placeholder="sofia.alpizar">
+                            <label class="form-label">Correo electrónico *</label>
+                            <input class="form-input" type="email" name="email" required maxlength="150"
+                                   th:value="${usuario.email}" placeholder="correo@ejemplo.com">
                         </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nombre de usuario *</label>
+                                <input class="form-input" type="text" name="usuario" required maxlength="60"
+                                       th:value="${usuario.usuario}" placeholder="sofia.alpizar">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"
+                                       th:text="${usuario.id == null ? 'Contraseña *' : 'Contraseña'}">Contraseña</label>
+                                <input class="form-input" type="password" name="password"
+                                       th:required="${usuario.id == null}"
+                                       th:placeholder="${usuario.id == null ? 'Contraseña inicial' : 'Dejar vacío para no cambiar'}">
+                            </div>
+                        </div>
+
                         <div class="form-group">
-                            <label class="form-label"
-                                   th:text="${usuario.id == null ? 'Contraseña *' : 'Contraseña'}">Contraseña</label>
-                            <input class="form-input" type="password" name="password"
-                                   th:required="${usuario.id == null}"
-                                   th:placeholder="${usuario.id == null ? 'Contraseña inicial' : 'Dejar vacío para no cambiar'}">
+                            <label class="form-label">Sección *</label>
+                            <select class="form-input" name="nivelId" required>
+                                <option value="" disabled th:selected="${usuario.nivelAcademico == null}">Seleccione una sección</option>
+                                <option th:each="nivel : ${niveles}" th:value="${nivel.id}"
+                                        th:text="${nivel.nombreCompleto}"
+                                        th:selected="${usuario.nivelAcademico != null and usuario.nivelAcademico.id == nivel.id}"></option>
+                            </select>
+                            <p th:if="${niveles == null or niveles.empty}" style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">
+                                No hay secciones activas configuradas. Créalas en Configuración Académica.
+                            </p>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Sección *</label>
-                        <select class="form-input" name="nivelId" required>
-                            <option value="" disabled th:selected="${usuario.nivelAcademico == null}">Seleccione una sección</option>
-                            <option th:each="nivel : ${niveles}" th:value="${nivel.id}"
-                                    th:text="${nivel.nombreCompleto}"
-                                    th:selected="${usuario.nivelAcademico != null and usuario.nivelAcademico.id == nivel.id}"></option>
-                        </select>
-                        <p th:if="${niveles == null or niveles.empty}" style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">
-                            No hay secciones activas configuradas. Créalas en Configuración Académica.
-                        </p>
-                    </div>
+                        <div class="form-group">
+                            <label class="form-label">Rol</label>
+                            <div><span class="badge-xs badge-estudiante">ESTUDIANTE</span></div>
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Rol</label>
-                        <div><span class="badge-xs badge-estudiante">ESTUDIANTE</span></div>
-                    </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="custom-checkbox" name="activo" value="true"
+                                       th:checked="${usuario.activo == null or usuario.activo}">
+                                <span class="custom-checkbox-control">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </span>
+                                <span>Estudiante activo</span>
+                            </label>
+                        </div>
 
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" class="custom-checkbox" name="activo" value="true"
-                                   th:checked="${usuario.activo == null or usuario.activo}">
-                            <span class="custom-checkbox-control">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            </span>
-                            <span>Estudiante activo</span>
-                        </label>
-                    </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" @click="$dispatch('close-modal')">Cancelar</button>
+                            <button type="submit" class="btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn-secondary" @click="$dispatch('close-modal')">Cancelar</button>
-                        <button type="submit" class="btn-primary">Guardar</button>
-                    </div>
-                </form>
+                <div x-show="tab === 'padres'" id="estudiante-padres-panel"></div>
+
             </div>
         </div>
     </div>

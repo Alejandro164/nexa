@@ -1,0 +1,107 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+
+    <div th:if="${errorPadre}" class="form-alert-error" th:text="${errorPadre}"></div>
+
+    <div style="margin-bottom:1.25rem;">
+        <div th:if="${padresVinculados == null or padresVinculados.empty}"
+             style="color:#94a3b8;font-size:0.85rem;padding:0.5rem 0;">
+            Este estudiante todavía no tiene padres vinculados.
+        </div>
+        <div th:each="p : ${padresVinculados}"
+             style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f1f5f9;">
+            <div>
+                <div style="font-weight:600;color:#0f172a;font-size:0.9rem;" th:text="${p.nombre}">Nombre</div>
+                <div style="font-size:0.78rem;color:#64748b;">
+                    <span th:text="${p.email}">email</span>
+                    <span th:if="${p.cedula != null}"> · <span th:text="${p.cedula}">cédula</span></span>
+                </div>
+            </div>
+            <button type="button" class="btn-xs btn-danger-ghost"
+                    onclick="abrirConfirmacionAcademica(this)"
+                    th:attr="data-delete-method='DELETE',data-delete-url='/estudiantes/expedientes/' + ${estudiante.id} + '/padres/' + ${p.id},data-delete-target='#estudiante-padres-panel',data-delete-title='Desvincular padre',data-delete-message='¿Deseas desvincular a ' + ${p.nombre} + ' de este estudiante? La cuenta del padre no se elimina.'"
+                    title="Desvincular">🗑️</button>
+        </div>
+    </div>
+
+    <div style="border-top:1px solid #e2e8f0;padding-top:1rem;"
+         x-data="{ estado: 'inicial', padreEncontradoId: null, padreEncontradoNombre: '', nombreSugerido: '', cedulaBuscada: '' }">
+        <label class="form-label">Agregar padre por cédula</label>
+        <div style="display:flex;gap:0.5rem;">
+            <input type="text" x-ref="cedula" class="form-input" placeholder="Ej. 1-2345-6789" style="flex:1;">
+            <button type="button" class="btn-secondary" style="white-space:nowrap;"
+                    @click="
+                        estado = 'buscando';
+                        const cedula = $refs.cedula.value.trim();
+                        cedulaBuscada = cedula;
+                        if (!cedula) { estado = 'inicial'; return; }
+                        fetch('/estudiantes/buscar-padre?cedula=' + encodeURIComponent(cedula))
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.encontrado) {
+                                    padreEncontradoId = data.padreId;
+                                    padreEncontradoNombre = data.nombre;
+                                    estado = 'encontrado-local';
+                                    return;
+                                }
+                                fetch('/estudiantes/buscar-hacienda?identificacion=' + encodeURIComponent(cedula))
+                                    .then(r => r.json())
+                                    .then(h => {
+                                        nombreSugerido = h.encontrado ? h.nombre : '';
+                                        estado = h.encontrado ? 'crear-con-nombre' : 'crear-manual';
+                                    })
+                                    .catch(() => { nombreSugerido = ''; estado = 'crear-manual'; });
+                            })
+                            .catch(() => { estado = 'error'; });
+                    ">🔍 Buscar</button>
+        </div>
+
+        <p x-show="estado === 'buscando'" style="font-size:0.8rem;color:#94a3b8;margin-top:6px;">Buscando...</p>
+        <p x-show="estado === 'error'" style="font-size:0.8rem;color:var(--error);margin-top:6px;">Error al buscar. Intenta de nuevo.</p>
+
+        <div x-show="estado === 'encontrado-local'" style="margin-top:10px;padding:10px;background:#f0fdf4;border-radius:8px;">
+            <p style="font-size:0.85rem;color:#166534;margin:0 0 8px;">✅ Ya registrado: <span x-text="padreEncontradoNombre"></span></p>
+            <form th:attr="hx-post='/estudiantes/expedientes/' + ${estudiante.id} + '/padres/vincular'"
+                  hx-target="#estudiante-padres-panel" hx-swap="innerHTML">
+                <input type="hidden" name="padreId" :value="padreEncontradoId">
+                <button type="submit" class="btn-primary" style="font-size:0.85rem;padding:6px 14px;">Vincular</button>
+            </form>
+        </div>
+
+        <div x-show="estado === 'crear-con-nombre' || estado === 'crear-manual'"
+             style="margin-top:10px;padding:12px;background:#f8fafc;border-radius:8px;">
+            <p style="font-size:0.8rem;color:#64748b;margin:0 0 8px;">
+                <span x-show="estado === 'crear-con-nombre'">✅ Encontrado en Hacienda — revisa y completa los datos para crear la cuenta.</span>
+                <span x-show="estado === 'crear-manual'">⚠️ No se encontró. Completa los datos manualmente para crear la cuenta.</span>
+            </p>
+            <form th:attr="hx-post='/estudiantes/expedientes/' + ${estudiante.id} + '/padres/crear'"
+                  hx-target="#estudiante-padres-panel" hx-swap="innerHTML">
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label class="form-label">Nombre completo *</label>
+                        <input class="form-input" type="text" name="nombre" required maxlength="100" :value="nombreSugerido">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label class="form-label">Cédula</label>
+                        <input class="form-input" type="text" name="cedula" maxlength="30" :value="cedulaBuscada">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Correo electrónico *</label>
+                    <input class="form-input" type="email" name="email" required maxlength="150" placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nombre de usuario *</label>
+                        <input class="form-input" type="text" name="usuario" required maxlength="60" placeholder="ej. juan.perez">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contraseña *</label>
+                        <input class="form-input" type="password" name="password" required placeholder="Contraseña inicial">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="font-size:0.85rem;padding:6px 14px;">Crear y vincular</button>
+            </form>
+        </div>
+    </div>
+
+</div>
