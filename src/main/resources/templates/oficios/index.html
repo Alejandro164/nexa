@@ -142,12 +142,12 @@
             }
 
             .oficios-table .col-oficio { width: 11%; }
-            .oficios-table .col-redactor { width: 16%; }
-            .oficios-table .col-asunto { width: 26%; }
-            .oficios-table .col-destinatario { width: 22%; }
-            .oficios-table .col-circular { width: 10%; }
-            .oficios-table .col-estado { width: 8%; }
-            .oficios-table .col-doc { width: 14%; }
+            .oficios-table .col-redactor { width: 15%; }
+            .oficios-table .col-asunto { width: 22%; }
+            .oficios-table .col-destinatario { width: 19%; }
+            .oficios-table .col-circular { width: 9%; }
+            .oficios-table .col-estado { width: 12%; }
+            .oficios-table .col-doc { width: 17%; }
 
             .oficio-number {
                 font-weight: 700;
@@ -237,6 +237,17 @@
         </div>
 
         <div id="oficios-modal-container" style="display:none;"></div>
+
+        <script>
+            if (!window.oficiosEventsRegistrados) {
+                document.addEventListener('oficioError', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje, 'error');
+                    }
+                });
+                window.oficiosEventsRegistrados = true;
+            }
+        </script>
 
     </main>
     </th:block>

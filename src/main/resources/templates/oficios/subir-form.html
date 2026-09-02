@@ -1,20 +1,25 @@
 <div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
     <div class="modal-backdrop" @click.self="$dispatch('close-modal')">
         <div class="modal-dialog">
+            <div class="modal-loading-overlay htmx-indicator" id="oficios-subir-loading">
+                <div class="spinner"></div>
+                <span>Subiendo...</span>
+            </div>
             <div class="modal-header">
-                <h3 class="modal-title" th:text="${oficio.rutaArchivo != null ? 'Reemplazar documento' : 'Subir documento'} + ' — ' + ${oficio.numero}">Subir documento</h3>
+                <h3 class="modal-title" th:text="${oficio.nubeNodo != null ? 'Reemplazar documento' : 'Subir documento'} + ' — ' + ${oficio.numero}">Subir documento</h3>
                 <button type="button" class="close-btn" @click="$dispatch('close-modal')">&times;</button>
             </div>
             <div class="modal-body">
                 <form th:action="@{'/oficios/' + ${oficio.id} + '/documento'}" method="post" enctype="multipart/form-data"
-                      hx-post="@{'/oficios/' + ${oficio.id} + '/documento'}" hx-encoding="multipart/form-data"
+                      th:attr="hx-post=@{'/oficios/' + ${oficio.id} + '/documento'}" hx-encoding="multipart/form-data"
                       hx-target="#oficios-lista-content" hx-swap="outerHTML"
+                      hx-indicator="#oficios-subir-loading"
                       hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
 
                     <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
 
-                    <p th:if="${oficio.rutaArchivo != null}" style="font-size:0.85rem; color:var(--text-light); margin-bottom:1rem;">
-                        Ya hay un documento adjunto (<span th:text="${oficio.nombreArchivoOriginal}">archivo.pdf</span>). Subir uno nuevo lo reemplazará.
+                    <p th:if="${oficio.nubeNodo != null}" style="font-size:0.85rem; color:var(--text-light); margin-bottom:1rem;">
+                        Ya hay un documento adjunto (<span th:text="${oficio.nubeNodo.nombre}">archivo.pdf</span>). Subir uno nuevo lo reemplazará.
                     </p>
 
                     <div class="form-group">

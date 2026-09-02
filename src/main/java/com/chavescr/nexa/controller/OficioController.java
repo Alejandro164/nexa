@@ -1,6 +1,5 @@
 package com.chavescr.nexa.controller;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -58,17 +57,32 @@ public class OficioController {
     public String formCrear(Model model, HttpSession session) {
         requerirInstitucion(session);
         model.addAttribute("oficio", new Oficio());
+        cargarOpcionesDestinatario(model);
+        return "oficios/formulario :: form-content";
+    }
+
+    @GetMapping("/form/{id}")
+    public String formEditar(@PathVariable Long id, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("oficio", oficioService.obtenerPorId(institucionId, id));
+        cargarOpcionesDestinatario(model);
         return "oficios/formulario :: form-content";
     }
 
     @PostMapping
-    public String crear(@RequestParam String asunto, @RequestParam String destinatario,
+    public String guardar(@RequestParam(required = false) Long id,
+            @RequestParam String asunto,
+            @RequestParam String tipoDestinatario, @RequestParam Long destinatarioId,
             @RequestParam(required = false) String numeroCircular,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         try {
-            oficioService.crear(institucionId, usuarioId, asunto, destinatario, numeroCircular);
+            if (id == null) {
+                Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+                oficioService.crear(institucionId, usuarioId, asunto, tipoDestinatario, destinatarioId, numeroCircular);
+            } else {
+                oficioService.actualizar(institucionId, id, asunto, tipoDestinatario, destinatarioId, numeroCircular);
+            }
             cargarLista(model, institucionId, null);
             return "oficios/lista :: content";
         } catch (Exception e) {
@@ -76,10 +90,13 @@ public class OficioController {
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
             Oficio oficio = new Oficio();
+            oficio.setId(id);
             oficio.setAsunto(asunto);
-            oficio.setDestinatario(destinatario);
             oficio.setNumeroCircular(numeroCircular);
             model.addAttribute("oficio", oficio);
+            model.addAttribute("tipoDestinatarioSeleccionado", tipoDestinatario);
+            model.addAttribute("destinatarioIdSeleccionado", destinatarioId);
+            cargarOpcionesDestinatario(model);
             return "oficios/formulario :: form-content";
         }
     }
@@ -95,28 +112,50 @@ public class OficioController {
     public String subirDocumento(@PathVariable Long id, @RequestParam("archivo") MultipartFile archivo,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         try {
-            oficioService.subirDocumento(institucionId, id, archivo);
+            oficioService.subirDocumento(institucionId, id, usuarioId, archivo);
             cargarLista(model, institucionId, null);
             return "oficios/lista :: content";
         } catch (Exception e) {
+            notificarError(response, "No se pudo subir el documento: " + e.getMessage());
+
+            Oficio oficio = null;
+            try {
+                oficio = oficioService.obtenerPorId(institucionId, id);
+            } catch (Exception noEncontrado) {
+                // El oficio ya no existe (p. ej. lo eliminaron mientras se subía el documento):
+                // no hay formulario sensato que re-mostrar, se refresca la lista en su lugar.
+            }
+            if (oficio == null) {
+                cargarLista(model, institucionId, null);
+                return "oficios/lista :: content";
+            }
+
             response.setHeader("HX-Retarget", "#oficios-modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("oficio", oficioService.obtenerPorId(institucionId, id));
+            model.addAttribute("oficio", oficio);
             return "oficios/subir-form :: form-content";
         }
+    }
+
+    private void notificarError(HttpServletResponse response, String mensaje) {
+        // Los encabezados HTTP no admiten saltos de línea (Tomcat los rechaza como posible header
+        // injection) — algunos mensajes de excepción (ej. fallos de conexión SMTP) vienen multilínea.
+        String mensajeSaneado = mensaje.replace("\"", "'").replaceAll("[\\r\\n]+", " ").trim();
+        response.setHeader("HX-Trigger", "{\"oficioError\":{\"mensaje\":\"" + mensajeSaneado + "\"}}");
     }
 
     @GetMapping("/{id}/documento")
     public ResponseEntity<Resource> verDocumento(@PathVariable Long id, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         Oficio oficio = oficioService.obtenerPorId(institucionId, id);
-        if (oficio.getRutaArchivo() == null) {
+        if (oficio.getNubeNodo() == null) {
             return ResponseEntity.notFound().build();
         }
         try {
-            Path filePath = Paths.get(oficioService.getRutaRecursos()).resolve(oficio.getRutaArchivo());
+            Path filePath = Paths.get(oficioService.getRutaRecursos()).resolve(oficio.getNubeNodo().getUrlArchivo());
             Resource resource = new UrlResource(filePath.toUri());
             if (!resource.exists() || !resource.isReadable()) {
                 return ResponseEntity.notFound().build();
@@ -124,7 +163,7 @@ public class OficioController {
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "inline; filename=\"" + oficio.getNombreArchivoOriginal() + "\"")
+                            "inline; filename=\"" + oficio.getNubeNodo().getNombre() + "\"")
                     .body(resource);
         } catch (Exception e) {
             throw new RuntimeException("Error al abrir el documento: " + e.getMessage());
@@ -132,9 +171,25 @@ public class OficioController {
     }
 
     @DeleteMapping("/{id}")
-    public String eliminar(@PathVariable Long id, Model model, HttpSession session) throws IOException {
+    public String eliminar(@PathVariable Long id, Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        oficioService.eliminar(institucionId, id);
+        try {
+            oficioService.eliminar(institucionId, id);
+        } catch (Exception e) {
+            notificarError(response, e.getMessage());
+        }
+        cargarLista(model, institucionId, null);
+        return "oficios/lista :: content";
+    }
+
+    @PostMapping("/{id}/emitir")
+    public String emitir(@PathVariable Long id, Model model, HttpSession session, HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        try {
+            oficioService.emitir(institucionId, id);
+        } catch (Exception e) {
+            notificarError(response, "No se pudo emitir el oficio: " + e.getMessage());
+        }
         cargarLista(model, institucionId, null);
         return "oficios/lista :: content";
     }
@@ -143,6 +198,11 @@ public class OficioController {
         List<Oficio> oficios = institucionId == null ? List.of() : oficioService.listar(institucionId, q);
         model.addAttribute("oficios", oficios);
         model.addAttribute("q", q);
+    }
+
+    private void cargarOpcionesDestinatario(Model model) {
+        model.addAttribute("usuariosDestinatario", oficioService.listarUsuariosActivos());
+        model.addAttribute("institucionesDestinatario", oficioService.listarInstitucionesActivas());
     }
 
     private Long institucionId(HttpSession session) {

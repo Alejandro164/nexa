@@ -1,18 +1,25 @@
 package com.chavescr.nexa.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.chavescr.nexa.entity.NubeNodo;
+import com.chavescr.nexa.entity.TipoNodo;
 
 @Repository
 public interface NubeNodoRepository extends JpaRepository<NubeNodo, Long> {
 
     // Find all nodes inside a specific parent folder (excluye los que están en la papelera)
     List<NubeNodo> findByPadreIdAndFechaEliminacionIsNullOrderByTipoAscNombreAsc(Long padreId);
+
+    // Carpeta raíz de la institución con este nombre (usado por módulos que integran su
+    // almacenamiento en Nube Nexa, ej. Oficios, para encontrar/crear su carpeta dedicada).
+    Optional<NubeNodo> findByNombreAndTipoAndInstitucionIdAndPadreIsNullAndFechaEliminacionIsNull(
+            String nombre, TipoNodo tipo, Long institucionId);
 
     // Find all root nodes (where parent is null), excluye los que están en la papelera
     List<NubeNodo> findByPadreIsNullAndFechaEliminacionIsNullOrderByTipoAscNombreAsc();

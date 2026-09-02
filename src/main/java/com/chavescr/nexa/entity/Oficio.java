@@ -39,23 +39,28 @@ public class Oficio {
     @Column(nullable = false, length = 300)
     private String asunto;
 
-    @Column(nullable = false, length = 200)
-    private String destinatario;
+    /** Exactamente uno de los dos debe estar presente: el oficio se dirige a un usuario registrado o a una institución. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "destinatario_usuario_id")
+    private Usuario destinatarioUsuario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "destinatario_institucion_id")
+    private Institucion destinatarioInstitucion;
 
     @Column(name = "numero_circular", length = 30)
     private String numeroCircular;
 
     @Column(nullable = false, length = 20)
-    private String estado = "PENDIENTE";
+    private String estado = "BORRADOR";
 
     @Column(nullable = false)
     private LocalDate fecha;
 
-    @Column(name = "ruta_archivo", length = 300)
-    private String rutaArchivo;
-
-    @Column(name = "nombre_archivo_original", length = 200)
-    private String nombreArchivoOriginal;
+    /** El documento vive en Nube Nexa (carpeta "Oficios" de la institución) — no se duplica su ruta/nombre aquí. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nube_nodo_id")
+    private NubeNodo nubeNodo;
 
     @PrePersist
     void alPersistir() {
@@ -104,12 +109,20 @@ public class Oficio {
         this.asunto = asunto;
     }
 
-    public String getDestinatario() {
-        return destinatario;
+    public Usuario getDestinatarioUsuario() {
+        return destinatarioUsuario;
     }
 
-    public void setDestinatario(String destinatario) {
-        this.destinatario = destinatario;
+    public void setDestinatarioUsuario(Usuario destinatarioUsuario) {
+        this.destinatarioUsuario = destinatarioUsuario;
+    }
+
+    public Institucion getDestinatarioInstitucion() {
+        return destinatarioInstitucion;
+    }
+
+    public void setDestinatarioInstitucion(Institucion destinatarioInstitucion) {
+        this.destinatarioInstitucion = destinatarioInstitucion;
     }
 
     public String getNumeroCircular() {
@@ -136,19 +149,11 @@ public class Oficio {
         this.fecha = fecha;
     }
 
-    public String getRutaArchivo() {
-        return rutaArchivo;
+    public NubeNodo getNubeNodo() {
+        return nubeNodo;
     }
 
-    public void setRutaArchivo(String rutaArchivo) {
-        this.rutaArchivo = rutaArchivo;
-    }
-
-    public String getNombreArchivoOriginal() {
-        return nombreArchivoOriginal;
-    }
-
-    public void setNombreArchivoOriginal(String nombreArchivoOriginal) {
-        this.nombreArchivoOriginal = nombreArchivoOriginal;
+    public void setNubeNodo(NubeNodo nubeNodo) {
+        this.nubeNodo = nubeNodo;
     }
 }

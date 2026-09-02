@@ -2,7 +2,7 @@
     <div class="modal-backdrop" @click.self="$dispatch('close-modal')">
         <div class="modal-dialog">
             <div class="modal-header">
-                <h3 class="modal-title">Nuevo Oficio</h3>
+                <h3 class="modal-title" th:text="${oficio.id == null ? 'Nuevo Oficio' : 'Editar Oficio ' + oficio.numero}">Nuevo Oficio</h3>
                 <button type="button" class="close-btn" @click="$dispatch('close-modal')">&times;</button>
             </div>
             <div class="modal-body">
@@ -10,10 +10,11 @@
                       hx-post="/oficios"
                       hx-target="#oficios-lista-content" hx-swap="outerHTML"
                       hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
+                    <input type="hidden" name="id" th:value="${oficio.id}">
 
                     <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
 
-                    <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:1rem;">
+                    <p th:if="${oficio.id == null}" style="font-size:0.85rem; color:var(--text-light); margin-bottom:1rem;">
                         El número de oficio se asigna automáticamente. El documento (PDF) se sube después de crear el oficio.
                     </p>
 
@@ -23,10 +24,44 @@
                                th:value="${oficio.asunto}" placeholder="Ej. Solicitud de autorización para actividad extracurricular">
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group"
+                         th:with="tipoInicial=${tipoDestinatarioSeleccionado != null ? tipoDestinatarioSeleccionado : (oficio.destinatarioInstitucion != null ? 'INSTITUCION' : 'USUARIO')}">
                         <label class="form-label">Destinatario *</label>
-                        <input class="form-input" type="text" name="destinatario" required maxlength="200"
-                               th:value="${oficio.destinatario}" placeholder="Ej. MEP - Dirección Regional de San José Norte">
+                        <div style="display:flex; gap:1rem; margin-bottom:0.5rem;">
+                            <label style="display:flex; align-items:center; gap:4px; font-size:0.85rem; font-weight:500; cursor:pointer;">
+                                <input type="radio" name="tipoDestinatario" value="USUARIO"
+                                       th:checked="${tipoInicial == 'USUARIO'}"
+                                       onchange="toggleTipoDestinatario('USUARIO')"
+                                       style="accent-color:var(--primary); width:15px; height:15px;"> Usuario registrado
+                            </label>
+                            <label style="display:flex; align-items:center; gap:4px; font-size:0.85rem; font-weight:500; cursor:pointer;">
+                                <input type="radio" name="tipoDestinatario" value="INSTITUCION"
+                                       th:checked="${tipoInicial == 'INSTITUCION'}"
+                                       onchange="toggleTipoDestinatario('INSTITUCION')"
+                                       style="accent-color:var(--primary); width:15px; height:15px;"> Institución
+                            </label>
+                        </div>
+
+                        <div id="wrap-destinatario-usuario" th:style="${tipoInicial != 'USUARIO'} ? 'display:none' : ''">
+                            <select class="form-input" id="destinatario-usuario" name="destinatarioId"
+                                    th:disabled="${tipoInicial != 'USUARIO'}">
+                                <option value="" disabled selected>Seleccione un usuario...</option>
+                                <option th:each="u : ${usuariosDestinatario}" th:value="${u.id}"
+                                        th:text="${u.nombre} + ' (' + ${u.email} + ')'"
+                                        th:selected="${(oficio.destinatarioUsuario != null and oficio.destinatarioUsuario.id == u.id)
+                                                      or (destinatarioIdSeleccionado != null and tipoDestinatarioSeleccionado == 'USUARIO' and destinatarioIdSeleccionado == u.id)}">Usuario</option>
+                            </select>
+                        </div>
+
+                        <div id="wrap-destinatario-institucion" th:style="${tipoInicial != 'INSTITUCION'} ? 'display:none' : ''">
+                            <select class="form-input" id="destinatario-institucion" name="destinatarioId"
+                                    th:disabled="${tipoInicial != 'INSTITUCION'}">
+                                <option value="" disabled selected>Seleccione una institución...</option>
+                                <option th:each="i : ${institucionesDestinatario}" th:value="${i.id}" th:text="${i.nombre}"
+                                        th:selected="${(oficio.destinatarioInstitucion != null and oficio.destinatarioInstitucion.id == i.id)
+                                                      or (destinatarioIdSeleccionado != null and tipoDestinatarioSeleccionado == 'INSTITUCION' and destinatarioIdSeleccionado == i.id)}">Institución</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -37,7 +72,7 @@
 
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary" @click="$dispatch('close-modal')">Cancelar</button>
-                        <button type="submit" class="btn-primary">Crear Oficio</button>
+                        <button type="submit" class="btn-primary" th:text="${oficio.id == null ? 'Crear Oficio' : 'Guardar Cambios'}">Crear Oficio</button>
                     </div>
                 </form>
             </div>

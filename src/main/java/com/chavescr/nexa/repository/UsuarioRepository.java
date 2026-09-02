@@ -91,4 +91,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
        @Query("SELECT u FROM Usuario u WHERE u.nivelAcademico.id = :nivelId AND u.activo = true ORDER BY u.nombre")
        List<Usuario> findEstudiantesActivosByNivelId(@Param("nivelId") Long nivelId);
+
+       List<Usuario> findByActivoTrueOrderByNombreAsc();
 }
