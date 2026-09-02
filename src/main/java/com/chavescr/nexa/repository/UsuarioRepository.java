@@ -17,6 +17,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
        boolean existsByEmail(String email);
 
+       /** Para el CRUD global de Usuarios (admin sin institución seleccionada): todos, con instituciones cargadas. */
+       @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.instituciones ORDER BY u.nombre")
+       List<Usuario> findAllWithInstituciones();
+
+       @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.instituciones WHERE u.id = :id")
+       Optional<Usuario> findByIdWithInstituciones(@Param("id") Long id);
+
        /**
         * Busca un usuario por email, nombre de usuario o cédula.
         * Usado por UserDetailsService para permitir login con cualquiera de los tres.
@@ -55,6 +62,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
        List<Usuario> findActivosByInstitucionIdAndRol(@Param("institucionId") Long institucionId,
                      @Param("rolNombre") String rolNombre);
 
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r " +
+                     "WHERE i.id = :institucionId AND u.activo = true AND r.nombre IN :rolNombres ORDER BY u.nombre")
+       List<Usuario> findActivosByInstitucionIdAndRolIn(@Param("institucionId") Long institucionId,
+                     @Param("rolNombres") List<String> rolNombres);
+
        @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i " +
                      "WHERE i.id = :institucionId ORDER BY u.nombre")
        List<Usuario> findAllByInstitucionId(@Param("institucionId") Long institucionId);
@@ -86,4 +98,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
        @Query("SELECT u FROM Usuario u WHERE u.nivelAcademico.id = :nivelId AND u.activo = true ORDER BY u.nombre")
        List<Usuario> findEstudiantesActivosByNivelId(@Param("nivelId") Long nivelId);
+
+       List<Usuario> findByActivoTrueOrderByNombreAsc();
 }

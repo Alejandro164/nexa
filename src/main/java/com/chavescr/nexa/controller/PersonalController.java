@@ -138,8 +138,7 @@ public class PersonalController {
 
     @GetMapping("/regimen")
     public String regimen(Model model, HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) return "redirect:/";
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("registros", regimenService.listarTodos(institucionId));
         model.addAttribute("funcionarios", regimenService.listarFuncionarios(institucionId));
         return "personal/regimen/index :: content";
@@ -147,16 +146,14 @@ public class PersonalController {
 
     @GetMapping("/regimen/todos")
     public String regimenTodos(Model model, HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) return "redirect:/";
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("registros", regimenService.listarTodos(institucionId));
         return "personal/regimen/todos/todos :: content";
     }
 
     @GetMapping("/regimen/llamadas")
     public String regimenLlamadas(Model model, HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) return "redirect:/";
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
                 RegimenDisciplinario.TipoRegimen.LLAMADA_ATENCION));
         return "personal/regimen/llamadas/llamadas :: content";
@@ -164,8 +161,7 @@ public class PersonalController {
 
     @GetMapping("/regimen/amonestaciones")
     public String regimenAmonestaciones(Model model, HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) return "redirect:/";
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
                 RegimenDisciplinario.TipoRegimen.AMONESTACION));
         return "personal/regimen/amonestaciones/amonestaciones :: content";
@@ -173,8 +169,7 @@ public class PersonalController {
 
     @GetMapping("/regimen/procesos")
     public String regimenProcesos(Model model, HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) return "redirect:/";
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
                 RegimenDisciplinario.TipoRegimen.PROCESO_DISCIPLINARIO));
         return "personal/regimen/procesos/procesos :: content";

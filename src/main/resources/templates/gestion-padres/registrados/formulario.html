@@ -48,79 +48,9 @@
                         </div>
                     </div>
 
-                    <div class="form-group" style="position:relative;"
-                         x-data="{
-                             open: false,
-                             selected: [],
-                             names: {},
-                             init() {
-                                 this.selected = (this.$el.dataset.preselected || '')
-                                     .split(',').map(Number).filter(Boolean);
-                                 this.$nextTick(() => {
-                                     if (this.$refs.panel) {
-                                         this.$refs.panel.querySelectorAll('[data-rol-id]').forEach(o => {
-                                             this.names[+o.dataset.rolId] = o.dataset.rolName;
-                                         });
-                                     }
-                                 });
-                             },
-                             openDropdown() {
-                                 posicionarDropdown(this.$refs.trigger, this.$refs.panel, 4);
-                                 this.open = true;
-                             },
-                             toggle(id) {
-                                 this.selected = this.selected.includes(id)
-                                     ? this.selected.filter(x => x !== id)
-                                     : [...this.selected, id];
-                             },
-                             label() {
-                                 if (!this.selected.length) return 'Seleccionar roles...';
-                                 const n = this.selected.map(id => this.names[id]).filter(Boolean);
-                                 return n.length === 1 ? n[0] : n[0] + ' + ' + (n.length - 1) + ' más';
-                             }
-                         }"
-                         x-init="init()"
-                         th:data-preselected="${#strings.listJoin(usuario.roles.![id], ',')}"
-                         @click.window="if (open && !$el.contains($event.target) && (!$refs.panel || !$refs.panel.contains($event.target))) open = false"
-                         @keydown.escape.window="open = false">
-
-                        <label class="form-label">Roles</label>
-
-                        <template x-for="id in selected" :key="id">
-                            <input type="hidden" name="rolIds" :value="id">
-                        </template>
-
-                        <button type="button" class="multiselect-trigger"
-                                x-ref="trigger"
-                                @click="open ? open = false : openDropdown()"
-                                :aria-expanded="open.toString()">
-                            <span x-text="label()">Seleccionar roles...</span>
-                            <svg class="multiselect-arrow" :class="{'rotated': open}"
-                                 xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-
-                        <template x-teleport="body">
-                            <div class="multiselect-panel" x-ref="panel"
-                                 :class="{'ms-open': open}"
-                                 @click="const o = $event.target.closest('[data-rol-id]'); if (o) toggle(+o.dataset.rolId)">
-                                <div th:each="rol : ${roles}"
-                                     class="multiselect-option"
-                                     th:attr="data-rol-id=${rol.id},data-rol-name=${rol.nombre.replace('ROLE_', '')}"
-                                     :class="{'ms-selected': selected.includes(+$el.dataset.rolId)}">
-                                    <svg class="multiselect-check"
-                                         xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                         stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                    <span th:text="${rol.nombre.replace('ROLE_', '')}">ROL</span>
-                                </div>
-                            </div>
-                        </template>
+                    <div class="form-group">
+                        <label class="form-label">Rol</label>
+                        <div><span class="badge-xs badge-padre">PADRE</span></div>
                     </div>
 
                     <div class="form-group">

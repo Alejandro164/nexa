@@ -9,13 +9,13 @@
 <body>
 
     <h2 layout:fragment="page-title">Gestión de Docentes</h2>
-    <p layout:fragment="page-subtitle">Administra el personal académico, especialidades y carga laboral</p>
+    <p layout:fragment="page-subtitle">Administra el personal académico, disponibilidad y carga laboral</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Gestión de Docentes</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Administra el personal académico, especialidades y carga laboral</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Administra el personal académico, disponibilidad y carga laboral</p>
     <main layout:fragment="content">
         <style>
             .config-tabs-container {
@@ -80,13 +80,10 @@
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'directorio' }" @click="activeTab = 'directorio'">
                         📋 Directorio
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'especialidades' }" @click="activeTab = 'especialidades'">
-                        🎓 Especialidades
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'disponibilidad' }" @click="activeTab = 'disponibilidad'">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'disponibilidad' }" @click="activeTab = 'disponibilidad'; htmx.ajax('GET', '/docentes/disponibilidad', { target: '#docentes-disponibilidad-container', swap: 'outerHTML' })">
                         ⏳ Disponibilidad
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'asignaciones' }" @click="activeTab = 'asignaciones'">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'asignaciones' }" @click="activeTab = 'asignaciones'; htmx.ajax('GET', '/docentes/asignaciones', { target: '#docentes-asignaciones-container', swap: 'outerHTML' })">
                         💼 Carga Laboral
                     </button>
                 </div>
@@ -95,10 +92,6 @@
             <!-- Contenidos -->
             <div x-show="activeTab === 'directorio'" class="tab-pane">
                 <div th:replace="~{docentes/directorio/directorio :: content}"></div>
-            </div>
-
-            <div x-show="activeTab === 'especialidades'" class="tab-pane" x-cloak>
-                <div th:replace="~{docentes/especialidades/especialidades :: content}"></div>
             </div>
 
             <div x-show="activeTab === 'disponibilidad'" class="tab-pane" x-cloak>

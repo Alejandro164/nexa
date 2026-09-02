@@ -46,12 +46,11 @@ public class DistribucionPorcentualController {
             @RequestParam(required = false) Integer proyectos,
             @RequestParam(required = false) Integer examenes,
             @RequestParam(required = false) Integer asistencia,
-            @RequestParam(required = false) Integer trabajosExtraclase,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
             service.guardarDistribucion(institucionId, periodoId, materiaId, cotidiano, tareas, proyectos,
-                    examenes, asistencia, trabajosExtraclase);
+                    examenes, asistencia);
             model.addAttribute("guardadoOk", true);
             response.setHeader("HX-Trigger", "promedioDesactualizado");
         } catch (IllegalArgumentException e) {

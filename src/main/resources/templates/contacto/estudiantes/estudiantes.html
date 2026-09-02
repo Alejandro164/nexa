@@ -1,0 +1,33 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Directorio de Estudiantes</h3>
+            <span class="badge badge-primary" th:text="${estudiantes != null ? #lists.size(estudiantes) : 0} + ' estudiantes'">0 estudiantes</span>
+        </div>
+        <div style="padding: 1.5rem;">
+            <div class="contact-search">
+                <input type="text" class="form-input" placeholder="Buscar estudiante..." name="q"
+                       th:value="${qEstudiantes}"
+                       hx-get="/contacto/estudiantes"
+                       hx-trigger="keyup changed delay:400ms, search"
+                       hx-target="closest .card" hx-swap="outerHTML" />
+            </div>
+            <p th:if="${estudiantes == null or estudiantes.empty}" class="table-empty">No se encontraron estudiantes.</p>
+            <div class="contact-grid" th:unless="${estudiantes == null or estudiantes.empty}">
+                <div class="contact-card" th:each="u : ${estudiantes}">
+                    <div class="contact-avatar" th:text="${#strings.toUpperCase(#strings.substring(u.nombre,0,1))}">?</div>
+                    <div class="contact-info">
+                        <div class="contact-name" th:text="${u.nombre}">Nombre</div>
+                        <div class="contact-detail" th:if="${u.email != null}">📧 <span th:text="${u.email}">correo</span></div>
+                        <div class="contact-detail" th:if="${u.telefono != null}">📱 <span th:text="${u.telefono}">teléfono</span></div>
+                        <div class="contact-detail" th:if="${u.nivelAcademico != null}">📚 <span th:text="${u.nivelAcademico.nombreCompleto}">Sección</span></div>
+                    </div>
+                    <div class="contact-actions">
+                        <a class="btn btn-sm btn-secondary" th:if="${u.email != null}" th:href="'mailto:' + ${u.email}" title="Enviar correo">✉️</a>
+                        <a class="btn btn-sm btn-secondary" th:if="${u.telefono != null}" th:href="'tel:' + ${u.telefono}" title="Llamar">📞</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

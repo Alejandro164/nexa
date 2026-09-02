@@ -7,11 +7,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @Controller
 public class MenuController {
 
-    @GetMapping("/usuarios")
-    public String usuarios(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "usuarios/index :: htmx-content" : "usuarios/index";
-    }
-
     @GetMapping("/estudiantes")
     public String estudiantes(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "estudiantes/index :: htmx-content" : "estudiantes/index";
@@ -62,11 +57,6 @@ public class MenuController {
         return htmxRequest ? "comunicacion/index :: htmx-content" : "comunicacion/index";
     }
 
-    @GetMapping("/contacto")
-    public String contacto(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "contacto/index :: htmx-content" : "contacto/index";
-    }
-
     @GetMapping("/agenda")
     public String agenda(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "agenda/index :: htmx-content" : "agenda/index";
@@ -77,19 +67,9 @@ public class MenuController {
         return htmxRequest ? "reportes/index :: htmx-content" : "reportes/index";
     }
 
-    @GetMapping("/seguridad")
-    public String seguridad(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "seguridad/index :: htmx-content" : "seguridad/index";
-    }
-
     @GetMapping("/archivo-graduados")
     public String archivoGraduados(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "archivo/index :: htmx-content" : "archivo/index";
-    }
-
-    @GetMapping("/oficios")
-    public String oficios(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "oficios/index :: htmx-content" : "oficios/index";
     }
 
 }

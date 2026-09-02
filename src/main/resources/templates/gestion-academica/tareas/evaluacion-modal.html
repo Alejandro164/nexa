@@ -1,6 +1,10 @@
 <div th:fragment="modal-content" xmlns:th="http://www.thymeleaf.org">
     <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
         <div class="modal-dialog" style="max-width: 720px;">
+            <div class="modal-loading-overlay htmx-indicator" id="modal-loading-overlay">
+                <div class="spinner"></div>
+                <span>Cargando...</span>
+            </div>
             <div class="modal-header">
                 <h3 class="modal-title" th:text="'Evaluar: ' + ${tarea.titulo}">Evaluar tarea</h3>
                 <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
@@ -63,6 +67,7 @@
                         hx-post="/gestion-academica/tareas/evaluacion/guardar-lote"
                         hx-include="#calificaciones-modal-form"
                         th:attr="hx-vals=|js:{nivelId: ${nivelId}, materiaId: ${materiaId}, tareaId: ${tarea.id}}|"
+                        hx-indicator="#modal-loading-overlay"
                         hx-swap="none">Guardar calificaciones</button>
             </div>
         </div>

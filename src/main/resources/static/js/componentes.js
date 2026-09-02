@@ -437,7 +437,7 @@ function proyectoComponente() {
 // ── Componente Alpine: Distribución Porcentual (gestión académica) ──────────
 
 function distribucionForm(el) {
-    var campos = ['cotidiano', 'tareas', 'proyectos', 'examenes', 'asistencia', 'trabajosExtraclase'];
+    var campos = ['cotidiano', 'tareas', 'proyectos', 'examenes', 'asistencia'];
     var saved = {};
     campos.forEach(function (c) { saved[c] = parseInt(el.dataset[c], 10) || 0; });
 
@@ -482,6 +482,29 @@ function toggleTipoAsignacion(tipo) {
         if (selU) selU.disabled = false;
         wrapP.style.display = 'none';
         if (selP) { selP.disabled = true; resetAcademicSelect(selP); }
+    }
+}
+
+// Selector Usuario/Institución del formulario de Oficios (misma idea que toggleTipoAsignacion,
+// sin depender de Alpine para el show/hide: los wrappers ya vienen con el estado inicial
+// correcto renderizado por el servidor, esto solo reacciona a los clics del usuario).
+function toggleTipoDestinatario(tipo) {
+    var wrapU = document.getElementById('wrap-destinatario-usuario');
+    var wrapI = document.getElementById('wrap-destinatario-institucion');
+    var selU  = document.getElementById('destinatario-usuario');
+    var selI  = document.getElementById('destinatario-institucion');
+    if (!wrapU || !wrapI) return;
+
+    if (tipo === 'USUARIO') {
+        wrapU.style.display = '';
+        if (selU) selU.disabled = false;
+        wrapI.style.display = 'none';
+        if (selI) selI.disabled = true;
+    } else {
+        wrapI.style.display = '';
+        if (selI) selI.disabled = false;
+        wrapU.style.display = 'none';
+        if (selU) selU.disabled = true;
     }
 }
 
@@ -812,6 +835,7 @@ if (!window._modalGlobalEventsRegistered) {
 function abrirConfirmacionAcademica(trigger) {
     window.academicDeleteRequest = {
         url: trigger.dataset.deleteUrl,
+        method: trigger.dataset.deleteMethod || 'DELETE',
         target: trigger.dataset.deleteTarget,
         swap: trigger.dataset.deleteSwap || 'innerHTML',
         onComplete: trigger.dataset.deleteOncomplete || null,
@@ -821,6 +845,11 @@ function abrirConfirmacionAcademica(trigger) {
         trigger.dataset.deleteTitle || 'Confirmar eliminación';
     document.getElementById('academic-delete-message').textContent =
         trigger.dataset.deleteMessage || '¿Deseas eliminar este registro?';
+    var btnConfirmar = document.getElementById('academic-delete-confirm-btn');
+    if (btnConfirmar) {
+        btnConfirmar.textContent = trigger.dataset.deleteConfirmLabel || 'Eliminar';
+        btnConfirmar.className = trigger.dataset.deleteConfirmClass || 'btn btn-destructive';
+    }
     var modal = document.getElementById('academic-delete-modal');
     modal.style.display = 'flex';
     void modal.offsetWidth;
@@ -843,7 +872,7 @@ function cerrarConfirmacionAcademica() {
 function confirmarEliminacionAcademica() {
     var req = window.academicDeleteRequest;
     if (!req || !req.url || !req.target) { cerrarConfirmacionAcademica(); return; }
-    htmx.ajax('DELETE', req.url, { target: req.target, swap: req.swap })
+    htmx.ajax(req.method, req.url, { target: req.target, swap: req.swap })
         .then(function () {
             if (req.onComplete && typeof window[req.onComplete] === 'function') {
                 window[req.onComplete](req.context);

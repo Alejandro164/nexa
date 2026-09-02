@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <body>
     <div th:fragment="modal-content">
@@ -15,6 +16,26 @@
                 </div>
 
                 <div class="modal-body" style="padding: 0;">
+                    <div th:if="${institucionActualId != null}" sec:authorize="hasAuthority('ROLE_ADMIN')"
+                         style="padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+                        <form th:action="@{/inicio/salir-institucion}" method="post"
+                              hx-post="/inicio/salir-institucion"
+                              hx-target="#modal-container"
+                              hx-swap="innerHTML"
+                              @submit="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" class="btn btn-secondary"
+                                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                    <polyline points="16 17 21 12 16 7" />
+                                    <line x1="21" y1="12" x2="9" y2="12" />
+                                </svg>
+                                Salir de institución seleccionada
+                            </button>
+                        </form>
+                    </div>
                     <div style="padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--input-bg);">
                         <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 0.6rem;">
                             Selecciona la institución con la que deseas trabajar

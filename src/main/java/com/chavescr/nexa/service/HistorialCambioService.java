@@ -49,4 +49,10 @@ public class HistorialCambioService {
     public List<HistorialCambio> listar(Long institucionId, Long nivelId, Long materiaId) {
         return repository.findByInstitucionIdAndNivelIdAndMateriaIdOrderByFechaDesc(institucionId, nivelId, materiaId);
     }
+
+    /** Últimos cambios académicos (tareas, exámenes, notas, etc.) de la institución, para el dashboard. */
+    @Transactional(readOnly = true)
+    public List<HistorialCambio> listarRecientes(Long institucionId) {
+        return repository.findTop8ByInstitucionIdOrderByFechaDesc(institucionId);
+    }
 }

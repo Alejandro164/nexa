@@ -18,7 +18,7 @@
                     <h4 th:text="${v.nombreVisitante}">Nombre</h4>
                     <p>
                         <span th:if="${v.identificacion != null}" th:text="'Céd: ' + ${v.identificacion} + ' · '"></span>
-                        <span th:text="${'Ver a: ' + v.personaAVisitar}"></span>
+                        <span th:text="${'Ver a: ' + (v.personaVisitada != null ? v.personaVisitada.nombre : 'N/D')}"></span>
                         <span th:text="' (' + ${v.tipoDestinatario} + ')'"></span>
                     </p>
                     <p class="visita-meta">
@@ -58,7 +58,7 @@
                         <h4 th:text="${v.nombreVisitante}">Nombre</h4>
                         <p>
                             <span th:if="${v.identificacion != null}" th:text="'Céd: ' + ${v.identificacion} + ' · '"></span>
-                            <span th:text="${'Ver a: ' + v.personaAVisitar + ' (' + v.tipoDestinatario + ')'}"></span>
+                            <span th:text="${'Ver a: ' + (v.personaVisitada != null ? v.personaVisitada.nombre : 'N/D') + ' (' + v.tipoDestinatario + ')'}"></span>
                         </p>
                         <p class="visita-meta">
                             <span th:if="${v.tieneCita}">✅ Con cita</span>

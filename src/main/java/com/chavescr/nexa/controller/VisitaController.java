@@ -1,11 +1,18 @@
 package com.chavescr.nexa.controller;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,11 +22,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.chavescr.nexa.dto.HaciendaContribuyenteDTO;
 import com.chavescr.nexa.entity.RegistroAsistencia;
 import com.chavescr.nexa.entity.RetiroEstudiante;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.entity.Visita;
 import com.chavescr.nexa.repository.UsuarioRepository;
+import com.chavescr.nexa.service.HaciendaService;
 import com.chavescr.nexa.service.PersonalService;
 import com.chavescr.nexa.service.RegistroAsistenciaService;
 import com.chavescr.nexa.service.RetiroEstudianteService;
@@ -32,6 +41,8 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 @RequestMapping("/control-de-acceso")
 public class VisitaController {
+
+    private static final DateTimeFormatter FECHA_HORA_CSV = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @Autowired
     private VisitaService visitaService;
@@ -51,6 +62,9 @@ public class VisitaController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private HaciendaService haciendaService;
+
     @GetMapping
     public String index(Model model, HttpSession session, HttpServletRequest request) {
         Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
@@ -67,7 +81,7 @@ public class VisitaController {
             model.addAttribute("asistenciaPresentes", conteo.get("presentes"));
             model.addAttribute("asistenciaTotalRegistros", conteo.get("totalRegistros"));
 
-            List<Usuario> usuarios = usuarioService.obtenerTodos();
+            List<Usuario> usuarios = usuarioService.obtenerPersonalActivoPorInstitucion(institucionId);
             model.addAttribute("usuarios", usuarios);
 
             List<RetiroEstudiante> retirosDelDia = retiroEstudianteService.obtenerRetirosDelDia(institucionId);
@@ -134,6 +148,37 @@ public class VisitaController {
         return resultado;
     }
 
+    @GetMapping("/buscar-visitante")
+    @ResponseBody
+    public Map<String, Object> buscarVisitante(@RequestParam String identificacion, HttpSession session) {
+        Map<String, Object> resultado = new HashMap<>();
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        Optional<Visita> visitaOpt = institucionId == null
+                ? Optional.empty()
+                : visitaService.buscarVisitanteRecurrente(identificacion.trim(), institucionId);
+        if (visitaOpt.isPresent()) {
+            resultado.put("encontrado", true);
+            resultado.put("nombre", visitaOpt.get().getNombreVisitante());
+        } else {
+            resultado.put("encontrado", false);
+        }
+        return resultado;
+    }
+
+    @GetMapping("/buscar-hacienda")
+    @ResponseBody
+    public Map<String, Object> buscarHacienda(@RequestParam String identificacion) {
+        Map<String, Object> resultado = new HashMap<>();
+        Optional<HaciendaContribuyenteDTO> contribuyente = haciendaService.consultar(identificacion);
+        if (contribuyente.isPresent()) {
+            resultado.put("encontrado", true);
+            resultado.put("nombre", contribuyente.get().getNombre());
+        } else {
+            resultado.put("encontrado", false);
+        }
+        return resultado;
+    }
+
     @GetMapping("/personas")
     public String personas(@RequestParam String tipoDestinatario, Model model, HttpSession session) {
         Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
@@ -163,14 +208,107 @@ public class VisitaController {
     }
 
     @GetMapping("/historial")
-    public String historial(Model model, HttpSession session) {
+    public String historial(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            Model model, HttpSession session) {
         Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        LocalDate desdeReal = desde != null ? desde : LocalDate.now().minusDays(7);
+        LocalDate hastaReal = hasta != null ? hasta : LocalDate.now();
+        model.addAttribute("desde", desdeReal);
+        model.addAttribute("hasta", hastaReal);
         if (institucionId != null) {
-            List<Visita> visitasDelDia = visitaService.obtenerVisitasDelDia(institucionId);
-            model.addAttribute("visitas", visitasDelDia);
-            agregarStats(model, visitasDelDia);
+            List<Visita> visitas = visitaService.obtenerVisitasPorRango(institucionId, desdeReal, hastaReal);
+            model.addAttribute("visitas", visitas);
+            agregarStats(model, visitas);
         }
         return "control-acceso/historial/historial :: tabla-historial";
+    }
+
+    @GetMapping("/historial/exportar")
+    public ResponseEntity<byte[]> exportarHistorial(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            HttpSession session) {
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        LocalDate desdeReal = desde != null ? desde : LocalDate.now().minusDays(7);
+        LocalDate hastaReal = hasta != null ? hasta : LocalDate.now();
+        List<Visita> visitas = institucionId == null ? List.of()
+                : visitaService.obtenerVisitasPorRango(institucionId, desdeReal, hastaReal);
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("Visitante,Identificacion,Persona Visitada,Tipo,Motivo,Cita Previa,Estado,Fecha Registro,Hora Ingreso,Hora Salida\n");
+        for (Visita v : visitas) {
+            csv.append(csvCampo(v.getNombreVisitante())).append(',')
+                    .append(csvCampo(v.getIdentificacion())).append(',')
+                    .append(csvCampo(v.getPersonaVisitada() != null ? v.getPersonaVisitada().getNombre() : null)).append(',')
+                    .append(v.getTipoDestinatario()).append(',')
+                    .append(csvCampo(v.getMotivo())).append(',')
+                    .append(Boolean.TRUE.equals(v.getTieneCita()) ? "Si" : "No").append(',')
+                    .append(v.getEstado()).append(',')
+                    .append(csvFecha(v.getFechaRegistro())).append(',')
+                    .append(csvFecha(v.getFechaHoraIngreso())).append(',')
+                    .append(csvFecha(v.getFechaHoraSalida()))
+                    .append('\n');
+        }
+        return csvResponse(csv, "visitas.csv");
+    }
+
+    @GetMapping("/asistencia/exportar")
+    public ResponseEntity<byte[]> exportarAsistencia(HttpSession session) {
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        List<RegistroAsistencia> registros = institucionId == null ? List.of()
+                : registroAsistenciaService.obtenerRegistrosDelDia(institucionId);
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("Funcionario,Correo,Tipo,Hora,Observaciones\n");
+        for (RegistroAsistencia r : registros) {
+            csv.append(csvCampo(r.getUsuario().getNombre())).append(',')
+                    .append(csvCampo(r.getUsuario().getEmail())).append(',')
+                    .append(r.getTipo()).append(',')
+                    .append(csvFecha(r.getFechaHora())).append(',')
+                    .append(csvCampo(r.getObservaciones()))
+                    .append('\n');
+        }
+        return csvResponse(csv, "asistencia-personal.csv");
+    }
+
+    @GetMapping("/retiros/exportar")
+    public ResponseEntity<byte[]> exportarRetiros(HttpSession session) {
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        List<RetiroEstudiante> retiros = institucionId == null ? List.of()
+                : retiroEstudianteService.obtenerRetirosDelDia(institucionId);
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("Estudiante,Padre,Motivo,Estado,Solicitado,Salida,Retirado por,Identificacion de quien retira\n");
+        for (RetiroEstudiante r : retiros) {
+            csv.append(csvCampo(r.getEstudiante().getNombre())).append(',')
+                    .append(csvCampo(r.getPadre().getNombre())).append(',')
+                    .append(csvCampo(r.getMotivo())).append(',')
+                    .append(r.getEstado()).append(',')
+                    .append(csvFecha(r.getFechaHoraSolicitud())).append(',')
+                    .append(csvFecha(r.getFechaHoraSalida())).append(',')
+                    .append(csvCampo(r.getRetiradoPorNombre())).append(',')
+                    .append(csvCampo(r.getRetiradoPorIdentificacion()))
+                    .append('\n');
+        }
+        return csvResponse(csv, "retiros-estudiantes.csv");
+    }
+
+    private String csvCampo(String valor) {
+        return valor == null ? "" : "\"" + valor.replace("\"", "\"\"") + "\"";
+    }
+
+    private String csvFecha(java.time.LocalDateTime fecha) {
+        return fecha == null ? "" : fecha.format(FECHA_HORA_CSV);
+    }
+
+    private ResponseEntity<byte[]> csvResponse(StringBuilder csv, String nombreArchivo) {
+        byte[] contenido = csv.toString().getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombreArchivo + "\"")
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(contenido);
     }
 
     @PostMapping("/registrar")
@@ -178,7 +316,7 @@ public class VisitaController {
             @RequestParam(required = false) String identificacion,
             @RequestParam String motivo,
             @RequestParam String tipoDestinatario,
-            @RequestParam String personaAVisitar,
+            @RequestParam Long personaVisitadaId,
             @RequestParam(defaultValue = "false") boolean tieneCita,
             @RequestParam(required = false) String observaciones,
             HttpSession session,
@@ -190,12 +328,18 @@ public class VisitaController {
             return "redirect:/control-de-acceso";
         }
 
+        Usuario personaVisitada = usuarioRepository.findById(personaVisitadaId).orElse(null);
+        if (personaVisitada == null) {
+            redirectAttributes.addFlashAttribute("errorMsg", "La persona a visitar seleccionada no es válida.");
+            return "redirect:/control-de-acceso";
+        }
+
         Visita visita = new Visita();
         visita.setNombreVisitante(nombreVisitante);
         visita.setIdentificacion(identificacion);
         visita.setMotivo(motivo);
         visita.setTipoDestinatario(Visita.TipoDestinatario.valueOf(tipoDestinatario));
-        visita.setPersonaAVisitar(personaAVisitar);
+        visita.setPersonaVisitada(personaVisitada);
         visita.setTieneCita(tieneCita);
         visita.setObservaciones(observaciones);
 
@@ -206,8 +350,12 @@ public class VisitaController {
 
     @PostMapping("/autorizar")
     public String autorizar(@RequestParam Long visitaId, RedirectAttributes redirectAttributes) {
-        visitaService.autorizarEntrada(visitaId);
-        redirectAttributes.addFlashAttribute("successMsg", "Entrada autorizada.");
+        try {
+            visitaService.autorizarEntrada(visitaId);
+            redirectAttributes.addFlashAttribute("successMsg", "Entrada autorizada.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/control-de-acceso";
     }
 
@@ -215,15 +363,23 @@ public class VisitaController {
     public String denegar(@RequestParam Long visitaId,
             @RequestParam(required = false) String motivoDenegacion,
             RedirectAttributes redirectAttributes) {
-        visitaService.denegarEntrada(visitaId, motivoDenegacion);
-        redirectAttributes.addFlashAttribute("successMsg", "Entrada denegada.");
+        try {
+            visitaService.denegarEntrada(visitaId, motivoDenegacion);
+            redirectAttributes.addFlashAttribute("successMsg", "Entrada denegada.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/control-de-acceso";
     }
 
     @PostMapping("/salida")
     public String salida(@RequestParam Long visitaId, RedirectAttributes redirectAttributes) {
-        visitaService.registrarSalida(visitaId);
-        redirectAttributes.addFlashAttribute("successMsg", "Salida registrada.");
+        try {
+            visitaService.registrarSalida(visitaId);
+            redirectAttributes.addFlashAttribute("successMsg", "Salida registrada.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/control-de-acceso";
     }
 
@@ -237,7 +393,7 @@ public class VisitaController {
             model.addAttribute("asistenciaPresentes", conteo.get("presentes"));
             model.addAttribute("asistenciaTotalRegistros", conteo.get("totalRegistros"));
 
-            List<Usuario> usuarios = usuarioService.obtenerTodos();
+            List<Usuario> usuarios = usuarioService.obtenerPersonalActivoPorInstitucion(institucionId);
             model.addAttribute("usuarios", usuarios);
         }
         return "control-acceso/asistencia/asistencia :: tabla-asistencia";
@@ -257,11 +413,15 @@ public class VisitaController {
         }
 
         RegistroAsistencia.TipoRegistro tipoRegistro = RegistroAsistencia.TipoRegistro.valueOf(tipo);
-        registroAsistenciaService.registrar(usuarioId, tipoRegistro, observaciones, institucionId);
-        redirectAttributes.addFlashAttribute("successMsg",
-                tipoRegistro == RegistroAsistencia.TipoRegistro.ENTRADA
-                        ? "Entrada registrada exitosamente."
-                        : "Salida registrada exitosamente.");
+        try {
+            registroAsistenciaService.registrar(usuarioId, tipoRegistro, observaciones, institucionId);
+            redirectAttributes.addFlashAttribute("successMsg",
+                    tipoRegistro == RegistroAsistencia.TipoRegistro.ENTRADA
+                            ? "Entrada registrada exitosamente."
+                            : "Salida registrada exitosamente.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/control-de-acceso";
     }
 
@@ -283,8 +443,12 @@ public class VisitaController {
     public String autorizarRetiro(@RequestParam Long retiroId, HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         exigirPersonalAutorizado(request);
-        retiroEstudianteService.autorizar(retiroId);
-        redirectAttributes.addFlashAttribute("successMsg", "Retiro autorizado.");
+        try {
+            retiroEstudianteService.autorizar(retiroId);
+            redirectAttributes.addFlashAttribute("successMsg", "Retiro autorizado.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/control-de-acceso";
     }
 
@@ -294,17 +458,28 @@ public class VisitaController {
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         exigirPersonalAutorizado(request);
-        retiroEstudianteService.denegar(retiroId, motivoDenegacion);
-        redirectAttributes.addFlashAttribute("successMsg", "Retiro denegado.");
+        try {
+            retiroEstudianteService.denegar(retiroId, motivoDenegacion);
+            redirectAttributes.addFlashAttribute("successMsg", "Retiro denegado.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/control-de-acceso";
     }
 
     @PostMapping("/retiros/salida")
-    public String salidaRetiro(@RequestParam Long retiroId, HttpServletRequest request,
+    public String salidaRetiro(@RequestParam Long retiroId,
+            @RequestParam(required = false) String retiradoPorNombre,
+            @RequestParam(required = false) String retiradoPorIdentificacion,
+            HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         exigirPersonalAutorizado(request);
-        retiroEstudianteService.registrarSalida(retiroId);
-        redirectAttributes.addFlashAttribute("successMsg", "Salida del estudiante registrada.");
+        try {
+            retiroEstudianteService.registrarSalida(retiroId, retiradoPorNombre, retiradoPorIdentificacion);
+            redirectAttributes.addFlashAttribute("successMsg", "Salida del estudiante registrada.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        }
         return "redirect:/control-de-acceso";
     }
 }

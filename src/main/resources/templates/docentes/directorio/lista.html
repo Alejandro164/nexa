@@ -1,0 +1,69 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="module-card">
+        <div class="module-card-header">
+            <h3 class="module-card-title" th:text="'Docentes (' + ${docentes != null ? #lists.size(docentes) : 0} + ')'">Docentes (0)</h3>
+            <button class="btn-primary"
+                    hx-get="/docentes/directorio/form"
+                    hx-target="#docentes-modal-container" hx-swap="innerHTML"
+                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                    style="font-size:0.85rem;padding:8px 16px;">+ Registrar Docente</button>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Cédula</th>
+                    <th>Contacto</th>
+                    <th>Roles</th>
+                    <th>Estado</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${docentes == null or docentes.empty}">
+                    <td colspan="7" class="table-empty">No se encontraron docentes.</td>
+                </tr>
+                <tr th:each="u : ${docentes}">
+                    <td><strong th:text="${u.nombre}" style="color:#0f172a;">Nombre</strong></td>
+                    <td th:text="${u.email}" style="color:#64748b;">email</td>
+                    <td th:text="${u.cedula != null ? u.cedula : '—'}" style="color:#94a3b8;">—</td>
+                    <td th:text="${u.telefono != null ? u.telefono : '—'}" style="color:#64748b;">—</td>
+                    <td>
+                        <div style="display:flex;flex-wrap:wrap;gap:2px;">
+                            <span th:each="r : ${u.roles}" class="badge-xs"
+                                  th:classappend="${r.nombre == 'ROLE_ADMIN' ? 'badge-admin' : (r.nombre == 'ROLE_DIRECTOR' ? 'badge-director' : (r.nombre == 'ROLE_PADRE' ? 'badge-padre' : (r.nombre == 'ROLE_ESTUDIANTE' ? 'badge-estudiante' : 'badge-docente')))}"
+                                  th:text="${r.nombre.replace('ROLE_', '')}">ROL</span>
+                            <span th:if="${u.roles.empty}" style="color:#94a3b8;font-size:0.8rem;">Sin rol</span>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="badge-xs" style="border:none;cursor:pointer;"
+                                th:classappend="${u.activo ? 'badge-activo' : 'badge-inactivo'}"
+                                th:text="${u.activo ? 'Activo' : 'Inactivo'}"
+                                th:attr="hx-put='/docentes/directorio/' + ${u.id} + '/activo'"
+                                hx-target="#docentes-dir-content" hx-swap="innerHTML">Estado</button>
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-xs btn-ghost"
+                                    th:attr="hx-get='/docentes/directorio/ficha/' + ${u.id}"
+                                    hx-target="#docentes-ficha-container" hx-swap="innerHTML"
+                                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-ficha'))"
+                                    title="Ver Ficha">📁</button>
+                            <button class="btn-xs btn-ghost"
+                                    th:attr="hx-get='/docentes/directorio/form/' + ${u.id}"
+                                    hx-target="#docentes-modal-container" hx-swap="innerHTML"
+                                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                                    title="Editar">✏️</button>
+                            <button class="btn-xs btn-danger-ghost"
+                                    onclick="abrirConfirmacionAcademica(this)"
+                                    th:attr="data-delete-url='/docentes/directorio/' + ${u.id},data-delete-target='#docentes-dir-content',data-delete-title='Eliminar docente',data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
+                                    title="Eliminar">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
