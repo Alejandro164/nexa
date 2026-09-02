@@ -1,6 +1,5 @@
 package com.chavescr.nexa;
 
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 
@@ -9,7 +8,7 @@ import org.springframework.cache.annotation.EnableCaching;
 public class ProyectoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ProyectoApplication.class, args);
+		// SpringApplication.run(ProyectoApplication.class, args);
 	}
 
 }
