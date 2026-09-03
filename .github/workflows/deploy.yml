@@ -4,7 +4,12 @@ on:
   # Sábado 00:00 hora de Costa Rica (UTC-6) = sábado 06:00 UTC
   schedule:
     - cron: "0 6 * * 6"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit, tag o rama a desplegar (vacío = último build exitoso en main)"
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -14,21 +19,27 @@ jobs:
       actions: read
       contents: read
     steps:
-      - name: Resolver el último build exitoso de main
+      - name: Resolver la versión a desplegar
         id: ultimo_build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF_MANUAL: ${{ github.event.inputs.ref }}
         run: |
-          sha=$(gh api "repos/${{ github.repository }}/actions/workflows/build.yml/runs?branch=main&status=success&per_page=1" \
-            --jq '.workflow_runs[0].head_sha')
-          if [ -z "$sha" ] || [ "$sha" = "null" ]; then
-            echo "No hay ningún build exitoso registrado en main todavía." >&2
-            exit 1
+          if [ -n "$REF_MANUAL" ]; then
+            sha="$REF_MANUAL"
+            echo "Versión elegida manualmente: $sha"
+          else
+            sha=$(gh api "repos/${{ github.repository }}/actions/workflows/build.yml/runs?branch=main&status=success&per_page=1" \
+              --jq '.workflow_runs[0].head_sha')
+            if [ -z "$sha" ] || [ "$sha" = "null" ]; then
+              echo "No hay ningún build exitoso registrado en main todavía." >&2
+              exit 1
+            fi
+            echo "Último build exitoso: $sha"
           fi
-          echo "Último build exitoso: $sha"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
-      - name: Checkout (commit del último build exitoso)
+      - name: Checkout (versión resuelta arriba)
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.ultimo_build.outputs.sha }}
