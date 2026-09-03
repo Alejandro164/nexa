@@ -262,8 +262,12 @@ public class DataInitializer implements ApplicationRunner {
         u.setCedula(cedula);
         u.setPassword(passwordEncoder.encode(rawPassword));
         u.setActivo(activo);
-        u.setRoles(roles);
-        u.setInstituciones(instituciones);
+        // Copias mutables: los llamadores suelen pasar Set.of(...) (inmutable), y más adelante en el
+        // seeding se hace .add() sobre estas mismas colecciones (ej. agregarInstitucionADocentes,
+        // asignarPadresFaltantes) — asignar el Set.of(...) tal cual revienta con
+        // UnsupportedOperationException la primera vez que la base arranca realmente vacía.
+        u.setRoles(new HashSet<>(roles));
+        u.setInstituciones(new HashSet<>(instituciones));
         usuarioRepository.save(u);
         log.info("  [USUARIO creado] {} / {} ({})", email, usuario, activo ? "activo" : "inactivo");
         return u;
