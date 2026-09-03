@@ -120,7 +120,7 @@ class ProyectoApplicationTests {
 		context.setVariable("nivelSeleccionado", 1L);
 		context.setVariable("dias", ConfiguracionAcademicaService.DIAS);
 		context.setVariable("lecciones", ConfiguracionAcademicaService.LECCIONES);
-		context.setVariable("horario", Map.of("1-LUNES", leccion));
+		context.setVariable("horario", Map.of("1-LUNES", List.of(leccion)));
 		context.setVariable("leccion", leccion);
 		context.setVariable("periodoId", 1L);
 		context.setVariable("nivelId", 1L);
@@ -153,7 +153,7 @@ class ProyectoApplicationTests {
 		assertTrue(horarioRenderizado.contains("Matemáticas"));
 		assertTrue(horarioRenderizado.contains("Docente de prueba"));
 		assertTrue(horarioRenderizado.contains("Aula 101"));
-		assertTrue(horarioRenderizado.contains("schedule-slot schedule-slot-filled"));
+		assertTrue(horarioRenderizado.contains("schedule-slot schedule-slot-multi"));
 		assertFalse(horarioRenderizado.contains(
 				"periodoId=1&amp;amp;nivelId=1"));
 	}
