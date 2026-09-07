@@ -143,10 +143,6 @@
                         @click="activeTab = 'examenes'">
                         📋 Exámenes
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'extraclase' }"
-                        @click="activeTab = 'extraclase'">
-                        🏠 Extraclase
-                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'promedio' }"
                         @click="activeTab = 'promedio'">
                         ✅ Promedio
@@ -207,15 +203,6 @@
                 </div>
             </div>
 
-            <!-- Extraclase -->
-            <div x-show="activeTab === 'extraclase'" class="tab-pane" x-cloak>
-                <div id="extraclase-panel" hx-get="/gestion-academica/extraclase" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="card">
-                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando trabajos extraclase…</div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Promedio -->
             <div x-show="activeTab === 'promedio'" class="tab-pane" x-cloak>
                 <div id="promedio-panel" hx-get="/gestion-academica/promedio" hx-trigger="load" hx-swap="innerHTML">
@@ -250,7 +237,7 @@
             // Gestión Académica) — sin este guard se acumularían duplicados en cada visita y cada
             // evento dispararía múltiples peticiones redundantes.
             if (!window.gestionAcademicaEventsRegistrados) {
-                // El promedio depende de asistencia, cotidiano, tareas, proyectos, exámenes, extraclase y
+                // El promedio depende de asistencia, cotidiano, tareas, proyectos, exámenes y
                 // la distribución porcentual; cualquier cambio en esas pestañas desactualiza la pestaña de
                 // Promedio (ya cargada aparte), así que se refresca cuando cualquiera de ellas avisa un cambio.
                 document.body.addEventListener('promedioDesactualizado', function () {
@@ -296,15 +283,6 @@
                             { target: '#examenes-panel', swap: 'innerHTML' });
                     }
                 });
-                // Igual que 'cotidianoCalificado', pero para la tabla de trabajos extraclase.
-                document.body.addEventListener('trabajoExtraclaseCalificado', function (event) {
-                    var panel = document.getElementById('extraclase-panel');
-                    if (panel && event.detail) {
-                        htmx.ajax('GET', '/gestion-academica/extraclase?nivelId=' + event.detail.nivelId
-                            + '&materiaId=' + event.detail.materiaId,
-                            { target: '#extraclase-panel', swap: 'innerHTML' });
-                    }
-                });
                 // Guardado por lote en modales (ej. Evaluar indicador de Cotidiano): cierra el modal y
                 // muestra la notificación tanto si la operación fue exitosa como si falló.
                 document.addEventListener('academicoGuardado', function (event) {
@@ -320,7 +298,7 @@
                     }
                 });
                 // 'academicoGuardado' se dispara en cualquier creación/edición/eliminación/calificación
-                // exitosa de los 5 módulos, así que basta con escucharlo una vez para refrescar el
+                // exitosa de los módulos académicos, así que basta con escucharlo una vez para refrescar el
                 // historial; como el evento no trae nivelId/materiaId, se toman de los selects propios
                 // del panel (o se omite si el historial no está cargado o no tiene sección/materia elegida).
                 document.body.addEventListener('academicoGuardado', function () {

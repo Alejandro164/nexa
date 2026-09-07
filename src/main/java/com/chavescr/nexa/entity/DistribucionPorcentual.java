@@ -48,9 +48,6 @@ public class DistribucionPorcentual {
     @Column(nullable = false)
     private Integer asistencia = 0;
 
-    @Column(name = "trabajos_extraclase", nullable = false)
-    private Integer trabajosExtraclase = 0;
-
     public Long getId() {
         return id;
     }
@@ -123,15 +120,7 @@ public class DistribucionPorcentual {
         this.asistencia = asistencia;
     }
 
-    public Integer getTrabajosExtraclase() {
-        return trabajosExtraclase;
-    }
-
-    public void setTrabajosExtraclase(Integer trabajosExtraclase) {
-        this.trabajosExtraclase = trabajosExtraclase;
-    }
-
     public int getTotal() {
-        return cotidiano + tareas + proyectos + examenes + asistencia + trabajosExtraclase;
+        return cotidiano + tareas + proyectos + examenes + asistencia;
     }
 }

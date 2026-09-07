@@ -437,7 +437,7 @@ function proyectoComponente() {
 // ── Componente Alpine: Distribución Porcentual (gestión académica) ──────────
 
 function distribucionForm(el) {
-    var campos = ['cotidiano', 'tareas', 'proyectos', 'examenes', 'asistencia', 'trabajosExtraclase'];
+    var campos = ['cotidiano', 'tareas', 'proyectos', 'examenes', 'asistencia'];
     var saved = {};
     campos.forEach(function (c) { saved[c] = parseInt(el.dataset[c], 10) || 0; });
 

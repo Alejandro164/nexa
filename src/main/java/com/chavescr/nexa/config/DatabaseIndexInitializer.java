@@ -45,5 +45,26 @@ public class DatabaseIndexInitializer {
         }
 
         log.info("=== Índices verificados ===");
+        eliminarExtraclase();
+    }
+
+    private void eliminarExtraclase() {
+        try {
+            Boolean existeColumna = jdbcTemplate.queryForObject(
+                    "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
+                            + "WHERE table_schema = 'public' AND table_name = 'distribuciones_porcentuales' "
+                            + "AND column_name = 'trabajos_extraclase')",
+                    Boolean.class);
+            if (Boolean.TRUE.equals(existeColumna)) {
+                jdbcTemplate.execute(
+                        "UPDATE distribuciones_porcentuales SET cotidiano = cotidiano + COALESCE(trabajos_extraclase, 0)");
+                jdbcTemplate.execute("ALTER TABLE distribuciones_porcentuales DROP COLUMN trabajos_extraclase");
+                log.info("Columna trabajos_extraclase eliminada de distribuciones_porcentuales");
+            }
+            jdbcTemplate.execute("DROP TABLE IF EXISTS trabajos_calificaciones CASCADE");
+            jdbcTemplate.execute("DROP TABLE IF EXISTS trabajos_definicion CASCADE");
+        } catch (Exception e) {
+            log.warn("No se pudo limpiar datos de extraclase: {}", e.getMessage());
+        }
     }
 }

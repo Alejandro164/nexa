@@ -4,19 +4,19 @@
     layout:decorate="~{index}">
 
 <head>
-    <title>Personal — Nexa</title>
+    <title>Acción de Personal — Nexa</title>
 </head>
 
 <body>
 
-    <h2 layout:fragment="page-title">Módulo de Personal</h2>
-    <p layout:fragment="page-subtitle">Gestiona la asistencia, tareas, evaluaciones y el estado de presencia de docentes y administrativos</p>
+    <h2 layout:fragment="page-title">Acción de Personal</h2>
+    <p layout:fragment="page-subtitle">Registros del personal en general: asistencia, tareas, evaluaciones y presencia</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
-    <h2 id="topbar-page-title" hx-swap-oob="true">Módulo de Personal</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestiona la asistencia, tareas, evaluaciones y el estado de presencia de docentes y administrativos</p>
+    <h2 id="topbar-page-title" hx-swap-oob="true">Acción de Personal</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Registros del personal en general: asistencia, tareas, evaluaciones y presencia</p>
     <main layout:fragment="content">
         <style>
             .config-tabs-container {
