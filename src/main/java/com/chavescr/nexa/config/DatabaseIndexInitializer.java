@@ -32,7 +32,9 @@ public class DatabaseIndexInitializer {
                 "CREATE INDEX IF NOT EXISTS idx_user_roles_uid   ON usuario_roles (usuario_id)",
                 "CREATE INDEX IF NOT EXISTS idx_user_roles_rid   ON usuario_roles (rol_id)",
                 "CREATE INDEX IF NOT EXISTS idx_user_inst_uid    ON usuario_instituciones (usuario_id)",
-                "CREATE INDEX IF NOT EXISTS idx_user_inst_iid    ON usuario_instituciones (institucion_id)"
+                "CREATE INDEX IF NOT EXISTS idx_user_inst_iid    ON usuario_instituciones (institucion_id)",
+                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_fecha ON bitacora_evento (institucion_id, fecha DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_modulo ON bitacora_evento (institucion_id, modulo, fecha DESC)"
         };
 
         for (String sql : statements) {
@@ -45,5 +47,26 @@ public class DatabaseIndexInitializer {
         }
 
         log.info("=== Índices verificados ===");
+        eliminarExtraclase();
+    }
+
+    private void eliminarExtraclase() {
+        try {
+            Boolean existeColumna = jdbcTemplate.queryForObject(
+                    "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
+                            + "WHERE table_schema = 'public' AND table_name = 'distribuciones_porcentuales' "
+                            + "AND column_name = 'trabajos_extraclase')",
+                    Boolean.class);
+            if (Boolean.TRUE.equals(existeColumna)) {
+                jdbcTemplate.execute(
+                        "UPDATE distribuciones_porcentuales SET cotidiano = cotidiano + COALESCE(trabajos_extraclase, 0)");
+                jdbcTemplate.execute("ALTER TABLE distribuciones_porcentuales DROP COLUMN trabajos_extraclase");
+                log.info("Columna trabajos_extraclase eliminada de distribuciones_porcentuales");
+            }
+            jdbcTemplate.execute("DROP TABLE IF EXISTS trabajos_calificaciones CASCADE");
+            jdbcTemplate.execute("DROP TABLE IF EXISTS trabajos_definicion CASCADE");
+        } catch (Exception e) {
+            log.warn("No se pudo limpiar datos de extraclase: {}", e.getMessage());
+        }
     }
 }

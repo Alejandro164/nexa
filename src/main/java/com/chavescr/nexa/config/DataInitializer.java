@@ -99,10 +99,11 @@ public class DataInitializer implements ApplicationRunner {
                 "1-2345-6789", "admin", true,
                 Set.of(rolAdmin), Set.of(instAlpha, instBeta, instGamma));
 
-        crearUsuarioSiNoExiste(
-                "María González", "maria@empresa.com", "maria.gonzalez",
-                "2-3456-7890", "editor1", true,
+        Usuario usuarioDirector = crearUsuarioSiNoExiste(
+                "María González", "maria@empresa.com", "director",
+                "2-3456-7890", "123", true,
                 Set.of(rolDirector), Set.of(instAlpha));
+        actualizarCredenciales(usuarioDirector, "director", "123");
 
         crearUsuarioSiNoExiste(
                 "Carlos López", "carlos@empresa.com", "carlos.lopez",
@@ -271,6 +272,16 @@ public class DataInitializer implements ApplicationRunner {
         usuarioRepository.save(u);
         log.info("  [USUARIO creado] {} / {} ({})", email, usuario, activo ? "activo" : "inactivo");
         return u;
+    }
+
+    private void actualizarCredenciales(Usuario usuario, String handle, String rawPassword) {
+        if (handle.equals(usuario.getUsuario()) && passwordEncoder.matches(rawPassword, usuario.getPassword())) {
+            return;
+        }
+        usuario.setUsuario(handle);
+        usuario.setPassword(passwordEncoder.encode(rawPassword));
+        usuarioRepository.save(usuario);
+        log.info("  [USUARIO actualizado] {} / {}", usuario.getEmail(), handle);
     }
 
     private void vincularPadreEstudiante(Usuario padre, Usuario estudiante) {

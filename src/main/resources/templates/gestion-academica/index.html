@@ -147,10 +147,6 @@
                         @click="activeTab = 'promedio'">
                         ✅ Promedio
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'historial' }"
-                        @click="activeTab = 'historial'">
-                        🕘 Historial
-                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'componentes' }"
                         @click="activeTab = 'componentes'">
                         ⚖️ Distribución Porcentual
@@ -208,15 +204,6 @@
                 <div id="promedio-panel" hx-get="/gestion-academica/promedio" hx-trigger="load" hx-swap="innerHTML">
                     <div class="card">
                         <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando promedios…</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Historial de cambios -->
-            <div x-show="activeTab === 'historial'" class="tab-pane" x-cloak>
-                <div id="historial-panel" hx-get="/gestion-academica/historial" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="card">
-                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando historial…</div>
                     </div>
                 </div>
             </div>
@@ -295,23 +282,6 @@
                     cerrarModalAcademico();
                     if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
                         showNotification(event.detail.mensaje, 'error');
-                    }
-                });
-                // 'academicoGuardado' se dispara en cualquier creación/edición/eliminación/calificación
-                // exitosa de los 5 módulos, así que basta con escucharlo una vez para refrescar el
-                // historial; como el evento no trae nivelId/materiaId, se toman de los selects propios
-                // del panel (o se omite si el historial no está cargado o no tiene sección/materia elegida).
-                document.body.addEventListener('academicoGuardado', function () {
-                    var panel = document.getElementById('historial-panel');
-                    if (!panel) {
-                        return;
-                    }
-                    var nivelSelect = panel.querySelector('select[name="nivelId"]');
-                    var materiaSelect = panel.querySelector('select[name="materiaId"]');
-                    if (nivelSelect && materiaSelect && nivelSelect.value && materiaSelect.value) {
-                        htmx.ajax('GET', '/gestion-academica/historial?nivelId=' + nivelSelect.value
-                            + '&materiaId=' + materiaSelect.value,
-                            { target: '#historial-panel', swap: 'innerHTML' });
                     }
                 });
                 window.gestionAcademicaEventsRegistrados = true;

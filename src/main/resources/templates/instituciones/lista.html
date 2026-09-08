@@ -28,7 +28,8 @@
                         <td><strong th:text="${inst.codigo}" style="color:#0f172a;">001</strong></td>
                         <td>
                             <div style="font-weight:600;color:#0f172a;" th:text="${inst.nombre}">Institución</div>
-                            <div style="font-size:0.8rem;color:#94a3b8;" th:text="${inst.email}">email@ejemplo.com</div>
+                            <div style="font-size:0.8rem;color:#94a3b8;"
+                                th:text="${inst.cedula != null ? inst.cedula : inst.email}">email@ejemplo.com</div>
                         </td>
                         <td th:text="${inst.direccion}" style="color:#64748b;">Dirección</td>
                         <td>

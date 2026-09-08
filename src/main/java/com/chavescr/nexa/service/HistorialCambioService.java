@@ -16,9 +16,11 @@ import com.chavescr.nexa.repository.HistorialCambioRepository;
 public class HistorialCambioService {
 
     private final HistorialCambioRepository repository;
+    private final BitacoraService bitacoraService;
 
-    public HistorialCambioService(HistorialCambioRepository repository) {
+    public HistorialCambioService(HistorialCambioRepository repository, BitacoraService bitacoraService) {
         this.repository = repository;
+        this.bitacoraService = bitacoraService;
     }
 
     /** Registra un evento de creación/edición/eliminación sobre una definición de Gestión Académica. */
@@ -43,6 +45,8 @@ public class HistorialCambioService {
         evento.setDetalle(detalle);
         evento.setFecha(LocalDateTime.now());
         repository.save(evento);
+        bitacoraService.registrarDesdeHistorialAcademico(institucionId, modulo, itemId, itemTitulo, accion,
+                usuarioId, usuarioNombre, detalle);
     }
 
     @Transactional(readOnly = true)

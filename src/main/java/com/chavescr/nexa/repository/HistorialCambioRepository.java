@@ -10,5 +10,7 @@ public interface HistorialCambioRepository extends JpaRepository<HistorialCambio
     List<HistorialCambio> findByInstitucionIdAndNivelIdAndMateriaIdOrderByFechaDesc(
             Long institucionId, Long nivelId, Long materiaId);
 
+    List<HistorialCambio> findByInstitucionIdOrderByFechaDesc(Long institucionId);
+
     List<HistorialCambio> findTop8ByInstitucionIdOrderByFechaDesc(Long institucionId);
 }

@@ -18,7 +18,10 @@ public class Institucion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 150)
+    @Column(unique = true, length = 20)
+    private String cedula;
+
+    @Column(nullable = false, length = 300)
     private String nombre;
 
     @Column(unique = true, length = 50)
@@ -53,6 +56,14 @@ public class Institucion {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getCedula() {
+        return cedula;
+    }
+
+    public void setCedula(String cedula) {
+        this.cedula = cedula;
     }
 
     public String getNombre() {

@@ -13,6 +13,8 @@ public interface InstitucionRepository extends JpaRepository<Institucion, Long> 
 
     Optional<Institucion> findByCodigo(String codigo);
 
+    Optional<Institucion> findByCedula(String cedula);
+
     List<Institucion> findByActivaTrueOrderByNombreAsc();
 
 }

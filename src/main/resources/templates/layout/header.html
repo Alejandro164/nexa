@@ -22,6 +22,16 @@
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
         </button>
+        <button class="topbar-icon-btn" type="button" title="Bitácora"
+                sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')"
+                :class="{ 'is-active': bitacoraOpen }"
+                @click="bitacoraOpen = true; $nextTick(function () { if (window.cargarBitacoraPanel) window.cargarBitacoraPanel(); })">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <polyline points="12 7 12 12 15.5 14" />
+            </svg>
+        </button>
         <div class="topbar-profile" x-data="{ open: false }" @click.outside="open = false">
             <button class="topbar-icon-btn" type="button"
                     @click="open = !open; if (open) htmx.ajax('GET', '/notificaciones', { target: '#notif-dropdown', swap: 'innerHTML' })">
