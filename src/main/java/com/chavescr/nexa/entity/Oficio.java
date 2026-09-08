@@ -39,13 +39,9 @@ public class Oficio {
     @Column(nullable = false, length = 300)
     private String asunto;
 
-    /** Exactamente uno de los dos debe estar presente: el oficio se dirige a un usuario registrado o a una institución. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "destinatario_usuario_id")
-    private Usuario destinatarioUsuario;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "destinatario_institucion_id")
+    /** El oficio siempre se dirige a una institución registrada. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "destinatario_institucion_id", nullable = false)
     private Institucion destinatarioInstitucion;
 
     @Column(name = "numero_circular", length = 30)
@@ -107,14 +103,6 @@ public class Oficio {
 
     public void setAsunto(String asunto) {
         this.asunto = asunto;
-    }
-
-    public Usuario getDestinatarioUsuario() {
-        return destinatarioUsuario;
-    }
-
-    public void setDestinatarioUsuario(Usuario destinatarioUsuario) {
-        this.destinatarioUsuario = destinatarioUsuario;
     }
 
     public Institucion getDestinatarioInstitucion() {

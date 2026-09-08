@@ -1570,6 +1570,11 @@
         .academic-delete-dialog { max-width: 460px; border-top: 4px solid var(--error); }
         .academic-delete-message { display:flex;align-items:flex-start;gap:1rem;padding:1rem;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#7f1d1d;line-height:1.55; }
         .academic-delete-icon { width:30px;height:30px;flex:0 0 30px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--error);color:white;font-weight:800; }
+        /* Variante "positiva": para confirmaciones que no son destructivas (ej. emitir un oficio),
+           reutiliza el mismo diálogo de confirmación pero en verde en vez de rojo. */
+        .academic-delete-dialog.academic-delete-dialog--positivo { border-top-color: var(--success); }
+        .academic-delete-dialog--positivo .academic-delete-message { border-color:#bbf7d0;background:#f0fdf4;color:#14532d; }
+        .academic-delete-dialog--positivo .academic-delete-icon { background: var(--success); }
         .academic-help { color:var(--text-secondary);font-size:0.84rem;margin-top:0.3rem; }
         .btn-destructive { padding:9px 18px;background:var(--error);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer; }
         .btn-destructive:hover { opacity:0.9; }

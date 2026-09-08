@@ -39,6 +39,7 @@ public class OficioService {
 
     private final OficioRepository oficioRepository;
     private final InstitucionRepository institucionRepository;
+    private final InstitucionService institucionService;
     private final UsuarioRepository usuarioRepository;
     private final NubeNodoService nubeNodoService;
     private final NubeNodoRepository nubeNodoRepository;
@@ -46,11 +47,12 @@ public class OficioService {
     private final EmailService emailService;
 
     public OficioService(OficioRepository oficioRepository, InstitucionRepository institucionRepository,
-            UsuarioRepository usuarioRepository, NubeNodoService nubeNodoService,
-            NubeNodoRepository nubeNodoRepository, NubeNodoAccesoRepository nubeNodoAccesoRepository,
-            EmailService emailService) {
+            InstitucionService institucionService, UsuarioRepository usuarioRepository,
+            NubeNodoService nubeNodoService, NubeNodoRepository nubeNodoRepository,
+            NubeNodoAccesoRepository nubeNodoAccesoRepository, EmailService emailService) {
         this.oficioRepository = oficioRepository;
         this.institucionRepository = institucionRepository;
+        this.institucionService = institucionService;
         this.usuarioRepository = usuarioRepository;
         this.nubeNodoService = nubeNodoService;
         this.nubeNodoRepository = nubeNodoRepository;
@@ -73,18 +75,7 @@ public class OficioService {
     }
 
     private String nombreDestinatario(Oficio oficio) {
-        if (oficio.getDestinatarioUsuario() != null) {
-            return oficio.getDestinatarioUsuario().getNombre();
-        }
-        if (oficio.getDestinatarioInstitucion() != null) {
-            return oficio.getDestinatarioInstitucion().getNombre();
-        }
-        return "";
-    }
-
-    @Transactional(readOnly = true)
-    public List<Usuario> listarUsuariosActivos() {
-        return usuarioRepository.findByActivoTrueOrderByNombreAsc();
+        return oficio.getDestinatarioInstitucion() != null ? oficio.getDestinatarioInstitucion().getNombre() : "";
     }
 
     @Transactional(readOnly = true)
@@ -104,8 +95,8 @@ public class OficioService {
                 .orElseThrow(() -> new IllegalArgumentException("Oficio no encontrado"));
     }
 
-    public Oficio crear(Long institucionId, Long usuarioId, String asunto, String tipoDestinatario,
-            Long destinatarioId, String numeroCircular) {
+    public Oficio crear(Long institucionId, Long usuarioId, String asunto, Long destinatarioInstitucionId,
+            String numeroCircular) {
         if (asunto == null || asunto.isBlank()) {
             throw new IllegalArgumentException("El asunto es obligatorio");
         }
@@ -117,7 +108,7 @@ public class OficioService {
         oficio.setInstitucion(institucion);
         oficio.setNumero(generarNumero(institucionId));
         oficio.setAsunto(asunto.trim());
-        aplicarDestinatario(oficio, tipoDestinatario, destinatarioId);
+        oficio.setDestinatarioInstitucion(resolverInstitucionDestinataria(destinatarioInstitucionId));
         oficio.setNumeroCircular(numeroCircular != null && !numeroCircular.isBlank() ? numeroCircular.trim() : null);
         oficio.setEstado("BORRADOR");
         oficio.setFecha(LocalDate.now());
@@ -131,15 +122,15 @@ public class OficioService {
     }
 
     /** Edita el asunto/destinatario/circular de un oficio existente. El número, estado y documento no cambian aquí. */
-    public Oficio actualizar(Long institucionId, Long id, String asunto, String tipoDestinatario,
-            Long destinatarioId, String numeroCircular) {
+    public Oficio actualizar(Long institucionId, Long id, String asunto, Long destinatarioInstitucionId,
+            String numeroCircular) {
         if (asunto == null || asunto.isBlank()) {
             throw new IllegalArgumentException("El asunto es obligatorio");
         }
 
         Oficio oficio = obtenerPorId(institucionId, id);
         oficio.setAsunto(asunto.trim());
-        aplicarDestinatario(oficio, tipoDestinatario, destinatarioId);
+        oficio.setDestinatarioInstitucion(resolverInstitucionDestinataria(destinatarioInstitucionId));
         oficio.setNumeroCircular(numeroCircular != null && !numeroCircular.isBlank() ? numeroCircular.trim() : null);
 
         Oficio guardado = oficioRepository.save(oficio);
@@ -147,24 +138,21 @@ public class OficioService {
         return guardado;
     }
 
-    /** El destinatario es, exactamente, un usuario registrado o una institución — nunca ambos ni ninguno. */
-    private void aplicarDestinatario(Oficio oficio, String tipoDestinatario, Long destinatarioId) {
-        if (destinatarioId == null || tipoDestinatario == null) {
-            throw new IllegalArgumentException("El destinatario es obligatorio");
+    private Institucion resolverInstitucionDestinataria(Long destinatarioInstitucionId) {
+        if (destinatarioInstitucionId == null) {
+            throw new IllegalArgumentException("La institución destinataria es obligatoria");
         }
-        if ("USUARIO".equals(tipoDestinatario)) {
-            Usuario usuario = usuarioRepository.findById(destinatarioId)
-                    .orElseThrow(() -> new IllegalArgumentException("Usuario destinatario no encontrado"));
-            oficio.setDestinatarioUsuario(usuario);
-            oficio.setDestinatarioInstitucion(null);
-        } else if ("INSTITUCION".equals(tipoDestinatario)) {
-            Institucion institucionDestino = institucionRepository.findById(destinatarioId)
-                    .orElseThrow(() -> new IllegalArgumentException("Institución destinataria no encontrada"));
-            oficio.setDestinatarioInstitucion(institucionDestino);
-            oficio.setDestinatarioUsuario(null);
-        } else {
-            throw new IllegalArgumentException("Tipo de destinatario inválido");
-        }
+        return institucionRepository.findById(destinatarioInstitucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Institución destinataria no encontrada"));
+    }
+
+    /** Registro rápido de una institución destinataria que aún no existe, desde el propio formulario de oficio. */
+    public Institucion registrarInstitucionDestinataria(String nombre, String cedula, String email) {
+        Institucion institucion = new Institucion();
+        institucion.setNombre(nombre);
+        institucion.setCedula(cedula);
+        institucion.setEmail(email != null && !email.isBlank() ? email.trim() : null);
+        return institucionService.save(institucion);
     }
 
     private String generarNumero(Long institucionId) {
@@ -214,17 +202,8 @@ public class OficioService {
             throw new IllegalStateException("Solo se puede emitir un oficio en estado Pendiente");
         }
 
-        String destinatarioEmail;
-        String destinatarioNombre;
-        if (oficio.getDestinatarioUsuario() != null) {
-            destinatarioEmail = oficio.getDestinatarioUsuario().getEmail();
-            destinatarioNombre = oficio.getDestinatarioUsuario().getNombre();
-        } else if (oficio.getDestinatarioInstitucion() != null) {
-            destinatarioEmail = oficio.getDestinatarioInstitucion().getEmail();
-            destinatarioNombre = oficio.getDestinatarioInstitucion().getNombre();
-        } else {
-            throw new IllegalStateException("El oficio no tiene destinatario");
-        }
+        String destinatarioEmail = oficio.getDestinatarioInstitucion().getEmail();
+        String destinatarioNombre = oficio.getDestinatarioInstitucion().getNombre();
         if (destinatarioEmail == null || destinatarioEmail.isBlank()) {
             throw new IllegalStateException("El destinatario no tiene un correo electrónico configurado");
         }
