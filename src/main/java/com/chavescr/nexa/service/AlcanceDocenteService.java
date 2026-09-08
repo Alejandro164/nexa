@@ -46,29 +46,54 @@ public class AlcanceDocenteService {
         return horarioLeccionRepository.findNivelesDistinctByInstitucionIdAndDocenteId(institucionId, docenteId);
     }
 
-    /** Materias que efectivamente se imparten en esta sección según el horario (no todas las de la institución). */
-    public List<Materia> materiasVisiblesEnNivel(Long institucionId, Long nivelId, Long docenteId) {
-        if (nivelId == null) {
+    public List<Materia> materiasVisiblesEnPeriodo(Long institucionId, Long periodoId, Long docenteId) {
+        if (periodoId == null) {
             return List.of();
         }
         if (docenteId == null) {
-            return horarioLeccionRepository.findMateriasDistinctByInstitucionIdAndNivelId(institucionId, nivelId);
+            return horarioLeccionRepository.findMateriasDistinctByInstitucionIdAndPeriodoId(institucionId, periodoId);
         }
-        return horarioLeccionRepository.findMateriasDistinctByInstitucionIdAndNivelIdAndDocenteId(
-                institucionId, nivelId, docenteId);
+        return horarioLeccionRepository.findMateriasDistinctByInstitucionIdAndPeriodoIdAndDocenteId(
+                institucionId, periodoId, docenteId);
     }
 
-    /** Números de lección en los que esta materia realmente se imparte en esta sección, ese día de la semana. */
-    public List<Integer> leccionesVisibles(Long institucionId, Long nivelId, Long materiaId, String dia,
+    public List<NivelAcademico> nivelesVisiblesEnPeriodoPorMateria(Long institucionId, Long periodoId, Long materiaId,
             Long docenteId) {
-        if (nivelId == null || materiaId == null || dia == null) {
+        if (periodoId == null || materiaId == null) {
             return List.of();
         }
         if (docenteId == null) {
-            return horarioLeccionRepository.findNumerosLeccionByInstitucionIdAndNivelIdAndMateriaIdAndDia(
-                    institucionId, nivelId, materiaId, dia);
+            return horarioLeccionRepository.findNivelesDistinctByInstitucionIdAndPeriodoIdAndMateriaId(
+                    institucionId, periodoId, materiaId);
         }
-        return horarioLeccionRepository.findNumerosLeccionByInstitucionIdAndNivelIdAndMateriaIdAndDiaAndDocenteId(
-                institucionId, nivelId, materiaId, dia, docenteId);
+        return horarioLeccionRepository.findNivelesDistinctByInstitucionIdAndPeriodoIdAndMateriaIdAndDocenteId(
+                institucionId, periodoId, materiaId, docenteId);
+    }
+
+    /**
+     * Lecciones de esa materia/sección en el período. Si el día tiene horario, se usan esas;
+     * si no, se listan las del período para que el select no quede vacío.
+     */
+    public List<Integer> leccionesVisiblesEnPeriodo(Long institucionId, Long periodoId, Long nivelId, Long materiaId,
+            String dia, Long docenteId) {
+        if (periodoId == null || nivelId == null || materiaId == null) {
+            return List.of();
+        }
+        List<Integer> delDia = numerosLeccionEnPeriodo(institucionId, periodoId, nivelId, materiaId, dia, docenteId);
+        if (!delDia.isEmpty() || dia == null) {
+            return delDia;
+        }
+        return numerosLeccionEnPeriodo(institucionId, periodoId, nivelId, materiaId, null, docenteId);
+    }
+
+    private List<Integer> numerosLeccionEnPeriodo(Long institucionId, Long periodoId, Long nivelId, Long materiaId,
+            String dia, Long docenteId) {
+        if (docenteId == null) {
+            return horarioLeccionRepository.findNumerosLeccionByInstitucionIdAndPeriodoIdAndNivelIdAndMateriaIdAndDia(
+                    institucionId, periodoId, nivelId, materiaId, dia);
+        }
+        return horarioLeccionRepository
+                .findNumerosLeccionByInstitucionIdAndPeriodoIdAndNivelIdAndMateriaIdAndDiaAndDocenteId(
+                        institucionId, periodoId, nivelId, materiaId, dia, docenteId);
     }
 }
