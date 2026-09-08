@@ -32,7 +32,9 @@ public class DatabaseIndexInitializer {
                 "CREATE INDEX IF NOT EXISTS idx_user_roles_uid   ON usuario_roles (usuario_id)",
                 "CREATE INDEX IF NOT EXISTS idx_user_roles_rid   ON usuario_roles (rol_id)",
                 "CREATE INDEX IF NOT EXISTS idx_user_inst_uid    ON usuario_instituciones (usuario_id)",
-                "CREATE INDEX IF NOT EXISTS idx_user_inst_iid    ON usuario_instituciones (institucion_id)"
+                "CREATE INDEX IF NOT EXISTS idx_user_inst_iid    ON usuario_instituciones (institucion_id)",
+                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_fecha ON bitacora_evento (institucion_id, fecha DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_modulo ON bitacora_evento (institucion_id, modulo, fecha DESC)"
         };
 
         for (String sql : statements) {

@@ -1,0 +1,85 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org" id="bitacora-panel-body"
+     th:attr="data-alcance=${alcance}, data-accion=${accionFiltro != null ? accionFiltro.name() : ''}">
+    <div class="bitacora-toolbar">
+        <div class="bitacora-alcance" th:if="${puedeVerInstitucional}">
+            <button type="button" class="bitacora-chip"
+                    th:classappend="${alcance != 'institucion'} ? ' active'"
+                    th:hx-get="${accionFiltro != null}
+                        ? @{/bitacora/panel(ruta=${ruta}, alcance='modulo', accion=${accionFiltro})}
+                        : @{/bitacora/panel(ruta=${ruta}, alcance='modulo')}"
+                    hx-target="#bitacora-panel-body" hx-swap="innerHTML">
+                Este módulo
+            </button>
+            <button type="button" class="bitacora-chip"
+                    th:classappend="${alcance == 'institucion'} ? ' active'"
+                    th:hx-get="${accionFiltro != null}
+                        ? @{/bitacora/panel(ruta=${ruta}, alcance='institucion', accion=${accionFiltro})}
+                        : @{/bitacora/panel(ruta=${ruta}, alcance='institucion')}"
+                    hx-target="#bitacora-panel-body" hx-swap="innerHTML">
+                Institución
+            </button>
+        </div>
+        <div class="bitacora-filtros">
+            <button type="button" class="bitacora-chip"
+                    th:classappend="${accionFiltro == null} ? ' active'"
+                    th:hx-get="@{/bitacora/panel(ruta=${ruta}, alcance=${alcance})}"
+                    hx-target="#bitacora-panel-body" hx-swap="innerHTML">Todas</button>
+            <button type="button" class="bitacora-chip"
+                    th:classappend="${accionFiltro != null and accionFiltro.name() == 'CREAR'} ? ' active'"
+                    th:hx-get="@{/bitacora/panel(ruta=${ruta}, alcance=${alcance}, accion='CREAR')}"
+                    hx-target="#bitacora-panel-body" hx-swap="innerHTML">Crear</button>
+            <button type="button" class="bitacora-chip"
+                    th:classappend="${accionFiltro != null and accionFiltro.name() == 'EDITAR'} ? ' active'"
+                    th:hx-get="@{/bitacora/panel(ruta=${ruta}, alcance=${alcance}, accion='EDITAR')}"
+                    hx-target="#bitacora-panel-body" hx-swap="innerHTML">Editar</button>
+            <button type="button" class="bitacora-chip"
+                    th:classappend="${accionFiltro != null and accionFiltro.name() == 'ELIMINAR'} ? ' active'"
+                    th:hx-get="@{/bitacora/panel(ruta=${ruta}, alcance=${alcance}, accion='ELIMINAR')}"
+                    hx-target="#bitacora-panel-body" hx-swap="innerHTML">Eliminar</button>
+            <button type="button" class="bitacora-chip"
+                    th:classappend="${accionFiltro != null and accionFiltro.name() == 'CALIFICAR'} ? ' active'"
+                    th:hx-get="@{/bitacora/panel(ruta=${ruta}, alcance=${alcance}, accion='CALIFICAR')}"
+                    hx-target="#bitacora-panel-body" hx-swap="innerHTML">Calificar</button>
+        </div>
+    </div>
+
+    <p class="bitacora-contexto"
+       th:text="${alcance == 'institucion'}
+           ? 'Actividad reciente de toda la institución.'
+           : (${modulo != null} ? 'Actividad reciente en ' + ${modulo.etiqueta} + '.' : 'Actividad reciente.')">
+        Actividad reciente.
+    </p>
+
+    <div th:if="${eventos == null or eventos.empty}" class="bitacora-vacio">
+        <div class="bitacora-vacio-icono">🕘</div>
+        <strong>Sin actividad registrada</strong>
+        <p>Cuando alguien cree, edite o califique en este módulo, el registro aparecerá aquí.</p>
+    </div>
+
+    <ol th:if="${eventos != null and !eventos.empty}" class="bitacora-lista">
+        <li th:each="e : ${eventos}" class="bitacora-item">
+            <div class="bitacora-item-punto" th:classappend="${' accion-' + e.accion.name().toLowerCase()}"></div>
+            <div class="bitacora-item-cuerpo">
+                <div class="bitacora-item-meta">
+                    <time th:text="${#temporals.format(e.fecha, 'dd/MM/yyyy HH:mm')}">01/01/2026 08:00</time>
+                    <span class="bitacora-item-usuario" th:text="${e.usuarioNombre != null ? e.usuarioNombre : 'Sistema'}">Usuario</span>
+                </div>
+                <div class="bitacora-item-titulo">
+                    <span th:switch="${e.accion.name()}">
+                        <span class="badge badge-success" th:case="'CREAR'">Creó</span>
+                        <span class="badge badge-primary" th:case="'EDITAR'">Editó</span>
+                        <span class="badge badge-warning" th:case="'ELIMINAR'">Eliminó</span>
+                        <span class="badge badge-info" th:case="'CALIFICAR'">Calificó</span>
+                    </span>
+                    <strong th:text="${e.itemTitulo}">Ítem</strong>
+                </div>
+                <div class="bitacora-item-area">
+                    <span th:if="${alcance == 'institucion' and e.modulo != null}" th:text="${e.modulo.etiqueta}">Módulo</span>
+                    <span th:if="${alcance == 'institucion' and e.modulo != null and e.area != null}"> · </span>
+                    <span th:if="${e.area != null}" th:text="${e.area}">Área</span>
+                </div>
+                <p class="bitacora-item-detalle" th:if="${e.detalle != null and !e.detalle.isBlank()}" th:text="${e.detalle}"></p>
+            </div>
+        </li>
+    </ol>
+</div>
