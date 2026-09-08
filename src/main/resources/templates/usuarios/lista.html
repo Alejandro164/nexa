@@ -1,0 +1,70 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="module-card">
+        <div class="module-card-header">
+            <h3 class="module-card-title" th:text="'Usuarios (' + ${usuarios != null ? #lists.size(usuarios) : 0} + ')'">Usuarios (0)</h3>
+            <button class="btn-primary"
+                    hx-get="/usuarios/form"
+                    hx-target="#usuarios-modal-container" hx-swap="innerHTML"
+                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                    style="font-size:0.85rem;padding:8px 16px;">+ Nuevo Usuario</button>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Cédula</th>
+                    <th>Roles</th>
+                    <th>Instituciones</th>
+                    <th>Estado</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${usuarios == null or usuarios.empty}">
+                    <td colspan="7" class="table-empty">No se encontraron usuarios.</td>
+                </tr>
+                <tr th:each="u : ${usuarios}">
+                    <td><strong th:text="${u.nombre}" style="color:#0f172a;">Nombre</strong></td>
+                    <td th:text="${u.email}" style="color:#64748b;">email</td>
+                    <td th:text="${u.cedula != null ? u.cedula : '—'}" style="color:#94a3b8;">—</td>
+                    <td>
+                        <div style="display:flex;flex-wrap:wrap;gap:2px;">
+                            <span th:each="r : ${u.roles}" class="badge-xs"
+                                  th:classappend="${r.nombre == 'ROLE_ADMIN' ? 'badge-admin' : (r.nombre == 'ROLE_DIRECTOR' ? 'badge-director' : (r.nombre == 'ROLE_PADRE' ? 'badge-padre' : (r.nombre == 'ROLE_ESTUDIANTE' ? 'badge-estudiante' : 'badge-docente')))}"
+                                  th:text="${r.nombre.replace('ROLE_', '')}">ROL</span>
+                            <span th:if="${u.roles.empty}" style="color:#94a3b8;font-size:0.8rem;">Sin rol</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span th:if="${!u.instituciones.empty}"
+                              th:text="${#lists.size(u.instituciones)} + ${#lists.size(u.instituciones) == 1 ? ' institución' : ' instituciones'}"
+                              th:title="${#strings.listJoin(u.instituciones.![nombre], ', ')}"
+                              style="color:#64748b;font-size:0.85rem;">0 instituciones</span>
+                        <span th:if="${u.instituciones.empty}" style="color:#94a3b8;font-size:0.8rem;">Ninguna</span>
+                    </td>
+                    <td>
+                        <button class="badge-xs" style="border:none;cursor:pointer;"
+                                th:classappend="${u.activo ? 'badge-activo' : 'badge-inactivo'}"
+                                th:text="${u.activo ? 'Activo' : 'Inactivo'}"
+                                th:attr="hx-put='/usuarios/' + ${u.id} + '/activo'"
+                                hx-target="#usuarios-content" hx-swap="innerHTML">Estado</button>
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-xs btn-ghost"
+                                    th:attr="hx-get='/usuarios/form/' + ${u.id}"
+                                    hx-target="#usuarios-modal-container" hx-swap="innerHTML"
+                                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                                    title="Editar">✏️</button>
+                            <button class="btn-xs btn-danger-ghost"
+                                    onclick="abrirConfirmacionAcademica(this)"
+                                    th:attr="data-delete-url='/usuarios/' + ${u.id},data-delete-target='#usuarios-content',data-delete-title='Eliminar usuario',data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
+                                    title="Eliminar">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -32,8 +32,19 @@
     </div>
 
     <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Registro de Visitas de Hoy</h3>
+        <div class="card-header" style="flex-wrap:wrap; gap:0.75rem;">
+            <h3 class="card-title">Registro de Visitas</h3>
+            <form style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;"
+                  hx-get="/control-de-acceso/historial" hx-target="#tabla-historial-container" hx-swap="outerHTML">
+                <input type="date" name="desde" class="form-input" style="padding:0.4rem 0.6rem; width:auto;"
+                       th:value="${desde}">
+                <span style="color:var(--text-light); font-size:0.85rem;">a</span>
+                <input type="date" name="hasta" class="form-input" style="padding:0.4rem 0.6rem; width:auto;"
+                       th:value="${hasta}">
+                <button type="submit" class="btn btn-secondary" style="padding:0.4rem 0.9rem;">Buscar</button>
+                <a class="btn btn-secondary" style="padding:0.4rem 0.9rem;"
+                   th:href="@{/control-de-acceso/historial/exportar(desde=${desde}, hasta=${hasta})}">⬇️ Exportar CSV</a>
+            </form>
         </div>
         <div style="padding: 0 0 1.5rem 0;">
             <div th:if="${visitas != null && !visitas.empty}">
@@ -54,7 +65,7 @@
                             <tr th:each="v : ${visitas}">
                                 <td style="font-weight:600;" th:text="${v.nombreVisitante}">Nombre</td>
                                 <td th:text="${v.identificacion != null ? v.identificacion : '—'}">Cédula</td>
-                                <td th:text="${v.personaAVisitar}">Persona</td>
+                                <td th:text="${v.personaVisitada != null ? v.personaVisitada.nombre : 'N/D'}">Persona</td>
                                 <td th:text="${v.tipoDestinatario}">Tipo</td>
                                 <td>
                                     <span th:if="${v.tieneCita}" class="badge badge-success">Sí</span>
@@ -73,8 +84,8 @@
                 </div>
             </div>
             <div th:if="${visitas == null || visitas.empty}" class="empty-state">
-                <h4 style="color:var(--text-secondary);">No hay visitas registradas hoy</h4>
-                <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.25rem;">Las visitas que se registren aparecerán aquí.</p>
+                <h4 style="color:var(--text-secondary);">No hay visitas registradas en este rango de fechas</h4>
+                <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.25rem;">Probá ampliando el rango de búsqueda.</p>
             </div>
         </div>
     </div>

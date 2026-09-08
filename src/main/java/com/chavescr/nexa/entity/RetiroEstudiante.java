@@ -46,6 +46,12 @@ public class RetiroEstudiante {
 
     private LocalDateTime fechaHoraSalida;
 
+    @Column(length = 150)
+    private String retiradoPorNombre;
+
+    @Column(length = 30)
+    private String retiradoPorIdentificacion;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "institucion_id")
     private Institucion institucion;
@@ -127,6 +133,22 @@ public class RetiroEstudiante {
 
     public void setFechaHoraSalida(LocalDateTime fechaHoraSalida) {
         this.fechaHoraSalida = fechaHoraSalida;
+    }
+
+    public String getRetiradoPorNombre() {
+        return retiradoPorNombre;
+    }
+
+    public void setRetiradoPorNombre(String retiradoPorNombre) {
+        this.retiradoPorNombre = retiradoPorNombre;
+    }
+
+    public String getRetiradoPorIdentificacion() {
+        return retiradoPorIdentificacion;
+    }
+
+    public void setRetiradoPorIdentificacion(String retiradoPorIdentificacion) {
+        this.retiradoPorIdentificacion = retiradoPorIdentificacion;
     }
 
     public Institucion getInstitucion() {

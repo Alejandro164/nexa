@@ -1,0 +1,32 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <p th:if="${instituciones == null or instituciones.empty}" class="table-empty">No se encontraron contactos.</p>
+    <div class="contact-grid" th:unless="${instituciones == null or instituciones.empty}">
+        <div class="contact-card" th:each="c : ${instituciones}">
+            <div class="contact-avatar" style="width: 56px; height: 56px; font-size: 1.4rem; border-radius:12px;"
+                 th:text="${c.tipo == 'SALUD' ? '🏥' : (c.tipo == 'EMERGENCIA' ? '🚒' : (c.tipo == 'GUBERNAMENTAL' ? '🏛️' : (c.tipo == 'EDUCATIVA' ? '🏫' : '📋')))}">🏫</div>
+            <div class="contact-info">
+                <div class="contact-name" th:text="${c.nombre}">Nombre</div>
+                <div class="contact-detail" th:if="${c.direccion != null}">📍 <span th:text="${c.direccion}">Dirección</span></div>
+                <div class="contact-detail" th:if="${c.email != null}">📧 <span th:text="${c.email}">correo</span></div>
+                <div class="contact-detail" th:if="${c.telefono != null or c.sitioWeb != null}">
+                    <span th:if="${c.telefono != null}" th:text="'📱 ' + ${c.telefono}">teléfono</span>
+                    <span th:if="${c.telefono != null and c.sitioWeb != null}">&nbsp;|&nbsp;</span>
+                    <span th:if="${c.sitioWeb != null}" th:text="'🌐 ' + ${c.sitioWeb}">sitio</span>
+                </div>
+            </div>
+            <div class="contact-actions">
+                <a class="btn btn-sm btn-secondary" th:if="${c.email != null}" th:href="'mailto:' + ${c.email}" title="Enviar correo">✉️</a>
+                <a class="btn btn-sm btn-secondary" th:if="${c.telefono != null}" th:href="'tel:' + ${c.telefono}" title="Llamar">📞</a>
+                <button class="btn btn-sm btn-secondary"
+                        th:attr="hx-get='/contacto/instituciones/form/' + ${c.id}"
+                        hx-target="#contacto-instituciones-modal" hx-swap="innerHTML"
+                        hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                        title="Editar">✏️</button>
+                <button class="btn btn-sm btn-secondary"
+                        onclick="abrirConfirmacionAcademica(this)"
+                        th:attr="data-delete-url='/contacto/instituciones/' + ${c.id},data-delete-target='#contacto-instituciones-content',data-delete-title='Eliminar contacto',data-delete-message='¿Deseas eliminar ' + ${c.nombre} + '? Esta acción no se puede deshacer.'"
+                        title="Eliminar">🗑️</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -42,15 +42,19 @@ public class SesionInstitucionService {
                 ? institucionService.obtenerTodasDTO()
                 : usuarioService.obtenerInstitucionesDelUsuarioActual();
 
-        if (disponibles.isEmpty()) {
-            return new Resultado(Estado.SIN_INSTITUCIONES, disponibles);
-        }
         if (disponibles.size() == 1) {
             seleccionar(disponibles.get(0), session);
             return Resultado.resuelta();
         }
         if (seleccionarRecordada(disponibles, session)) {
             return Resultado.resuelta();
+        }
+        if (esAdmin) {
+            // ROLE_ADMIN puede operar sin institución seleccionada (ve solo Inicio + Administración).
+            return Resultado.resuelta();
+        }
+        if (disponibles.isEmpty()) {
+            return new Resultado(Estado.SIN_INSTITUCIONES, disponibles);
         }
         return new Resultado(Estado.REQUIERE_SELECCION, disponibles);
     }

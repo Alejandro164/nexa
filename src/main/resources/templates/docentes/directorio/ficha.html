@@ -1,0 +1,60 @@
+<div th:fragment="modal" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" onclick="if(event.target===this) window.dispatchEvent(new CustomEvent('close-ficha'))">
+        <div class="modal-dialog" style="max-width:560px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${docente != null ? docente.nombre : 'Docente no encontrado'}">Ficha</h3>
+                <button type="button" class="close-btn"
+                        onclick="window.dispatchEvent(new CustomEvent('close-ficha'))">&times;</button>
+            </div>
+            <div class="modal-body">
+                <th:block th:if="${docente != null}">
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem;">
+                        <span class="badge" th:classappend="${docente.activo ? 'badge-success' : 'badge-secondary'}"
+                              th:text="${docente.activo ? 'Docente Activo' : 'Docente Inactivo'}">Estado</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:1.25rem;">
+                        <div>
+                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Cédula</p>
+                            <p style="font-weight:600;" th:text="${docente.cedula != null ? docente.cedula : '—'}">—</p>
+                        </div>
+                        <div>
+                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Usuario</p>
+                            <p style="font-weight:600;" th:text="${docente.usuario}">usuario</p>
+                        </div>
+                        <div>
+                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Teléfono</p>
+                            <p style="font-weight:600;" th:text="${docente.telefono != null ? docente.telefono : '—'}">—</p>
+                        </div>
+                        <div>
+                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Correo electrónico</p>
+                            <p style="font-weight:600;" th:text="${docente.email}">correo</p>
+                        </div>
+                    </div>
+
+                    <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.6rem;">
+                        📘 Materias que imparte
+                    </h4>
+                    <div th:if="${materias == null or materias.empty}" style="color:var(--text-light); font-size:0.85rem; margin-bottom:1.25rem;">
+                        No tiene lecciones asignadas en el horario actual.
+                    </div>
+                    <div th:unless="${materias == null or materias.empty}" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1.25rem;">
+                        <span th:each="m : ${materias}" class="badge-xs badge-docente"
+                              th:text="${m.nombre}" th:style="|background:${m.color}22; color:${m.color};|">Materia</span>
+                    </div>
+
+                    <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.6rem;">
+                        🏫 Secciones asignadas
+                    </h4>
+                    <div th:if="${niveles == null or niveles.empty}" style="color:var(--text-light); font-size:0.85rem;">
+                        No tiene secciones asignadas en el horario actual.
+                    </div>
+                    <div th:unless="${niveles == null or niveles.empty}" style="display:flex; flex-wrap:wrap; gap:6px;">
+                        <span th:each="n : ${niveles}" class="badge-xs" th:text="${n.nombreCompleto}">Sección</span>
+                    </div>
+                </th:block>
+                <p th:if="${docente == null}" class="table-empty">No se encontró información para este docente.</p>
+            </div>
+        </div>
+    </div>
+</div>

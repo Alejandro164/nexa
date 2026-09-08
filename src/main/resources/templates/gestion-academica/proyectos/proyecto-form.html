@@ -1,6 +1,10 @@
 <div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
     <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
         <div class="modal-dialog" style="max-width: 480px;">
+            <div class="modal-loading-overlay htmx-indicator" id="modal-loading-overlay">
+                <div class="spinner"></div>
+                <span>Cargando...</span>
+            </div>
             <div class="modal-header">
                 <h3 class="modal-title" th:text="${proyecto.id == null ? 'Nuevo Proyecto' : 'Editar Proyecto'}">Proyecto</h3>
                 <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
@@ -8,6 +12,7 @@
             <div class="modal-body">
                 <form hx-post="/gestion-academica/proyectos"
                       hx-target="#proyectos-panel" hx-swap="innerHTML"
+                      hx-indicator="#modal-loading-overlay"
                       hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()">
                     <input type="hidden" name="id" th:value="${proyecto.id}">
                     <input type="hidden" name="nivelId" th:value="${nivelId}">

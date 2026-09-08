@@ -8,195 +8,67 @@
 
 <body>
 
-    <h2 layout:fragment="page-title">Gestión de Usuarios</h2>
-    <p layout:fragment="page-subtitle">Administra los usuarios del sistema, sus roles, permisos y accesos</p>
+    <h2 layout:fragment="page-title">Usuarios</h2>
+    <p layout:fragment="page-subtitle">Gestión de cuentas de usuario de todas las instituciones</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
-    <h2 id="topbar-page-title" hx-swap-oob="true">Gestión de Usuarios</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Administra los usuarios del sistema, sus roles, permisos y accesos</p>
-    <main layout:fragment="content">
-        <style>
-            .config-tabs-container {
-                margin-bottom: 2rem;
-                background: #ffffff;
-                border: 1px solid var(--border);
-                border-radius: 14px;
-                padding: 6px;
-                display: flex;
-                width: 100%;
-                box-shadow: var(--shadow-sm);
-                overflow: visible;
-            }
-            .config-tabs-container::-webkit-scrollbar {
-                display: none;
-            }
-            .config-tabs {
-                display: flex;
-                width: 100%;
-                gap: 6px;
-            }
-            .config-tab-btn {
-                flex: 1;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                padding: 10px 16px;
-                font-size: 0.85rem;
-                font-weight: 600;
-                color: var(--text-secondary);
-                text-decoration: none;
-                border-radius: 10px;
-                transition: all 0.25s ease;
-                cursor: pointer;
-                border: none;
-                background: transparent;
-                white-space: nowrap;
-            }
-            .config-tab-btn:hover {
-                color: var(--primary);
-                background-color: var(--input-bg);
-            }
-            .config-tab-btn.active {
-                color: white !important;
-                background-color: var(--primary) !important;
-                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
-            }
-            .tab-pane {
-                animation: fadeIn 0.35s ease-out;
-            }
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(6px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-            .user-card {
-                padding: 1.25rem;
-                border-radius: 12px;
-                border: 1px solid var(--border);
-                background: white;
-                display: flex;
-                align-items: center;
-                gap: 1rem;
-                margin-bottom: 1rem;
-            }
-        </style>
+    <h2 id="topbar-page-title" hx-swap-oob="true">Usuarios</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestión de cuentas de usuario de todas las instituciones</p>
+    <main layout:fragment="content"
+          x-data="{
+              openModal(id) {
+                  const el = document.getElementById(id);
+                  el.style.display = 'block';
+                  setTimeout(() => {
+                      void el.offsetWidth;
+                      el.classList.remove('dir-modal-closing');
+                      el.classList.add('dir-modal-visible');
+                  }, 0);
+              },
+              closeModal(id) {
+                  const el = document.getElementById(id);
+                  el.classList.remove('dir-modal-visible');
+                  el.classList.add('dir-modal-closing');
+                  setTimeout(() => {
+                      el.style.display = 'none';
+                      el.classList.remove('dir-modal-closing');
+                  }, 180);
+              }
+          }"
+          @open-modal.window="openModal('usuarios-modal-container')"
+          @close-modal.window="closeModal('usuarios-modal-container')"
+          @keydown.escape.window="closeModal('usuarios-modal-container')">
 
-        <div x-data="{ activeTab: 'lista' }">
-            <div class="config-tabs-container">
-                <div class="config-tabs">
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'lista' }" @click="activeTab = 'lista'">
-                        👤 Lista de Usuarios
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'crear' }" @click="activeTab = 'crear'">
-                        ➕ Crear Usuario
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'roles' }" @click="activeTab = 'roles'">
-                        🔑 Roles y Permisos
-                    </button>
+        <div class="card" style="margin-bottom:1rem;">
+            <div class="card-header">
+                <h3 class="card-title">Buscar Usuario</h3>
+                <div class="search-box">
+                    <input type="text" class="form-input" name="q" placeholder="Buscar por nombre, email o cédula..."
+                           th:value="${q}"
+                           hx-get="/usuarios/lista"
+                           hx-trigger="keyup changed delay:400ms, search"
+                           hx-target="#usuarios-content" hx-swap="innerHTML">
                 </div>
             </div>
-
-            <!-- Lista de Usuarios -->
-            <div x-show="activeTab === 'lista'" class="tab-pane">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Usuarios Registrados</h3>
-                        <div class="search-box">
-                            <input type="text" class="form-input" placeholder="Buscar usuario...">
-                        </div>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="user-card">
-                            <div class="avatar-sm">AP</div>
-                            <div style="flex:1;">
-                                <h4 style="font-weight:600;">Alejandro Prado Chaves</h4>
-                                <p style="font-size:0.8rem; color:var(--text-secondary);">alejandro@estudiafacil.ed.cr • Administrador</p>
-                            </div>
-                            <span class="badge badge-success">Activo</span>
-                        </div>
-                        <div class="user-card">
-                            <div class="avatar-sm">MC</div>
-                            <div style="flex:1;">
-                                <h4 style="font-weight:600;">María Castro Méndez</h4>
-                                <p style="font-size:0.8rem; color:var(--text-secondary);">mcastro@estudiafacil.ed.cr • Docente</p>
-                            </div>
-                            <span class="badge badge-success">Activo</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Crear Usuario -->
-            <div x-show="activeTab === 'crear'" class="tab-pane" x-cloak>
-                <div class="card" style="max-width: 600px; margin: 0 auto;">
-                    <div class="card-header">
-                        <h3 class="card-title">Nuevo Usuario</h3>
-                    </div>
-                    <div style="padding: 2rem;">
-                        <form onsubmit="event.preventDefault(); alert('Usuario simulado registrado exitosamente');">
-                            <div class="form-group">
-                                <label class="form-label">Nombre Completo</label>
-                                <input type="text" class="form-input" style="padding-left:0.75rem;" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Correo Electrónico</label>
-                                <input type="email" class="form-input" style="padding-left:0.75rem;" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Rol del Sistema</label>
-                                <select class="form-input" style="padding-left:0.75rem;">
-                                    <option>Administrador</option>
-                                    <option>Docente</option>
-                                    <option>Estudiante</option>
-                                    <option>Encargado / Padre</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Registrar Usuario</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Roles y Permisos -->
-            <div x-show="activeTab === 'roles'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Configuración de Perfiles de Seguridad</h3>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div class="table-container">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Rol</th>
-                                        <th>Permisos Clave</th>
-                                        <th>Usuarios Asignados</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="font-weight:600;">Administrador</td>
-                                        <td>Acceso Total, Gestión de Configuración y Seguridad</td>
-                                        <td>3 usuarios</td>
-                                        <td><span class="badge badge-primary">Sistema</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:600;">Docente</td>
-                                        <td>Registro de Notas, Asistencias, Justificaciones</td>
-                                        <td>42 usuarios</td>
-                                        <td><span class="badge badge-success">Activo</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
+
+        <div id="usuarios-content" th:insert="~{usuarios/lista :: content}"></div>
+
+        <div id="usuarios-modal-container" style="display:none;"></div>
+
+        <script>
+            if (!window.usuariosEventsRegistrados) {
+                document.addEventListener('usuarioError', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje, 'error');
+                    }
+                });
+                window.usuariosEventsRegistrados = true;
+            }
+        </script>
+
     </main>
     </th:block>
 

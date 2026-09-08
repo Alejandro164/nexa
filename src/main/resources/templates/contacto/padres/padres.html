@@ -1,0 +1,36 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Directorio de Padres de Familia</h3>
+            <span class="badge badge-primary" th:text="${padres != null ? #lists.size(padres) : 0} + ' contactos'">0 contactos</span>
+        </div>
+        <div style="padding: 1.5rem;">
+            <div class="contact-search">
+                <input type="text" class="form-input" placeholder="Buscar padre de familia..." name="q"
+                       th:value="${qPadres}"
+                       hx-get="/contacto/padres"
+                       hx-trigger="keyup changed delay:400ms, search"
+                       hx-target="closest .card" hx-swap="outerHTML" />
+            </div>
+            <p th:if="${padres == null or padres.empty}" class="table-empty">No se encontraron padres de familia.</p>
+            <div class="contact-grid" th:unless="${padres == null or padres.empty}">
+                <div class="contact-card" th:each="p : ${padres}"
+                     th:with="hijos=${estudiantesPorPadre.get(p.id)}">
+                    <div class="contact-avatar" th:text="${#strings.toUpperCase(#strings.substring(p.nombre,0,1))}">?</div>
+                    <div class="contact-info">
+                        <div class="contact-name" th:text="${p.nombre}">Nombre</div>
+                        <div class="contact-detail" th:if="${hijos != null and !hijos.empty}">
+                            👪 Encargado/a de <span th:text="${#strings.listJoin(hijos.![nombre], ', ')}">estudiantes</span>
+                        </div>
+                        <div class="contact-detail" th:if="${p.email != null}">📧 <span th:text="${p.email}">correo</span></div>
+                        <div class="contact-detail" th:if="${p.telefono != null}">📱 <span th:text="${p.telefono}">teléfono</span></div>
+                    </div>
+                    <div class="contact-actions">
+                        <a class="btn btn-sm btn-secondary" th:if="${p.email != null}" th:href="'mailto:' + ${p.email}" title="Enviar correo">✉️</a>
+                        <a class="btn btn-sm btn-secondary" th:if="${p.telefono != null}" th:href="'tel:' + ${p.telefono}" title="Llamar">📞</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

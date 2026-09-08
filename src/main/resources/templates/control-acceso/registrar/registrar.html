@@ -12,7 +12,7 @@
                             <input type="text" id="identificacionVisita" name="identificacion" class="form-input"
                                 style="padding-left:0.75rem; flex:1;" placeholder="Ej: 1-1234-0567">
                             <button type="button" class="btn btn-secondary" style="white-space:nowrap;"
-                                    onclick="buscarPadrePorCedula()">🔍 Buscar Padre</button>
+                                    onclick="buscarPadrePorCedula()">🔍 Buscar</button>
                         </div>
                         <p id="buscarPadreMsg" style="font-size:0.8rem; margin-top:4px; min-height:1em;"></p>
                     </div>
@@ -40,17 +40,15 @@
                     </div>
                     <div class="form-group" id="campo-persona-container" th:fragment="campo-persona">
                         <label class="form-label">Nombre de la Persona *</label>
-                        <select name="personaAVisitar" class="form-input" style="padding-left:0.75rem;" required
+                        <select name="personaVisitadaId" class="form-input" style="padding-left:0.75rem;" required
                                 th:if="${personas != null}">
                             <option value="" disabled selected>Seleccione...</option>
-                            <option th:each="p : ${personas}" th:value="${p.nombre}" th:text="${p.nombre}"></option>
+                            <option th:each="p : ${personas}" th:value="${p.id}" th:text="${p.nombre}"></option>
                         </select>
                         <p th:if="${personas != null and personas.empty}"
                            style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">
                             No hay personal disponible de este tipo en la institución.
                         </p>
-                        <input type="text" name="personaAVisitar" class="form-input" style="padding-left:0.75rem;"
-                               required placeholder="Nombre de la persona a visitar" th:if="${personas == null}">
                     </div>
                 </div>
                 <div class="form-group" style="display:flex; align-items:center; gap:0.75rem;">
@@ -90,10 +88,38 @@
                         document.getElementById('identificacionVisita').value = data.identificacion;
                         msg.style.color = 'var(--success)';
                         msg.textContent = '✅ Padre encontrado: ' + data.nombre;
-                    } else {
-                        msg.style.color = 'var(--danger)';
-                        msg.textContent = '⚠️ No se encontró un padre registrado con esa cédula en esta institución.';
+                        return;
                     }
+                    // No es un padre registrado — probamos si ya visitó antes (visitante recurrente).
+                    fetch('/control-de-acceso/buscar-visitante?identificacion=' + encodeURIComponent(cedula))
+                        .then(r => r.json())
+                        .then(v => {
+                            if (v.encontrado) {
+                                document.getElementById('nombreVisitante').value = v.nombre;
+                                msg.style.color = 'var(--success)';
+                                msg.textContent = '✅ Visitante ya registrado antes: ' + v.nombre;
+                                return;
+                            }
+                            // Tampoco es un visitante recurrente — probamos con Hacienda (situación tributaria).
+                            msg.style.color = 'var(--text-light)';
+                            msg.textContent = 'Consultando Hacienda...';
+                            fetch('/control-de-acceso/buscar-hacienda?identificacion=' + encodeURIComponent(cedula))
+                                .then(r => r.json())
+                                .then(h => {
+                                    if (h.encontrado) {
+                                        document.getElementById('nombreVisitante').value = h.nombre;
+                                        msg.style.color = 'var(--success)';
+                                        msg.textContent = '✅ Encontrado en Hacienda: ' + h.nombre;
+                                    } else {
+                                        msg.style.color = 'var(--danger)';
+                                        msg.textContent = '⚠️ No se encontró a nadie con esa identificación. Completá el nombre manualmente.';
+                                    }
+                                })
+                                .catch(() => {
+                                    msg.style.color = 'var(--danger)';
+                                    msg.textContent = '⚠️ No se encontró localmente y Hacienda no respondió. Completá el nombre manualmente.';
+                                });
+                        });
                 })
                 .catch(() => {
                     msg.style.color = 'var(--danger)';

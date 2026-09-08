@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <div th:fragment="dropdown-content">
+        <span id="notification-dot" class="notification-dot"
+              th:classappend="${notificaciones == null or notificaciones.empty} ? ' notification-dot-hidden' : ''"
+              hx-swap-oob="true"></span>
+
+        <div class="dropdown-header">
+            <div class="dropdown-user-name">Notificaciones</div>
+        </div>
+        <div class="dropdown-divider"></div>
+
+        <div th:if="${notificaciones == null or notificaciones.empty}"
+             style="padding: 1.5rem 0.75rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
+            No tenés notificaciones nuevas.
+        </div>
+
+        <div th:each="n : ${notificaciones}" class="notif-item">
+            <div style="flex: 1; min-width: 0;">
+                <p style="font-size: 0.85rem; color: var(--text-primary); margin: 0; line-height: 1.4;" th:text="${n.mensaje}">Mensaje</p>
+                <p style="font-size: 0.72rem; color: var(--text-light); margin: 4px 0 0;"
+                   th:text="${#temporals.format(n.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</p>
+            </div>
+            <form th:action="@{'/notificaciones/' + ${n.id} + '/leer'}" method="post"
+                  th:attr="hx-post=@{'/notificaciones/' + ${n.id} + '/leer'}"
+                  hx-target="#notif-dropdown" hx-swap="innerHTML" style="margin: 0;">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <button type="submit" class="btn-icon" title="Marcar como leída">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--text-light);">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>

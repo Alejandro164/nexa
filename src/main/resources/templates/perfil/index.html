@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Mi Perfil — Nexa</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Mi Perfil</h2>
+    <p layout:fragment="page-subtitle">Administrá tu información personal y seguridad</p>
+
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Mi Perfil</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Administrá tu información personal y seguridad</p>
+    <main layout:fragment="content">
+        <style>
+            .perfil-field-label {
+                font-size: 0.72rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: var(--text-light);
+                margin-bottom: 6px;
+            }
+            .perfil-field-value {
+                font-size: 0.92rem;
+                font-weight: 500;
+                color: var(--text-primary);
+            }
+            .perfil-inst-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px;
+                border-radius: 10px;
+            }
+            .perfil-inst-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 9px;
+                background: var(--input-bg);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                color: var(--primary);
+            }
+            .perfil-inst-icon svg { width: 18px; height: 18px; }
+        </style>
+
+        <div id="perfil-content" th:fragment="content" style="display:flex;flex-direction:column;gap:20px;">
+
+            <div class="card">
+                <div style="padding:28px 32px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+                    <div style="width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#2d5a87,#60a5fa);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:2rem;flex-shrink:0;box-shadow:var(--shadow);"
+                         th:text="${#strings.substring(usuario.nombre, 0, 1).toUpperCase()}">A</div>
+                    <div style="flex:1;min-width:260px;">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <h1 style="font-size:1.4rem;font-weight:700;color:var(--text-primary);margin:0;" th:text="${usuario.nombre}">Nombre</h1>
+                            <span class="badge badge-primary" th:each="rol : ${usuario.roles}"
+                                  th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(rol.nombre, 'ROLE_', '')))}">Rol</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--text-secondary);font-size:0.9rem;" th:if="${institucionActualNombre != null}">
+                            <svg style="width:16px;height:16px;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            <span th:text="${institucionActualNombre}">Institución</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" type="button"
+                            hx-get="/perfil/editar-modal" hx-target="#modal-container" hx-swap="innerHTML"
+                            @click="document.getElementById('modal-container').classList.add('show')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        Editar perfil
+                    </button>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start;">
+
+                <div style="display:flex;flex-direction:column;gap:20px;">
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Información Personal</span>
+                            <button class="btn btn-secondary" type="button"
+                                    hx-get="/perfil/editar-modal" hx-target="#modal-container" hx-swap="innerHTML"
+                                    @click="document.getElementById('modal-container').classList.add('show')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Editar
+                            </button>
+                        </div>
+                        <div style="padding:1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:22px;">
+                            <div>
+                                <div class="perfil-field-label">Nombre completo</div>
+                                <div class="perfil-field-value" th:text="${usuario.nombre}">Nombre</div>
+                            </div>
+                            <div>
+                                <div class="perfil-field-label">Cédula</div>
+                                <div class="perfil-field-value" th:text="${usuario.cedula != null ? usuario.cedula : 'No especificada'}">Cédula</div>
+                            </div>
+                            <div>
+                                <div class="perfil-field-label">Correo electrónico</div>
+                                <div class="perfil-field-value" th:text="${usuario.email}">correo@nexa.cr</div>
+                            </div>
+                            <div>
+                                <div class="perfil-field-label">Teléfono</div>
+                                <div class="perfil-field-value" th:text="${usuario.telefono != null ? usuario.telefono : 'No especificado'}">Teléfono</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Seguridad</span></div>
+                        <div style="padding:1.5rem;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                            <div style="flex:1;min-width:200px;">
+                                <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">Contraseña</div>
+                                <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">Por tu seguridad, elegí una contraseña que no uses en otros sitios.</div>
+                            </div>
+                            <button class="btn btn-secondary" type="button"
+                                    hx-get="/perfil/cambiar-password-modal" hx-target="#modal-container" hx-swap="innerHTML"
+                                    @click="document.getElementById('modal-container').classList.add('show')">
+                                Cambiar contraseña
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:20px;">
+
+                    <div class="card">
+                        <div class="card-header"><span class="card-title" style="font-size:0.92rem;">Instituciones Asociadas</span></div>
+                        <div style="padding:10px;display:flex;flex-direction:column;gap:2px;">
+                            <div th:if="${#lists.isEmpty(usuario.instituciones)}" style="padding:1rem;color:var(--text-secondary);font-size:0.85rem;">
+                                No tenés instituciones asociadas.
+                            </div>
+                            <div class="perfil-inst-row" th:each="inst : ${usuario.instituciones}"
+                                 th:style="${institucionActualId != null and institucionActualId == inst.id} ? 'background:rgba(45,90,135,0.06);' : ''">
+                                <div class="perfil-inst-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" th:text="${inst.nombre}">Institución</div>
+                                    <div style="font-size:0.72rem;color:var(--text-secondary);" th:text="${inst.codigo}">Código</div>
+                                </div>
+                                <span class="badge badge-success" th:if="${institucionActualId != null and institucionActualId == inst.id}">Activa</span>
+                                <span class="badge badge-secondary" th:unless="${institucionActualId != null and institucionActualId == inst.id}">Inactiva</span>
+                            </div>
+                            <div style="padding:8px 12px 4px;" th:if="${not #lists.isEmpty(usuario.instituciones)}">
+                                <a href="#" style="display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;"
+                                   hx-get="/inicio/instituciones-modal" hx-target="#modal-container" hx-swap="innerHTML"
+                                   @click.prevent="document.getElementById('modal-container').classList.add('show')">
+                                    Cambiar cuenta
+                                    <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <script th:inline="none">
+            if (!window.perfilEventsRegistrados) {
+                document.addEventListener('perfilGuardado', function (event) {
+                    var modalContainer = document.getElementById('modal-container');
+                    if (modalContainer.classList.contains('show')) {
+                        modalContainer.classList.remove('show');
+                        setTimeout(function () { modalContainer.innerHTML = ''; }, 300);
+                    }
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje);
+                    }
+                });
+                window.perfilEventsRegistrados = true;
+            }
+        </script>
+    </main>
+    </th:block>
+
+</body>
+
+</html>

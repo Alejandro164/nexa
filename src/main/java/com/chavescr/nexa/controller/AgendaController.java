@@ -412,8 +412,7 @@ public class AgendaController {
                                 @RequestParam(required = false) String rol,
                                 @RequestParam(required = false) String estado,
                                 Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) return "redirect:/";
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("participantes", participacionService.listarParticipantes(institucionId, filtro, rol, estado));
         model.addAttribute("filtro", filtro);
         model.addAttribute("rolSel", rol);
@@ -426,8 +425,7 @@ public class AgendaController {
 
     @GetMapping("/participacion/detalle/{usuarioId}")
     public String participacionDetalle(@PathVariable Long usuarioId, Model model, HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) return "redirect:/";
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("detalle", participacionService.obtenerDetalle(institucionId, usuarioId));
         return "agenda/participacion/detalle :: contenido";
     }
@@ -436,8 +434,7 @@ public class AgendaController {
 
     @GetMapping("/proyectos")
     public String proyectos(Model model, HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) return "redirect:/";
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
         return "agenda/proyecto/contenido :: content";
     }

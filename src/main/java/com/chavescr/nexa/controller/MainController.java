@@ -2,6 +2,7 @@ package com.chavescr.nexa.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -12,8 +13,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.dto.InstitucionDTO;
 import com.chavescr.nexa.dto.UsuarioDTO;
+import com.chavescr.nexa.entity.NivelAcademico;
+import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.security.CustomUserDetails;
+import com.chavescr.nexa.service.ConfiguracionAcademicaService;
+import com.chavescr.nexa.service.HistorialCambioService;
 import com.chavescr.nexa.service.InstitucionService;
+import com.chavescr.nexa.service.RegistroAsistenciaService;
 import com.chavescr.nexa.service.SesionInstitucionService;
 import com.chavescr.nexa.service.UsuarioService;
 
@@ -35,6 +41,15 @@ public class MainController {
     @Autowired
     private SesionInstitucionService sesionInstitucionService;
 
+    @Autowired
+    private ConfiguracionAcademicaService configuracionAcademicaService;
+
+    @Autowired
+    private RegistroAsistenciaService registroAsistenciaService;
+
+    @Autowired
+    private HistorialCambioService historialCambioService;
+
     @GetMapping("/")
     public String index(@AuthenticationPrincipal CustomUserDetails usuario, Model model,
             HttpServletRequest request, HttpSession session) {
@@ -49,6 +64,12 @@ public class MainController {
             session.invalidate();
             return "redirect:/login";
         }
+
+        // El @ModelAttribute global se calculó ANTES de este handler, así que si resolver() acaba
+        // de auto-seleccionar institución (efecto secundario del propio resolver) puede haber quedado
+        // desactualizado — se recalcula aquí con el estado de sesión ya resuelto.
+        model.addAttribute("sinInstitucionAdmin",
+                request.isUserInRole("ROLE_ADMIN") && session.getAttribute("SESSION_INSTITUCION_ID") == null);
 
         cargarDashboard(model, session);
         return "inicio/inicio";
@@ -116,7 +137,66 @@ public class MainController {
         response.sendRedirect("/inicio");
     }
 
+    @PostMapping("/inicio/salir-institucion")
+    public void salirInstitucion(HttpServletRequest request, HttpServletResponse response, HttpSession session)
+            throws IOException {
+        // Solo ROLE_ADMIN puede operar sin institución seleccionada (ver SesionInstitucionService.resolver).
+        if (!request.isUserInRole("ROLE_ADMIN")) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        session.removeAttribute("SESSION_INSTITUCION_ID");
+        session.removeAttribute("SESSION_INSTITUCION_NOMBRE");
+        // Se olvida también la institución recordada: si no, el próximo login la auto-seleccionaría
+        // de nuevo (seleccionarRecordada) y "salir" no tendría efecto duradero.
+        usuarioService.actualizarUltimaInstitucion(usuarioId, null);
+
+        if ("true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
+            response.setHeader("HX-Redirect", "/inicio");
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
+        response.sendRedirect("/inicio");
+    }
+
     private void cargarDashboard(Model model, HttpSession session) {
+        String institucionActivaNombre = (String) session.getAttribute("SESSION_INSTITUCION_NOMBRE");
+        model.addAttribute("institucionActivaNombre", institucionActivaNombre);
+
+        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        if (institucionId == null) {
+            model.addAttribute("sinInstitucion", true);
+            cargarResumenGlobal(model);
+            return;
+        }
+
+        long totalEstudiantes = usuarioService.contarActivosPorInstitucionYRol(institucionId, "ROLE_ESTUDIANTE");
+        long totalDocentes = usuarioService.contarActivosPorInstitucionYRol(institucionId, "ROLE_DOCENTE");
+
+        Map<String, Long> asistenciaHoy = registroAsistenciaService.obtenerConteoPersonalPresente(institucionId);
+
+        List<PeriodoAcademico> periodosActivos = configuracionAcademicaService.listarPeriodosActivos(institucionId);
+        PeriodoAcademico periodoActivo = periodosActivos.isEmpty() ? null : periodosActivos.get(0);
+
+        List<NivelAcademico> niveles = configuracionAcademicaService.listarNivelesActivos(institucionId);
+
+        model.addAttribute("totalEstudiantes", totalEstudiantes);
+        model.addAttribute("totalDocentes", totalDocentes);
+        model.addAttribute("personalPresenteHoy", asistenciaHoy.getOrDefault("presentes", 0L));
+        model.addAttribute("totalRegistrosHoy", asistenciaHoy.getOrDefault("totalRegistros", 0L));
+        model.addAttribute("periodoActivo", periodoActivo);
+        model.addAttribute("niveles", niveles);
+        model.addAttribute("actividadReciente", historialCambioService.listarRecientes(institucionId));
+    }
+
+    /**
+     * Panel para el admin sin institución seleccionada: en vez del detalle de una institución
+     * (que no aplica aquí), muestra un resumen global del sistema — mismos indicadores que ya
+     * existían en el dashboard antes de que este pasara a estar scoped a una institución.
+     */
+    private void cargarResumenGlobal(Model model) {
         List<UsuarioDTO> usuarios = usuarioService.obtenerTodosDTO();
         List<InstitucionDTO> instituciones = institucionService.obtenerTodasDTO();
 
@@ -140,18 +220,8 @@ public class MainController {
         model.addAttribute("totalRoles", totalRoles);
 
         model.addAttribute("ultimosUsuarios",
-                usuarios.stream()
-                        .sorted((a, b) -> b.getId().compareTo(a.getId()))
-                        .limit(5)
-                        .toList());
-
+                usuarios.stream().sorted((a, b) -> b.getId().compareTo(a.getId())).limit(5).toList());
         model.addAttribute("ultimasInstituciones",
-                instituciones.stream()
-                        .sorted((a, b) -> b.getId().compareTo(a.getId()))
-                        .limit(5)
-                        .toList());
-
-        String institucionActivaNombre = (String) session.getAttribute("SESSION_INSTITUCION_NOMBRE");
-        model.addAttribute("institucionActivaNombre", institucionActivaNombre);
+                instituciones.stream().sorted((a, b) -> b.getId().compareTo(a.getId())).limit(5).toList());
     }
 }

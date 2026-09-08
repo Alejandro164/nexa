@@ -1,0 +1,47 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org"
+     x-data="{
+         openModal(id) {
+             const el = document.getElementById(id);
+             el.style.display = 'block';
+             setTimeout(() => {
+                 void el.offsetWidth;
+                 el.classList.remove('dir-modal-closing');
+                 el.classList.add('dir-modal-visible');
+             }, 0);
+         },
+         closeModal(id) {
+             const el = document.getElementById(id);
+             el.classList.remove('dir-modal-visible');
+             el.classList.add('dir-modal-closing');
+             setTimeout(() => {
+                 el.style.display = 'none';
+                 el.classList.remove('dir-modal-closing');
+             }, 180);
+         }
+     }"
+     @open-modal.window="openModal('contacto-instituciones-modal')"
+     @close-modal.window="closeModal('contacto-instituciones-modal')"
+     @keydown.escape.window="closeModal('contacto-instituciones-modal')">
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Directorio de Instituciones</h3>
+            <button class="btn btn-primary"
+                    hx-get="/contacto/instituciones/form"
+                    hx-target="#contacto-instituciones-modal" hx-swap="innerHTML"
+                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))">+ Agregar Contacto</button>
+        </div>
+        <div style="padding: 1.5rem;">
+            <div class="contact-search">
+                <input type="text" class="form-input" placeholder="Buscar institución..." name="q"
+                       th:value="${qInstituciones}"
+                       hx-get="/contacto/instituciones/lista"
+                       hx-trigger="keyup changed delay:400ms, search"
+                       hx-target="#contacto-instituciones-content" hx-swap="innerHTML" />
+            </div>
+            <div id="contacto-instituciones-content" th:insert="~{contacto/instituciones/lista :: content}"></div>
+        </div>
+    </div>
+
+    <div id="contacto-instituciones-modal" style="display:none;"></div>
+</div>

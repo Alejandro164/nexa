@@ -2,11 +2,15 @@ package com.chavescr.nexa.security;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.LocalDateTime;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
+import com.chavescr.nexa.entity.AccionAcceso;
+import com.chavescr.nexa.entity.ResultadoAcceso;
+import com.chavescr.nexa.service.RegistroAccesoService;
 import com.chavescr.nexa.service.SesionInstitucionService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,9 +26,12 @@ import jakarta.servlet.http.HttpSession;
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final SesionInstitucionService sesionInstitucionService;
+    private final RegistroAccesoService registroAccesoService;
 
-    public LoginSuccessHandler(SesionInstitucionService sesionInstitucionService) {
+    public LoginSuccessHandler(SesionInstitucionService sesionInstitucionService,
+            RegistroAccesoService registroAccesoService) {
         this.sesionInstitucionService = sesionInstitucionService;
+        this.registroAccesoService = registroAccesoService;
     }
 
     @Override
@@ -33,6 +40,12 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         HttpSession session = request.getSession();
         CustomUserDetails usuario = (CustomUserDetails) authentication.getPrincipal();
         session.setAttribute("SESSION_USUARIO_ID", usuario.getId());
+
+        String ip = RegistroAccesoService.resolverIp(request);
+        registroAccesoService.registrar(usuario.getEmail(), ip, AccionAcceso.LOGIN, ResultadoAcceso.EXITOSO);
+        session.setAttribute("SESSION_LOGIN_IP", ip);
+        session.setAttribute("SESSION_LOGIN_USER_AGENT", request.getHeader("User-Agent"));
+        session.setAttribute("SESSION_LOGIN_FECHA", LocalDateTime.now());
 
         boolean esAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));

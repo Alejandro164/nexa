@@ -214,6 +214,19 @@ public class ConfiguracionAcademicaService {
         return horario;
     }
 
+    /** Igual que {@link #obtenerHorario}, pero acotado al horario de un docente en particular (para Disponibilidad). */
+    @Transactional(readOnly = true)
+    public Map<String, List<HorarioLeccion>> obtenerHorarioPorDocente(Long institucionId, Long periodoId, Long docenteId) {
+        Map<String, List<HorarioLeccion>> horario = new LinkedHashMap<>();
+        if (periodoId == null || docenteId == null) return horario;
+        horarioRepository.findByInstitucionIdAndPeriodoIdAndDocenteIdOrderByDiaAscNumeroLeccionAsc(
+                institucionId, periodoId, docenteId)
+                .forEach(l -> horario
+                        .computeIfAbsent(clave(l.getDia(), l.getNumeroLeccion()), k -> new ArrayList<>())
+                        .add(l));
+        return horario;
+    }
+
     @Transactional(readOnly = true)
     public HorarioLeccion obtenerLeccionPorId(Long institucionId, Long id) {
         return horarioRepository.findByIdAndInstitucionId(id, institucionId)

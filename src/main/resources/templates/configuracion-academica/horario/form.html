@@ -4,6 +4,10 @@
 <div th:fragment="form-content">
     <div class="modal-backdrop">
         <div class="modal-dialog">
+            <div class="modal-loading-overlay htmx-indicator" id="modal-loading-overlay">
+                <div class="spinner"></div>
+                <span>Cargando...</span>
+            </div>
             <div class="modal-header">
                 <div>
                     <h3 class="modal-title" th:text="${leccion.id == null ? 'Asignar lección' : 'Editar lección'}">Lección</h3>
@@ -19,7 +23,8 @@
                 <form th:unless="${materias.empty or docentes.empty or aulas.empty}"
                       hx-post="/configuracion-academica/horario"
                       hx-target="#horario-panel"
-                      hx-swap="outerHTML">
+                      hx-swap="outerHTML"
+                      hx-indicator="#modal-loading-overlay">
                     <input type="hidden" name="id" th:value="${leccion.id}">
                     <input type="hidden" name="periodoId" th:value="${periodoId}">
                     <input type="hidden" name="nivelId" th:value="${nivelId}">

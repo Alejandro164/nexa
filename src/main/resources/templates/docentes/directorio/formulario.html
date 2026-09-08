@@ -1,0 +1,77 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" @click.self="$dispatch('close-modal')">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${usuario.id == null ? 'Registrar Docente' : 'Editar Docente'}">Docente</h3>
+                <button type="button" class="close-btn" @click="$dispatch('close-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form th:action="@{/docentes/directorio}" method="post"
+                      hx-post="/docentes/directorio"
+                      hx-target="#docentes-dir-content" hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
+                    <input type="hidden" name="id" th:value="${usuario.id}">
+
+                    <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2;">
+                            <label class="form-label">Nombre completo *</label>
+                            <input class="form-input" type="text" name="nombre" required maxlength="100"
+                                   th:value="${usuario.nombre}" placeholder="Ej. Carlos Mendoza Arias">
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label class="form-label">Cédula</label>
+                            <input class="form-input" type="text" name="cedula" maxlength="30"
+                                   th:value="${usuario.cedula}" placeholder="1-2345-6789">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Correo electrónico *</label>
+                        <input class="form-input" type="email" name="email" required maxlength="150"
+                               th:value="${usuario.email}" placeholder="correo@ejemplo.com">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Nombre de usuario *</label>
+                            <input class="form-input" type="text" name="usuario" required maxlength="60"
+                                   th:value="${usuario.usuario}" placeholder="carlos.mendoza">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"
+                                   th:text="${usuario.id == null ? 'Contraseña *' : 'Contraseña'}">Contraseña</label>
+                            <input class="form-input" type="password" name="password"
+                                   th:required="${usuario.id == null}"
+                                   th:placeholder="${usuario.id == null ? 'Contraseña inicial' : 'Dejar vacío para no cambiar'}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Rol</label>
+                        <div><span class="badge-xs badge-docente">DOCENTE</span></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="custom-checkbox" name="activo" value="true"
+                                   th:checked="${usuario.activo == null or usuario.activo}">
+                            <span class="custom-checkbox-control">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </span>
+                            <span>Docente activo</span>
+                        </label>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" @click="$dispatch('close-modal')">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

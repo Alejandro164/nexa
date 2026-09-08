@@ -155,4 +155,32 @@ public class PersonalService {
         u.setActivo(!u.getActivo());
         usuarioRepository.save(u);
     }
+
+    // ─── VÍNCULO PADRE-ESTUDIANTE ────────────────────────────────
+    // La relación es dueña del lado padre.estudiantes (@JoinTable en esa dirección) — vincular y
+    // desvincular siempre mutan y guardan al padre, nunca al estudiante directamente.
+
+    public void vincularPadre(Long institucionId, Long estudianteId, Long padreId) {
+        Usuario estudiante = obtenerPorId(institucionId, estudianteId);
+        Usuario padre = obtenerPorId(institucionId, padreId);
+        if (!usuarioRepository.existeVinculoPadreEstudiante(padre.getId(), estudiante.getId())) {
+            padre.getEstudiantes().add(estudiante);
+            usuarioRepository.save(padre);
+            log.info("Vínculo padre-estudiante creado: padre={}, estudiante={}", padre.getId(), estudiante.getId());
+        }
+    }
+
+    public void desvincularPadre(Long institucionId, Long estudianteId, Long padreId) {
+        Usuario estudiante = obtenerPorId(institucionId, estudianteId);
+        Usuario padre = obtenerPorId(institucionId, padreId);
+        padre.getEstudiantes().remove(estudiante);
+        usuarioRepository.save(padre);
+        log.info("Vínculo padre-estudiante eliminado: padre={}, estudiante={}", padre.getId(), estudiante.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Usuario> listarPadresDe(Long institucionId, Long estudianteId) {
+        obtenerPorId(institucionId, estudianteId);
+        return usuarioRepository.findPadresByEstudianteId(estudianteId);
+    }
 }

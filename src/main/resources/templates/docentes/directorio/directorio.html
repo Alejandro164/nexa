@@ -1,49 +1,45 @@
-<div th:fragment="content">
-    <div class="card">
+<div th:fragment="content" class="tab-pane" xmlns:th="http://www.thymeleaf.org"
+     x-data="{
+         openModal(id) {
+             const el = document.getElementById(id);
+             el.style.display = 'block';
+             setTimeout(() => {
+                 void el.offsetWidth;
+                 el.classList.remove('dir-modal-closing');
+                 el.classList.add('dir-modal-visible');
+             }, 0);
+         },
+         closeModal(id) {
+             const el = document.getElementById(id);
+             el.classList.remove('dir-modal-visible');
+             el.classList.add('dir-modal-closing');
+             setTimeout(() => {
+                 el.style.display = 'none';
+                 el.classList.remove('dir-modal-closing');
+             }, 180);
+         }
+     }"
+     @open-modal.window="openModal('docentes-modal-container')"
+     @close-modal.window="closeModal('docentes-modal-container')"
+     @open-ficha.window="openModal('docentes-ficha-container')"
+     @close-ficha.window="closeModal('docentes-ficha-container')"
+     @keydown.escape.window="closeModal('docentes-modal-container'); closeModal('docentes-ficha-container')">
+
+    <div class="card" style="margin-bottom:1rem;">
         <div class="card-header">
-            <h3 class="card-title">Directorio de Docentes</h3>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" class="form-input" placeholder="Buscar por nombre o cédula..." style="padding: 6px 12px; font-size: 0.85rem; border-radius: 8px; border: 1px solid var(--border);">
-                <button class="btn btn-primary">+ Registrar Docente</button>
-            </div>
-        </div>
-        <div style="padding: 2rem;">
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Identificación</th>
-                            <th>Nombre Completo</th>
-                            <th>Contacto</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="color: var(--text-muted); font-family: monospace;">1-1111-0111</td>
-                            <td style="font-weight: 600;">Carlos Mendoza Arias</td>
-                            <td>cmendoza@colegio.edu<br><span style="font-size: 0.75rem; color: var(--text-muted);">8888-8888</span></td>
-                            <td><span class="badge badge-success">Activo</span></td>
-                            <td><button class="btn btn-secondary btn-demo-sm">Perfil</button></td>
-                        </tr>
-                        <tr>
-                            <td style="color: var(--text-muted); font-family: monospace;">1-2222-0222</td>
-                            <td style="font-weight: 600;">Laura Quirós Salas</td>
-                            <td>lquiros@colegio.edu<br><span style="font-size: 0.75rem; color: var(--text-muted);">8888-7777</span></td>
-                            <td><span class="badge badge-success">Activo</span></td>
-                            <td><button class="btn btn-secondary btn-demo-sm">Perfil</button></td>
-                        </tr>
-                        <tr>
-                            <td style="color: var(--text-muted); font-family: monospace;">1-3333-0333</td>
-                            <td style="font-weight: 600;">Andrés Castro Vega</td>
-                            <td>acastro@colegio.edu<br><span style="font-size: 0.75rem; color: var(--text-muted);">8888-6666</span></td>
-                            <td><span class="badge" style="background: rgba(217,119,6,0.1); color: var(--warm);">Incapacitado</span></td>
-                            <td><button class="btn btn-secondary btn-demo-sm">Perfil</button></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <h3 class="card-title">Buscar Docente</h3>
+            <div class="search-box">
+                <input type="text" class="form-input" name="q" placeholder="Buscar por cédula o nombre..."
+                       th:value="${q}"
+                       hx-get="/docentes/directorio/lista"
+                       hx-trigger="keyup changed delay:400ms, search"
+                       hx-target="#docentes-dir-content" hx-swap="innerHTML">
             </div>
         </div>
     </div>
+
+    <div id="docentes-dir-content" th:insert="~{docentes/directorio/lista :: content}"></div>
+
+    <div id="docentes-modal-container" style="display:none;"></div>
+    <div id="docentes-ficha-container" style="display:none;"></div>
 </div>
