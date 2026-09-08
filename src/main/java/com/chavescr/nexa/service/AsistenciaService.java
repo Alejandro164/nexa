@@ -2,6 +2,7 @@ package com.chavescr.nexa.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -14,34 +15,66 @@ import com.chavescr.nexa.entity.AsistenciaEstudiante;
 import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
+import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
+import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
+import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
 @Service
 @Transactional
 public class AsistenciaService {
 
+    private static final DateTimeFormatter FECHA_PERIODO = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private final AsistenciaEstudianteRepository asistenciaRepository;
     private final NivelAcademicoRepository nivelAcademicoRepository;
     private final MateriaRepository materiaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PeriodoAcademicoRepository periodoRepository;
+    private final HorarioLeccionRepository horarioLeccionRepository;
 
     public AsistenciaService(AsistenciaEstudianteRepository asistenciaRepository,
             NivelAcademicoRepository nivelAcademicoRepository,
             MateriaRepository materiaRepository,
-            UsuarioRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository,
+            PeriodoAcademicoRepository periodoRepository,
+            HorarioLeccionRepository horarioLeccionRepository) {
         this.asistenciaRepository = asistenciaRepository;
         this.nivelAcademicoRepository = nivelAcademicoRepository;
         this.materiaRepository = materiaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.periodoRepository = periodoRepository;
+        this.horarioLeccionRepository = horarioLeccionRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<NivelAcademico> listarSeccionesActivas(Long institucionId) {
-        return nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId);
+    public PeriodoAcademico obtenerUltimoPeriodoActivo(Long institucionId) {
+        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public String validarPeriodoParaAsistencia(Long institucionId, LocalDate fecha, PeriodoAcademico periodo) {
+        if (periodo == null) {
+            return "No hay un período académico activo. Actívalo en Configuración académica antes de pasar lista.";
+        }
+        if (!periodo.contiene(fecha)) {
+            return "La fecha seleccionada no pertenece al período activo " + periodo.getCodigo()
+                    + " (" + periodo.getFechaInicio().format(FECHA_PERIODO)
+                    + " – " + periodo.getFechaFin().format(FECHA_PERIODO) + ").";
+        }
+        if (!nivelAcademicoRepository.existsByInstitucionIdAndActivoTrue(institucionId)) {
+            return "El período activo no tiene secciones registradas. Créalas en Configuración académica.";
+        }
+        if (!horarioLeccionRepository.existsByInstitucionIdAndPeriodoId(institucionId, periodo.getId())) {
+            return "El período activo no tiene lecciones registradas en el horario. Configúralas en Configuración académica.";
+        }
+        return null;
     }
 
     @Transactional(readOnly = true)
@@ -60,6 +93,7 @@ public class AsistenciaService {
 
     public FilaAsistencia registrarEstado(Long institucionId, Long estudianteId, Long nivelId, Long materiaId,
             Integer numeroLeccion, LocalDate fecha, String estado, String observaciones, Long registradoPorId) {
+        exigirPeriodoListoParaAsistencia(institucionId, fecha);
         NivelAcademico nivel = nivelAcademicoRepository.findByIdAndInstitucionId(nivelId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
         Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
@@ -108,6 +142,7 @@ public class AsistenciaService {
      */
     public int copiarDeLeccionAnterior(Long institucionId, Long nivelId, Long materiaId, LocalDate fecha,
             Integer leccionOrigen, Integer leccionDestino, Long registradoPorId) {
+        exigirPeriodoListoParaAsistencia(institucionId, fecha);
         List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
         int copiados = 0;
         for (Usuario estudiante : estudiantes) {
@@ -123,6 +158,13 @@ public class AsistenciaService {
             copiados++;
         }
         return copiados;
+    }
+
+    private void exigirPeriodoListoParaAsistencia(Long institucionId, LocalDate fecha) {
+        String aviso = validarPeriodoParaAsistencia(institucionId, fecha, obtenerUltimoPeriodoActivo(institucionId));
+        if (aviso != null) {
+            throw new IllegalArgumentException(aviso);
+        }
     }
 
     private FilaAsistencia construirFila(Usuario estudiante, AsistenciaEstudiante registro) {

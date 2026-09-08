@@ -97,4 +97,9 @@ public class PeriodoAcademico {
     public void setActivo(Boolean activo) {
         this.activo = activo;
     }
+
+    public boolean contiene(LocalDate fecha) {
+        return fecha != null && fechaInicio != null && fechaFin != null
+                && !fecha.isBefore(fechaInicio) && !fecha.isAfter(fechaFin);
+    }
 }

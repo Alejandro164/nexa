@@ -6,6 +6,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,6 +18,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.dto.FilaAsistencia;
+import com.chavescr.nexa.entity.Materia;
+import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.AsistenciaService;
 
@@ -27,6 +31,16 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 @RequestMapping("/gestion-academica/asistencia")
 public class AsistenciaController {
+
+    private static final String FRAGMENTO = "gestion-academica/asistencia/asistencia :: content";
+    private static final Map<DayOfWeek, String> DIA_ES = Map.of(
+            DayOfWeek.MONDAY, "LUNES",
+            DayOfWeek.TUESDAY, "MARTES",
+            DayOfWeek.WEDNESDAY, "MIERCOLES",
+            DayOfWeek.THURSDAY, "JUEVES",
+            DayOfWeek.FRIDAY, "VIERNES",
+            DayOfWeek.SATURDAY, "SABADO",
+            DayOfWeek.SUNDAY, "DOMINGO");
 
     private final AsistenciaService service;
     private final AlcanceDocenteService alcanceDocenteService;
@@ -42,9 +56,9 @@ public class AsistenciaController {
             @RequestParam(required = false) Integer numeroLeccion,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
             Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, nivelId, materiaId, numeroLeccion, fecha, docenteIdSiAplica(request, session));
-        return "gestion-academica/asistencia/asistencia :: content";
+        cargarPanel(model, requerirInstitucion(session), nivelId, materiaId, numeroLeccion, fecha,
+                docenteIdSiAplica(request, session));
+        return FRAGMENTO;
     }
 
     @PostMapping("/registrar")
@@ -76,7 +90,7 @@ public class AsistenciaController {
             model.addAttribute("error", e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, numeroLeccion, fecha, docenteIdSiAplica(request, session));
-        return "gestion-academica/asistencia/asistencia :: content";
+        return FRAGMENTO;
     }
 
     @PostMapping("/copiar-leccion-anterior")
@@ -88,67 +102,75 @@ public class AsistenciaController {
         exigirDocenteODirectorOAdmin(request);
         Long institucionId = requerirInstitucion(session);
         Long docenteId = docenteIdSiAplica(request, session);
-        String dia = DIA_ES.get(fecha.getDayOfWeek());
-        var lecciones = alcanceDocenteService.leccionesVisibles(institucionId, nivelId, materiaId, dia, docenteId);
-        Integer leccionOrigen = leccionAnterior(lecciones, numeroLeccion);
-        if (leccionOrigen == null) {
-            model.addAttribute("error", "No hay una lección anterior de la que copiar.");
-        } else {
-            Long registradoPorId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-            int copiados = service.copiarDeLeccionAnterior(institucionId, nivelId, materiaId, fecha, leccionOrigen,
-                    numeroLeccion, registradoPorId);
-            if (copiados == 0) {
-                model.addAttribute("error", "No hay asistencia registrada en la lección anterior para copiar.");
+        var periodo = service.obtenerUltimoPeriodoActivo(institucionId);
+        if (service.validarPeriodoParaAsistencia(institucionId, fecha, periodo) == null) {
+            String dia = DIA_ES.get(fecha.getDayOfWeek());
+            var lecciones = alcanceDocenteService.leccionesVisiblesEnPeriodo(
+                    institucionId, periodo.getId(), nivelId, materiaId, dia, docenteId);
+            Integer leccionOrigen = leccionAnterior(lecciones, numeroLeccion);
+            if (leccionOrigen == null) {
+                model.addAttribute("error", "No hay una lección anterior de la que copiar.");
             } else {
-                notificarPromedioDesactualizado(response);
+                Long registradoPorId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+                int copiados = service.copiarDeLeccionAnterior(institucionId, nivelId, materiaId, fecha, leccionOrigen,
+                        numeroLeccion, registradoPorId);
+                if (copiados == 0) {
+                    model.addAttribute("error", "No hay asistencia registrada en la lección anterior para copiar.");
+                } else {
+                    notificarPromedioDesactualizado(response);
+                }
             }
         }
         cargarPanel(model, institucionId, nivelId, materiaId, numeroLeccion, fecha, docenteId);
-        return "gestion-academica/asistencia/asistencia :: content";
+        return FRAGMENTO;
     }
 
     private void notificarPromedioDesactualizado(HttpServletResponse response) {
         response.setHeader("HX-Trigger", "promedioDesactualizado");
     }
 
-    private static final Map<DayOfWeek, String> DIA_ES = Map.of(
-            DayOfWeek.MONDAY, "LUNES",
-            DayOfWeek.TUESDAY, "MARTES",
-            DayOfWeek.WEDNESDAY, "MIERCOLES",
-            DayOfWeek.THURSDAY, "JUEVES",
-            DayOfWeek.FRIDAY, "VIERNES",
-            DayOfWeek.SATURDAY, "SABADO",
-            DayOfWeek.SUNDAY, "DOMINGO");
-
     private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Integer numeroLeccion,
             LocalDate fecha, Long docenteId) {
-        var secciones = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
-        if (nivelId == null && !secciones.isEmpty()) {
-            nivelId = secciones.get(0).getId();
-        }
-
-        // Las materias disponibles dependen de la sección: solo las que el horario asigna ahí.
-        var materias = alcanceDocenteService.materiasVisiblesEnNivel(institucionId, nivelId, docenteId);
-        Long materiaSolicitada = materiaId;
-        if (materiaSolicitada == null || materias.stream().noneMatch(m -> m.getId().equals(materiaSolicitada))) {
-            materiaId = materias.isEmpty() ? null : materias.get(0).getId();
-        }
-
         if (fecha == null) {
             fecha = LocalDate.now();
         }
-        String dia = DIA_ES.get(fecha.getDayOfWeek());
 
-        // Las lecciones disponibles dependen de la sección, la materia y el día de la semana de la fecha elegida.
-        var lecciones = alcanceDocenteService.leccionesVisibles(institucionId, nivelId, materiaId, dia, docenteId);
-        if (numeroLeccion == null || !lecciones.contains(numeroLeccion)) {
-            numeroLeccion = lecciones.isEmpty() ? null : lecciones.get(0);
+        var periodo = service.obtenerUltimoPeriodoActivo(institucionId);
+        String avisoPeriodo = service.validarPeriodoParaAsistencia(institucionId, fecha, periodo);
+
+        List<Materia> materias = List.of();
+        List<NivelAcademico> secciones = List.of();
+        List<Integer> lecciones = List.of();
+        Integer leccionAnterior = null;
+        List<FilaAsistencia> filas = List.of();
+        String mensajeVacio = null;
+
+        if (avisoPeriodo == null) {
+            Long periodoId = periodo.getId();
+            String dia = DIA_ES.get(fecha.getDayOfWeek());
+
+            materias = alcanceDocenteService.materiasVisiblesEnPeriodo(institucionId, periodoId, docenteId);
+            materiaId = elegirId(materiaId, materias, Materia::getId);
+
+            secciones = alcanceDocenteService.nivelesVisiblesEnPeriodoPorMateria(
+                    institucionId, periodoId, materiaId, docenteId);
+            nivelId = elegirId(nivelId, secciones, NivelAcademico::getId);
+
+            lecciones = alcanceDocenteService.leccionesVisiblesEnPeriodo(
+                    institucionId, periodoId, nivelId, materiaId, dia, docenteId);
+            if (numeroLeccion == null || !lecciones.contains(numeroLeccion)) {
+                numeroLeccion = lecciones.isEmpty() ? null : lecciones.get(0);
+            }
+            leccionAnterior = leccionAnterior(lecciones, numeroLeccion);
+            filas = nivelId != null && materiaId != null && numeroLeccion != null
+                    ? service.listarFilas(institucionId, nivelId, fecha, materiaId, numeroLeccion)
+                    : List.of();
+            mensajeVacio = mensajeTablaVacia(materias, secciones, lecciones, filas);
         }
 
-        // Botón "copiar de la lección anterior": solo aparece si la lección justo antes (numeroLeccion - 1)
-        // es también de esta materia, en esta sección, ese día (dos lecciones seguidas).
-        Integer leccionAnterior = leccionAnterior(lecciones, numeroLeccion);
-
+        model.addAttribute("fecha", fecha);
+        model.addAttribute("periodoActivo", periodo);
+        model.addAttribute("avisoPeriodo", avisoPeriodo);
         model.addAttribute("secciones", secciones);
         model.addAttribute("materias", materias);
         model.addAttribute("lecciones", lecciones);
@@ -156,17 +178,35 @@ public class AsistenciaController {
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("numeroLeccion", numeroLeccion);
         model.addAttribute("leccionAnterior", leccionAnterior);
-        model.addAttribute("fecha", fecha);
-        model.addAttribute("filas", nivelId != null && materiaId != null && numeroLeccion != null
-                ? service.listarFilas(institucionId, nivelId, fecha, materiaId, numeroLeccion)
-                : List.of());
+        model.addAttribute("filas", filas);
+        model.addAttribute("mensajeVacio", mensajeVacio);
     }
 
-    /**
-     * La lección {@code actual - 1}, solo si esa lección consecutiva también existe para esta
-     * materia/sección/día (es decir, son dos lecciones seguidas de la misma materia). Si la lección
-     * previa del horario no es consecutiva (p. ej. materia en Lección 1 y luego en Lección 5), no aplica.
-     */
+    private static String mensajeTablaVacia(List<Materia> materias, List<NivelAcademico> secciones,
+            List<Integer> lecciones, List<?> filas) {
+        if (materias.isEmpty()) {
+            return "No hay materias con lecciones registradas en el período activo.";
+        }
+        if (secciones.isEmpty()) {
+            return "Esta materia no tiene secciones asignadas en el período activo.";
+        }
+        if (lecciones.isEmpty()) {
+            return "Esta materia no tiene lección programada ese día en esta sección.";
+        }
+        if (filas.isEmpty()) {
+            return "No hay estudiantes activos en esta sección.";
+        }
+        return null;
+    }
+
+    private static <T> Long elegirId(Long solicitado, List<T> items, Function<T, Long> idDe) {
+        if (solicitado != null && items.stream().anyMatch(item -> idDe.apply(item).equals(solicitado))) {
+            return solicitado;
+        }
+        return items.isEmpty() ? null : idDe.apply(items.get(0));
+    }
+
+    /** Lección consecutiva anterior (actual - 1) si también existe para esta materia/sección. */
     private Integer leccionAnterior(List<Integer> lecciones, Integer actual) {
         if (actual == null) {
             return null;
@@ -175,12 +215,8 @@ public class AsistenciaController {
         return lecciones.contains(anterior) ? anterior : null;
     }
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-    }
-
     private Long requerirInstitucion(HttpSession session) {
-        Long id = institucionId(session);
+        Long id = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
         if (id == null) {
             throw new InstitucionNoSeleccionadaException();
         }

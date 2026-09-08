@@ -15,6 +15,8 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
     List<HorarioLeccion> findByInstitucionIdAndPeriodoIdAndNivelIdOrderByNumeroLeccionAsc(
             Long institucionId, Long periodoId, Long nivelId);
 
+    boolean existsByInstitucionIdAndPeriodoId(Long institucionId, Long periodoId);
+
     @Query("SELECT DISTINCT h.materia FROM HorarioLeccion h " +
             "WHERE h.institucion.id = :institucionId AND h.docente.id = :docenteId " +
             "ORDER BY h.materia.nombre")
@@ -28,32 +30,48 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
             @Param("institucionId") Long institucionId, @Param("docenteId") Long docenteId);
 
     @Query("SELECT DISTINCT h.materia FROM HorarioLeccion h " +
-            "WHERE h.institucion.id = :institucionId AND h.nivel.id = :nivelId " +
+            "WHERE h.institucion.id = :institucionId AND h.periodo.id = :periodoId " +
             "ORDER BY h.materia.nombre")
-    List<Materia> findMateriasDistinctByInstitucionIdAndNivelId(
-            @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId);
+    List<Materia> findMateriasDistinctByInstitucionIdAndPeriodoId(
+            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId);
 
     @Query("SELECT DISTINCT h.materia FROM HorarioLeccion h " +
-            "WHERE h.institucion.id = :institucionId AND h.nivel.id = :nivelId AND h.docente.id = :docenteId " +
-            "ORDER BY h.materia.nombre")
-    List<Materia> findMateriasDistinctByInstitucionIdAndNivelIdAndDocenteId(
-            @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId,
+            "WHERE h.institucion.id = :institucionId AND h.periodo.id = :periodoId " +
+            "AND h.docente.id = :docenteId ORDER BY h.materia.nombre")
+    List<Materia> findMateriasDistinctByInstitucionIdAndPeriodoIdAndDocenteId(
+            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId,
             @Param("docenteId") Long docenteId);
 
-    @Query("SELECT DISTINCT h.numeroLeccion FROM HorarioLeccion h " +
-            "WHERE h.institucion.id = :institucionId AND h.nivel.id = :nivelId " +
-            "AND h.materia.id = :materiaId AND h.dia = :dia ORDER BY h.numeroLeccion")
-    List<Integer> findNumerosLeccionByInstitucionIdAndNivelIdAndMateriaIdAndDia(
-            @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId,
-            @Param("materiaId") Long materiaId, @Param("dia") String dia);
+    @Query("SELECT DISTINCT h.nivel FROM HorarioLeccion h " +
+            "WHERE h.institucion.id = :institucionId AND h.periodo.id = :periodoId " +
+            "AND h.materia.id = :materiaId ORDER BY h.nivel.grado, h.nivel.seccion")
+    List<NivelAcademico> findNivelesDistinctByInstitucionIdAndPeriodoIdAndMateriaId(
+            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId,
+            @Param("materiaId") Long materiaId);
+
+    @Query("SELECT DISTINCT h.nivel FROM HorarioLeccion h " +
+            "WHERE h.institucion.id = :institucionId AND h.periodo.id = :periodoId " +
+            "AND h.materia.id = :materiaId AND h.docente.id = :docenteId " +
+            "ORDER BY h.nivel.grado, h.nivel.seccion")
+    List<NivelAcademico> findNivelesDistinctByInstitucionIdAndPeriodoIdAndMateriaIdAndDocenteId(
+            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId,
+            @Param("materiaId") Long materiaId, @Param("docenteId") Long docenteId);
 
     @Query("SELECT DISTINCT h.numeroLeccion FROM HorarioLeccion h " +
-            "WHERE h.institucion.id = :institucionId AND h.nivel.id = :nivelId " +
-            "AND h.materia.id = :materiaId AND h.dia = :dia AND h.docente.id = :docenteId " +
+            "WHERE h.institucion.id = :institucionId AND h.periodo.id = :periodoId AND h.nivel.id = :nivelId " +
+            "AND h.materia.id = :materiaId AND (:dia IS NULL OR h.dia = :dia) ORDER BY h.numeroLeccion")
+    List<Integer> findNumerosLeccionByInstitucionIdAndPeriodoIdAndNivelIdAndMateriaIdAndDia(
+            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId,
+            @Param("nivelId") Long nivelId, @Param("materiaId") Long materiaId, @Param("dia") String dia);
+
+    @Query("SELECT DISTINCT h.numeroLeccion FROM HorarioLeccion h " +
+            "WHERE h.institucion.id = :institucionId AND h.periodo.id = :periodoId AND h.nivel.id = :nivelId " +
+            "AND h.materia.id = :materiaId AND (:dia IS NULL OR h.dia = :dia) AND h.docente.id = :docenteId " +
             "ORDER BY h.numeroLeccion")
-    List<Integer> findNumerosLeccionByInstitucionIdAndNivelIdAndMateriaIdAndDiaAndDocenteId(
-            @Param("institucionId") Long institucionId, @Param("nivelId") Long nivelId,
-            @Param("materiaId") Long materiaId, @Param("dia") String dia, @Param("docenteId") Long docenteId);
+    List<Integer> findNumerosLeccionByInstitucionIdAndPeriodoIdAndNivelIdAndMateriaIdAndDiaAndDocenteId(
+            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId,
+            @Param("nivelId") Long nivelId, @Param("materiaId") Long materiaId,
+            @Param("dia") String dia, @Param("docenteId") Long docenteId);
 
     List<HorarioLeccion> findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccionOrderByIdAsc(
             Long institucionId, Long periodoId, Long nivelId, String dia, Integer numeroLeccion);
