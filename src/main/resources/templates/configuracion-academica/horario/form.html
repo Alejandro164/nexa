@@ -38,7 +38,7 @@
                             <option th:each="materia : ${materias}"
                                     th:value="${materia.id}"
                                     th:selected="${leccion.materia != null and leccion.materia.id == materia.id}"
-                                    th:text="|${materia.codigo} - ${materia.nombre}|">Materia</option>
+                                    th:text="${materia.nombre}">Materia</option>
                         </select>
                     </div>
                     <div class="form-group">

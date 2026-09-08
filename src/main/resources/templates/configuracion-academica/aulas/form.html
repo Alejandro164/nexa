@@ -26,19 +26,15 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Tipo</label>
-                            <select class="form-input" name="tipo" required>
-                                <option value="" disabled hidden th:selected="${aula.tipo == null or aula.tipo.isBlank()}">
+                            <select class="form-input" name="tipoAula.id" required>
+                                <option value="" disabled hidden
+                                        th:selected="${aula.tipoAula == null}">
                                     Seleccione un tipo
                                 </option>
-                                <option value="Regular" th:selected="${aula.tipo == 'Regular'}">Regular</option>
-                                <option value="Laboratorio" th:selected="${aula.tipo == 'Laboratorio'}">Laboratorio</option>
-                                <option value="Taller" th:selected="${aula.tipo == 'Taller'}">Taller</option>
-                                <option value="Sala de Cómputo" th:selected="${aula.tipo == 'Sala de Cómputo'}">Sala de Cómputo</option>
-                                <option value="Sala de Arte" th:selected="${aula.tipo == 'Sala de Arte'}">Sala de Arte</option>
-                                <option value="Sala de Música" th:selected="${aula.tipo == 'Sala de Música'}">Sala de Música</option>
-                                <option value="Auditorio" th:selected="${aula.tipo == 'Auditorio'}">Auditorio</option>
-                                <option value="Biblioteca" th:selected="${aula.tipo == 'Biblioteca'}">Biblioteca</option>
-                                <option value="Gimnasio" th:selected="${aula.tipo == 'Gimnasio'}">Gimnasio</option>
+                                <option th:each="tipo : ${tiposAula}"
+                                        th:value="${tipo.id}"
+                                        th:selected="${aula.tipoAula != null and aula.tipoAula.id == tipo.id}"
+                                        th:text="${tipo.nombre}">Tipo</option>
                             </select>
                         </div>
                     </div>

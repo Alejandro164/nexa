@@ -9,12 +9,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "materias", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_materia_institucion_codigo", columnNames = {"institucion_id", "codigo"})
-})
+@Table(name = "materias")
 public class Materia {
 
     @Id
@@ -25,14 +22,18 @@ public class Materia {
     @JoinColumn(name = "institucion_id", nullable = false)
     private Institucion institucion;
 
-    @Column(nullable = false, length = 30)
+    @Column(length = 30)
     private String codigo;
 
     @Column(nullable = false, length = 120)
     private String nombre;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String area;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_materia_id")
+    private TipoMateria tipoMateria;
 
     @Column(nullable = false, length = 60)
     private String tipo;
@@ -83,8 +84,16 @@ public class Materia {
         this.area = area;
     }
 
+    public TipoMateria getTipoMateria() {
+        return tipoMateria;
+    }
+
+    public void setTipoMateria(TipoMateria tipoMateria) {
+        this.tipoMateria = tipoMateria;
+    }
+
     public String getTipo() {
-        return tipo;
+        return tipoMateria != null ? tipoMateria.getNombre() : tipo;
     }
 
     public void setTipo(String tipo) {

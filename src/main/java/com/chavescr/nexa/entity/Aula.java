@@ -31,6 +31,10 @@ public class Aula {
     @Column(nullable = false)
     private Integer capacidad;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_aula_id")
+    private TipoAula tipoAula;
+
     @Column(nullable = false, length = 40)
     private String tipo;
 
@@ -72,8 +76,16 @@ public class Aula {
         this.capacidad = capacidad;
     }
 
+    public TipoAula getTipoAula() {
+        return tipoAula;
+    }
+
+    public void setTipoAula(TipoAula tipoAula) {
+        this.tipoAula = tipoAula;
+    }
+
     public String getTipo() {
-        return tipo;
+        return tipoAula != null ? tipoAula.getNombre() : tipo;
     }
 
     public void setTipo(String tipo) {
