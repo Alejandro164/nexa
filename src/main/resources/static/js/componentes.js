@@ -850,6 +850,14 @@ function abrirConfirmacionAcademica(trigger) {
         btnConfirmar.textContent = trigger.dataset.deleteConfirmLabel || 'Eliminar';
         btnConfirmar.className = trigger.dataset.deleteConfirmClass || 'btn btn-destructive';
     }
+    var dialogo = document.querySelector('#academic-delete-modal .academic-delete-dialog');
+    if (dialogo) {
+        dialogo.classList.toggle('academic-delete-dialog--positivo', trigger.dataset.deleteVariant === 'positivo');
+    }
+    var icono = document.querySelector('#academic-delete-modal .academic-delete-icon');
+    if (icono) {
+        icono.textContent = trigger.dataset.deleteIcon || '!';
+    }
     var modal = document.getElementById('academic-delete-modal');
     modal.style.display = 'flex';
     void modal.offsetWidth;

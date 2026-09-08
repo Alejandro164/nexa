@@ -25,42 +25,70 @@
                     </div>
 
                     <div class="form-group"
-                         th:with="tipoInicial=${tipoDestinatarioSeleccionado != null ? tipoDestinatarioSeleccionado : (oficio.destinatarioInstitucion != null ? 'INSTITUCION' : 'USUARIO')}">
-                        <label class="form-label">Destinatario *</label>
-                        <div style="display:flex; gap:1rem; margin-bottom:0.5rem;">
-                            <label style="display:flex; align-items:center; gap:4px; font-size:0.85rem; font-weight:500; cursor:pointer;">
-                                <input type="radio" name="tipoDestinatario" value="USUARIO"
-                                       th:checked="${tipoInicial == 'USUARIO'}"
-                                       onchange="toggleTipoDestinatario('USUARIO')"
-                                       style="accent-color:var(--primary); width:15px; height:15px;"> Usuario registrado
-                            </label>
-                            <label style="display:flex; align-items:center; gap:4px; font-size:0.85rem; font-weight:500; cursor:pointer;">
-                                <input type="radio" name="tipoDestinatario" value="INSTITUCION"
-                                       th:checked="${tipoInicial == 'INSTITUCION'}"
-                                       onchange="toggleTipoDestinatario('INSTITUCION')"
-                                       style="accent-color:var(--primary); width:15px; height:15px;"> Institución
-                            </label>
-                        </div>
+                         x-data="{
+                             nueva: false,
+                             cancelarNueva() {
+                                 this.nueva = false;
+                                 document.getElementById('nueva-institucion-nombre').value = '';
+                                 document.getElementById('nueva-institucion-cedula').value = '';
+                                 document.getElementById('nueva-institucion-email').value = '';
+                                 document.getElementById('hacienda-indicador-oficio').textContent = '';
+                                 document.getElementById('error-nueva-institucion').innerHTML = '';
+                             }
+                         }">
+                        <label class="form-label">Institución destinataria *</label>
 
-                        <div id="wrap-destinatario-usuario" th:style="${tipoInicial != 'USUARIO'} ? 'display:none' : ''">
-                            <select class="form-input" id="destinatario-usuario" name="destinatarioId"
-                                    th:disabled="${tipoInicial != 'USUARIO'}">
-                                <option value="" disabled selected>Seleccione un usuario...</option>
-                                <option th:each="u : ${usuariosDestinatario}" th:value="${u.id}"
-                                        th:text="${u.nombre} + ' (' + ${u.email} + ')'"
-                                        th:selected="${(oficio.destinatarioUsuario != null and oficio.destinatarioUsuario.id == u.id)
-                                                      or (destinatarioIdSeleccionado != null and tipoDestinatarioSeleccionado == 'USUARIO' and destinatarioIdSeleccionado == u.id)}">Usuario</option>
-                            </select>
-                        </div>
-
-                        <div id="wrap-destinatario-institucion" th:style="${tipoInicial != 'INSTITUCION'} ? 'display:none' : ''">
-                            <select class="form-input" id="destinatario-institucion" name="destinatarioId"
-                                    th:disabled="${tipoInicial != 'INSTITUCION'}">
-                                <option value="" disabled selected>Seleccione una institución...</option>
+                        <div id="wrap-destinatario-institucion" th:fragment="wrap-destinatario-institucion">
+                            <select class="form-input" id="destinatario-institucion" name="destinatarioInstitucionId" required>
+                                <option value="" disabled th:selected="${destinatarioIdSeleccionado == null}">Seleccione una institución...</option>
                                 <option th:each="i : ${institucionesDestinatario}" th:value="${i.id}" th:text="${i.nombre}"
-                                        th:selected="${(oficio.destinatarioInstitucion != null and oficio.destinatarioInstitucion.id == i.id)
-                                                      or (destinatarioIdSeleccionado != null and tipoDestinatarioSeleccionado == 'INSTITUCION' and destinatarioIdSeleccionado == i.id)}">Institución</option>
+                                        th:selected="${destinatarioIdSeleccionado != null and destinatarioIdSeleccionado == i.id}">Institución</option>
                             </select>
+                        </div>
+
+                        <button type="button" @click="nueva ? cancelarNueva() : nueva = true"
+                                style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.85rem; font-weight:500; padding:0.4rem 0;">
+                            <span x-text="nueva ? '− Cancelar' : '+ Registrar nueva institución'"></span>
+                        </button>
+
+                        <div id="panel-nueva-institucion-collapse"
+                             :style="'display:grid; grid-template-rows:' + (nueva ? '1fr' : '0fr') + '; transition:grid-template-rows 220ms ease; margin-top:0.25rem;'"
+                             style="display:grid; grid-template-rows:0fr; transition:grid-template-rows 220ms ease; margin-top:0.25rem;">
+                            <div style="overflow:hidden;">
+                                <div id="panel-nueva-institucion"
+                                     style="border:1px solid var(--border); border-radius:8px; padding:0.75rem;">
+                                    <div id="error-nueva-institucion">
+                                        <p th:fragment="error-nueva-institucion" th:if="${errorInstitucion}" class="form-alert-error" th:text="${errorInstitucion}"></p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Cédula jurídica</label>
+                                        <input class="form-input" type="text" id="nueva-institucion-cedula"
+                                               name="nuevaInstitucionCedula" placeholder="Ej. 3-101-123456"
+                                               onblur="consultarNombreHaciendaOficio()">
+                                        <p id="hacienda-indicador-oficio" style="margin:0.4rem 0 0; font-size:0.8rem; color:var(--text-secondary);"></p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Nombre *</label>
+                                        <input class="form-input" type="text" id="nueva-institucion-nombre"
+                                               name="nuevaInstitucionNombre" placeholder="Nombre de la institución">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:0;">
+                                        <label class="form-label">Correo electrónico</label>
+                                        <input class="form-input" type="email" id="nueva-institucion-email"
+                                               name="nuevaInstitucionEmail" placeholder="correo@institucion.ed.cr">
+                                        <p style="margin:0.4rem 0 0; font-size:0.8rem; color:var(--text-secondary);">
+                                            Necesario para poder emitir oficios a esta institución.
+                                        </p>
+                                    </div>
+                                    <button type="button" class="btn-secondary" style="margin-top:0.75rem;"
+                                            hx-post="/oficios/instituciones"
+                                            hx-include="#nueva-institucion-nombre,#nueva-institucion-cedula,#nueva-institucion-email"
+                                            hx-target="#wrap-destinatario-institucion" hx-swap="outerHTML"
+                                            hx-on:htmx:after-request="if(event.detail.successful &amp;&amp; event.detail.target.id==='wrap-destinatario-institucion'){ cancelarNueva() }">
+                                        Registrar institución
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -78,4 +106,64 @@
             </div>
         </div>
     </div>
+    <script>
+        function normalizarIdentificacionHaciendaOficio(cedula) {
+            var digits = (cedula || '').replace(/\D/g, '');
+            if (digits.length < 9 || digits.length > 12) {
+                return null;
+            }
+            if (digits.length >= 11 && digits.charAt(0) === '3') {
+                return digits.substring(0, 10);
+            }
+            return digits;
+        }
+
+        window.consultarNombreHaciendaOficio = function () {
+            var cedulaInput = document.getElementById('nueva-institucion-cedula');
+            var nombreInput = document.getElementById('nueva-institucion-nombre');
+            var msg = document.getElementById('hacienda-indicador-oficio');
+            if (!cedulaInput || !nombreInput || !msg) {
+                return;
+            }
+            var crudo = cedulaInput.value.trim();
+            if (!crudo) {
+                msg.textContent = '';
+                return;
+            }
+            var identificacion = normalizarIdentificacionHaciendaOficio(crudo);
+            if (!identificacion) {
+                msg.style.color = '#b45309';
+                msg.textContent = 'Ingrese una cédula de 9 a 12 dígitos.';
+                return;
+            }
+            msg.style.color = 'var(--text-secondary)';
+            msg.textContent = 'Consultando Hacienda…';
+            fetch('https://api.hacienda.go.cr/fe/ae?identificacion=' + encodeURIComponent(identificacion), {
+                headers: { 'Accept': 'application/json' }
+            }).then(function (respuesta) {
+                if (respuesta.status === 404) {
+                    throw new Error('No hay contribuyente inscrito con esa cédula.');
+                }
+                if (respuesta.status === 429) {
+                    throw new Error('Hacienda está limitando consultas. Intente en unos minutos.');
+                }
+                if (!respuesta.ok) {
+                    throw new Error('No se pudo consultar Hacienda. Revise la cédula e intente de nuevo.');
+                }
+                return respuesta.json();
+            }).then(function (data) {
+                if (!data || !data.nombre) {
+                    msg.style.color = '#b45309';
+                    msg.textContent = 'Hacienda no devolvió un nombre para esa cédula.';
+                    return;
+                }
+                nombreInput.value = data.nombre.trim();
+                msg.style.color = '#15803d';
+                msg.textContent = 'Nombre obtenido de Hacienda.';
+            }).catch(function (error) {
+                msg.style.color = '#b45309';
+                msg.textContent = error.message || 'No se pudo contactar el API de Hacienda.';
+            });
+        };
+    </script>
 </div>

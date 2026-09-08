@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.Oficio;
 import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 import com.chavescr.nexa.service.OficioService;
@@ -57,6 +58,7 @@ public class OficioController {
     public String formCrear(Model model, HttpSession session) {
         requerirInstitucion(session);
         model.addAttribute("oficio", new Oficio());
+        model.addAttribute("destinatarioIdSeleccionado", null);
         cargarOpcionesDestinatario(model);
         return "oficios/formulario :: form-content";
     }
@@ -64,7 +66,9 @@ public class OficioController {
     @GetMapping("/form/{id}")
     public String formEditar(@PathVariable Long id, Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("oficio", oficioService.obtenerPorId(institucionId, id));
+        Oficio oficio = oficioService.obtenerPorId(institucionId, id);
+        model.addAttribute("oficio", oficio);
+        model.addAttribute("destinatarioIdSeleccionado", oficio.getDestinatarioInstitucion().getId());
         cargarOpcionesDestinatario(model);
         return "oficios/formulario :: form-content";
     }
@@ -72,16 +76,16 @@ public class OficioController {
     @PostMapping
     public String guardar(@RequestParam(required = false) Long id,
             @RequestParam String asunto,
-            @RequestParam String tipoDestinatario, @RequestParam Long destinatarioId,
+            @RequestParam Long destinatarioInstitucionId,
             @RequestParam(required = false) String numeroCircular,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
             if (id == null) {
                 Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-                oficioService.crear(institucionId, usuarioId, asunto, tipoDestinatario, destinatarioId, numeroCircular);
+                oficioService.crear(institucionId, usuarioId, asunto, destinatarioInstitucionId, numeroCircular);
             } else {
-                oficioService.actualizar(institucionId, id, asunto, tipoDestinatario, destinatarioId, numeroCircular);
+                oficioService.actualizar(institucionId, id, asunto, destinatarioInstitucionId, numeroCircular);
             }
             cargarLista(model, institucionId, null);
             return "oficios/lista :: content";
@@ -94,10 +98,28 @@ public class OficioController {
             oficio.setAsunto(asunto);
             oficio.setNumeroCircular(numeroCircular);
             model.addAttribute("oficio", oficio);
-            model.addAttribute("tipoDestinatarioSeleccionado", tipoDestinatario);
-            model.addAttribute("destinatarioIdSeleccionado", destinatarioId);
+            model.addAttribute("destinatarioIdSeleccionado", destinatarioInstitucionId);
             cargarOpcionesDestinatario(model);
             return "oficios/formulario :: form-content";
+        }
+    }
+
+    @PostMapping("/instituciones")
+    public String registrarInstitucion(@RequestParam String nuevaInstitucionNombre,
+            @RequestParam(required = false) String nuevaInstitucionCedula,
+            @RequestParam(required = false) String nuevaInstitucionEmail,
+            Model model, HttpServletResponse response) {
+        try {
+            Institucion nueva = oficioService.registrarInstitucionDestinataria(nuevaInstitucionNombre,
+                    nuevaInstitucionCedula, nuevaInstitucionEmail);
+            model.addAttribute("institucionesDestinatario", oficioService.listarInstitucionesActivas());
+            model.addAttribute("destinatarioIdSeleccionado", nueva.getId());
+            return "oficios/formulario :: wrap-destinatario-institucion";
+        } catch (Exception e) {
+            response.setHeader("HX-Retarget", "#error-nueva-institucion");
+            response.setHeader("HX-Reswap", "innerHTML");
+            model.addAttribute("errorInstitucion", e.getMessage());
+            return "oficios/formulario :: error-nueva-institucion";
         }
     }
 
@@ -201,7 +223,6 @@ public class OficioController {
     }
 
     private void cargarOpcionesDestinatario(Model model) {
-        model.addAttribute("usuariosDestinatario", oficioService.listarUsuariosActivos());
         model.addAttribute("institucionesDestinatario", oficioService.listarInstitucionesActivas());
     }
 

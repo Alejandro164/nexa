@@ -17,13 +17,12 @@
                     <td colspan="7" class="table-empty">No se encontraron oficios.</td>
                 </tr>
                 <tr th:each="o : ${oficios}"
-                    th:with="nombreDest=${o.destinatarioUsuario != null ? o.destinatarioUsuario.nombre : (o.destinatarioInstitucion != null ? o.destinatarioInstitucion.nombre : '—')}">
+                    th:with="nombreDest=${o.destinatarioInstitucion != null ? o.destinatarioInstitucion.nombre : '—'}">
                     <td class="col-oficio" th:title="${o.numero}"><span class="oficio-number" th:text="${o.numero}">2026-001</span></td>
                     <td class="col-redactor" th:title="${o.redactadoPor != null ? o.redactadoPor.nombre : ''}"
                         th:text="${o.redactadoPor != null ? o.redactadoPor.nombre : '—'}">Redactor</td>
                     <td class="col-asunto" th:title="${o.asunto}" th:text="${o.asunto}">Asunto</td>
-                    <td class="col-destinatario"
-                        th:title="${nombreDest}" th:text="${nombreDest} + ${o.destinatarioUsuario != null ? ' (usuario)' : (o.destinatarioInstitucion != null ? ' (institución)' : '')}">Destinatario</td>
+                    <td class="col-destinatario" th:title="${nombreDest}" th:text="${nombreDest}">Destinatario</td>
                     <td class="col-circular">
                         <span th:if="${o.numeroCircular != null}" class="badge-circular" th:text="${o.numeroCircular}">CIR-2026-012</span>
                         <span th:if="${o.numeroCircular == null}" style="color:#94a3b8;" title="Sin circular asignada">—</span>
@@ -54,7 +53,7 @@
                             </button>
                             <button th:if="${o.estado == 'PENDIENTE'}" class="btn-view" style="background:rgba(34,197,94,0.1); color:#16a34a;"
                                     onclick="abrirConfirmacionAcademica(this)"
-                                    th:attr="data-delete-url='/oficios/' + ${o.id} + '/emitir',data-delete-method='POST',data-delete-target='#oficios-lista-content',data-delete-swap='outerHTML',data-delete-title='Emitir oficio',data-delete-confirm-label='Emitir',data-delete-confirm-class='btn btn-primary',data-delete-message='¿Deseas emitir el oficio ' + ${o.numero} + ' y enviar el correo a ' + ${nombreDest} + '? Esta acción no se puede deshacer.'"
+                                    th:attr="data-delete-url='/oficios/' + ${o.id} + '/emitir',data-delete-method='POST',data-delete-target='#oficios-lista-content',data-delete-swap='outerHTML',data-delete-title='Emitir oficio',data-delete-confirm-label='Emitir',data-delete-confirm-class='btn btn-primary',data-delete-variant='positivo',data-delete-icon='✓',data-delete-message='¿Deseas emitir el oficio ' + ${o.numero} + ' y enviar el correo a ' + ${nombreDest} + '? Esta acción no se puede deshacer.'"
                                     title="Emitir oficio">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                             </button>
