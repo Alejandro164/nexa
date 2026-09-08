@@ -23,7 +23,8 @@
                         <td style="padding: 12px; font-weight: 600; color: var(--text-primary);" th:text="${inst.codigo}">001</td>
                         <td style="padding: 12px;">
                             <div style="font-weight: 600; color: var(--text-primary);" th:text="${inst.nombre}">Institución</div>
-                            <div style="font-size: 0.8rem; color: var(--text-secondary);" th:text="${inst.email}">email@ejemplo.com</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);"
+                                th:text="${inst.cedula != null ? inst.cedula : inst.email}">email@ejemplo.com</div>
                         </td>
                         <td style="padding: 12px; color: var(--text-secondary);" th:text="${inst.direccion}">Dirección</td>
                         <td style="padding: 12px;">

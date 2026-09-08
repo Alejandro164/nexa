@@ -20,12 +20,25 @@
 
                         <input type="hidden" name="id" th:value="${institucion.id}" />
 
+                        <div class="form-group" style="margin-bottom: 1.25rem;">
+                            <label class="form-label"
+                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Cédula</label>
+                            <input type="text" name="cedula" id="institucion-cedula" class="form-input"
+                                th:value="${institucion.cedula}" maxlength="20"
+                                placeholder="3-101-123456 o 1-2345-6789"
+                                onblur="consultarNombreHacienda()"
+                                style="padding-left:14px;" />
+                            <p id="hacienda-indicador"
+                                style="margin:0.4rem 0 0; font-size:0.8rem; color:var(--text-secondary);"></p>
+                        </div>
+
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label class="form-label"
                                     style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Nombre</label>
-                                <input type="text" name="nombre" class="form-input" th:value="${institucion.nombre}"
-                                    required placeholder="Ej. CTP de San José" style="padding-left:14px;" />
+                                <input type="text" name="nombre" id="institucion-nombre" class="form-input"
+                                    th:value="${institucion.nombre}" required placeholder="Ej. CTP de San José"
+                                    style="padding-left:14px;" />
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label class="form-label"
@@ -60,8 +73,9 @@
                         </div>
 
                         <div class="form-group" style="margin-bottom: 1.25rem;">
+                            <input type="hidden" name="_activa" value="on" />
                             <label class="checkbox-label">
-                                <input type="checkbox" class="custom-checkbox" name="activa"
+                                <input type="checkbox" class="custom-checkbox" name="activa" value="true"
                                     th:checked="${institucion.id == null ? true : institucion.activa}" />
                                 <span class="custom-checkbox-control">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
@@ -86,6 +100,66 @@
                 </div>
             </div>
         </div>
+        <script>
+            function normalizarIdentificacionHacienda(cedula) {
+                var digits = (cedula || '').replace(/\D/g, '');
+                if (digits.length < 9 || digits.length > 12) {
+                    return null;
+                }
+                if (digits.length >= 11 && digits.charAt(0) === '3') {
+                    return digits.substring(0, 10);
+                }
+                return digits;
+            }
+
+            window.consultarNombreHacienda = function () {
+                var cedulaInput = document.getElementById('institucion-cedula');
+                var nombreInput = document.getElementById('institucion-nombre');
+                var msg = document.getElementById('hacienda-indicador');
+                if (!cedulaInput || !nombreInput || !msg) {
+                    return;
+                }
+                var crudo = cedulaInput.value.trim();
+                if (!crudo) {
+                    msg.textContent = '';
+                    return;
+                }
+                var identificacion = normalizarIdentificacionHacienda(crudo);
+                if (!identificacion) {
+                    msg.style.color = '#b45309';
+                    msg.textContent = 'Ingrese una cédula de 9 a 12 dígitos.';
+                    return;
+                }
+                msg.style.color = 'var(--text-secondary)';
+                msg.textContent = 'Consultando Hacienda…';
+                fetch('https://api.hacienda.go.cr/fe/ae?identificacion=' + encodeURIComponent(identificacion), {
+                    headers: { 'Accept': 'application/json' }
+                }).then(function (respuesta) {
+                    if (respuesta.status === 404) {
+                        throw new Error('No hay contribuyente inscrito con esa cédula.');
+                    }
+                    if (respuesta.status === 429) {
+                        throw new Error('Hacienda está limitando consultas. Intente en unos minutos.');
+                    }
+                    if (!respuesta.ok) {
+                        throw new Error('No se pudo consultar Hacienda. Revise la cédula e intente de nuevo.');
+                    }
+                    return respuesta.json();
+                }).then(function (data) {
+                    if (!data || !data.nombre) {
+                        msg.style.color = '#b45309';
+                        msg.textContent = 'Hacienda no devolvió un nombre para esa cédula.';
+                        return;
+                    }
+                    nombreInput.value = data.nombre.trim();
+                    msg.style.color = '#15803d';
+                    msg.textContent = 'Nombre obtenido de Hacienda.';
+                }).catch(function (error) {
+                    msg.style.color = '#b45309';
+                    msg.textContent = error.message || 'No se pudo contactar el API de Hacienda.';
+                });
+            };
+        </script>
     </div>
 </body>
 
