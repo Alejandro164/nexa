@@ -1,6 +1,8 @@
 package com.chavescr.nexa.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,25 +55,70 @@ public class TareaDefinicionService {
                 .orElseThrow(() -> new IllegalArgumentException("Tarea no encontrada"));
     }
 
+    /**
+     * Peso efectivo de cada tarea dentro del componente (base 100).
+     * Las de porcentaje fijo conservan su valor; el resto (100 − suma de fijos) se reparte
+     * equitativamente entre las ponderadas (porcentaje null).
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> calcularPesosEfectivos(List<TareaDefinicion> tareas) {
+        Map<Long, Double> pesos = new LinkedHashMap<>();
+        if (tareas == null || tareas.isEmpty()) {
+            return pesos;
+        }
+        int sumaFijos = tareas.stream()
+                .filter(t -> t.getPorcentaje() != null)
+                .mapToInt(TareaDefinicion::getPorcentaje)
+                .sum();
+        long ponderadas = tareas.stream().filter(TareaDefinicion::isPonderado).count();
+        double resto = Math.max(0, 100 - sumaFijos);
+        double pesoPonderado = ponderadas == 0 ? 0 : resto / ponderadas;
+        for (TareaDefinicion tarea : tareas) {
+            pesos.put(tarea.getId(),
+                    tarea.isPonderado() ? pesoPonderado : tarea.getPorcentaje().doubleValue());
+        }
+        return pesos;
+    }
+
     public TareaDefinicion guardarTarea(Long institucionId, Long nivelId, Long materiaId, TareaDefinicion datos) {
         NivelAcademico nivel = nivelRepository.findByIdAndInstitucionId(nivelId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
         Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
 
-        int porcentaje = datos.getPorcentaje() != null ? datos.getPorcentaje() : 0;
-        int sumaExistente = listarTareas(institucionId, nivelId, materiaId).stream()
-                .filter(t -> !t.getId().equals(datos.getId()))
-                .mapToInt(TareaDefinicion::getPorcentaje)
-                .sum();
-        if (sumaExistente + porcentaje > 100) {
-            throw new IllegalArgumentException(
-                    "La suma de las tareas no puede superar 100% (actual: " + sumaExistente + "%)");
+        Integer puntosTotales = datos.getPuntosTotales();
+        if (puntosTotales == null || puntosTotales < 1) {
+            throw new IllegalArgumentException("Debes indicar los puntos totales de la tarea");
         }
 
-        Integer puntosTotales = datos.getPuntosTotales();
-        if (puntosTotales != null && puntosTotales < 0) {
-            throw new IllegalArgumentException("Los puntos totales no pueden ser negativos");
+        List<TareaDefinicion> existentes = listarTareas(institucionId, nivelId, materiaId);
+        int sumaFijosOtros = existentes.stream()
+                .filter(t -> datos.getId() == null || !t.getId().equals(datos.getId()))
+                .filter(t -> t.getPorcentaje() != null)
+                .mapToInt(TareaDefinicion::getPorcentaje)
+                .sum();
+        long ponderadasOtras = existentes.stream()
+                .filter(t -> datos.getId() == null || !t.getId().equals(datos.getId()))
+                .filter(TareaDefinicion::isPonderado)
+                .count();
+        Integer porcentaje = datos.getPorcentaje();
+        if (porcentaje != null) {
+            if (porcentaje < 1 || porcentaje > 100) {
+                throw new IllegalArgumentException("El porcentaje debe estar entre 1 y 100");
+            }
+            if (sumaFijosOtros + porcentaje > 100) {
+                throw new IllegalArgumentException(
+                        "La suma de los porcentajes fijos no puede superar 100% (disponible: "
+                                + (100 - sumaFijosOtros) + "%)");
+            }
+            if (ponderadasOtras > 0 && sumaFijosOtros + porcentaje >= 100) {
+                throw new IllegalArgumentException(
+                        "Debes dejar un porcentaje disponible para las tareas ponderadas (máximo: "
+                                + Math.max(0, 99 - sumaFijosOtros) + "%)");
+            }
+        } else if (sumaFijosOtros >= 100) {
+            throw new IllegalArgumentException(
+                    "El 100% ya está asignado a tareas con porcentaje fijo. Reduce una de ellas para poder ponderar esta.");
         }
 
         TareaDefinicion tarea = datos.getId() != null

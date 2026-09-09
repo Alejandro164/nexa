@@ -37,21 +37,22 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Porcentaje *</label>
-                        <input class="form-input" type="number" name="porcentaje" min="0" max="100" required
-                               th:value="${tarea.porcentaje}" placeholder="Ej. 15">
+                        <label class="form-label">Puntos totales *</label>
+                        <div class="input-suffix-wrap">
+                            <input class="form-input" type="number" name="puntosTotales" min="1" required
+                                   style="padding-left: 10px;" th:value="${tarea.puntosTotales}" placeholder="Ej. 50">
+                            <span class="input-suffix">pts</span>
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Puntos totales (opcional)</label>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div class="input-suffix-wrap" style="flex: 1;">
-                                <input class="form-input" type="number" name="puntosTotales" min="0"
-                                       style="padding-left: 10px;" th:value="${tarea.puntosTotales}">
-                                <span class="input-suffix">pts</span>
-                            </div>
+                        <div th:if="${sinCupoPorcentaje}" class="form-alert-error" style="margin-bottom: 10px;">
+                            El 100% ya está asignado a tareas con porcentaje fijo. Reduce una de ellas para poder agregar o ponderar esta.
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <label class="form-label" style="margin: 0;">Porcentaje</label>
                             <span class="info-tooltip">
-                                <button type="button" class="info-tooltip-btn" aria-label="Información sobre puntos totales">
+                                <button type="button" class="info-tooltip-btn" aria-label="Información sobre el porcentaje">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="10" />
@@ -59,20 +60,88 @@
                                         <line x1="12" y1="8" x2="12.01" y2="8" />
                                     </svg>
                                 </button>
-                                <span class="info-tooltip-text">
-                                    Si se define, al evaluar se ingresan puntos obtenidos y la calificación se calcula
-                                    automáticamente. Si se deja vacío, la calificación se ingresa directamente (0-100).
+                                <span class="info-tooltip-text" style="width: 280px;">
+                                    Ponderado (recomendado): el sistema reparte lo que falte para 100% entre las
+                                    tareas ponderadas. Ejemplo: 2 ponderadas → 50% cada una. Si una vale 40% fijo
+                                    y hay 2 ponderadas, cada ponderada vale 30%. La suma de los porcentajes fijos no
+                                    puede superar 100%.
                                 </span>
                             </span>
                         </div>
+                        <div style="display: flex; gap: 1.25rem; margin-bottom: 10px;">
+                            <label class="radio-label">
+                                <input type="radio" name="modoPorcentaje" class="custom-radio" value="ponderado"
+                                       id="modo-porcentaje-ponderado"
+                                       th:checked="${tarea.porcentaje == null}"
+                                       onchange="toggleModoPorcentajeTarea()">
+                                Ponderado
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="modoPorcentaje" class="custom-radio" value="fijo"
+                                       id="modo-porcentaje-fijo"
+                                       th:checked="${tarea.porcentaje != null}"
+                                       onchange="toggleModoPorcentajeTarea()">
+                                Porcentaje fijo
+                            </label>
+                        </div>
+                        <div id="wrap-porcentaje-fijo" th:style="${tarea.porcentaje == null} ? 'display:none' : ''">
+                            <div class="input-suffix-wrap">
+                                <input class="form-input" type="number" name="porcentaje" id="tarea-porcentaje"
+                                       min="1" th:max="${porcentajeDisponible}"
+                                       style="padding-left: 10px;"
+                                       th:value="${tarea.porcentaje}"
+                                       th:disabled="${tarea.porcentaje == null}"
+                                       th:required="${tarea.porcentaje != null}"
+                                       th:placeholder="|Máx. ${porcentajeDisponible}%|"
+                                       oninput="limitarPorcentajeTarea(this)">
+                                <span class="input-suffix">%</span>
+                            </div>
+                            <p class="text-muted text-sm" style="margin: 6px 0 0 0;"
+                               th:text="'Disponible: ' + ${porcentajeDisponible} + '% de 100%. No se puede superar ese tope.'">
+                                Disponible: 100% de 100%. No se puede superar ese tope.
+                            </p>
+                        </div>
+                        <p id="hint-porcentaje-ponderado" class="text-muted text-sm" style="margin: 0;"
+                           th:style="${tarea.porcentaje != null} ? 'display:none; margin: 0;' : 'margin: 0;'"
+                           th:text="'El sistema asignará ' + ${#numbers.formatDecimal(pesoPonderadoEstimado, 1, 1)} + '% a esta tarea (reparte el ' + ${porcentajeDisponible} + '% restante entre las ponderadas).'">
+                            El sistema asignará 50.0% a esta tarea.
+                        </p>
                     </div>
 
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
-                        <button type="submit" class="btn-primary">Guardar</button>
+                        <button type="submit" class="btn-primary" th:disabled="${sinCupoPorcentaje}">Guardar</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+    <script>
+        window.toggleModoPorcentajeTarea = function () {
+            var ponderado = document.getElementById('modo-porcentaje-ponderado');
+            var input = document.getElementById('tarea-porcentaje');
+            var wrap = document.getElementById('wrap-porcentaje-fijo');
+            var hint = document.getElementById('hint-porcentaje-ponderado');
+            if (!ponderado || !input) return;
+            var esPonderado = ponderado.checked;
+            input.disabled = esPonderado;
+            if (esPonderado) {
+                input.removeAttribute('required');
+                input.value = '';
+                if (wrap) wrap.style.display = 'none';
+                if (hint) hint.style.display = '';
+            } else {
+                input.setAttribute('required', 'required');
+                if (wrap) wrap.style.display = '';
+                if (hint) hint.style.display = 'none';
+                input.focus();
+            }
+        };
+        window.limitarPorcentajeTarea = function (input) {
+            if (input.value === '') return;
+            var val = Number(input.value);
+            var tope = Math.min(100, Number(input.max) || 100);
+            if (val > tope) input.value = tope;
+        };
+    </script>
 </div>

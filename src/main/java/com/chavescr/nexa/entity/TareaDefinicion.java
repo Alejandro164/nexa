@@ -41,7 +41,8 @@ public class TareaDefinicion {
     @Column(nullable = false)
     private LocalDate fechaEntrega;
 
-    @Column(nullable = false)
+    /** Null = ponderado: el sistema reparte el porcentaje restante entre estas tareas. */
+    @Column
     private Integer porcentaje;
 
     @Column(name = "puntos_totales")
@@ -117,5 +118,9 @@ public class TareaDefinicion {
 
     public void setPuntosTotales(Integer puntosTotales) {
         this.puntosTotales = puntosTotales;
+    }
+
+    public boolean isPonderado() {
+        return porcentaje == null;
     }
 }

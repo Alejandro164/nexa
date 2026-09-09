@@ -1,6 +1,8 @@
 package com.chavescr.nexa.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +55,31 @@ public class IndicadorCotidianoService {
                 .orElseThrow(() -> new IllegalArgumentException("Indicador no encontrado"));
     }
 
+    /**
+     * Peso efectivo de cada indicador dentro del cotidiano (base 100).
+     * Los de porcentaje fijo conservan su valor; el resto (100 − suma de fijos) se reparte
+     * equitativamente entre los ponderados (porcentaje null).
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> calcularPesosEfectivos(List<IndicadorCotidiano> indicadores) {
+        Map<Long, Double> pesos = new LinkedHashMap<>();
+        if (indicadores == null || indicadores.isEmpty()) {
+            return pesos;
+        }
+        int sumaFijos = indicadores.stream()
+                .filter(i -> i.getPorcentaje() != null)
+                .mapToInt(IndicadorCotidiano::getPorcentaje)
+                .sum();
+        long ponderados = indicadores.stream().filter(IndicadorCotidiano::isPonderado).count();
+        double resto = Math.max(0, 100 - sumaFijos);
+        double pesoPonderado = ponderados == 0 ? 0 : resto / ponderados;
+        for (IndicadorCotidiano indicador : indicadores) {
+            pesos.put(indicador.getId(),
+                    indicador.isPonderado() ? pesoPonderado : indicador.getPorcentaje().doubleValue());
+        }
+        return pesos;
+    }
+
     public IndicadorCotidiano guardarIndicador(Long institucionId, Long nivelId, Long materiaId,
             IndicadorCotidiano datos) {
         NivelAcademico nivel = nivelRepository.findByIdAndInstitucionId(nivelId, institucionId)
@@ -60,19 +87,39 @@ public class IndicadorCotidianoService {
         Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
 
-        int porcentaje = datos.getPorcentaje() != null ? datos.getPorcentaje() : 0;
-        int sumaExistente = listarIndicadores(institucionId, nivelId, materiaId).stream()
-                .filter(i -> !i.getId().equals(datos.getId()))
-                .mapToInt(IndicadorCotidiano::getPorcentaje)
-                .sum();
-        if (sumaExistente + porcentaje > 100) {
-            throw new IllegalArgumentException(
-                    "La suma de los indicadores no puede superar 100% (actual: " + sumaExistente + "%)");
+        Integer puntosTotales = datos.getPuntosTotales();
+        if (puntosTotales == null || puntosTotales < 1) {
+            throw new IllegalArgumentException("Debes indicar los puntos totales del indicador");
         }
 
-        Integer puntosTotales = datos.getPuntosTotales();
-        if (puntosTotales != null && puntosTotales < 0) {
-            throw new IllegalArgumentException("Los puntos totales no pueden ser negativos");
+        List<IndicadorCotidiano> existentes = listarIndicadores(institucionId, nivelId, materiaId);
+        int sumaFijosOtros = existentes.stream()
+                .filter(i -> datos.getId() == null || !i.getId().equals(datos.getId()))
+                .filter(i -> i.getPorcentaje() != null)
+                .mapToInt(IndicadorCotidiano::getPorcentaje)
+                .sum();
+        long ponderadosOtros = existentes.stream()
+                .filter(i -> datos.getId() == null || !i.getId().equals(datos.getId()))
+                .filter(IndicadorCotidiano::isPonderado)
+                .count();
+        Integer porcentaje = datos.getPorcentaje();
+        if (porcentaje != null) {
+            if (porcentaje < 1 || porcentaje > 100) {
+                throw new IllegalArgumentException("El porcentaje debe estar entre 1 y 100");
+            }
+            if (sumaFijosOtros + porcentaje > 100) {
+                throw new IllegalArgumentException(
+                        "La suma de los porcentajes fijos no puede superar 100% (disponible: "
+                                + (100 - sumaFijosOtros) + "%)");
+            }
+            if (ponderadosOtros > 0 && sumaFijosOtros + porcentaje >= 100) {
+                throw new IllegalArgumentException(
+                        "Debes dejar un porcentaje disponible para los indicadores ponderados (máximo: "
+                                + Math.max(0, 99 - sumaFijosOtros) + "%)");
+            }
+        } else if (sumaFijosOtros >= 100) {
+            throw new IllegalArgumentException(
+                    "El 100% ya está asignado a indicadores con porcentaje fijo. Reduce uno de ellos para poder ponderar este.");
         }
 
         IndicadorCotidiano indicador = datos.getId() != null

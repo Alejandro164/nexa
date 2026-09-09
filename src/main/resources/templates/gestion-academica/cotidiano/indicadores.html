@@ -63,7 +63,12 @@
                                       th:text="${#numbers.formatDecimal(promedioPorIndicador.get(i.id), 1, 1)} + '%'">85.0%</span>
                                 <span th:unless="${promedioPorIndicador.get(i.id)} != null" class="text-muted">—</span>
                             </td>
-                            <td><span class="badge badge-primary" th:text="${i.porcentaje} + '%'">15%</span></td>
+                            <td>
+                                <span th:if="${i.ponderado}" class="badge badge-info"
+                                      th:text="'Ponderado · ' + ${#numbers.formatDecimal(pesosEfectivos.get(i.id), 1, 1)} + '%'">Ponderado · 50.0%</span>
+                                <span th:unless="${i.ponderado}" class="badge badge-primary"
+                                      th:text="${#numbers.formatDecimal(pesosEfectivos.get(i.id), 1, 1)} + '%'">15.0%</span>
+                            </td>
                             <td>
                                 <span th:if="${i.puntosTotales != null}" th:text="${i.puntosTotales} + ' pts'">50 pts</span>
                                 <span th:unless="${i.puntosTotales != null}" class="text-muted">N/A</span>
@@ -104,7 +109,8 @@
                     <tfoot>
                         <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
                             <td colspan="2">Total asignado</td>
-                            <td><span style="color: var(--primary);" th:text="${totalAsignado} + '%'">0%</span></td>
+                            <td><span style="color: var(--primary);"
+                                      th:text="${#numbers.formatDecimal(totalAsignado, 1, 1)} + '%'">0.0%</span></td>
                             <td></td>
                             <td></td>
                             <td></td>

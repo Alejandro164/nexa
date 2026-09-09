@@ -100,9 +100,9 @@ public class EvaluacionCotidianaService {
     }
 
     /**
-     * Si el indicador tiene puntosTotales definidos, la calificación se calcula a partir de
-     * puntosObtenidos; si no, se ingresa directamente (0-100). Los puntos totales del indicador son
-     * opcionales, así que este método soporta ambos modos según ese indicador en particular.
+     * Los indicadores nuevos siempre tienen puntosTotales. Si el indicador los define, la
+     * calificación se calcula a partir de puntosObtenidos; si un registro anterior no los tiene,
+     * se ingresa directamente (0-100).
      */
     public FilaEvaluacionCotidiana registrarCalificacion(Long institucionId, Long estudianteId, Long indicadorId,
             Long periodoId, Integer calificacion, Integer puntosObtenidos, String observacion) {

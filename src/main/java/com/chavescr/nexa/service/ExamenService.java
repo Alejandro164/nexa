@@ -1,5 +1,6 @@
 package com.chavescr.nexa.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -99,8 +100,34 @@ public class ExamenService {
     }
 
     /**
-     * A diferencia de indicadores/tareas, en las pruebas los puntos totales son obligatorios: la
-     * calificación siempre se deriva de puntosObtenidos/puntosTotales, nunca se ingresa directamente.
+     * Peso efectivo de cada prueba dentro del componente (base 100).
+     * Las de porcentaje fijo conservan su valor; el resto (100 − suma de fijos) se reparte
+     * equitativamente entre las ponderadas (porcentaje null).
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> calcularPesosEfectivos(List<Examen> examenes) {
+        Map<Long, Double> pesos = new LinkedHashMap<>();
+        if (examenes == null || examenes.isEmpty()) {
+            return pesos;
+        }
+        int sumaFijos = examenes.stream()
+                .filter(e -> e.getPorcentaje() != null)
+                .mapToInt(Examen::getPorcentaje)
+                .sum();
+        long ponderadas = examenes.stream().filter(Examen::isPonderado).count();
+        double resto = Math.max(0, 100 - sumaFijos);
+        double pesoPonderado = ponderadas == 0 ? 0 : resto / ponderadas;
+        for (Examen examen : examenes) {
+            pesos.put(examen.getId(),
+                    examen.isPonderado() ? pesoPonderado : examen.getPorcentaje().doubleValue());
+        }
+        return pesos;
+    }
+
+    /**
+     * En las pruebas los puntos totales son obligatorios: la calificación siempre se deriva de
+     * puntosObtenidos/puntosTotales. El porcentaje sí puede ser ponderado (null): el sistema
+     * reparte el resto hasta 100%.
      */
     public Examen guardarPrueba(Long institucionId, Long nivelId, Long materiaId, Examen datos) {
         NivelAcademico nivel = nivelRepository.findByIdAndInstitucionId(nivelId, institucionId)
@@ -112,23 +139,38 @@ public class ExamenService {
         if (datos.getTitulo() == null || datos.getTitulo().isBlank()) {
             throw new IllegalArgumentException("Debes indicar el nombre de la prueba");
         }
-        if (datos.getPorcentaje() == null) {
-            throw new IllegalArgumentException("Debes indicar el porcentaje de la prueba");
-        }
-        if (datos.getPorcentaje() < 0 || datos.getPorcentaje() > 100) {
-            throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
-        }
-        int sumaExistente = listarExamenes(institucionId, nivelId, materiaId, periodoActivo.getId()).stream()
-                .filter(e -> !e.getId().equals(datos.getId()))
-                .mapToInt(Examen::getPorcentaje)
-                .sum();
-        if (sumaExistente + datos.getPorcentaje() > 100) {
-            throw new IllegalArgumentException(
-                    "La suma de las pruebas no puede superar 100% (actual: " + sumaExistente + "%)");
-        }
-
         if (datos.getPuntosTotales() == null || datos.getPuntosTotales() <= 0) {
             throw new IllegalArgumentException("Debes indicar los puntos totales de la prueba");
+        }
+
+        List<Examen> existentes = listarExamenes(institucionId, nivelId, materiaId, periodoActivo.getId());
+        int sumaFijosOtros = existentes.stream()
+                .filter(e -> datos.getId() == null || !e.getId().equals(datos.getId()))
+                .filter(e -> e.getPorcentaje() != null)
+                .mapToInt(Examen::getPorcentaje)
+                .sum();
+        long ponderadasOtras = existentes.stream()
+                .filter(e -> datos.getId() == null || !e.getId().equals(datos.getId()))
+                .filter(Examen::isPonderado)
+                .count();
+        Integer porcentaje = datos.getPorcentaje();
+        if (porcentaje != null) {
+            if (porcentaje < 1 || porcentaje > 100) {
+                throw new IllegalArgumentException("El porcentaje debe estar entre 1 y 100");
+            }
+            if (sumaFijosOtros + porcentaje > 100) {
+                throw new IllegalArgumentException(
+                        "La suma de los porcentajes fijos no puede superar 100% (disponible: "
+                                + (100 - sumaFijosOtros) + "%)");
+            }
+            if (ponderadasOtras > 0 && sumaFijosOtros + porcentaje >= 100) {
+                throw new IllegalArgumentException(
+                        "Debes dejar un porcentaje disponible para las pruebas ponderadas (máximo: "
+                                + Math.max(0, 99 - sumaFijosOtros) + "%)");
+            }
+        } else if (sumaFijosOtros >= 100) {
+            throw new IllegalArgumentException(
+                    "El 100% ya está asignado a pruebas con porcentaje fijo. Reduce una de ellas para poder ponderar esta.");
         }
 
         Examen examen = datos.getId() != null
@@ -142,7 +184,7 @@ public class ExamenService {
         }
         examen.setTitulo(datos.getTitulo().trim());
         examen.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
-        examen.setPorcentaje(datos.getPorcentaje());
+        examen.setPorcentaje(porcentaje);
         examen.setPuntosTotales(datos.getPuntosTotales());
         return examenRepository.save(examen);
     }

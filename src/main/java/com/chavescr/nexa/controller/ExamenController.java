@@ -52,10 +52,13 @@ public class ExamenController {
     }
 
     @GetMapping("/form")
-    public String nuevaPrueba(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model) {
+    public String nuevaPrueba(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
+            HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("examen", new Examen());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
+        cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, null);
         return "gestion-academica/examenes/examen-form :: form-content";
     }
 
@@ -66,6 +69,7 @@ public class ExamenController {
         model.addAttribute("examen", service.obtenerExamen(institucionId, id));
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
+        cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, id);
         return "gestion-academica/examenes/examen-form :: form-content";
     }
 
@@ -136,7 +140,8 @@ public class ExamenController {
         List<Examen> examenes = nivelId != null && materiaId != null && periodoActivo != null
                 ? service.listarExamenes(institucionId, nivelId, materiaId, periodoActivo.getId())
                 : List.of();
-        int total = examenes.stream().mapToInt(Examen::getPorcentaje).sum();
+        var pesosEfectivos = service.calcularPesosEfectivos(examenes);
+        double total = pesosEfectivos.values().stream().mapToDouble(Double::doubleValue).sum();
 
         int totalEstudiantesSeccion = nivelId != null ? service.contarEstudiantesActivos(nivelId) : 0;
         var evaluadosPorExamen = service.contarEvaluadosPorExamen(examenes.stream().map(Examen::getId).toList());
@@ -147,11 +152,37 @@ public class ExamenController {
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("examenes", examenes);
+        model.addAttribute("pesosEfectivos", pesosEfectivos);
         model.addAttribute("totalAsignado", total);
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorExamen", evaluadosPorExamen);
         model.addAttribute("promedioPorExamen", promedioPorExamen);
+    }
+
+    private void cargarContextoPorcentaje(Model model, Long institucionId, Long nivelId, Long materiaId,
+            Long examenId) {
+        var periodoActivo = service.obtenerPeriodoActivoOpcional(institucionId);
+        List<Examen> examenes = periodoActivo != null
+                ? service.listarExamenes(institucionId, nivelId, materiaId, periodoActivo.getId())
+                : List.of();
+        int sumaFijosOtros = examenes.stream()
+                .filter(e -> examenId == null || !e.getId().equals(examenId))
+                .filter(e -> e.getPorcentaje() != null)
+                .mapToInt(Examen::getPorcentaje)
+                .sum();
+        long ponderadasOtras = examenes.stream()
+                .filter(e -> examenId == null || !e.getId().equals(examenId))
+                .filter(Examen::isPonderado)
+                .count();
+        int topeFijos = ponderadasOtras > 0 ? 99 : 100;
+        int disponible = Math.max(0, topeFijos - sumaFijosOtros);
+        long nPonderadas = ponderadasOtras + 1;
+        model.addAttribute("porcentajeDisponible", disponible);
+        model.addAttribute("ponderadosOtros", ponderadasOtras);
+        model.addAttribute("sinCupoPorcentaje", sumaFijosOtros >= 100);
+        model.addAttribute("pesoPonderadoEstimado",
+                nPonderadas == 0 ? 0.0 : Math.max(0, 100 - sumaFijosOtros) / (double) nPonderadas);
     }
 
     private Long requerirInstitucion(HttpSession session) {
