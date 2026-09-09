@@ -52,6 +52,29 @@ public class DocenteMateriaService {
         return listarMaterias(institucionId, docenteId).stream().map(Materia::getId).toList();
     }
 
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public List<Usuario> listarDocentesPorMateria(Long institucionId, Long materiaId) {
+        if (materiaId == null) {
+            return List.of();
+        }
+        Map<Long, Usuario> porId = new LinkedHashMap<>();
+        for (DocenteMateria asignacion : docenteMateriaRepository
+                .findByInstitucionIdAndMateriaIdOrderByDocente_NombreAsc(institucionId, materiaId)) {
+            Usuario docente = asignacion.getDocente();
+            if (Boolean.TRUE.equals(docente.getActivo())) {
+                porId.putIfAbsent(docente.getId(), docente);
+            }
+        }
+        return new ArrayList<>(porId.values());
+    }
+
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public boolean estaAsignado(Long institucionId, Long docenteId, Long materiaId) {
+        return docenteId != null && materiaId != null
+                && docenteMateriaRepository.existsByInstitucionIdAndDocenteIdAndMateriaId(
+                        institucionId, docenteId, materiaId);
+    }
+
     /**
      * Materias activas de la institución, más las ya asignadas aunque estén inactivas,
      * para que no desaparezcan del formulario al desactivarlas.

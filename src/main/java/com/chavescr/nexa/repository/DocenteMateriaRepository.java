@@ -16,6 +16,12 @@ public interface DocenteMateriaRepository extends JpaRepository<DocenteMateria, 
     @EntityGraph(attributePaths = { "docente", "materia" })
     List<DocenteMateria> findByInstitucionIdOrderByMateria_NombreAsc(Long institucionId);
 
+    @EntityGraph(attributePaths = "docente")
+    List<DocenteMateria> findByInstitucionIdAndMateriaIdOrderByDocente_NombreAsc(
+            Long institucionId, Long materiaId);
+
+    boolean existsByInstitucionIdAndDocenteIdAndMateriaId(Long institucionId, Long docenteId, Long materiaId);
+
     void deleteByInstitucionIdAndDocenteId(Long institucionId, Long docenteId);
 
     void deleteByDocenteId(Long docenteId);

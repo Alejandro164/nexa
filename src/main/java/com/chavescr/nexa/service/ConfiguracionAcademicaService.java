@@ -252,6 +252,25 @@ public class ConfiguracionAcademicaService {
         return usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, "ROLE_DOCENTE");
     }
 
+    /**
+     * Profesores activos asociados a la materia. Si se edita una lección cuyo
+     * docente ya no está asignado, se incluye para no romper el formulario.
+     */
+    @Transactional(readOnly = true)
+    public List<Usuario> listarDocentesPorMateria(Long institucionId, Long materiaId, Long docenteSeleccionadoId) {
+        if (materiaId == null) {
+            return List.of();
+        }
+        List<Usuario> docentes = new ArrayList<>(
+                docenteMateriaService.listarDocentesPorMateria(institucionId, materiaId));
+        if (docenteSeleccionadoId != null
+                && docentes.stream().noneMatch(docente -> docente.getId().equals(docenteSeleccionadoId))) {
+            usuarioRepository.findActivoByIdAndInstitucionId(docenteSeleccionadoId, institucionId)
+                    .ifPresent(docente -> docentes.add(0, docente));
+        }
+        return docentes;
+    }
+
     @Transactional(readOnly = true)
     public Map<String, List<HorarioLeccion>> obtenerHorario(Long institucionId, Long periodoId, Long nivelId) {
         Map<String, List<HorarioLeccion>> horario = new LinkedHashMap<>();
@@ -292,6 +311,7 @@ public class ConfiguracionAcademicaService {
         if (!horaFin.isAfter(horaInicio)) {
             throw new IllegalArgumentException("La hora final debe ser posterior a la hora inicial");
         }
+        validarDocenteDeMateria(institucionId, materiaId, docenteId, id);
 
         boolean docenteOcupado = horarioRepository
                 .findByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
@@ -341,6 +361,20 @@ public class ConfiguracionAcademicaService {
 
     public String clave(String dia, Integer numeroLeccion) {
         return numeroLeccion + "-" + dia;
+    }
+
+    private void validarDocenteDeMateria(Long institucionId, Long materiaId, Long docenteId, Long leccionId) {
+        if (docenteMateriaService.estaAsignado(institucionId, docenteId, materiaId)) {
+            return;
+        }
+        if (leccionId != null) {
+            HorarioLeccion actual = obtenerLeccionPorId(institucionId, leccionId);
+            if (actual.getDocente().getId().equals(docenteId)
+                    && actual.getMateria().getId().equals(materiaId)) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException("El profesor no está asociado a esa materia");
     }
 
     private Institucion obtenerInstitucion(Long institucionId) {

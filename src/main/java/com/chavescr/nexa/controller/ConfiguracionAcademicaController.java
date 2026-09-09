@@ -198,10 +198,24 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("leccion", leccion);
         model.addAttribute("periodoId", periodoId);
         model.addAttribute("nivelId", nivelId);
+        Long materiaId = leccion.getMateria() != null ? leccion.getMateria().getId() : null;
+        Long docenteId = leccion.getDocente() != null ? leccion.getDocente().getId() : null;
+        model.addAttribute("materiaId", materiaId);
+        model.addAttribute("docenteSeleccionadoId", docenteId);
         model.addAttribute("materias", service.listarMateriasActivas(institucionId));
-        model.addAttribute("docentes", service.listarDocentes(institucionId));
+        model.addAttribute("docentes", service.listarDocentesPorMateria(institucionId, materiaId, docenteId));
         model.addAttribute("aulas", service.listarAulasActivas(institucionId));
         return "configuracion-academica/horario/form :: form-content";
+    }
+
+    @GetMapping("/horario/docentes")
+    public String docentesPorMateria(@RequestParam(required = false) Long materiaId,
+            Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        model.addAttribute("materiaId", materiaId);
+        model.addAttribute("docenteSeleccionadoId", null);
+        model.addAttribute("docentes", service.listarDocentesPorMateria(institucionId, materiaId, null));
+        return "configuracion-academica/horario/form :: docentes-select";
     }
 
     @PostMapping("/horario")
