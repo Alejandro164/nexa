@@ -6,7 +6,6 @@
         </div>
         <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
             <div>
-                <h3 class="card-title">Pase de Lista</h3>
                 <p class="text-muted text-sm" style="margin:4px 0 0 0;" th:if="${periodoActivo != null}">
                     Período activo: <span th:text="${periodoActivo.codigo}">2026-1</span>
                     (<span th:text="${#temporals.format(periodoActivo.fechaInicio, 'dd/MM/yyyy')}">01/01/2026</span>

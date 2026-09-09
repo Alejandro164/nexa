@@ -1,16 +1,7 @@
 <div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
     <div class="card">
-        <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
-            <div>
-                <h3 class="card-title">Proyectos Estudiantiles</h3>
-                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
-                    Defina los proyectos que asignará a la sección durante el período.
-                    <span th:if="${periodoActivo != null}"
-                          th:text="'Período activo: ' + ${periodoActivo.codigo}">Período activo: 2028-2</span>
-                </p>
-            </div>
-            <div style="border-top: 1px solid var(--border);"></div>
-            <div class="filters-bar">
+        <div class="card-header">
+            <div class="filters-bar" style="width: 100%;">
                 <select class="form-input" style="max-width: 200px;" name="nivelId"
                         hx-get="/gestion-academica/proyectos"
                         hx-target="#proyectos-panel" hx-swap="innerHTML"
@@ -27,7 +18,7 @@
                     <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
                             th:selected="${materiaId != null and materiaId == m.id}"></option>
                 </select>
-                <button class="btn btn-primary" style="width: 220px; height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap;"
+                <button class="btn btn-primary" style="width: 220px; height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap; margin-left: auto;"
                         th:if="${nivelId != null and materiaId != null and periodoActivo != null}"
                         th:attr="hx-get='/gestion-academica/proyectos/form?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
                         hx-target="#modal-container" hx-swap="innerHTML"
