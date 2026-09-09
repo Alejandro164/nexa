@@ -296,6 +296,21 @@ public class ConfiguracionAcademicaService {
         return horario;
     }
 
+    /** Lecciones semanales por docente en un período (para el directorio). */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> contarLeccionesPorDocente(Long institucionId, Long periodoId) {
+        Map<Long, Long> conteo = new LinkedHashMap<>();
+        if (periodoId == null) {
+            return conteo;
+        }
+        for (Object[] fila : horarioRepository.countLeccionesGroupedByDocente(institucionId, periodoId)) {
+            Long docenteId = (Long) fila[0];
+            long total = ((Number) fila[1]).longValue();
+            conteo.put(docenteId, total);
+        }
+        return conteo;
+    }
+
     @Transactional(readOnly = true)
     public HorarioLeccion obtenerLeccionPorId(Long institucionId, Long id) {
         return horarioRepository.findByIdAndInstitucionId(id, institucionId)

@@ -9,6 +9,7 @@
                 <form th:action="@{/docentes/directorio}" method="post"
                       hx-post="/docentes/directorio"
                       hx-target="#docentes-dir-content" hx-swap="innerHTML"
+                      hx-include=".dir-filters"
                       hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
                     <input type="hidden" name="id" th:value="${usuario.id}">
 

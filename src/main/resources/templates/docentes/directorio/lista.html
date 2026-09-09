@@ -1,82 +1,88 @@
-<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
-    <div class="module-card">
-        <div class="module-card-header">
-            <h3 class="module-card-title" th:text="'Docentes (' + ${docentes != null ? #lists.size(docentes) : 0} + ')'">Docentes (0)</h3>
-            <button class="btn-primary"
-                    hx-get="/docentes/directorio/form"
-                    hx-target="#docentes-modal-container" hx-swap="innerHTML"
-                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
-                    style="font-size:0.85rem;padding:8px 16px;">+ Registrar Docente</button>
-        </div>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Cédula</th>
-                    <th>Materias</th>
-                    <th>Prof. guía</th>
-                    <th>Estado</th>
-                    <th style="text-align:right;">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:if="${docentes == null or docentes.empty}">
-                    <td colspan="7" class="table-empty">No se encontraron docentes.</td>
-                </tr>
-                <tr th:each="u : ${docentes}">
-                    <td><strong th:text="${u.nombre}" style="color:#0f172a;">Nombre</strong></td>
-                    <td th:text="${u.email}" style="color:#64748b;">email</td>
-                    <td th:text="${u.cedula != null ? u.cedula : '—'}" style="color:#94a3b8;">—</td>
-                    <td>
-                        <div th:with="materias=${materiasPorDocente != null ? materiasPorDocente[u.id] : null}"
-                             style="display:flex;flex-wrap:wrap;gap:4px;">
-                            <span th:if="${materias == null or materias.empty}"
-                                  style="color:#94a3b8;font-size:0.8rem;">Sin materias</span>
-                            <span th:each="m : ${materias}" class="docente-materia-chip docente-materia-chip-static"
-                                  th:style="|--chip-color:${m.color != null ? m.color : '#2d5a87'}|">
-                                <span class="docente-materia-dot"></span>
-                                <span th:text="${m.nombre}">Materia</span>
-                            </span>
-                        </div>
-                    </td>
-                    <td>
-                        <div th:with="guias=${guiasPorDocente != null ? guiasPorDocente[u.id] : null}"
-                             style="display:flex;flex-wrap:wrap;gap:4px;">
-                            <span th:if="${guias == null or guias.empty}"
-                                  style="color:#94a3b8;font-size:0.8rem;">—</span>
-                            <span th:each="n : ${guias}" class="docente-materia-chip docente-materia-chip-static docente-seccion-chip">
-                                <span th:text="${n.nombreCompleto}">7 - A</span>
-                            </span>
-                        </div>
-                    </td>
-                    <td>
-                        <button class="badge-xs" style="border:none;cursor:pointer;"
-                                th:classappend="${u.activo ? 'badge-activo' : 'badge-inactivo'}"
-                                th:text="${u.activo ? 'Activo' : 'Inactivo'}"
-                                th:attr="hx-put='/docentes/directorio/' + ${u.id} + '/activo'"
-                                hx-target="#docentes-dir-content" hx-swap="innerHTML">Estado</button>
-                    </td>
-                    <td>
-                        <div class="table-actions">
-                            <button class="btn-xs btn-ghost"
-                                    th:attr="hx-get='/docentes/directorio/ficha/' + ${u.id}"
-                                    hx-target="#docentes-ficha-container" hx-swap="innerHTML"
-                                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-ficha'))"
-                                    title="Ver Ficha">📁</button>
-                            <button class="btn-xs btn-ghost"
-                                    th:attr="hx-get='/docentes/directorio/form/' + ${u.id}"
-                                    hx-target="#docentes-modal-container" hx-swap="innerHTML"
-                                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
-                                    title="Editar">✏️</button>
-                            <button class="btn-xs btn-danger-ghost"
-                                    onclick="abrirConfirmacionAcademica(this)"
-                                    th:attr="data-delete-url='/docentes/directorio/' + ${u.id},data-delete-target='#docentes-dir-content',data-delete-title='Eliminar docente',data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
-                                    title="Eliminar">🗑️</button>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
+<th:block th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <span id="docentes-dir-count" class="dir-count-badge" hx-swap-oob="true"
+          th:text="${docentes != null and #lists.size(docentes) == 1} ? '1 docente' : |${docentes != null ? #lists.size(docentes) : 0} docentes|">0 docentes</span>
+    <table th:replace="~{docentes/directorio/lista :: tabla}"></table>
+</th:block>
+
+<table th:fragment="tabla" class="table" xmlns:th="http://www.thymeleaf.org">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Cédula</th>
+            <th>Materias</th>
+            <th>Lecciones</th>
+            <th>Prof. guía</th>
+            <th>Estado</th>
+            <th style="text-align:right;">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:if="${docentes == null or docentes.empty}">
+            <td colspan="8" class="table-empty">No se encontraron docentes.</td>
+        </tr>
+        <tr th:each="u : ${docentes}">
+            <td><strong th:text="${u.nombre}" style="color:#0f172a;">Nombre</strong></td>
+            <td th:text="${u.email}" style="color:#64748b;">email</td>
+            <td th:text="${u.cedula != null ? u.cedula : '—'}" style="color:#94a3b8;">—</td>
+            <td>
+                <div th:with="materias=${materiasPorDocente != null ? materiasPorDocente[u.id] : null}"
+                     style="display:flex;flex-wrap:wrap;gap:4px;">
+                    <span th:if="${materias == null or materias.empty}"
+                          style="color:#94a3b8;font-size:0.8rem;">Sin materias</span>
+                    <span th:each="m : ${materias}" class="docente-materia-chip docente-materia-chip-static"
+                          th:style="|--chip-color:${m.color != null ? m.color : '#2d5a87'}|">
+                        <span class="docente-materia-dot"></span>
+                        <span th:text="${m.nombre}">Materia</span>
+                    </span>
+                </div>
+            </td>
+            <td th:with="total=${leccionesPorDocente != null ? leccionesPorDocente[u.id] : null}">
+                <span th:if="${total == null or total == 0}" class="dir-lecciones-empty">—</span>
+                <span th:unless="${total == null or total == 0}"
+                      class="dir-lecciones-badge"
+                      th:title="|${total} lecciones semanales en el período activo|"
+                      th:text="|${total} / sem.|">12 / sem.</span>
+            </td>
+            <td>
+                <div th:with="guias=${guiasPorDocente != null ? guiasPorDocente[u.id] : null}"
+                     style="display:flex;flex-wrap:wrap;gap:4px;">
+                    <span th:if="${guias == null or guias.empty}"
+                          style="color:#94a3b8;font-size:0.8rem;">—</span>
+                    <span th:each="n : ${guias}" class="docente-materia-chip docente-materia-chip-static docente-seccion-chip">
+                        <span th:text="${n.nombreCompleto}">7 - A</span>
+                    </span>
+                </div>
+            </td>
+            <td>
+                <button class="badge-xs" style="border:none;cursor:pointer;"
+                        th:classappend="${u.activo ? 'badge-activo' : 'badge-inactivo'}"
+                        th:text="${u.activo ? 'Activo' : 'Inactivo'}"
+                        th:attr="hx-put='/docentes/directorio/' + ${u.id} + '/activo'"
+                        hx-include=".dir-filters"
+                        hx-target="#docentes-dir-content" hx-swap="innerHTML">Estado</button>
+            </td>
+            <td>
+                <div class="table-actions">
+                    <button class="btn-xs btn-ghost"
+                            th:attr="hx-get='/docentes/directorio/ficha/' + ${u.id}"
+                            hx-target="#docentes-ficha-container" hx-swap="innerHTML"
+                            hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-ficha'))"
+                            title="Ver Ficha">📁</button>
+                    <button class="btn-xs btn-ghost"
+                            th:attr="hx-get='/docentes/directorio/form/' + ${u.id}"
+                            hx-target="#docentes-modal-container" hx-swap="innerHTML"
+                            hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                            title="Editar">✏️</button>
+                    <button class="btn-xs btn-danger-ghost"
+                            onclick="abrirConfirmacionAcademica(this)"
+                            th:attr="data-delete-url=@{/docentes/directorio/{id}(id=${u.id}, q=${q}, estado=${estadoFiltro}, materiaId=${materiaFiltro})},
+                                     data-delete-target='#docentes-dir-content',
+                                     data-delete-title='Eliminar docente',
+                                     data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
+                            title="Eliminar">🗑️</button>
+                </div>
+            </td>
+        </tr>
+    </tbody>
+</table>

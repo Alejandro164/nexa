@@ -82,6 +82,12 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
     List<HorarioLeccion> findByInstitucionIdAndPeriodoIdAndDocenteIdOrderByDiaAscNumeroLeccionAsc(
             Long institucionId, Long periodoId, Long docenteId);
 
+    @Query("SELECT h.docente.id, COUNT(h) FROM HorarioLeccion h "
+            + "WHERE h.institucion.id = :institucionId AND h.periodo.id = :periodoId "
+            + "GROUP BY h.docente.id")
+    List<Object[]> countLeccionesGroupedByDocente(
+            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId);
+
     Optional<HorarioLeccion> findByIdAndInstitucionId(Long id, Long institucionId);
 
     void deleteByInstitucionIdAndPeriodoId(Long institucionId, Long periodoId);

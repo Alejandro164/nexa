@@ -77,14 +77,20 @@ public class DocentesController {
     // ─── DIRECTORIO ──────────────────────────────────────────────
 
     @GetMapping("/directorio")
-    public String directorio(@RequestParam(required = false) String q, Model model, HttpSession session) {
-        cargarDirectorio(model, institucionId(session), q);
+    public String directorio(@RequestParam(required = false) String q,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String materiaId,
+            Model model, HttpSession session) {
+        cargarDirectorio(model, institucionId(session), q, estado, parseId(materiaId));
         return "docentes/directorio/directorio :: content";
     }
 
     @GetMapping("/directorio/lista")
-    public String directorioLista(@RequestParam(required = false) String q, Model model, HttpSession session) {
-        cargarDirectorio(model, institucionId(session), q);
+    public String directorioLista(@RequestParam(required = false) String q,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String materiaId,
+            Model model, HttpSession session) {
+        cargarDirectorio(model, institucionId(session), q, estado, parseId(materiaId));
         return "docentes/directorio/lista :: content";
     }
 
@@ -128,6 +134,9 @@ public class DocentesController {
             @RequestParam(required = false) List<Long> materiaIds,
             @RequestParam(defaultValue = "false") boolean profesorGuia,
             @RequestParam(required = false) List<Long> nivelGuiaIds,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String materiaId,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
@@ -138,7 +147,7 @@ public class DocentesController {
                     institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
             docenteMateriaService.reemplazar(institucionId, guardado.getId(), materiaIds);
             docenteGuiaService.reemplazar(institucionId, guardado.getId(), profesorGuia, nivelGuiaIds);
-            cargarDirectorio(model, institucionId, null);
+            cargarDirectorio(model, institucionId, q, estado, parseId(materiaId));
             return "docentes/directorio/lista :: content";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#docentes-modal-container");
@@ -154,18 +163,26 @@ public class DocentesController {
     }
 
     @DeleteMapping("/directorio/{id}")
-    public String directorioEliminar(@PathVariable Long id, Model model, HttpSession session) {
+    public String directorioEliminar(@PathVariable Long id,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String materiaId,
+            Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         personalService.eliminar(institucionId, id);
-        cargarDirectorio(model, institucionId, null);
+        cargarDirectorio(model, institucionId, q, estado, parseId(materiaId));
         return "docentes/directorio/lista :: content";
     }
 
     @PutMapping("/directorio/{id}/activo")
-    public String directorioToggleActivo(@PathVariable Long id, Model model, HttpSession session) {
+    public String directorioToggleActivo(@PathVariable Long id,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String materiaId,
+            Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         personalService.toggleActivo(institucionId, id);
-        cargarDirectorio(model, institucionId, null);
+        cargarDirectorio(model, institucionId, q, estado, parseId(materiaId));
         return "docentes/directorio/lista :: content";
     }
 
@@ -189,16 +206,65 @@ public class DocentesController {
     // ─── CARGA DE DATOS (compartida entre la carga inicial de /docentes y cada pestaña) ──
 
     private void cargarDirectorio(Model model, Long institucionId, String q) {
+        cargarDirectorio(model, institucionId, q, null, null);
+    }
+
+    private void cargarDirectorio(Model model, Long institucionId, String q, String estado, Long materiaId) {
         List<Usuario> docentes = institucionId == null ? List.of()
                 : personalService.listarPorRol(institucionId, ROL_DOCENTE, q);
         Map<Long, List<Materia>> materiasPorDocente = institucionId == null ? Map.of()
                 : docenteMateriaService.mapearPorDocente(institucionId);
         Map<Long, List<NivelAcademico>> guiasPorDocente = institucionId == null ? Map.of()
                 : docenteGuiaService.mapearPorDocente(institucionId);
+
+        if (estado == null) {
+            estado = "activo";
+        }
+        if ("activo".equalsIgnoreCase(estado) || "inactivo".equalsIgnoreCase(estado)) {
+            boolean activo = "activo".equalsIgnoreCase(estado);
+            docentes = docentes.stream()
+                    .filter(d -> Boolean.TRUE.equals(d.getActivo()) == activo)
+                    .toList();
+        }
+        if (materiaId != null) {
+            docentes = docentes.stream()
+                    .filter(d -> materiasPorDocente.getOrDefault(d.getId(), List.of()).stream()
+                            .anyMatch(m -> materiaId.equals(m.getId())))
+                    .toList();
+        }
+
+        List<Materia> materiasFiltro = institucionId == null ? List.of()
+                : configuracionAcademicaService.listarMateriasActivas(institucionId);
+
+        Long periodoActivoId = null;
+        if (institucionId != null) {
+            List<PeriodoAcademico> periodos = configuracionAcademicaService.listarPeriodosActivos(institucionId);
+            if (!periodos.isEmpty()) {
+                periodoActivoId = periodos.get(0).getId();
+            }
+        }
+        Map<Long, Long> leccionesPorDocente = institucionId == null ? Map.of()
+                : configuracionAcademicaService.contarLeccionesPorDocente(institucionId, periodoActivoId);
+
         model.addAttribute("docentes", docentes);
         model.addAttribute("materiasPorDocente", materiasPorDocente);
         model.addAttribute("guiasPorDocente", guiasPorDocente);
+        model.addAttribute("materiasFiltro", materiasFiltro);
+        model.addAttribute("leccionesPorDocente", leccionesPorDocente);
         model.addAttribute("q", q);
+        model.addAttribute("estadoFiltro", estado);
+        model.addAttribute("materiaFiltro", materiaId);
+    }
+
+    private Long parseId(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private void cargarFormulario(Model model, Long institucionId, Usuario usuario,
