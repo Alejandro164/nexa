@@ -18,6 +18,7 @@ public enum ModuloSistema {
     COORDINACION_ACADEMICA("/coordinacion-academica", "Coordinación Académica"),
     EVALUACION_ACADEMICA("/evaluacion-academica", "Evaluación Académica"),
     CONDUCTA("/conducta", "Conducta"),
+    NOTAS("/notas", "Notas"),
     COMEDOR("/comedor", "Comedor"),
     NUBE("/nube-nexa", "Nube Nexa"),
     ARCHIVO_GRADUADOS("/archivo-graduados", "Archivo Graduados"),

@@ -9,13 +9,13 @@
 <body>
 
     <h2 layout:fragment="page-title">Coordinación Académica</h2>
-    <p layout:fragment="page-subtitle">Gestiona el calendario de exámenes, cuidadores y distribución de aulas</p>
+    <p layout:fragment="page-subtitle">Calificaciones, calendario de exámenes, cuidadores y distribución de aulas</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Coordinación Académica</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestiona el calendario de exámenes, cuidadores y distribución de aulas</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Calificaciones, calendario de exámenes, cuidadores y distribución de aulas</p>
     <main layout:fragment="content">
         <style>
             .config-tabs-container {
@@ -64,6 +64,7 @@
                 background-color: var(--primary) !important;
                 box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
             }
+            [x-cloak] { display: none !important; }
             .tab-pane {
                 animation: fadeIn 0.35s ease-out;
             }
@@ -73,9 +74,12 @@
             }
         </style>
 
-        <div x-data="{ activeTab: 'calendario' }">
+        <div x-data="{ activeTab: 'notas' }">
             <div class="config-tabs-container">
                 <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'notas' }" @click="activeTab = 'notas'">
+                        📋 Notas
+                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'calendario' }" @click="activeTab = 'calendario'">
                         📅 Calendario de Exámenes
                     </button>
@@ -88,8 +92,12 @@
                 </div>
             </div>
 
+            <div x-show="activeTab === 'notas'" class="tab-pane">
+                <div th:replace="~{coordinacion-academica/notas/notas :: content}"></div>
+            </div>
+
             <!-- Calendario de Exámenes -->
-            <div x-show="activeTab === 'calendario'" class="tab-pane">
+            <div x-show="activeTab === 'calendario'" class="tab-pane" x-cloak>
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Fechas de Pruebas y Exámenes</h3>

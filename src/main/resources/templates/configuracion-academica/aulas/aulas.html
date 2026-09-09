@@ -31,7 +31,7 @@
                     </tr>
                     <tr th:each="aula : ${aulas}">
                         <td><strong th:text="${aula.nombre}">Aula 101</strong></td>
-                        <td th:text="${aula.tipo}">Regular</td>
+                        <td th:text="${aula.tipoAula != null ? aula.tipoAula.nombre : aula.tipo}">Regular</td>
                         <td th:text="${aula.capacidad}">30</td>
                         <td th:text="${aula.ubicacion != null and !aula.ubicacion.isBlank() ? aula.ubicacion : '—'}">Pabellón A</td>
                         <td>

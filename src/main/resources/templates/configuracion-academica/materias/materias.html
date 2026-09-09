@@ -14,9 +14,7 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Código</th>
                         <th>Nombre</th>
-                        <th>Área</th>
                         <th>Tipo</th>
                         <th>Estado</th>
                         <th>Acciones</th>
@@ -24,17 +22,15 @@
                 </thead>
                 <tbody>
                     <tr th:if="${materias == null or materias.empty}">
-                        <td colspan="6" class="table-empty">No hay materias registradas.</td>
+                        <td colspan="4" class="table-empty">No hay materias registradas.</td>
                     </tr>
                     <tr th:each="materia : ${materias}">
-                        <td><strong th:text="${materia.codigo}">MAT-01</strong></td>
                         <td>
                             <span class="subject-chip subject-chip-preview"
                                   th:style="|--subject-color: ${materia.color}|"
                                   th:text="${materia.nombre}">Matemáticas</span>
                         </td>
-                        <td th:text="${materia.area}">Ciencias exactas</td>
-                        <td th:text="${materia.tipo}">Básica</td>
+                        <td th:text="${materia.tipoMateria != null ? materia.tipoMateria.nombre : materia.tipo}">Básica</td>
                         <td>
                             <span th:if="${materia.activo}" class="badge badge-success">Activa</span>
                             <span th:unless="${materia.activo}" class="badge badge-secondary">Inactiva</span>

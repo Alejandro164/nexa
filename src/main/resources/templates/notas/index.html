@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Notas</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Notas</h2>
+    <p layout:fragment="page-subtitle">Calificaciones por estudiante, materia y período académico</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">Notas</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Calificaciones por estudiante, materia y período académico</p>
+    <main layout:fragment="content">
+        <style>
+            [x-cloak] { display: none !important; }
+
+            .notas-toolbar {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                box-shadow: var(--shadow-sm);
+                padding: 0.9rem 1.15rem;
+                margin-bottom: 1rem;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0.75rem 1rem;
+            }
+            .notas-search-wrap {
+                position: relative;
+                flex: 1 1 22rem;
+                min-width: 0;
+                max-width: 36rem;
+            }
+            .notas-search {
+                position: relative;
+                display: flex;
+                align-items: center;
+            }
+            .notas-search svg {
+                position: absolute;
+                left: 11px;
+                color: #94a3b8;
+                pointer-events: none;
+            }
+            .notas-search input {
+                width: 100%;
+                min-height: 40px;
+                padding: 0.5rem 0.85rem 0.5rem 2.3rem;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: #f8fafc;
+                font-size: 0.85rem;
+                font-family: inherit;
+                color: #0f172a;
+                outline: none;
+                box-sizing: border-box;
+            }
+            .notas-search input:focus {
+                background: #fff;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
+            }
+            .notas-results {
+                position: absolute;
+                z-index: 20;
+                left: 0;
+                right: 0;
+                top: calc(100% + 6px);
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+                max-height: 320px;
+                overflow-y: auto;
+                padding: 0.35rem;
+            }
+            .notas-student {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 0.65rem 0.7rem;
+                border: 1px solid transparent;
+                border-radius: 8px;
+                background: transparent;
+                cursor: pointer;
+                text-align: left;
+                font-family: inherit;
+                transition: background 0.15s;
+            }
+            .notas-student:hover,
+            .notas-student.is-on { background: #f8fafc; }
+            .notas-avatar {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+                color: #fff;
+                font-size: 0.7rem;
+                font-weight: 700;
+                flex-shrink: 0;
+            }
+            .notas-student-meta { min-width: 0; flex: 1; }
+            .notas-student-name {
+                font-size: 0.84rem;
+                font-weight: 650;
+                color: #0f172a;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .notas-student-sub {
+                font-size: 0.72rem;
+                color: #64748b;
+                margin-top: 1px;
+            }
+            .notas-results-empty {
+                padding: 0.85rem 0.75rem;
+                font-size: 0.82rem;
+                color: #94a3b8;
+            }
+            .notas-chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            .notas-chip {
+                border: 1px solid var(--border);
+                background: #fff;
+                color: #64748b;
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+                padding: 5px 10px;
+                border-radius: 999px;
+                cursor: pointer;
+                font-family: inherit;
+                transition: background 0.15s, color 0.15s, border-color 0.15s;
+            }
+            .notas-chip:hover { border-color: #cbd5e1; color: #334155; }
+            .notas-chip.is-on {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff;
+            }
+            .notas-count {
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: var(--primary);
+                background: rgba(45, 90, 135, 0.08);
+                padding: 3px 10px;
+                border-radius: 999px;
+                white-space: nowrap;
+                margin-left: auto;
+            }
+
+            .notas-pane {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                box-shadow: var(--shadow-sm);
+                display: flex;
+                flex-direction: column;
+                min-height: min(640px, calc(100vh - 250px));
+                overflow: hidden;
+            }
+            .notas-pill {
+                font-size: 0.78rem;
+                font-weight: 800;
+                padding: 3px 8px;
+                border-radius: 8px;
+                flex-shrink: 0;
+                font-variant-numeric: tabular-nums;
+            }
+            .notas-pill.excelente { background: #dcfce7; color: #166534; }
+            .notas-pill.bueno { background: #dbeafe; color: #1e40af; }
+            .notas-pill.regular { background: #fef3c7; color: #92400e; }
+            .notas-pill.deficiente { background: #fee2e2; color: #991b1b; }
+            .notas-pill.aprobado { background: #dcfce7; color: #166534; }
+            .notas-pill.aplazado { background: #fef3c7; color: #92400e; }
+            .notas-pill.reprobado { background: #fee2e2; color: #991b1b; }
+
+            .notas-empty {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 3rem 2rem;
+                color: #94a3b8;
+            }
+            .notas-empty-icon {
+                width: 56px;
+                height: 56px;
+                border-radius: 16px;
+                background: #f1f5f9;
+                display: grid;
+                place-items: center;
+                margin-bottom: 1rem;
+                color: #94a3b8;
+            }
+            .notas-empty strong {
+                display: block;
+                color: #64748b;
+                font-size: 0.95rem;
+                margin-bottom: 0.3rem;
+            }
+            .notas-empty span { font-size: 0.82rem; max-width: 28rem; line-height: 1.5; }
+
+            .notas-detail-head {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 1.1rem 1.25rem;
+                border-bottom: 1px solid var(--border);
+                background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+            }
+            .notas-ring {
+                --pct: 0;
+                width: 72px;
+                height: 72px;
+                border-radius: 50%;
+                background: conic-gradient(#2d5a87 calc(var(--pct) * 1%), #e8eef4 0);
+                display: grid;
+                place-items: center;
+                flex-shrink: 0;
+            }
+            .notas-ring-inner {
+                width: 54px;
+                height: 54px;
+                border-radius: 50%;
+                background: #fff;
+                display: grid;
+                place-items: center;
+                font-weight: 800;
+                font-size: 1.05rem;
+                color: #0f172a;
+                font-variant-numeric: tabular-nums;
+            }
+            .notas-detail-id { min-width: 0; flex: 1; }
+            .notas-detail-name {
+                margin: 0;
+                font-size: 1.15rem;
+                font-weight: 750;
+                color: #0f172a;
+                letter-spacing: -0.02em;
+            }
+            .notas-detail-sub {
+                margin-top: 0.2rem;
+                font-size: 0.8rem;
+                color: #64748b;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.45rem 0.85rem;
+            }
+            .notas-period {
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: var(--primary);
+                background: rgba(45, 90, 135, 0.08);
+                padding: 6px 10px;
+                border-radius: 8px;
+                white-space: nowrap;
+            }
+            .notas-kpis {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 0;
+                border-bottom: 1px solid var(--border);
+            }
+            .notas-kpi {
+                padding: 0.85rem 1.1rem;
+                border-right: 1px solid var(--border);
+            }
+            .notas-kpi:last-child { border-right: none; }
+            .notas-kpi-label {
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: #64748b;
+            }
+            .notas-kpi-value {
+                margin-top: 0.2rem;
+                font-size: 1.2rem;
+                font-weight: 750;
+                color: #0f172a;
+                font-variant-numeric: tabular-nums;
+            }
+            .notas-kpi-value.is-risk { color: #dc2626; }
+            .notas-kpi-value.is-ok { color: #15803d; }
+            .notas-kpi-value.is-aplazado { color: #a16207; }
+
+            .notas-table-wrap {
+                overflow: auto;
+                flex: 1;
+            }
+            .notas-table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 560px;
+            }
+            .notas-th-sub {
+                display: block;
+                font-size: 0.62rem;
+                font-weight: 600;
+                letter-spacing: 0.02em;
+                text-transform: none;
+                color: #94a3b8;
+                margin-top: 2px;
+            }
+            .notas-table th {
+                text-align: left;
+                padding: 0.6rem 0.85rem;
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                color: #64748b;
+                background: #f8fafc;
+                border-bottom: 1px solid var(--border);
+                position: sticky;
+                top: 0;
+                z-index: 1;
+            }
+            .notas-table th.num, .notas-table td.num { text-align: right; }
+            .notas-table td {
+                padding: 0.8rem 0.85rem;
+                font-size: 0.84rem;
+                color: #334155;
+                border-bottom: 1px solid #f1f5f9;
+                vertical-align: middle;
+            }
+            .notas-table tr:hover td { background: #f8fafc; }
+            .notas-materia {
+                font-weight: 650;
+                color: #0f172a;
+            }
+            .notas-docente {
+                display: block;
+                font-size: 0.72rem;
+                font-weight: 500;
+                color: #94a3b8;
+                margin-top: 2px;
+            }
+            .notas-final {
+                font-weight: 800;
+                font-variant-numeric: tabular-nums;
+            }
+            .notas-final.excelente { color: #166534; }
+            .notas-final.bueno { color: #1e40af; }
+            .notas-final.regular { color: #92400e; }
+            .notas-final.deficiente { color: #991b1b; }
+            .notas-final.aprobado { color: #166534; }
+            .notas-final.aplazado { color: #a16207; }
+            .notas-final.reprobado { color: #991b1b; }
+            .notas-bar {
+                height: 4px;
+                border-radius: 99px;
+                background: #e8eef4;
+                margin-top: 6px;
+                overflow: hidden;
+                width: 72px;
+                margin-left: auto;
+            }
+            .notas-bar-fill {
+                height: 100%;
+                border-radius: inherit;
+            }
+            .notas-legend {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem 1.25rem;
+                padding: 0.75rem 1.25rem;
+                border-top: 1px solid var(--border);
+                background: #f8fafc;
+                font-size: 0.72rem;
+                color: #64748b;
+            }
+            .notas-legend b { color: #334155; font-weight: 700; }
+
+            @media (max-width: 1100px) {
+                .notas-kpis { grid-template-columns: repeat(2, 1fr); }
+                .notas-kpi:nth-child(2) { border-right: none; }
+                .notas-kpi:nth-child(1),
+                .notas-kpi:nth-child(2) { border-bottom: 1px solid var(--border); }
+            }
+            @media (max-width: 720px) {
+                .notas-count { margin-left: 0; width: 100%; }
+                .notas-search-wrap { max-width: none; flex-basis: 100%; }
+            }
+        </style>
+
+        <div id="notas-root" x-data="notasModulo()" x-cloak>
+            <div class="notas-toolbar">
+                <div class="notas-search-wrap" @click.outside="abierto = false">
+                    <div class="notas-search">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="search" placeholder="Buscar estudiante por nombre o cédula..."
+                               aria-label="Buscar estudiante"
+                               autocomplete="off"
+                               role="combobox"
+                               aria-autocomplete="list"
+                               :aria-expanded="abierto"
+                               x-model="q"
+                               @focus="abrir()"
+                               @input="abrir()"
+                               @keydown.arrow-down.prevent="mover(1)"
+                               @keydown.arrow-up.prevent="mover(-1)"
+                               @keydown.enter.prevent="elegirResaltado()"
+                               @keydown.escape="abierto = false">
+                    </div>
+                    <div class="notas-results" x-show="abierto" x-cloak role="listbox" aria-label="Resultados">
+                        <template x-for="(e, i) in filtrados" :key="e.id">
+                            <button type="button" class="notas-student"
+                                    role="option"
+                                    :class="{ 'is-on': hi === i || selectedId === e.id }"
+                                    :aria-selected="selectedId === e.id"
+                                    @mousedown.prevent="elegir(e)">
+                                <span class="notas-avatar" :style="'background:' + e.color" x-text="e.iniciales"></span>
+                                <span class="notas-student-meta">
+                                    <span class="notas-student-name" x-text="e.nombre"></span>
+                                    <span class="notas-student-sub" x-text="e.cedula + ' · ' + e.seccion"></span>
+                                </span>
+                                <span class="notas-pill" :class="nivel(promedioDe(e))"
+                                      x-text="promedioDe(e)"></span>
+                            </button>
+                        </template>
+                        <div class="notas-results-empty" x-show="filtrados.length === 0">
+                            Sin coincidencias. Pruebe con otro nombre, cédula o sección.
+                        </div>
+                    </div>
+                </div>
+                <div class="notas-chips" role="tablist" aria-label="Filtrar por sección">
+                    <button type="button" class="notas-chip" :class="{ 'is-on': seccion === '' }"
+                            @click="seccion = ''">Todas</button>
+                    <template x-for="s in secciones" :key="s">
+                        <button type="button" class="notas-chip" :class="{ 'is-on': seccion === s }"
+                                @click="seccion = s" x-text="s"></button>
+                    </template>
+                </div>
+                <span class="notas-count" x-text="filtrados.length + ' de ' + estudiantes.length"></span>
+            </div>
+
+            <section class="notas-pane" aria-label="Notas del estudiante">
+                <template x-if="!seleccionado">
+                    <div class="notas-empty">
+                        <div class="notas-empty-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </div>
+                        <strong>Busque un estudiante</strong>
+                        <span>Escriba el nombre o la cédula en el recuadro superior para ver las calificaciones por materia y período.</span>
+                    </div>
+                </template>
+
+                <template x-if="seleccionado">
+                    <div style="display:flex;flex-direction:column;min-height:0;flex:1;">
+                        <div class="notas-detail-head">
+                            <div class="notas-ring" :style="'--pct:' + promedioDe(seleccionado)">
+                                <div class="notas-ring-inner" x-text="promedioDe(seleccionado)"></div>
+                            </div>
+                            <div class="notas-detail-id">
+                                <h3 class="notas-detail-name" x-text="seleccionado.nombre"></h3>
+                                <div class="notas-detail-sub">
+                                    <span x-text="seleccionado.cedula"></span>
+                                    <span x-text="'Sección ' + seleccionado.seccion"></span>
+                                    <span class="notas-pill" :class="condicion(promedioDe(seleccionado))"
+                                          x-text="condicionEtiqueta(promedioDe(seleccionado))"></span>
+                                </div>
+                            </div>
+                            <span class="notas-period" x-text="'Año lectivo 2026 · ' + periodos.length + ' períodos'"></span>
+                        </div>
+                        <div class="notas-kpis">
+                            <div class="notas-kpi">
+                                <div class="notas-kpi-label">Promedio</div>
+                                <div class="notas-kpi-value" x-text="promedioDe(seleccionado)"></div>
+                            </div>
+                            <div class="notas-kpi">
+                                <div class="notas-kpi-label">Aprobadas</div>
+                                <div class="notas-kpi-value is-ok" x-text="conteoCondicion(seleccionado, 'aprobado')"></div>
+                            </div>
+                            <div class="notas-kpi">
+                                <div class="notas-kpi-label">Aplazadas</div>
+                                <div class="notas-kpi-value" :class="{ 'is-aplazado': conteoCondicion(seleccionado, 'aplazado') > 0 }"
+                                     x-text="conteoCondicion(seleccionado, 'aplazado')"></div>
+                            </div>
+                            <div class="notas-kpi">
+                                <div class="notas-kpi-label">Reprobadas</div>
+                                <div class="notas-kpi-value" :class="{ 'is-risk': conteoCondicion(seleccionado, 'reprobado') > 0 }"
+                                     x-text="conteoCondicion(seleccionado, 'reprobado')"></div>
+                            </div>
+                        </div>
+                        <div class="notas-table-wrap">
+                            <table class="notas-table">
+                                <thead>
+                                    <tr>
+                                        <th>Materia</th>
+                                        <template x-for="p in periodos" :key="p.id">
+                                            <th class="num">
+                                                <span x-text="p.etiqueta"></span>
+                                                <span class="notas-th-sub" x-text="p.codigo"></span>
+                                            </th>
+                                        </template>
+                                        <th class="num">Promedio</th>
+                                        <th>Condición</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="m in seleccionado.materias" :key="m.nombre">
+                                        <tr>
+                                            <td>
+                                                <span class="notas-materia" x-text="m.nombre"></span>
+                                                <span class="notas-docente" x-text="m.docente"></span>
+                                            </td>
+                                            <template x-for="(p, i) in periodos" :key="m.nombre + '-' + p.id">
+                                                <td class="num">
+                                                    <div class="notas-final" :class="nivel(notaDe(m, i))"
+                                                         x-text="notaDe(m, i)"></div>
+                                                </td>
+                                            </template>
+                                            <td class="num">
+                                                <div class="notas-final" :class="condicion(finalDe(m))"
+                                                     x-text="finalDe(m)"></div>
+                                                <div class="notas-bar">
+                                                    <div class="notas-bar-fill"
+                                                         :style="'width:' + finalDe(m) + '%;background:' + colorDe(finalDe(m))"></div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="notas-pill" :class="condicion(finalDe(m))"
+                                                      x-text="condicionEtiqueta(finalDe(m))"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="notas-legend">
+                            <template x-for="p in periodos" :key="'leyenda-' + p.id">
+                                <span><b x-text="p.etiqueta"></b> <span x-text="p.codigo"></span></span>
+                            </template>
+                            <span><b>Aprobado</b> 70 o más</span>
+                            <span><b>Aplazado</b> 60 a 69</span>
+                            <span><b>Reprobado</b> menos de 60</span>
+                            <span>Promedio de la materia = media de los períodos. Promedio general = media de las materias.</span>
+                        </div>
+                    </div>
+                </template>
+            </section>
+        </div>
+
+        <script>
+            function notasModulo() {
+                const periodos = [
+                    { id: 'p1', codigo: 'I-2026', etiqueta: 'I período' },
+                    { id: 'p2', codigo: 'II-2026', etiqueta: 'II período' }
+                ];
+                const catalogo = [
+                    { nombre: 'Español', docente: 'Prof. Ana Vargas' },
+                    { nombre: 'Matemáticas', docente: 'Prof. Pedro Miranda' },
+                    { nombre: 'Ciencias', docente: 'Prof. Laura Méndez' },
+                    { nombre: 'Estudios Sociales', docente: 'Prof. Carlos Rojas' },
+                    { nombre: 'Inglés', docente: 'Prof. Helen Castro' },
+                    { nombre: 'Educación Cívica', docente: 'Prof. Ana Vargas' },
+                    { nombre: 'Educación Física', docente: 'Prof. Diego Solís' }
+                ];
+                const base = [
+                    { id: 1, nombre: 'Valeria Solano Mora', cedula: '9-2345-6789', seccion: '1-A', color: '#2d5a87', perfil: 93 },
+                    { id: 2, nombre: 'Gabriela Brenes Gómez', cedula: '9-0028-9971', seccion: '1-A', color: '#059669', perfil: 97 },
+                    { id: 3, nombre: 'Melissa Sánchez Gutiérrez', cedula: '9-0034-9965', seccion: '1-A', color: '#0284c7', perfil: 82 },
+                    { id: 4, nombre: 'Carlos Díaz Castro', cedula: '9-0040-9959', seccion: '1-A', color: '#7c3aed', perfil: 68 },
+                    { id: 5, nombre: 'Fernando Chavarría Quesada', cedula: '9-0046-9953', seccion: '1-A', color: '#e11d48', perfil: 55 },
+                    { id: 6, nombre: 'Francisco Jiménez Pérez', cedula: '9-0052-9947', seccion: '7-A', color: '#ca8a04', perfil: 92 },
+                    { id: 7, nombre: 'Lucía Fernández Rojas', cedula: '3-6001-0101', seccion: '7-A', color: '#db2777', perfil: 97 },
+                    { id: 8, nombre: 'Mateo Vargas Solís', cedula: '3-6002-0202', seccion: '7-A', color: '#0891b2', perfil: 80 }
+                ];
+
+                function clamp(n) { return Math.min(100, Math.max(40, Math.round(n))); }
+                function around(perfil, offset) { return clamp(perfil + offset); }
+                function materiasDe(est) {
+                    const p = est.perfil;
+                    return catalogo.map(function (m, i) {
+                        const sway = ((est.id * 3 + i * 5) % 9) - 4;
+                        return {
+                            nombre: m.nombre,
+                            docente: m.docente,
+                            notas: periodos.map(function (_per, pi) {
+                                return around(p, sway + (pi === 0 ? -2 : 1));
+                            })
+                        };
+                    });
+                }
+
+                const estudiantes = base.map(function (e) {
+                    const parts = e.nombre.split(' ');
+                    return Object.assign({}, e, {
+                        iniciales: parts[0].charAt(0) + parts[1].charAt(0),
+                        materias: materiasDe(e)
+                    });
+                });
+
+                return {
+                    q: '',
+                    seccion: '',
+                    selectedId: null,
+                    abierto: false,
+                    hi: 0,
+                    periodos: periodos,
+                    estudiantes: estudiantes,
+                    get secciones() {
+                        return [...new Set(this.estudiantes.map(function (e) { return e.seccion; }))];
+                    },
+                    get filtrados() {
+                        const q = this.q.trim().toLowerCase();
+                        return this.estudiantes.filter((e) => {
+                            if (this.seccion && e.seccion !== this.seccion) return false;
+                            if (!q) return true;
+                            return (e.nombre + ' ' + e.cedula + ' ' + e.seccion).toLowerCase().includes(q);
+                        });
+                    },
+                    get seleccionado() {
+                        if (this.selectedId == null) return null;
+                        return this.estudiantes.find((e) => e.id === this.selectedId) || null;
+                    },
+                    abrir() {
+                        this.abierto = true;
+                        this.hi = 0;
+                        if (this.seleccionado && this.q.trim() !== this.seleccionado.nombre) {
+                            this.selectedId = null;
+                        }
+                    },
+                    elegir(e) {
+                        this.selectedId = e.id;
+                        this.q = e.nombre;
+                        this.abierto = false;
+                    },
+                    elegirResaltado() {
+                        const e = this.filtrados[this.hi];
+                        if (e) this.elegir(e);
+                    },
+                    notaDe(m, i) {
+                        if (!m || !m.notas || m.notas[i] == null) return '—';
+                        return m.notas[i];
+                    },
+                    finalDe(m) {
+                        if (!m || !m.notas || !m.notas.length) return 0;
+                        const sum = m.notas.reduce(function (acc, n) { return acc + n; }, 0);
+                        return +(sum / m.notas.length).toFixed(1);
+                    },
+                    promedioDe(est) {
+                        if (!est || !est.materias.length) return 0;
+                        const sum = est.materias.reduce((acc, m) => acc + this.finalDe(m), 0);
+                        return +(sum / est.materias.length).toFixed(1);
+                    },
+                    conteoCondicion(est, cond) {
+                        if (!est) return 0;
+                        return est.materias.filter((m) => this.condicion(this.finalDe(m)) === cond).length;
+                    },
+                    nivel(n) {
+                        if (n >= 90) return 'excelente';
+                        if (n >= 80) return 'bueno';
+                        if (n >= 70) return 'regular';
+                        return 'deficiente';
+                    },
+                    etiqueta(n) {
+                        return this.condicionEtiqueta(n);
+                    },
+                    condicion(n) {
+                        if (n >= 70) return 'aprobado';
+                        if (n >= 60) return 'aplazado';
+                        return 'reprobado';
+                    },
+                    condicionEtiqueta(n) {
+                        const map = { aprobado: 'Aprobado', aplazado: 'Aplazado', reprobado: 'Reprobado' };
+                        return map[this.condicion(n)];
+                    },
+                    colorDe(n) {
+                        const map = { aprobado: '#16a34a', aplazado: '#d97706', reprobado: '#dc2626' };
+                        return map[this.condicion(n)];
+                    },
+                    mover(dir) {
+                        const list = this.filtrados;
+                        if (!list.length) return;
+                        this.abierto = true;
+                        this.hi = Math.max(0, Math.min(list.length - 1, this.hi + dir));
+                    }
+                };
+            }
+
+            (function () {
+                var el = document.getElementById('notas-root');
+                if (el && window.Alpine && !el._x_dataStack) {
+                    Alpine.initTree(el);
+                }
+            })();
+        </script>
+    </main>
+    </th:block>
+
+</body>
+
+</html>

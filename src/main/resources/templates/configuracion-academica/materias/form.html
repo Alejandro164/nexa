@@ -20,30 +20,21 @@
                     <input type="hidden" name="id" th:value="${materia.id}">
                     <div class="academic-form-grid">
                         <div class="form-group">
-                            <label class="form-label">Código</label>
-                            <input class="form-input" name="codigo" maxlength="30" required
-                                   th:value="${materia.codigo}" placeholder="Ej. MAT-01">
-                        </div>
-                        <div class="form-group">
                             <label class="form-label">Nombre</label>
                             <input class="form-input" name="nombre" maxlength="120" required
                                    th:value="${materia.nombre}" placeholder="Ej. Matemáticas">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Área</label>
-                            <input class="form-input" name="area" maxlength="100" required
-                                   th:value="${materia.area}" placeholder="Ej. Ciencias exactas">
-                        </div>
-                        <div class="form-group">
                             <label class="form-label">Tipo</label>
-                            <select class="form-input" name="tipo" required>
-                                <option value="" disabled hidden th:selected="${materia.tipo == null or materia.tipo.isBlank()}">
+                            <select class="form-input" name="tipoMateria.id" required>
+                                <option value="" disabled hidden
+                                        th:selected="${materia.tipoMateria == null}">
                                     Seleccione un tipo
                                 </option>
-                                <option th:selected="${materia.tipo == 'Básica'}">Básica</option>
-                                <option th:selected="${materia.tipo == 'Complementaria'}">Complementaria</option>
-                                <option th:selected="${materia.tipo == 'Especialidad'}">Especialidad</option>
-                                <option th:selected="${materia.tipo == 'Taller'}">Taller</option>
+                                <option th:each="tipo : ${tiposMateria}"
+                                        th:value="${tipo.id}"
+                                        th:selected="${materia.tipoMateria != null and materia.tipoMateria.id == tipo.id}"
+                                        th:text="${tipo.nombre}">Tipo</option>
                             </select>
                         </div>
                         <div class="form-group">

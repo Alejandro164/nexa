@@ -108,12 +108,14 @@ public class ConfiguracionAcademicaController {
     @GetMapping("/materias/form")
     public String nuevaMateria(Model model) {
         model.addAttribute("materia", new Materia());
+        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos());
         return "configuracion-academica/materias/form :: form-content";
     }
 
     @GetMapping("/materias/form/{id}")
     public String editarMateria(@PathVariable Long id, Model model, HttpSession session) {
         model.addAttribute("materia", service.obtenerMateria(requerirInstitucion(session), id));
+        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos());
         return "configuracion-academica/materias/form :: form-content";
     }
 
@@ -138,12 +140,14 @@ public class ConfiguracionAcademicaController {
     @GetMapping("/aulas/form")
     public String nuevaAula(Model model) {
         model.addAttribute("aula", new Aula());
+        model.addAttribute("tiposAula", service.listarTiposAulaActivos());
         return "configuracion-academica/aulas/form :: form-content";
     }
 
     @GetMapping("/aulas/form/{id}")
     public String editarAula(@PathVariable Long id, Model model, HttpSession session) {
         model.addAttribute("aula", service.obtenerAula(requerirInstitucion(session), id));
+        model.addAttribute("tiposAula", service.listarTiposAulaActivos());
         return "configuracion-academica/aulas/form :: form-content";
     }
 

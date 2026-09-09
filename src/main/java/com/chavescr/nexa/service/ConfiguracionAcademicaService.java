@@ -15,6 +15,8 @@ import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.TipoAula;
+import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AulaRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
@@ -22,6 +24,8 @@ import com.chavescr.nexa.repository.InstitucionRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
+import com.chavescr.nexa.repository.TipoAulaRepository;
+import com.chavescr.nexa.repository.TipoMateriaRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
 @Service
@@ -35,6 +39,8 @@ public class ConfiguracionAcademicaService {
     private final PeriodoAcademicoRepository periodoRepository;
     private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
+    private final TipoMateriaRepository tipoMateriaRepository;
+    private final TipoAulaRepository tipoAulaRepository;
     private final HorarioLeccionRepository horarioRepository;
     private final UsuarioRepository usuarioRepository;
     private final AulaRepository aulaRepository;
@@ -43,6 +49,8 @@ public class ConfiguracionAcademicaService {
             PeriodoAcademicoRepository periodoRepository,
             NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository,
+            TipoMateriaRepository tipoMateriaRepository,
+            TipoAulaRepository tipoAulaRepository,
             HorarioLeccionRepository horarioRepository,
             UsuarioRepository usuarioRepository,
             AulaRepository aulaRepository) {
@@ -50,6 +58,8 @@ public class ConfiguracionAcademicaService {
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
+        this.tipoMateriaRepository = tipoMateriaRepository;
+        this.tipoAulaRepository = tipoAulaRepository;
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
         this.aulaRepository = aulaRepository;
@@ -137,6 +147,11 @@ public class ConfiguracionAcademicaService {
     }
 
     @Transactional(readOnly = true)
+    public List<TipoMateria> listarTiposMateriaActivos() {
+        return tipoMateriaRepository.findByActivoTrueOrderByOrdenAscNombreAsc();
+    }
+
+    @Transactional(readOnly = true)
     public Materia obtenerMateria(Long institucionId, Long id) {
         return materiaRepository.findByIdAndInstitucionId(id, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
@@ -144,14 +159,24 @@ public class ConfiguracionAcademicaService {
 
     public Materia guardarMateria(Long institucionId, Materia datos) {
         Materia materia = datos.getId() == null ? new Materia() : obtenerMateria(institucionId, datos.getId());
+        TipoMateria tipoMateria = resolverTipoMateria(datos);
         materia.setInstitucion(obtenerInstitucion(institucionId));
-        materia.setCodigo(datos.getCodigo().trim().toUpperCase());
         materia.setNombre(datos.getNombre().trim());
-        materia.setArea(datos.getArea().trim());
-        materia.setTipo(datos.getTipo().trim());
+        materia.setTipoMateria(tipoMateria);
+        materia.setTipo(tipoMateria.getNombre());
         materia.setColor(normalizarColor(datos.getColor()));
         materia.setActivo(Boolean.TRUE.equals(datos.getActivo()));
         return materiaRepository.save(materia);
+    }
+
+    private TipoMateria resolverTipoMateria(Materia datos) {
+        Long tipoMateriaId = datos.getTipoMateria() != null ? datos.getTipoMateria().getId() : null;
+        if (tipoMateriaId == null) {
+            throw new IllegalArgumentException("Debe seleccionar un tipo de materia");
+        }
+        return tipoMateriaRepository.findById(tipoMateriaId)
+                .filter(tipo -> Boolean.TRUE.equals(tipo.getActivo()))
+                .orElseThrow(() -> new IllegalArgumentException("Tipo de materia no encontrado"));
     }
 
     public void eliminarMateria(Long institucionId, Long id) {
@@ -171,6 +196,11 @@ public class ConfiguracionAcademicaService {
     }
 
     @Transactional(readOnly = true)
+    public List<TipoAula> listarTiposAulaActivos() {
+        return tipoAulaRepository.findByActivoTrueOrderByOrdenAscNombreAsc();
+    }
+
+    @Transactional(readOnly = true)
     public Aula obtenerAula(Long institucionId, Long id) {
         return aulaRepository.findByIdAndInstitucionId(id, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Aula no encontrada"));
@@ -181,14 +211,26 @@ public class ConfiguracionAcademicaService {
             throw new IllegalArgumentException("La capacidad debe ser mayor a cero");
         }
         Aula aula = datos.getId() == null ? new Aula() : obtenerAula(institucionId, datos.getId());
+        TipoAula tipoAula = resolverTipoAula(datos);
         aula.setInstitucion(obtenerInstitucion(institucionId));
         aula.setNombre(datos.getNombre().trim());
         aula.setCapacidad(datos.getCapacidad());
-        aula.setTipo(datos.getTipo().trim());
+        aula.setTipoAula(tipoAula);
+        aula.setTipo(tipoAula.getNombre());
         aula.setUbicacion(datos.getUbicacion() != null && !datos.getUbicacion().isBlank()
                 ? datos.getUbicacion().trim() : null);
         aula.setActivo(Boolean.TRUE.equals(datos.getActivo()));
         return aulaRepository.save(aula);
+    }
+
+    private TipoAula resolverTipoAula(Aula datos) {
+        Long tipoAulaId = datos.getTipoAula() != null ? datos.getTipoAula().getId() : null;
+        if (tipoAulaId == null) {
+            throw new IllegalArgumentException("Debe seleccionar un tipo de aula");
+        }
+        return tipoAulaRepository.findById(tipoAulaId)
+                .filter(tipo -> Boolean.TRUE.equals(tipo.getActivo()))
+                .orElseThrow(() -> new IllegalArgumentException("Tipo de aula no encontrado"));
     }
 
     public void eliminarAula(Long institucionId, Long id) {
