@@ -124,6 +124,135 @@
                 border-radius: 20px;
             }
 
+            .conducta-toolbar {
+                display: flex;
+                flex-direction: column;
+                gap: 0.85rem;
+                padding: 1rem 1.5rem 1.15rem;
+                margin: 0;
+                background: #f8fafc;
+                border-bottom: 1px solid var(--border);
+            }
+            .conducta-filters-row {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                align-items: end;
+                gap: 0.75rem;
+            }
+            .conducta-field {
+                display: flex;
+                flex-direction: column;
+                gap: 0.35rem;
+                min-width: 0;
+                flex: 1 1 0;
+            }
+            .conducta-filters-row .table-card-count {
+                flex: 0 0 auto;
+                align-self: end;
+                margin-bottom: 7px;
+                white-space: nowrap;
+            }
+            .conducta-field > span {
+                font-size: 0.7rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: #64748b;
+            }
+            .conducta-field .form-input,
+            .conducta-field .filter-input,
+            .conducta-field .academic-select,
+            .conducta-field .academic-select-trigger {
+                width: 100% !important;
+                min-width: 0 !important;
+                min-height: 38px;
+                box-sizing: border-box;
+            }
+            .conducta-field select.form-input {
+                padding: 0.5rem 0.85rem;
+            }
+            .conducta-search-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                margin-top: 0.15rem;
+                padding-top: 0.9rem;
+                border-top: 1px solid var(--border);
+            }
+            .conducta-toolbar--simple .conducta-search-row {
+                margin-top: 0;
+                padding-top: 0;
+                border-top: none;
+            }
+            .conducta-search-row .table-card-count {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+            .conducta-search {
+                position: relative;
+                display: flex;
+                align-items: center;
+                width: 28rem;
+                flex: 0 1 28rem;
+            }
+            .conducta-search-icon {
+                position: absolute;
+                left: 12px;
+                color: #94a3b8;
+                pointer-events: none;
+                flex-shrink: 0;
+            }
+            .conducta-search .filter-input {
+                width: 100%;
+                min-height: 38px;
+                padding: 0.5rem 0.85rem 0.5rem 2.35rem;
+                box-sizing: border-box;
+            }
+            .conducta-actions {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-shrink: 0;
+                margin-left: auto;
+            }
+            .conducta-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                height: 38px;
+                padding: 0 14px;
+                border-radius: 8px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                font-family: inherit;
+                cursor: pointer;
+                white-space: nowrap;
+                transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+            }
+            .conducta-btn svg {
+                flex-shrink: 0;
+            }
+            .conducta-btn-secondary {
+                background: #ffffff;
+                color: #334155;
+                border: 1px solid var(--border);
+            }
+            .conducta-btn-secondary:hover {
+                background: #f1f5f9;
+                border-color: #cbd5e1;
+            }
+            .conducta-btn-primary {
+                background: var(--primary);
+                color: #fff;
+                border: 1px solid transparent;
+            }
+            .conducta-btn-primary:hover {
+                background: #1e3a5f;
+            }
+
             .conducta-table { width: 100%; border-collapse: collapse; }
             .conducta-table th {
                 text-align: left;
@@ -179,7 +308,6 @@
             .badge-regular { background: #fef3c7; color: #92400e; }
             .badge-deficiente { background: #fee2e2; color: #991b1b; }
             .badge-llamada { background: #fef3c7; color: #92400e; }
-            .badge-amonestacion { background: #fee2e2; color: #991b1b; }
             .badge-boleta { background: #fce7f3; color: #9d174d; }
             .badge-pendiente { background: #fef3c7; color: #92400e; }
             .badge-enproceso { background: #dbeafe; color: #1e40af; }
@@ -230,37 +358,13 @@
         </style>
 
         <!-- ==================== ALPINE STATE + TABS ==================== -->
-        <div x-data="{ activeTab: 'conducta' }">
-
-            <!-- Stats Cards (global summary) -->
-            <div class="conducta-stats">
-                <div class="stat-card positiva">
-                    <span class="stat-label">Nota Promedio</span>
-                    <span class="stat-value">86</span>
-                    <span style="font-size:0.78rem;color:var(--text-secondary);">Promedio general de conducta</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Llamadas de Atención</span>
-                    <span class="stat-value">12</span>
-                    <span style="font-size:0.78rem;color:var(--text-secondary);">Este período</span>
-                </div>
-                <div class="stat-card negativa">
-                    <span class="stat-label">Boletas Emitidas</span>
-                    <span class="stat-value">4</span>
-                    <span style="font-size:0.78rem;color:var(--text-secondary);">Faltas graves</span>
-                </div>
-                <div class="stat-card pendiente">
-                    <span class="stat-label">Amonestaciones</span>
-                    <span class="stat-value">2</span>
-                    <span style="font-size:0.78rem;color:var(--text-secondary);">Pendientes de resolución</span>
-                </div>
-            </div>
+        <div x-data="{ activeTab: 'notas' }">
 
             <!-- ==================== MENU HORIZONTAL ==================== -->
             <div class="config-tabs-container">
                 <div class="config-tabs">
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'conducta' }"
-                            @click="activeTab = 'conducta'">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'notas' }"
+                            @click="activeTab = 'notas'">
                         Notas de Conducta
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'llamadas' }"
@@ -271,659 +375,27 @@
                             @click="activeTab = 'boletas'">
                         Boletas
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'amonestaciones' }"
-                            @click="activeTab = 'amonestaciones'">
-                        Amonestaciones
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'historial' }"
-                            @click="activeTab = 'historial'">
-                        Historial
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'lecciones-guia' }"
+                            @click="activeTab = 'lecciones-guia'">
+                        Lecciones Guía
                     </button>
                 </div>
             </div>
 
-            <!-- ==================== TAB 1: NOTAS DE CONDUCTA ==================== -->
-            <div x-show="activeTab === 'conducta'" class="tab-pane">
-                <div class="table-card">
-                    <div class="table-card-header">
-                        <h3 class="table-card-title">
-                            Notas de Conducta
-                            <span class="table-card-count">8 estudiantes</span>
-                        </h3>
-                        <button class="btn-xs primary">+ Nuevo Registro</button>
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table class="conducta-table">
-                            <thead>
-                                <tr>
-                                    <th>Estudiante</th>
-                                    <th>Sección</th>
-                                    <th>Nota</th>
-                                    <th>Categoría</th>
-                                    <th>Observaciones</th>
-                                    <th>Período</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#2d5a87;">VS</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Valeria Solano Mora</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-2345-6789</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td><span class="nota-num nota-excelente">95</span></td>
-                                    <td><span class="badge-xs badge-excelente">Excelente</span></td>
-                                    <td>Excelente comportamiento. Ayuda a sus compañeros y mantiene una actitud positiva en clase.</td>
-                                    <td>II-2026</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Editar</button>
-                                        <button class="btn-xs btn-danger-ghost">Anular</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#059669;">GB</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Gabriela Brenes Gómez</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0028-9971</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td><span class="nota-num nota-excelente">100</span></td>
-                                    <td><span class="badge-xs badge-excelente">Excelente</span></td>
-                                    <td>Estudiante ejemplar. Nunca ha tenido llamadas de atención. Participa activamente.</td>
-                                    <td>II-2026</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Editar</button>
-                                        <button class="btn-xs btn-danger-ghost">Anular</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#0284c7;">MS</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Melissa Sánchez Gutiérrez</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0034-9965</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td><span class="nota-num nota-bueno">82</span></td>
-                                    <td><span class="badge-xs badge-bueno">Bueno</span></td>
-                                    <td>Generalmente cumple con las normas. Ha tenido 1 llamado de atención por conversar en clase.</td>
-                                    <td>II-2026</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Editar</button>
-                                        <button class="btn-xs btn-danger-ghost">Anular</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#7c3aed;">CD</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Carlos Díaz Castro</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0040-9959</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td><span class="nota-num nota-regular">68</span></td>
-                                    <td><span class="badge-xs badge-regular">Regular</span></td>
-                                    <td>Requiere mejorar su conducta. Ha recibido 3 llamadas de atención este período.</td>
-                                    <td>II-2026</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Editar</button>
-                                        <button class="btn-xs btn-danger-ghost">Anular</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría Quesada</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0046-9953</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td><span class="nota-num nota-deficiente">55</span></td>
-                                    <td><span class="badge-xs badge-deficiente">Deficiente</span></td>
-                                    <td>Conducta deficiente. 1 boleta por falta grave. Debe mejorar urgentemente su comportamiento.</td>
-                                    <td>II-2026</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Editar</button>
-                                        <button class="btn-xs btn-danger-ghost">Anular</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#ca8a04;">FJ</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Francisco Jiménez Pérez</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0052-9947</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td><span class="nota-num nota-excelente">92</span></td>
-                                    <td><span class="badge-xs badge-excelente">Excelente</span></td>
-                                    <td>Muy buen comportamiento. Responsable y respetuoso con docentes y compañeros.</td>
-                                    <td>II-2026</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Editar</button>
-                                        <button class="btn-xs btn-danger-ghost">Anular</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#db2777;">LF</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Lucía Fernández Rojas</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">3-6001-0101</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td><span class="nota-num nota-excelente">97</span></td>
-                                    <td><span class="badge-xs badge-excelente">Excelente</span></td>
-                                    <td>Siempre cumple con las normas. Excelente disciplina y presentación personal.</td>
-                                    <td>II-2026</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Editar</button>
-                                        <button class="btn-xs btn-danger-ghost">Anular</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#0891b2;">MV</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Mateo Vargas Solís</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">3-6002-0202</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td><span class="nota-num nota-bueno">80</span></td>
-                                    <td><span class="badge-xs badge-bueno">Bueno</span></td>
-                                    <td>Comportamiento aceptable. A veces se distrae en clase pero responde a las correcciones.</td>
-                                    <td>II-2026</td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Editar</button>
-                                        <button class="btn-xs btn-danger-ghost">Anular</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div x-show="activeTab === 'notas'" class="tab-pane">
+                <div th:replace="~{conducta/notas/notas :: content}"></div>
             </div>
 
-            <!-- ==================== TAB 2: LLAMADAS DE ATENCIÓN ==================== -->
-            <div x-show="activeTab === 'llamadas'" class="tab-pane" x-cloak style="display: none;">
-                <div class="table-card">
-                    <div class="table-card-header">
-                        <h3 class="table-card-title">
-                            Llamadas de Atención
-                            <span class="table-card-count">12 registros</span>
-                        </h3>
-                        <button class="btn-xs primary">+ Nueva Llamada</button>
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table class="conducta-table">
-                            <thead>
-                                <tr>
-                                    <th>Estudiante</th>
-                                    <th>Sección</th>
-                                    <th>Fecha</th>
-                                    <th>Motivo</th>
-                                    <th>Docente</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0046-9953</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>05/08/2026</td>
-                                    <td>Agresión verbal a un compañero durante el recreo</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-enproceso">En Proceso</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs" style="background:#fef3c7;color:#92400e;padding:5px 12px;border-radius:6px;font-weight:600;border:none;cursor:pointer;">Resolver</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#7c3aed;">CD</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Carlos Díaz Castro</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0040-9959</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>03/08/2026</td>
-                                    <td>Uso de celular en clase sin autorización</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#0284c7;">MS</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Melissa Sánchez</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0034-9965</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>01/08/2026</td>
-                                    <td>Conversación constante durante la lección</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#7c3aed;">CD</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Carlos Díaz Castro</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0040-9959</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>28/07/2026</td>
-                                    <td>No presentó la tarea por tercera vez consecutiva</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0046-9953</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>25/07/2026</td>
-                                    <td>Llegó tarde a la lección sin justificación</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-pendiente">Pendiente</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs" style="background:#fef3c7;color:#92400e;padding:5px 12px;border-radius:6px;font-weight:600;border:none;cursor:pointer;">Resolver</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#0891b2;">MV</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Mateo Vargas Solís</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">3-6002-0202</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>05/08/2026</td>
-                                    <td>No trajo el uniforme completo</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-pendiente">Pendiente</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs" style="background:#fef3c7;color:#92400e;padding:5px 12px;border-radius:6px;font-weight:600;border:none;cursor:pointer;">Resolver</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div x-show="activeTab === 'llamadas'" class="tab-pane" x-cloak>
+                <div th:replace="~{conducta/llamadas/llamadas :: content}"></div>
             </div>
 
-            <!-- ==================== TAB 3: BOLETAS ==================== -->
-            <div x-show="activeTab === 'boletas'" class="tab-pane" x-cloak style="display: none;">
-                <div class="table-card">
-                    <div class="table-card-header">
-                        <h3 class="table-card-title">
-                            Boletas Disciplinarias
-                            <span class="table-card-count">4 registros</span>
-                        </h3>
-                        <button class="btn-xs primary">+ Nueva Boleta</button>
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table class="conducta-table">
-                            <thead>
-                                <tr>
-                                    <th>Nº Boleta</th>
-                                    <th>Estudiante</th>
-                                    <th>Sección</th>
-                                    <th>Fecha</th>
-                                    <th>Falta</th>
-                                    <th>Sanción</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td style="font-weight:700;color:var(--primary);">B-2026-001</td>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">1-A</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>02/08/2026</td>
-                                    <td>Agresión física a un compañero</td>
-                                    <td>Suspensión 3 días</td>
-                                    <td><span class="badge-xs badge-enproceso">En Proceso</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs btn-ghost">Imprimir</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:700;color:var(--primary);">B-2026-002</td>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#7c3aed;">CD</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Carlos Díaz Castro</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">1-A</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>15/07/2026</td>
-                                    <td>Daño a mobiliario escolar</td>
-                                    <td>Reparación del daño y trabajo comunitario</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs btn-ghost">Imprimir</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:700;color:var(--primary);">B-2026-003</td>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#0891b2;">MV</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Mateo Vargas Solís</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">1-A</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>10/07/2026</td>
-                                    <td>Reincidencia en uso de vocabulario inadecuado</td>
-                                    <td>Carta de compromiso firmada por el encargado</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs btn-ghost">Imprimir</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:700;color:var(--primary);">B-2026-004</td>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">1-A</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>05/07/2026</td>
-                                    <td>Copió durante la prueba de Estudios Sociales</td>
-                                    <td>Anulación de la prueba. Debe repetirla.</td>
-                                    <td><span class="badge-xs badge-apelado">Apelado</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs btn-ghost">Imprimir</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div x-show="activeTab === 'boletas'" class="tab-pane" x-cloak>
+                <div th:replace="~{conducta/boletas/boletas :: content}"></div>
             </div>
 
-            <!-- ==================== TAB 4: AMONESTACIONES ==================== -->
-            <div x-show="activeTab === 'amonestaciones'" class="tab-pane" x-cloak style="display: none;">
-                <div class="table-card">
-                    <div class="table-card-header">
-                        <h3 class="table-card-title">
-                            Amonestaciones
-                            <span class="table-card-count">2 registros</span>
-                        </h3>
-                        <button class="btn-xs primary">+ Nueva Amonestación</button>
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table class="conducta-table">
-                            <thead>
-                                <tr>
-                                    <th>Estudiante</th>
-                                    <th>Sección</th>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Motivo</th>
-                                    <th>Resolución</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0046-9953</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>04/08/2026</td>
-                                    <td><span class="badge-xs badge-amonestacion">Escrita</span></td>
-                                    <td>Acumulación de 3 llamadas de atención en menos de 30 días</td>
-                                    <td style="color:#94a3b8;">Pendiente</td>
-                                    <td><span class="badge-xs badge-pendiente">Pendiente</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs" style="background:#dcfce7;color:#166534;padding:5px 12px;border-radius:6px;font-weight:600;border:none;cursor:pointer;">Resolver</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#7c3aed;">CD</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Carlos Díaz Castro</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0040-9959</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>20/07/2026</td>
-                                    <td><span class="badge-xs badge-amonestacion">Verbal</span></td>
-                                    <td>Desobediencia reiterada a las instrucciones del docente</td>
-                                    <td>El estudiante se comprometió a mejorar su conducta. Firma de acuerdo.</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ==================== TAB 5: HISTORIAL ==================== -->
-            <div x-show="activeTab === 'historial'" class="tab-pane" x-cloak style="display: none;">
-                <div class="table-card">
-                    <div class="table-card-header">
-                        <h3 class="table-card-title">
-                            Historial Completo de Conducta
-                            <span class="table-card-count">18 registros</span>
-                        </h3>
-                        <div style="display:flex;gap:8px;">
-                            <select class="form-input" style="padding:6px 10px;font-size:0.82rem;border-radius:6px;width:auto;">
-                                <option>Todos los tipos</option>
-                                <option>Llamada de Atención</option>
-                                <option>Amonestación</option>
-                                <option>Boleta</option>
-                                <option>Nota de Conducta</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table class="conducta-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Estudiante</th>
-                                    <th>Tipo</th>
-                                    <th>Descripción</th>
-                                    <th>Docente</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td style="font-weight:600;">05/08/2026</td>
-                                    <td>Fernando Chavarría</td>
-                                    <td><span class="badge-xs badge-llamada">Llamada</span></td>
-                                    <td>Agresión verbal a un compañero durante el recreo</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-enproceso">En Proceso</span></td>
-                                    <td class="actions-cell"><button class="btn-xs btn-ghost">Ver</button></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:600;">04/08/2026</td>
-                                    <td>Fernando Chavarría</td>
-                                    <td><span class="badge-xs badge-amonestacion">Amonestación</span></td>
-                                    <td>Amonestación escrita por acumulación de llamadas de atención</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-pendiente">Pendiente</span></td>
-                                    <td class="actions-cell"><button class="btn-xs btn-ghost">Ver</button></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:600;">03/08/2026</td>
-                                    <td>Carlos Díaz Castro</td>
-                                    <td><span class="badge-xs badge-llamada">Llamada</span></td>
-                                    <td>Uso de celular en clase sin autorización</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell"><button class="btn-xs btn-ghost">Ver</button></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:600;">02/08/2026</td>
-                                    <td>Fernando Chavarría</td>
-                                    <td><span class="badge-xs badge-boleta">Boleta</span></td>
-                                    <td>Boleta B-2026-001: Agresión física a un compañero</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-enproceso">En Proceso</span></td>
-                                    <td class="actions-cell"><button class="btn-xs btn-ghost">Ver</button></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:600;">01/08/2026</td>
-                                    <td>Melissa Sánchez</td>
-                                    <td><span class="badge-xs badge-llamada">Llamada</span></td>
-                                    <td>Conversación constante durante la lección</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell"><button class="btn-xs btn-ghost">Ver</button></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:600;">01/08/2026</td>
-                                    <td>Gabriela Brenes</td>
-                                    <td><span class="badge-xs badge-excelente">Nota</span></td>
-                                    <td>Nota de conducta: 100 - Excelente</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-resuelto">Registrado</span></td>
-                                    <td class="actions-cell"><button class="btn-xs btn-ghost">Ver</button></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:600;">28/07/2026</td>
-                                    <td>Carlos Díaz Castro</td>
-                                    <td><span class="badge-xs badge-llamada">Llamada</span></td>
-                                    <td>No presentó la tarea por tercera vez consecutiva</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell"><button class="btn-xs btn-ghost">Ver</button></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:600;">20/07/2026</td>
-                                    <td>Carlos Díaz Castro</td>
-                                    <td><span class="badge-xs badge-amonestacion">Amonestación</span></td>
-                                    <td>Amonestación verbal por desobediencia reiterada</td>
-                                    <td>Prof. Pedro Miranda</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell"><button class="btn-xs btn-ghost">Ver</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border);">
-                        <div style="font-size: 0.82rem; color: var(--text-secondary);">Mostrando 1 a 8 de 18 registros</div>
-                        <div style="display: flex; gap: 4px;">
-                            <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.78rem;" disabled>Anterior</button>
-                            <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.78rem;">1</button>
-                            <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.78rem;">2</button>
-                            <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.78rem;">3</button>
-                            <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.78rem;">Siguiente</button>
-                        </div>
-                    </div>
-                </div>
+            <div x-show="activeTab === 'lecciones-guia'" class="tab-pane" x-cloak>
+                <div th:replace="~{conducta/lecciones-guia/lecciones-guia :: content}"></div>
             </div>
 
         </div>

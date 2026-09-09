@@ -1,0 +1,184 @@
+<div th:fragment="content" id="llamadas-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="table-card">
+        <div class="conducta-toolbar">
+            <div class="conducta-filters-row">
+                <label class="conducta-field">
+                    <span>Período</span>
+                    <select class="form-input" aria-label="Período">
+                        <option value="I-2026">I-2026</option>
+                        <option value="II-2026" selected>II-2026</option>
+                    </select>
+                </label>
+                <label class="conducta-field">
+                    <span>Grado</span>
+                    <select class="form-input" aria-label="Grado">
+                        <option value="" selected>Todos los grados</option>
+                    </select>
+                </label>
+                <label class="conducta-field">
+                    <span>Sección</span>
+                    <select class="form-input" aria-label="Sección">
+                        <option value="" selected>Todas las secciones</option>
+                    </select>
+                </label>
+                <span class="table-card-count">12 registros</span>
+            </div>
+            <div class="conducta-search-row">
+                <div class="conducta-search">
+                    <svg class="conducta-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input class="filter-input" type="search" placeholder="Nombre o cédula..."
+                           aria-label="Buscar estudiante">
+                </div>
+                <div class="conducta-actions">
+                    <button type="button" class="conducta-btn conducta-btn-primary">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Nueva Llamada
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+                        <table class="conducta-table">
+                            <thead>
+                                <tr>
+                                    <th>Estudiante</th>
+                                    <th>Sección</th>
+                                    <th>Fecha</th>
+                                    <th>Motivo</th>
+                                    <th>Docente</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="student-cell">
+                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
+                                            <div>
+                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría</div>
+                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0046-9953</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>1-A</td>
+                                    <td>05/08/2026</td>
+                                    <td>Agresión verbal a un compañero durante el recreo</td>
+                                    <td>Prof. Pedro Miranda</td>
+                                    <td><span class="badge-xs badge-enproceso">En Proceso</span></td>
+                                    <td class="actions-cell">
+                                        <button class="btn-xs btn-ghost">Ver</button>
+                                        <button class="btn-xs" style="background:#fef3c7;color:#92400e;padding:5px 12px;border-radius:6px;font-weight:600;border:none;cursor:pointer;">Resolver</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="student-cell">
+                                            <div class="student-avatar" style="background:#7c3aed;">CD</div>
+                                            <div>
+                                                <div style="font-weight:600;color:#0f172a;">Carlos Díaz Castro</div>
+                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0040-9959</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>1-A</td>
+                                    <td>03/08/2026</td>
+                                    <td>Uso de celular en clase sin autorización</td>
+                                    <td>Prof. Pedro Miranda</td>
+                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
+                                    <td class="actions-cell">
+                                        <button class="btn-xs btn-ghost">Ver</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="student-cell">
+                                            <div class="student-avatar" style="background:#0284c7;">MS</div>
+                                            <div>
+                                                <div style="font-weight:600;color:#0f172a;">Melissa Sánchez</div>
+                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0034-9965</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>1-A</td>
+                                    <td>01/08/2026</td>
+                                    <td>Conversación constante durante la lección</td>
+                                    <td>Prof. Pedro Miranda</td>
+                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
+                                    <td class="actions-cell">
+                                        <button class="btn-xs btn-ghost">Ver</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="student-cell">
+                                            <div class="student-avatar" style="background:#7c3aed;">CD</div>
+                                            <div>
+                                                <div style="font-weight:600;color:#0f172a;">Carlos Díaz Castro</div>
+                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0040-9959</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>1-A</td>
+                                    <td>28/07/2026</td>
+                                    <td>No presentó la tarea por tercera vez consecutiva</td>
+                                    <td>Prof. Pedro Miranda</td>
+                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
+                                    <td class="actions-cell">
+                                        <button class="btn-xs btn-ghost">Ver</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="student-cell">
+                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
+                                            <div>
+                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría</div>
+                                                <div style="font-size:0.75rem;color:var(--text-secondary);">9-0046-9953</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>1-A</td>
+                                    <td>25/07/2026</td>
+                                    <td>Llegó tarde a la lección sin justificación</td>
+                                    <td>Prof. Pedro Miranda</td>
+                                    <td><span class="badge-xs badge-pendiente">Pendiente</span></td>
+                                    <td class="actions-cell">
+                                        <button class="btn-xs btn-ghost">Ver</button>
+                                        <button class="btn-xs" style="background:#fef3c7;color:#92400e;padding:5px 12px;border-radius:6px;font-weight:600;border:none;cursor:pointer;">Resolver</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="student-cell">
+                                            <div class="student-avatar" style="background:#0891b2;">MV</div>
+                                            <div>
+                                                <div style="font-weight:600;color:#0f172a;">Mateo Vargas Solís</div>
+                                                <div style="font-size:0.75rem;color:var(--text-secondary);">3-6002-0202</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>1-A</td>
+                                    <td>05/08/2026</td>
+                                    <td>No trajo el uniforme completo</td>
+                                    <td>Prof. Pedro Miranda</td>
+                                    <td><span class="badge-xs badge-pendiente">Pendiente</span></td>
+                                    <td class="actions-cell">
+                                        <button class="btn-xs btn-ghost">Ver</button>
+                                        <button class="btn-xs" style="background:#fef3c7;color:#92400e;padding:5px 12px;border-radius:6px;font-weight:600;border:none;cursor:pointer;">Resolver</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+</div>

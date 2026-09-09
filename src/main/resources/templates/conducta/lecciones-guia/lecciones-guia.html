@@ -1,0 +1,80 @@
+<div th:fragment="content" id="lecciones-guia-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="table-card">
+        <div class="conducta-toolbar conducta-toolbar--simple">
+            <div class="conducta-search-row">
+                <div class="conducta-search">
+                    <svg class="conducta-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input class="filter-input" type="search" placeholder="Sección, tema o docente..."
+                           aria-label="Buscar lección guía">
+                </div>
+                <span class="table-card-count">4 registros</span>
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="conducta-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Sección</th>
+                        <th>Profesor guía</th>
+                        <th>Tema</th>
+                        <th>Asistencia</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>08/08/2026</td>
+                        <td>1-A</td>
+                        <td>Prof. Pedro Miranda</td>
+                        <td>Convivencia y respeto en el aula</td>
+                        <td>26 / 28</td>
+                        <td><span class="badge-xs badge-resuelto">Impartida</span></td>
+                        <td class="actions-cell">
+                            <button class="btn-xs btn-ghost">Ver</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>01/08/2026</td>
+                        <td>1-A</td>
+                        <td>Prof. Pedro Miranda</td>
+                        <td>Uso responsable del celular</td>
+                        <td>28 / 28</td>
+                        <td><span class="badge-xs badge-resuelto">Impartida</span></td>
+                        <td class="actions-cell">
+                            <button class="btn-xs btn-ghost">Ver</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>08/08/2026</td>
+                        <td>7-A</td>
+                        <td>Prof. Ana Vargas</td>
+                        <td>Organización del II período</td>
+                        <td>—</td>
+                        <td><span class="badge-xs badge-pendiente">Programada</span></td>
+                        <td class="actions-cell">
+                            <button class="btn-xs btn-ghost">Ver</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>25/07/2026</td>
+                        <td>7-A</td>
+                        <td>Prof. Ana Vargas</td>
+                        <td>Hábitos de estudio y responsabilidad</td>
+                        <td>30 / 32</td>
+                        <td><span class="badge-xs badge-resuelto">Impartida</span></td>
+                        <td class="actions-cell">
+                            <button class="btn-xs btn-ghost">Ver</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
