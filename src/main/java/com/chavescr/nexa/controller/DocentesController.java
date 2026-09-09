@@ -1,11 +1,13 @@
 package com.chavescr.nexa.controller;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -28,6 +30,7 @@ import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.ConfiguracionAcademicaService;
+import com.chavescr.nexa.service.DocenteBloqueoService;
 import com.chavescr.nexa.service.DocenteGuiaService;
 import com.chavescr.nexa.service.DocenteMateriaService;
 import com.chavescr.nexa.service.PersonalService;
@@ -60,13 +63,16 @@ public class DocentesController {
     @Autowired
     private DocenteGuiaService docenteGuiaService;
 
+    @Autowired
+    private DocenteBloqueoService docenteBloqueoService;
+
     @GetMapping
     public String docentes(Model model, HttpSession session, HttpServletRequest request) {
         Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
         if (institucionId != null) {
             cargarDirectorio(model, institucionId, null);
             cargarDisponibilidad(model, institucionId, null, null);
-            cargarAsignaciones(model, institucionId, null);
+            cargarAsignaciones(model, institucionId, null, null);
         }
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "docentes/index :: htmx-content";
@@ -195,12 +201,109 @@ public class DocentesController {
         return "docentes/disponibilidad/disponibilidad :: disponibilidad-panel";
     }
 
+    @PostMapping("/disponibilidad/bloqueo")
+    public String alternarBloqueo(@RequestParam Long docenteId,
+            @RequestParam Long periodoId,
+            @RequestParam String dia,
+            @RequestParam Integer numeroLeccion,
+            Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        docenteBloqueoService.alternar(institucionId, docenteId, periodoId, dia, numeroLeccion);
+        cargarDisponibilidad(model, institucionId, docenteId, periodoId);
+        return "docentes/disponibilidad/disponibilidad :: disponibilidad-panel";
+    }
+
+    @GetMapping("/disponibilidad/reporte")
+    public String reporteDisponibilidad(@RequestParam Long docenteId,
+            @RequestParam Long periodoId, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        Usuario docente = personalService.obtenerPorId(institucionId, docenteId);
+        boolean esDocente = docente.getRoles().stream()
+                .anyMatch(rol -> ROL_DOCENTE.equals(rol.getNombre()));
+        if (!esDocente) {
+            throw new IllegalArgumentException("Docente no encontrado");
+        }
+        PeriodoAcademico periodo = configuracionAcademicaService.obtenerPeriodo(institucionId, periodoId);
+        Map<String, List<HorarioLeccion>> horario = configuracionAcademicaService
+                .obtenerHorarioPorDocente(institucionId, periodoId, docenteId);
+        Set<String> bloqueos = docenteBloqueoService.claves(institucionId, periodoId, docenteId);
+
+        int totalBloques = ConfiguracionAcademicaService.DIAS.size()
+                * ConfiguracionAcademicaService.LECCIONES.size();
+        int bloquesOcupados = 0;
+        int leccionesAsignadas = 0;
+        for (List<HorarioLeccion> items : horario.values()) {
+            if (items != null && !items.isEmpty()) {
+                bloquesOcupados++;
+                leccionesAsignadas += items.size();
+            }
+        }
+        int bloquesBloqueados = (int) bloqueos.stream()
+                .filter(clave -> {
+                    List<HorarioLeccion> items = horario.get(clave);
+                    return items == null || items.isEmpty();
+                })
+                .count();
+
+        model.addAttribute("institucionNombre", session.getAttribute("SESSION_INSTITUCION_NOMBRE"));
+        model.addAttribute("docente", docente);
+        model.addAttribute("periodo", periodo);
+        model.addAttribute("dias", ConfiguracionAcademicaService.DIAS);
+        model.addAttribute("lecciones", ConfiguracionAcademicaService.LECCIONES);
+        model.addAttribute("horarioDocente", horario);
+        model.addAttribute("bloqueos", bloqueos);
+        model.addAttribute("bloquesOcupados", bloquesOcupados);
+        model.addAttribute("bloquesBloqueados", bloquesBloqueados);
+        model.addAttribute("bloquesLibres", totalBloques - bloquesOcupados - bloquesBloqueados);
+        model.addAttribute("leccionesAsignadas", leccionesAsignadas);
+        model.addAttribute("totalBloques", totalBloques);
+        model.addAttribute("fechaGeneracion", LocalDateTime.now());
+        return "docentes/disponibilidad/reporte";
+    }
+
     // ─── CARGA LABORAL ───────────────────────────────────────────
 
     @GetMapping("/asignaciones")
-    public String asignaciones(@RequestParam(required = false) Long periodoId, Model model, HttpSession session) {
-        cargarAsignaciones(model, institucionId(session), periodoId);
+    public String asignaciones(@RequestParam(required = false) Long docenteId,
+            @RequestParam(required = false) Long periodoId, Model model, HttpSession session) {
+        cargarAsignaciones(model, institucionId(session), periodoId, docenteId);
         return "docentes/asignaciones/asignaciones :: asignaciones-panel";
+    }
+
+    @GetMapping("/asignaciones/reporte")
+    public String reporteAsignaciones(@RequestParam(required = false) Long docenteId,
+            @RequestParam Long periodoId, Model model, HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
+        PeriodoAcademico periodo = configuracionAcademicaService.obtenerPeriodo(institucionId, periodoId);
+        List<Usuario> docentes = personalService.listarPorRol(institucionId, ROL_DOCENTE);
+        if (docenteId != null) {
+            docentes = docentes.stream().filter(d -> docenteId.equals(d.getId())).toList();
+            if (docentes.isEmpty()) {
+                throw new IllegalArgumentException("Docente no encontrado");
+            }
+        }
+        List<CargaLaboralDocenteDTO> carga = new ArrayList<>();
+        int totalLecciones = 0;
+        int docentesConCarga = 0;
+        for (Usuario docente : docentes) {
+            CargaLaboralDocenteDTO fila = construirCargaLaboral(institucionId, periodoId, docente);
+            carga.add(fila);
+            totalLecciones += fila.getTotalLecciones();
+            if (fila.getTotalLecciones() > 0) {
+                docentesConCarga++;
+            }
+        }
+        carga.sort(Comparator.comparing(c -> c.getDocente().getNombre()));
+
+        model.addAttribute("institucionNombre", session.getAttribute("SESSION_INSTITUCION_NOMBRE"));
+        model.addAttribute("periodo", periodo);
+        model.addAttribute("carga", carga);
+        model.addAttribute("docenteFiltro", docenteId == null ? null : docentes.get(0));
+        model.addAttribute("totalLecciones", totalLecciones);
+        model.addAttribute("docentesConCarga", docentesConCarga);
+        model.addAttribute("totalDocentes", carga.size());
+        model.addAttribute("fechaGeneracion", LocalDateTime.now());
+        return "docentes/asignaciones/reporte";
     }
 
     // ─── CARGA DE DATOS (compartida entre la carga inicial de /docentes y cada pestaña) ──
@@ -307,6 +410,8 @@ public class DocentesController {
 
         Map<String, List<HorarioLeccion>> horario = institucionId == null ? Map.of()
                 : configuracionAcademicaService.obtenerHorarioPorDocente(institucionId, periodoId, docenteId);
+        Set<String> bloqueos = institucionId == null ? Set.of()
+                : docenteBloqueoService.claves(institucionId, periodoId, docenteId);
 
         model.addAttribute("docentesDisponibilidad", docentes);
         model.addAttribute("periodosActivosDisponibilidad", periodos);
@@ -315,24 +420,31 @@ public class DocentesController {
         model.addAttribute("dias", ConfiguracionAcademicaService.DIAS);
         model.addAttribute("lecciones", ConfiguracionAcademicaService.LECCIONES);
         model.addAttribute("horarioDocente", horario);
+        model.addAttribute("bloqueos", bloqueos);
     }
 
-    private void cargarAsignaciones(Model model, Long institucionId, Long periodoId) {
+    private void cargarAsignaciones(Model model, Long institucionId, Long periodoId, Long docenteId) {
         List<PeriodoAcademico> periodos = institucionId == null ? List.of()
                 : configuracionAcademicaService.listarPeriodosActivos(institucionId);
+        List<Usuario> docentes = institucionId == null ? List.of()
+                : personalService.listarPorRol(institucionId, ROL_DOCENTE);
         if (periodoId == null && !periodos.isEmpty()) {
             periodoId = periodos.get(0).getId();
         }
 
-        List<CargaLaboralDocenteDTO> carga = new ArrayList<>();
-        if (institucionId != null) {
-            List<Usuario> docentes = personalService.listarPorRol(institucionId, ROL_DOCENTE);
-            for (Usuario docente : docentes) {
-                carga.add(construirCargaLaboral(institucionId, periodoId, docente));
-            }
-            carga.sort(Comparator.comparing(c -> c.getDocente().getNombre()));
+        List<Usuario> docentesCarga = docentes;
+        if (docenteId != null) {
+            docentesCarga = docentes.stream().filter(d -> docenteId.equals(d.getId())).toList();
         }
 
+        List<CargaLaboralDocenteDTO> carga = new ArrayList<>();
+        for (Usuario docente : docentesCarga) {
+            carga.add(construirCargaLaboral(institucionId, periodoId, docente));
+        }
+        carga.sort(Comparator.comparing(c -> c.getDocente().getNombre()));
+
+        model.addAttribute("docentesAsignaciones", docentes);
+        model.addAttribute("docenteSeleccionadoAsignaciones", docenteId);
         model.addAttribute("periodosActivosAsignaciones", periodos);
         model.addAttribute("periodoSeleccionadoAsignaciones", periodoId);
         model.addAttribute("carga", carga);

@@ -15,6 +15,7 @@ import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.Usuario;
+import com.chavescr.nexa.repository.DocenteBloqueoLeccionRepository;
 import com.chavescr.nexa.repository.DocenteGuiaRepository;
 import com.chavescr.nexa.repository.DocenteMateriaRepository;
 import com.chavescr.nexa.repository.InstitucionRepository;
@@ -34,6 +35,7 @@ public class PersonalService {
     private final NivelAcademicoRepository nivelAcademicoRepository;
     private final DocenteMateriaRepository docenteMateriaRepository;
     private final DocenteGuiaRepository docenteGuiaRepository;
+    private final DocenteBloqueoLeccionRepository docenteBloqueoLeccionRepository;
     private final PasswordEncoder passwordEncoder;
 
     public PersonalService(UsuarioRepository usuarioRepository,
@@ -42,6 +44,7 @@ public class PersonalService {
                            NivelAcademicoRepository nivelAcademicoRepository,
                            DocenteMateriaRepository docenteMateriaRepository,
                            DocenteGuiaRepository docenteGuiaRepository,
+                           DocenteBloqueoLeccionRepository docenteBloqueoLeccionRepository,
                            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
@@ -49,6 +52,7 @@ public class PersonalService {
         this.nivelAcademicoRepository = nivelAcademicoRepository;
         this.docenteMateriaRepository = docenteMateriaRepository;
         this.docenteGuiaRepository = docenteGuiaRepository;
+        this.docenteBloqueoLeccionRepository = docenteBloqueoLeccionRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -156,6 +160,7 @@ public class PersonalService {
         Usuario u = obtenerPorId(institucionId, id);
         docenteMateriaRepository.deleteByDocenteId(id);
         docenteGuiaRepository.deleteByDocenteId(id);
+        docenteBloqueoLeccionRepository.deleteByDocenteId(id);
         usuarioRepository.delete(u);
         log.info("Personal eliminado: id={}", id);
     }

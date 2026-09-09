@@ -203,18 +203,28 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("docenteSeleccionadoId", docenteId);
         model.addAttribute("materias", service.listarMateriasActivas(institucionId));
-        model.addAttribute("docentes", service.listarDocentesPorMateria(institucionId, materiaId, docenteId));
+        model.addAttribute("docentes", service.listarDocentesDisponibles(
+                institucionId, materiaId, docenteId, periodoId, dia, numeroLeccion, id));
+        model.addAttribute("docentesAsociadosVacios",
+                service.listarDocentesPorMateria(institucionId, materiaId, docenteId).isEmpty());
         model.addAttribute("aulas", service.listarAulasActivas(institucionId));
         return "configuracion-academica/horario/form :: form-content";
     }
 
     @GetMapping("/horario/docentes")
     public String docentesPorMateria(@RequestParam(required = false) Long materiaId,
+            @RequestParam Long periodoId,
+            @RequestParam String dia,
+            @RequestParam Integer numeroLeccion,
+            @RequestParam(required = false) Long id,
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("docenteSeleccionadoId", null);
-        model.addAttribute("docentes", service.listarDocentesPorMateria(institucionId, materiaId, null));
+        model.addAttribute("docentesAsociadosVacios",
+                service.listarDocentesPorMateria(institucionId, materiaId, null).isEmpty());
+        model.addAttribute("docentes", service.listarDocentesDisponibles(
+                institucionId, materiaId, null, periodoId, dia, numeroLeccion, id));
         return "configuracion-academica/horario/form :: docentes-select";
     }
 

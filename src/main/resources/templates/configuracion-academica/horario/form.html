@@ -38,6 +38,7 @@
                                 hx-trigger="change"
                                 hx-target="#horario-docente-field"
                                 hx-swap="outerHTML"
+                                hx-include="closest form"
                                 hx-indicator="this">
                             <option value="" hidden>Seleccione una materia</option>
                             <option th:each="materia : ${materias}"
@@ -87,7 +88,7 @@
         <option value="" hidden
                 th:text="${materiaId == null
                           ? 'Seleccione una materia primero'
-                          : (docentes.empty ? 'No hay profesores asociados'
+                          : (docentes.empty ? 'Sin profesores disponibles'
                                             : 'Seleccione un profesor')}">
             Seleccione un profesor
         </option>
@@ -96,8 +97,11 @@
                 th:selected="${docenteSeleccionadoId != null and docente.id == docenteSeleccionadoId}"
                 th:text="${docente.nombre}">Profesor</option>
     </select>
-    <p class="academic-help" th:if="${materiaId != null and docentes.empty}">
+    <p class="academic-help" th:if="${materiaId != null and docentesAsociadosVacios}">
         No hay profesores asociados a esta materia. Asígnalos en Docentes → Directorio.
+    </p>
+    <p class="academic-help" th:if="${materiaId != null and !docentesAsociadosVacios and docentes.empty}">
+        Ningún profesor de esta materia está disponible en esta lección.
     </p>
 </div>
 </body>

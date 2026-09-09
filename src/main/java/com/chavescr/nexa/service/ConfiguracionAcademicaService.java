@@ -2,9 +2,12 @@ package com.chavescr.nexa.service;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +49,7 @@ public class ConfiguracionAcademicaService {
     private final AulaRepository aulaRepository;
     private final DocenteMateriaService docenteMateriaService;
     private final DocenteGuiaService docenteGuiaService;
+    private final DocenteBloqueoService docenteBloqueoService;
 
     public ConfiguracionAcademicaService(InstitucionRepository institucionRepository,
             PeriodoAcademicoRepository periodoRepository,
@@ -57,7 +61,8 @@ public class ConfiguracionAcademicaService {
             UsuarioRepository usuarioRepository,
             AulaRepository aulaRepository,
             DocenteMateriaService docenteMateriaService,
-            DocenteGuiaService docenteGuiaService) {
+            DocenteGuiaService docenteGuiaService,
+            DocenteBloqueoService docenteBloqueoService) {
         this.institucionRepository = institucionRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
@@ -69,6 +74,7 @@ public class ConfiguracionAcademicaService {
         this.aulaRepository = aulaRepository;
         this.docenteMateriaService = docenteMateriaService;
         this.docenteGuiaService = docenteGuiaService;
+        this.docenteBloqueoService = docenteBloqueoService;
     }
 
     @Transactional(readOnly = true)
@@ -106,6 +112,7 @@ public class ConfiguracionAcademicaService {
     public void eliminarPeriodo(Long institucionId, Long id) {
         PeriodoAcademico periodo = obtenerPeriodo(institucionId, id);
         horarioRepository.deleteByInstitucionIdAndPeriodoId(institucionId, id);
+        docenteBloqueoService.eliminarPorPeriodo(institucionId, id);
         periodoRepository.delete(periodo);
     }
 
@@ -272,6 +279,21 @@ public class ConfiguracionAcademicaService {
     }
 
     @Transactional(readOnly = true)
+    public List<Usuario> listarDocentesDisponibles(Long institucionId, Long materiaId, Long docenteSeleccionadoId,
+            Long periodoId, String dia, Integer numeroLeccion, Long leccionId) {
+        List<Usuario> docentes = listarDocentesPorMateria(institucionId, materiaId, docenteSeleccionadoId);
+        if (periodoId == null || dia == null || numeroLeccion == null) {
+            return docentes;
+        }
+        Set<Long> noDisponibles = new HashSet<>(horarioRepository.findDocenteIdsEnBloque(
+                institucionId, periodoId, dia, numeroLeccion, leccionId));
+        noDisponibles.addAll(docenteBloqueoService.docenteIds(institucionId, periodoId, dia, numeroLeccion));
+        return docentes.stream()
+                .filter(d -> Objects.equals(d.getId(), docenteSeleccionadoId) || !noDisponibles.contains(d.getId()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Map<String, List<HorarioLeccion>> obtenerHorario(Long institucionId, Long periodoId, Long nivelId) {
         Map<String, List<HorarioLeccion>> horario = new LinkedHashMap<>();
         if (periodoId == null || nivelId == null) return horario;
@@ -336,6 +358,9 @@ public class ConfiguracionAcademicaService {
         if (docenteOcupado) {
             throw new IllegalArgumentException("El docente ya tiene otra lección asignada en este horario");
         }
+        if (docenteBloqueoService.estaBloqueado(institucionId, periodoId, docenteId, dia, numeroLeccion)) {
+            throw new IllegalArgumentException("El docente no está disponible en esta lección");
+        }
 
         HorarioLeccion leccion;
         if (id != null) {
@@ -374,7 +399,7 @@ public class ConfiguracionAcademicaService {
                 .orElseThrow(() -> new IllegalArgumentException("Lección no encontrada")));
     }
 
-    public String clave(String dia, Integer numeroLeccion) {
+    public static String clave(String dia, Integer numeroLeccion) {
         return numeroLeccion + "-" + dia;
     }
 

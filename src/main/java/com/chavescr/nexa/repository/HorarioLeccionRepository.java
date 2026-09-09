@@ -79,6 +79,15 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
     List<HorarioLeccion> findByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
             Long institucionId, Long periodoId, Long docenteId, String dia, Integer numeroLeccion);
 
+    @Query("SELECT DISTINCT h.docente.id FROM HorarioLeccion h "
+            + "WHERE h.institucion.id = :institucionId AND h.periodo.id = :periodoId "
+            + "AND h.dia = :dia AND h.numeroLeccion = :numeroLeccion "
+            + "AND (:leccionId IS NULL OR h.id <> :leccionId)")
+    List<Long> findDocenteIdsEnBloque(
+            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId,
+            @Param("dia") String dia, @Param("numeroLeccion") Integer numeroLeccion,
+            @Param("leccionId") Long leccionId);
+
     List<HorarioLeccion> findByInstitucionIdAndPeriodoIdAndDocenteIdOrderByDiaAscNumeroLeccionAsc(
             Long institucionId, Long periodoId, Long docenteId);
 
