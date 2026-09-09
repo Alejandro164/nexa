@@ -11,6 +11,8 @@
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem;">
                         <span class="badge" th:classappend="${docente.activo ? 'badge-success' : 'badge-secondary'}"
                               th:text="${docente.activo ? 'Docente Activo' : 'Docente Inactivo'}">Estado</span>
+                        <span th:unless="${seccionesGuia == null or seccionesGuia.empty}"
+                              class="badge badge-success">Profesor guía</span>
                     </div>
 
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:1.25rem;">
@@ -35,19 +37,53 @@
                     <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.6rem;">
                         📘 Materias que imparte
                     </h4>
-                    <div th:if="${materias == null or materias.empty}" style="color:var(--text-light); font-size:0.85rem; margin-bottom:1.25rem;">
-                        No tiene lecciones asignadas en el horario actual.
+                    <div th:if="${materiasAsignadas == null or materiasAsignadas.empty}"
+                         style="color:var(--text-light); font-size:0.85rem; margin-bottom:1.25rem;">
+                        <p>No tiene materias asignadas en su perfil.</p>
+                        <div th:unless="${materiasHorario == null or materiasHorario.empty}"
+                             style="margin-top:0.55rem;">
+                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:6px;">
+                                Según el horario actual:
+                            </p>
+                            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                                <span th:each="m : ${materiasHorario}"
+                                      class="docente-materia-chip docente-materia-chip-static"
+                                      th:style="|--chip-color:${m.color != null ? m.color : '#2d5a87'}|">
+                                    <span class="docente-materia-dot"></span>
+                                    <span th:text="${m.nombre}">Materia</span>
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div th:unless="${materias == null or materias.empty}" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1.25rem;">
-                        <span th:each="m : ${materias}" class="badge-xs badge-docente"
-                              th:text="${m.nombre}" th:style="|background:${m.color}22; color:${m.color};|">Materia</span>
+                    <div th:unless="${materiasAsignadas == null or materiasAsignadas.empty}"
+                         style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1.25rem;">
+                        <span th:each="m : ${materiasAsignadas}"
+                              class="docente-materia-chip docente-materia-chip-static"
+                              th:style="|--chip-color:${m.color != null ? m.color : '#2d5a87'}|">
+                            <span class="docente-materia-dot"></span>
+                            <span th:text="${m.nombre}">Materia</span>
+                        </span>
                     </div>
 
                     <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.6rem;">
-                        🏫 Secciones asignadas
+                        🧭 Profesor guía de
+                    </h4>
+                    <div th:if="${seccionesGuia == null or seccionesGuia.empty}"
+                         style="color:var(--text-light); font-size:0.85rem; margin-bottom:1.25rem;">
+                        No es profesor guía de ninguna sección.
+                    </div>
+                    <div th:unless="${seccionesGuia == null or seccionesGuia.empty}"
+                         style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1.25rem;">
+                        <span th:each="n : ${seccionesGuia}"
+                              class="docente-materia-chip docente-materia-chip-static docente-seccion-chip"
+                              th:text="${n.nombreCompleto}">7 - A</span>
+                    </div>
+
+                    <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.6rem;">
+                        🏫 Secciones en el horario
                     </h4>
                     <div th:if="${niveles == null or niveles.empty}" style="color:var(--text-light); font-size:0.85rem;">
-                        No tiene secciones asignadas en el horario actual.
+                        No tiene lecciones asignadas en el horario actual.
                     </div>
                     <div th:unless="${niveles == null or niveles.empty}" style="display:flex; flex-wrap:wrap; gap:6px;">
                         <span th:each="n : ${niveles}" class="badge-xs" th:text="${n.nombreCompleto}">Sección</span>

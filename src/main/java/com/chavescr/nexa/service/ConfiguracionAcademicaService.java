@@ -44,6 +44,8 @@ public class ConfiguracionAcademicaService {
     private final HorarioLeccionRepository horarioRepository;
     private final UsuarioRepository usuarioRepository;
     private final AulaRepository aulaRepository;
+    private final DocenteMateriaService docenteMateriaService;
+    private final DocenteGuiaService docenteGuiaService;
 
     public ConfiguracionAcademicaService(InstitucionRepository institucionRepository,
             PeriodoAcademicoRepository periodoRepository,
@@ -53,7 +55,9 @@ public class ConfiguracionAcademicaService {
             TipoAulaRepository tipoAulaRepository,
             HorarioLeccionRepository horarioRepository,
             UsuarioRepository usuarioRepository,
-            AulaRepository aulaRepository) {
+            AulaRepository aulaRepository,
+            DocenteMateriaService docenteMateriaService,
+            DocenteGuiaService docenteGuiaService) {
         this.institucionRepository = institucionRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
@@ -63,6 +67,8 @@ public class ConfiguracionAcademicaService {
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
         this.aulaRepository = aulaRepository;
+        this.docenteMateriaService = docenteMateriaService;
+        this.docenteGuiaService = docenteGuiaService;
     }
 
     @Transactional(readOnly = true)
@@ -133,6 +139,7 @@ public class ConfiguracionAcademicaService {
     public void eliminarNivel(Long institucionId, Long id) {
         NivelAcademico nivel = obtenerNivel(institucionId, id);
         horarioRepository.deleteByInstitucionIdAndNivelId(institucionId, id);
+        docenteGuiaService.eliminarPorNivel(institucionId, id);
         nivelRepository.delete(nivel);
     }
 
@@ -182,6 +189,7 @@ public class ConfiguracionAcademicaService {
     public void eliminarMateria(Long institucionId, Long id) {
         Materia materia = obtenerMateria(institucionId, id);
         horarioRepository.deleteByInstitucionIdAndMateriaId(institucionId, id);
+        docenteMateriaService.eliminarPorMateria(institucionId, id);
         materiaRepository.delete(materia);
     }
 

@@ -2,6 +2,7 @@ package com.chavescr.nexa.controller;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,12 +20,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.dto.CargaLaboralDocenteDTO;
 import com.chavescr.nexa.entity.HorarioLeccion;
+import com.chavescr.nexa.entity.Materia;
+import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.ConfiguracionAcademicaService;
+import com.chavescr.nexa.service.DocenteGuiaService;
+import com.chavescr.nexa.service.DocenteMateriaService;
 import com.chavescr.nexa.service.PersonalService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,6 +53,12 @@ public class DocentesController {
 
     @Autowired
     private HorarioLeccionRepository horarioLeccionRepository;
+
+    @Autowired
+    private DocenteMateriaService docenteMateriaService;
+
+    @Autowired
+    private DocenteGuiaService docenteGuiaService;
 
     @GetMapping
     public String docentes(Model model, HttpSession session, HttpServletRequest request) {
@@ -82,24 +93,26 @@ public class DocentesController {
         Long institucionId = requerirInstitucion(session);
         Usuario docente = personalService.obtenerPorId(institucionId, id);
         model.addAttribute("docente", docente);
-        model.addAttribute("materias", alcanceDocenteService.materiasVisibles(institucionId, id));
+        model.addAttribute("materiasAsignadas", docenteMateriaService.listarMaterias(institucionId, id));
+        model.addAttribute("materiasHorario", alcanceDocenteService.materiasVisibles(institucionId, id));
+        model.addAttribute("seccionesGuia", docenteGuiaService.listarSecciones(institucionId, id));
         model.addAttribute("niveles", alcanceDocenteService.nivelesVisibles(institucionId, id));
         return "docentes/directorio/ficha :: modal";
     }
 
     @GetMapping("/directorio/form")
     public String directorioFormCrear(Model model, HttpSession session) {
-        requerirInstitucion(session);
+        Long institucionId = requerirInstitucion(session);
         Usuario nuevo = new Usuario();
         nuevo.setRoles(java.util.Set.of(personalService.obtenerRolPorNombre(ROL_DOCENTE)));
-        model.addAttribute("usuario", nuevo);
+        cargarFormulario(model, institucionId, nuevo, List.of(), false, List.of());
         return "docentes/directorio/formulario :: form-content";
     }
 
     @GetMapping("/directorio/form/{id}")
     public String directorioFormEditar(@PathVariable Long id, Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("usuario", personalService.obtenerPorId(institucionId, id));
+        cargarFormulario(model, institucionId, personalService.obtenerPorId(institucionId, id), null, null, null);
         return "docentes/directorio/formulario :: form-content";
     }
 
@@ -112,20 +125,30 @@ public class DocentesController {
             @RequestParam(required = false) String cedula,
             @RequestParam(required = false) String password,
             @RequestParam(defaultValue = "false") boolean activo,
+            @RequestParam(required = false) List<Long> materiaIds,
+            @RequestParam(defaultValue = "false") boolean profesorGuia,
+            @RequestParam(required = false) List<Long> nivelGuiaIds,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
             // El rol de una cuenta creada desde este módulo siempre es Docente — no lo elige el admin
             // (a diferencia de Personal, que sí permite cualquier combinación de roles).
             List<Long> rolIds = List.of(personalService.obtenerRolPorNombre(ROL_DOCENTE).getId());
-            personalService.guardar(institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
+            Usuario guardado = personalService.guardar(
+                    institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
+            docenteMateriaService.reemplazar(institucionId, guardado.getId(), materiaIds);
+            docenteGuiaService.reemplazar(institucionId, guardado.getId(), profesorGuia, nivelGuiaIds);
             cargarDirectorio(model, institucionId, null);
             return "docentes/directorio/lista :: content";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#docentes-modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id));
+            Usuario formUsuario = id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id);
+            cargarFormulario(model, institucionId, formUsuario,
+                    materiaIds == null ? List.of() : materiaIds,
+                    profesorGuia,
+                    nivelGuiaIds == null ? List.of() : nivelGuiaIds);
             return "docentes/directorio/formulario :: form-content";
         }
     }
@@ -168,8 +191,39 @@ public class DocentesController {
     private void cargarDirectorio(Model model, Long institucionId, String q) {
         List<Usuario> docentes = institucionId == null ? List.of()
                 : personalService.listarPorRol(institucionId, ROL_DOCENTE, q);
+        Map<Long, List<Materia>> materiasPorDocente = institucionId == null ? Map.of()
+                : docenteMateriaService.mapearPorDocente(institucionId);
+        Map<Long, List<NivelAcademico>> guiasPorDocente = institucionId == null ? Map.of()
+                : docenteGuiaService.mapearPorDocente(institucionId);
         model.addAttribute("docentes", docentes);
+        model.addAttribute("materiasPorDocente", materiasPorDocente);
+        model.addAttribute("guiasPorDocente", guiasPorDocente);
         model.addAttribute("q", q);
+    }
+
+    private void cargarFormulario(Model model, Long institucionId, Usuario usuario,
+            List<Long> materiaIds, Boolean profesorGuia, List<Long> nivelGuiaIds) {
+        model.addAttribute("usuario", usuario);
+        model.addAttribute("materiasCatalogo",
+                docenteMateriaService.catalogoParaFormulario(institucionId, usuario.getId()));
+        model.addAttribute("seccionesCatalogo",
+                docenteGuiaService.catalogoParaFormulario(institucionId, usuario.getId()));
+        List<Long> materiasSeleccionadas = materiaIds != null
+                ? materiaIds
+                : (usuario.getId() == null
+                        ? List.of()
+                        : docenteMateriaService.listarMateriaIds(institucionId, usuario.getId()));
+        List<Long> nivelesSeleccionados = nivelGuiaIds != null
+                ? nivelGuiaIds
+                : (usuario.getId() == null
+                        ? List.of()
+                        : docenteGuiaService.listarNivelIds(institucionId, usuario.getId()));
+        boolean esGuia = profesorGuia != null
+                ? profesorGuia
+                : !nivelesSeleccionados.isEmpty();
+        model.addAttribute("materiaIdsSeleccionadas", new HashSet<>(materiasSeleccionadas));
+        model.addAttribute("nivelGuiaIdsSeleccionados", new HashSet<>(nivelesSeleccionados));
+        model.addAttribute("profesorGuia", esGuia);
     }
 
     private void cargarDisponibilidad(Model model, Long institucionId, Long docenteId, Long periodoId) {

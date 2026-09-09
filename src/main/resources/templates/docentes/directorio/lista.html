@@ -14,8 +14,8 @@
                     <th>Nombre</th>
                     <th>Email</th>
                     <th>Cédula</th>
-                    <th>Contacto</th>
-                    <th>Roles</th>
+                    <th>Materias</th>
+                    <th>Prof. guía</th>
                     <th>Estado</th>
                     <th style="text-align:right;">Acciones</th>
                 </tr>
@@ -28,13 +28,26 @@
                     <td><strong th:text="${u.nombre}" style="color:#0f172a;">Nombre</strong></td>
                     <td th:text="${u.email}" style="color:#64748b;">email</td>
                     <td th:text="${u.cedula != null ? u.cedula : '—'}" style="color:#94a3b8;">—</td>
-                    <td th:text="${u.telefono != null ? u.telefono : '—'}" style="color:#64748b;">—</td>
                     <td>
-                        <div style="display:flex;flex-wrap:wrap;gap:2px;">
-                            <span th:each="r : ${u.roles}" class="badge-xs"
-                                  th:classappend="${r.nombre == 'ROLE_ADMIN' ? 'badge-admin' : (r.nombre == 'ROLE_DIRECTOR' ? 'badge-director' : (r.nombre == 'ROLE_PADRE' ? 'badge-padre' : (r.nombre == 'ROLE_ESTUDIANTE' ? 'badge-estudiante' : 'badge-docente')))}"
-                                  th:text="${r.nombre.replace('ROLE_', '')}">ROL</span>
-                            <span th:if="${u.roles.empty}" style="color:#94a3b8;font-size:0.8rem;">Sin rol</span>
+                        <div th:with="materias=${materiasPorDocente != null ? materiasPorDocente[u.id] : null}"
+                             style="display:flex;flex-wrap:wrap;gap:4px;">
+                            <span th:if="${materias == null or materias.empty}"
+                                  style="color:#94a3b8;font-size:0.8rem;">Sin materias</span>
+                            <span th:each="m : ${materias}" class="docente-materia-chip docente-materia-chip-static"
+                                  th:style="|--chip-color:${m.color != null ? m.color : '#2d5a87'}|">
+                                <span class="docente-materia-dot"></span>
+                                <span th:text="${m.nombre}">Materia</span>
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <div th:with="guias=${guiasPorDocente != null ? guiasPorDocente[u.id] : null}"
+                             style="display:flex;flex-wrap:wrap;gap:4px;">
+                            <span th:if="${guias == null or guias.empty}"
+                                  style="color:#94a3b8;font-size:0.8rem;">—</span>
+                            <span th:each="n : ${guias}" class="docente-materia-chip docente-materia-chip-static docente-seccion-chip">
+                                <span th:text="${n.nombreCompleto}">7 - A</span>
+                            </span>
                         </div>
                     </td>
                     <td>

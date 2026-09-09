@@ -15,6 +15,8 @@ import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.Usuario;
+import com.chavescr.nexa.repository.DocenteGuiaRepository;
+import com.chavescr.nexa.repository.DocenteMateriaRepository;
 import com.chavescr.nexa.repository.InstitucionRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.RolRepository;
@@ -30,17 +32,23 @@ public class PersonalService {
     private final RolRepository rolRepository;
     private final InstitucionRepository institucionRepository;
     private final NivelAcademicoRepository nivelAcademicoRepository;
+    private final DocenteMateriaRepository docenteMateriaRepository;
+    private final DocenteGuiaRepository docenteGuiaRepository;
     private final PasswordEncoder passwordEncoder;
 
     public PersonalService(UsuarioRepository usuarioRepository,
                            RolRepository rolRepository,
                            InstitucionRepository institucionRepository,
                            NivelAcademicoRepository nivelAcademicoRepository,
+                           DocenteMateriaRepository docenteMateriaRepository,
+                           DocenteGuiaRepository docenteGuiaRepository,
                            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.institucionRepository = institucionRepository;
         this.nivelAcademicoRepository = nivelAcademicoRepository;
+        this.docenteMateriaRepository = docenteMateriaRepository;
+        this.docenteGuiaRepository = docenteGuiaRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -146,6 +154,8 @@ public class PersonalService {
 
     public void eliminar(Long institucionId, Long id) {
         Usuario u = obtenerPorId(institucionId, id);
+        docenteMateriaRepository.deleteByDocenteId(id);
+        docenteGuiaRepository.deleteByDocenteId(id);
         usuarioRepository.delete(u);
         log.info("Personal eliminado: id={}", id);
     }
