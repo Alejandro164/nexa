@@ -17,4 +17,6 @@ public interface MateriaRepository extends JpaRepository<Materia, Long> {
 
     @EntityGraph(attributePaths = "tipoMateria")
     Optional<Materia> findByIdAndInstitucionId(Long id, Long institucionId);
+
+    boolean existsByInstitucionIdAndNombreIgnoreCase(Long institucionId, String nombre);
 }

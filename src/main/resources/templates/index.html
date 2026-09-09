@@ -1342,6 +1342,12 @@
         .academic-select-option.selected { background:rgba(45,90,135,0.1);color:var(--primary);font-weight:700; }
         .academic-select-option-label { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
         .academic-select-option .badge { flex-shrink:0; }
+        .academic-select-search { position:sticky;top:0;z-index:1;margin:-0.35rem -0.35rem 0.35rem;padding:0.5rem 0.5rem 0.45rem;background:#fff;border-bottom:1px solid var(--border); }
+        .academic-select-search-input { width:100%;min-height:34px;padding:0.35rem 0.65rem;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--text-primary);font-family:inherit;font-size:0.82rem;outline:none;box-sizing:border-box; }
+        .academic-select-search-input:focus { border-color:var(--primary);box-shadow:0 0 0 3px rgba(45,90,135,0.1); }
+        .academic-select-empty { padding:0.7rem 0.55rem;color:var(--text-secondary);font-size:0.8rem;text-align:center; }
+        .academic-select-option[hidden] { display:none!important; }
+        .academic-select-options:has(.academic-select-search) { max-height:280px; }
 
         .bitacora-overlay {
             position: fixed;

@@ -1,6 +1,6 @@
 <div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
     <div class="modal-backdrop" @click.self="$dispatch('close-modal')">
-        <div class="modal-dialog">
+        <div class="modal-dialog" style="max-width:580px;">
             <div class="modal-header">
                 <h3 class="modal-title" th:text="${usuario.id == null ? 'Registrar Docente' : 'Editar Docente'}">Docente</h3>
                 <button type="button" class="close-btn" @click="$dispatch('close-modal')">&times;</button>
@@ -9,6 +9,7 @@
                 <form th:action="@{/docentes/directorio}" method="post"
                       hx-post="/docentes/directorio"
                       hx-target="#docentes-dir-content" hx-swap="innerHTML"
+                      hx-include=".dir-filters"
                       hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
                     <input type="hidden" name="id" th:value="${usuario.id}">
 
@@ -51,6 +52,57 @@
                     <div class="form-group">
                         <label class="form-label">Rol</label>
                         <div><span class="badge-xs badge-docente">DOCENTE</span></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Materias que imparte</label>
+                        <p class="academic-help" style="margin:0 0 0.55rem;">
+                            Marque las materias que da este docente en la institución.
+                        </p>
+                        <div th:if="${materiasCatalogo == null or materiasCatalogo.empty}"
+                             class="academic-help">
+                            No hay materias activas. Regístrelas en Configuración académica.
+                        </div>
+                        <div th:unless="${materiasCatalogo == null or materiasCatalogo.empty}"
+                             class="docente-materias-grid">
+                            <label th:each="m : ${materiasCatalogo}" class="docente-materia-chip"
+                                   th:style="|--chip-color:${m.color != null ? m.color : '#2d5a87'}|">
+                                <input type="checkbox" name="materiaIds" th:value="${m.id}"
+                                       th:checked="${materiaIdsSeleccionadas != null and #sets.contains(materiaIdsSeleccionadas, m.id)}">
+                                <span class="docente-materia-dot"></span>
+                                <span th:text="${m.nombre}">Materia</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group docente-guia-block">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="custom-checkbox" name="profesorGuia" value="true"
+                                   th:checked="${profesorGuia}">
+                            <span class="custom-checkbox-control">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </span>
+                            <span>¿Es profesor guía?</span>
+                        </label>
+                        <div class="docente-guia-secciones">
+                            <p class="academic-help" style="margin:0.7rem 0 0.55rem;">
+                                Indique de qué secciones es profesor guía. Una sección solo puede tener un guía.
+                            </p>
+                            <div th:if="${seccionesCatalogo == null or seccionesCatalogo.empty}"
+                                 class="academic-help">
+                                No hay secciones activas. Regístrelas en Configuración académica.
+                            </div>
+                            <div th:unless="${seccionesCatalogo == null or seccionesCatalogo.empty}"
+                                 class="docente-materias-grid">
+                                <label th:each="n : ${seccionesCatalogo}" class="docente-materia-chip docente-seccion-chip">
+                                    <input type="checkbox" name="nivelGuiaIds" th:value="${n.id}"
+                                           th:checked="${nivelGuiaIdsSeleccionados != null and #sets.contains(nivelGuiaIdsSeleccionados, n.id)}">
+                                    <span th:text="${n.nombreCompleto}">7 - A</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">

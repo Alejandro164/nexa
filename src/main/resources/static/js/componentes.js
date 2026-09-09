@@ -909,6 +909,14 @@ function cerrarSelectoresAcademicos(excepto) {
 }
 
 function inicializarSelectoresAcademicos(root) {
+    document.querySelectorAll('.academic-select-options').forEach(function (panel) {
+        var vivo = false;
+        document.querySelectorAll('.academic-select').forEach(function (wrap) {
+            if (wrap._academicPanel === panel) vivo = true;
+        });
+        if (!vivo) panel.remove();
+    });
+
     (root || document).querySelectorAll('select.form-input:not([data-academic-select])').forEach(function (native) {
         native.dataset.academicSelect = 'true';
         native.classList.add('academic-native-select');
@@ -945,12 +953,67 @@ function inicializarSelectoresAcademicos(root) {
             });
         }
 
+        function normalizar(texto) {
+            return (texto || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
+        var searchable = native.hasAttribute('data-search');
+        var searchInput = null;
+        var emptyMsg = null;
+
+        if (searchable) {
+            var searchWrap = document.createElement('div');
+            searchWrap.className = 'academic-select-search';
+            searchInput = document.createElement('input');
+            searchInput.type = 'search';
+            searchInput.className = 'academic-select-search-input';
+            searchInput.placeholder = native.getAttribute('data-search-placeholder') || 'Buscar...';
+            searchInput.setAttribute('aria-label', searchInput.placeholder);
+            searchInput.autocomplete = 'off';
+            searchWrap.appendChild(searchInput);
+            opts.appendChild(searchWrap);
+
+            emptyMsg = document.createElement('div');
+            emptyMsg.className = 'academic-select-empty';
+            emptyMsg.textContent = 'Sin coincidencias';
+            emptyMsg.hidden = true;
+            opts.appendChild(emptyMsg);
+
+            function filtrar(q) {
+                var nq = normalizar(q);
+                var qNum = nq.replace(/\D/g, '');
+                var visibles = 0;
+                opts.querySelectorAll('.academic-select-option').forEach(function (o) {
+                    var hay = normalizar(o.textContent + ' ' + (o.dataset.search || ''));
+                    var ok = !nq || hay.indexOf(nq) !== -1
+                        || (qNum.length >= 4 && hay.replace(/\D/g, '').indexOf(qNum) !== -1);
+                    o.hidden = !ok;
+                    if (ok) visibles++;
+                });
+                emptyMsg.hidden = visibles > 0;
+            }
+
+            searchInput.addEventListener('click', function (e) { e.stopPropagation(); });
+            searchInput.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+            searchInput.addEventListener('keydown', function (e) {
+                e.stopPropagation();
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    filtrar('');
+                    cerrarSelectoresAcademicos();
+                    trigger.focus();
+                }
+            });
+            searchInput.addEventListener('input', function () { filtrar(searchInput.value); });
+        }
+
         Array.from(native.options).forEach(function (o) {
             if (o.hidden || o.disabled) return;
             var btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'academic-select-option';
             btn.dataset.value = o.value;
+            if (o.dataset.search) btn.dataset.search = o.dataset.search;
             btn.setAttribute('role', 'option');
             if (o.dataset.role) {
                 var nameSpan = document.createElement('span');
@@ -980,6 +1043,12 @@ function inicializarSelectoresAcademicos(root) {
             if (open) {
                 posicionarDropdown(trigger, opts, 6);
                 opts.classList.add('is-open');
+                if (searchInput) {
+                    searchInput.value = '';
+                    opts.querySelectorAll('.academic-select-option').forEach(function (o) { o.hidden = false; });
+                    if (emptyMsg) emptyMsg.hidden = true;
+                    setTimeout(function () { searchInput.focus(); }, 30);
+                }
             } else {
                 opts.classList.remove('is-open');
             }

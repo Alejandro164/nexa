@@ -71,6 +71,162 @@
                 from { opacity: 0; transform: translateY(6px); }
                 to { opacity: 1; transform: translateY(0); }
             }
+            #docentes-modal-container .modal-dialog { max-width: 580px; }
+            #docentes-modal-container.dir-modal-visible .modal-backdrop,
+            #docentes-ficha-container.dir-modal-visible .modal-backdrop {
+                animation: academicModalBackdropIn 180ms ease-out both;
+            }
+            #docentes-modal-container.dir-modal-visible .modal-dialog,
+            #docentes-ficha-container.dir-modal-visible .modal-dialog {
+                animation: academicModalDialogIn 240ms cubic-bezier(.22,1,.36,1) both;
+            }
+            #docentes-modal-container.dir-modal-closing .modal-backdrop,
+            #docentes-ficha-container.dir-modal-closing .modal-backdrop {
+                animation: academicModalBackdropOut 180ms ease-in both;
+            }
+            #docentes-modal-container.dir-modal-closing .modal-dialog,
+            #docentes-ficha-container.dir-modal-closing .modal-dialog {
+                animation: academicModalDialogOut 180ms ease-in both;
+            }
+            .docente-materias-grid {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .docente-materia-chip {
+                --chip-color: #2d5a87;
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 12px 6px 10px;
+                border-radius: 999px;
+                border: 1px solid color-mix(in srgb, var(--chip-color) 28%, #e2e8f0);
+                background: #fff;
+                color: #334155;
+                font-size: 0.8rem;
+                font-weight: 600;
+                cursor: pointer;
+                user-select: none;
+                transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+            }
+            .docente-materia-chip input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+            .docente-materia-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--chip-color);
+                flex-shrink: 0;
+            }
+            .docente-materia-chip:hover {
+                border-color: color-mix(in srgb, var(--chip-color) 50%, white);
+            }
+            .docente-materia-chip:has(input:checked),
+            .docente-materia-chip-static {
+                background: color-mix(in srgb, var(--chip-color) 14%, white);
+                border-color: color-mix(in srgb, var(--chip-color) 45%, white);
+                color: color-mix(in srgb, var(--chip-color) 78%, black);
+            }
+            .docente-materia-chip:has(input:checked) {
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--chip-color) 12%, transparent);
+            }
+            .docente-materia-chip-static {
+                cursor: default;
+                padding: 3px 10px 3px 8px;
+                font-size: 0.72rem;
+                text-transform: none;
+            }
+            .docente-seccion-chip {
+                --chip-color: var(--primary, #2d5a87);
+            }
+            .docente-guia-secciones {
+                display: none;
+                margin-top: 0.15rem;
+            }
+            .docente-guia-block:has(input[name="profesorGuia"]:checked) .docente-guia-secciones {
+                display: block;
+            }
+            .dir-card-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.9rem;
+            }
+            .dir-header {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-bottom: 0;
+            }
+            .dir-header .btn-primary {
+                margin-left: auto;
+                flex: 0 0 auto;
+            }
+            .dir-search {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .dir-search .search-box {
+                flex: 0 0 66.666%;
+                width: 66.666%;
+                max-width: none;
+            }
+            .dir-search .search-icon {
+                pointer-events: none;
+            }
+            .dir-lecciones-empty {
+                color: #94a3b8;
+                font-size: 0.8rem;
+            }
+            .dir-lecciones-badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 3px 9px;
+                border-radius: 999px;
+                background: #f1f5f9;
+                border: 1px solid #e2e8f0;
+                color: #334155;
+                font-size: 0.75rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+            .dir-count-badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                margin-left: auto;
+                min-height: 38px;
+                padding: 0.4rem 0.95rem;
+                border-radius: 999px;
+                background: color-mix(in srgb, var(--primary) 10%, white);
+                border: 1px solid color-mix(in srgb, var(--primary) 22%, #e2e8f0);
+                color: var(--primary);
+                font-size: 0.8rem;
+                font-weight: 700;
+                letter-spacing: 0.01em;
+                white-space: nowrap;
+            }
+            @media (max-width: 700px) {
+                .dir-header .btn-primary {
+                    margin-left: 0;
+                    width: 100%;
+                }
+                .dir-search {
+                    flex-wrap: wrap;
+                }
+                .dir-search .search-box {
+                    flex-basis: 100%;
+                    width: 100%;
+                }
+                .dir-count-badge {
+                    margin-left: 0;
+                }
+            }
         </style>
 
         <div x-data="{ activeTab: 'directorio' }">

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${docenteFiltro != null} ? |Carga laboral — ${docenteFiltro.nombre}| : 'Carga laboral'">Carga laboral</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/componentes.css}">
+    <style>
+        :root {
+            --rpt-ink: #0f172a;
+            --rpt-muted: #64748b;
+            --rpt-line: #cbd5e1;
+        }
+        body {
+            margin: 0;
+            background: #e2e8f0;
+            font-family: Inter, system-ui, sans-serif;
+            color: var(--rpt-ink);
+        }
+        .rpt-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 20px;
+            background: #fff;
+            border-bottom: 1px solid var(--rpt-line);
+        }
+        .rpt-sheet {
+            width: min(980px, calc(100% - 32px));
+            margin: 24px auto 48px;
+            background: #fff;
+            border: 1px solid var(--rpt-line);
+            border-radius: 12px;
+            padding: 32px 36px 40px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+        .rpt-brand {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--primary, #2d5a87);
+            padding-bottom: 16px;
+            margin-bottom: 22px;
+        }
+        .rpt-brand h1 { margin: 0; font-size: 1.35rem; letter-spacing: -0.02em; }
+        .rpt-brand p { margin: 4px 0 0; color: var(--rpt-muted); font-size: 0.88rem; }
+        .rpt-meta {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px 18px;
+            margin-bottom: 22px;
+        }
+        .rpt-meta dt {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--rpt-muted);
+            font-weight: 600;
+        }
+        .rpt-meta dd { margin: 2px 0 0; font-size: 0.92rem; font-weight: 600; }
+        .rpt-stats {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+            font-size: 0.82rem;
+            color: var(--rpt-muted);
+        }
+        .rpt-stats strong { color: var(--rpt-ink); }
+        .rpt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+        }
+        .rpt-table th, .rpt-table td {
+            border: 1px solid var(--rpt-line);
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .rpt-table th { background: #f1f5f9; font-size: 0.75rem; }
+        .rpt-table td.num { text-align: center; font-weight: 700; white-space: nowrap; }
+        .rpt-asig { color: var(--rpt-muted); font-size: 0.78rem; }
+        .rpt-signs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            margin-top: 48px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--rpt-muted);
+        }
+        .rpt-signs div { border-top: 1px solid var(--rpt-line); padding-top: 8px; }
+        .rpt-foot { margin-top: 22px; font-size: 0.72rem; color: var(--rpt-muted); }
+        @media (max-width: 800px) {
+            .rpt-meta { grid-template-columns: 1fr 1fr; }
+        }
+        @media print {
+            @page { size: portrait A4; margin: 12mm; }
+            body { background: #fff; }
+            .rpt-toolbar { display: none !important; }
+            .rpt-sheet {
+                width: auto;
+                margin: 0;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="rpt-toolbar">
+        <button type="button" class="btn-secondary" onclick="window.close()">Cerrar</button>
+        <button type="button" class="btn-primary" onclick="window.print()">Imprimir / Guardar PDF</button>
+    </div>
+
+    <article class="rpt-sheet">
+        <header class="rpt-brand">
+            <div>
+                <h1 th:text="${institucionNombre != null ? institucionNombre : 'Nexa'}">Institución</h1>
+                <p>Reporte de carga laboral y asignaciones</p>
+            </div>
+            <p th:text="|Generado ${#temporals.format(fechaGeneracion, 'dd/MM/yyyy HH:mm')}|">Generado</p>
+        </header>
+
+        <dl class="rpt-meta">
+            <div>
+                <dt>Alcance</dt>
+                <dd th:text="${docenteFiltro != null} ? ${docenteFiltro.nombre} : 'Todos los docentes'">Todos</dd>
+            </div>
+            <div>
+                <dt>Cédula</dt>
+                <dd th:text="${docenteFiltro != null and !#strings.isEmpty(docenteFiltro.cedula) ? docenteFiltro.cedula : '—'}">—</dd>
+            </div>
+            <div>
+                <dt>Período</dt>
+                <dd th:text="|${periodo.codigo} — ${periodo.descripcion}|">2026-I</dd>
+            </div>
+            <div>
+                <dt>Vigencia</dt>
+                <dd th:text="|${#temporals.format(periodo.fechaInicio, 'dd/MM/yyyy')} – ${#temporals.format(periodo.fechaFin, 'dd/MM/yyyy')}|">01/01/2026</dd>
+            </div>
+        </dl>
+
+        <div class="rpt-stats">
+            <span><strong th:text="${totalDocentes}">0</strong> docentes</span>
+            <span><strong th:text="${docentesConCarga}">0</strong> con lecciones asignadas</span>
+            <span><strong th:text="${totalLecciones}">0</strong> lecciones semanales</span>
+        </div>
+
+        <table class="rpt-table">
+            <thead>
+                <tr>
+                    <th>Docente</th>
+                    <th>Cédula</th>
+                    <th>Lecc. sem.</th>
+                    <th>Asignaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${carga == null or carga.empty}">
+                    <td colspan="4">No hay docentes para este filtro.</td>
+                </tr>
+                <tr th:each="c : ${carga}">
+                    <td th:text="${c.docente.nombre}">Docente</td>
+                    <td th:text="${#strings.isEmpty(c.docente.cedula) ? '—' : c.docente.cedula}">—</td>
+                    <td class="num" th:text="${c.totalLecciones}">0</td>
+                    <td>
+                        <span th:if="${c.asignaciones.empty}" class="rpt-asig">Sin lecciones asignadas</span>
+                        <div th:each="a : ${c.asignaciones}" class="rpt-asig"
+                             th:text="|${a.materiaNombre} (${a.nivelNombre}) — ${a.lecciones} lecc.|">Materia</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="rpt-signs">
+            <div>Coordinación académica</div>
+            <div>Dirección</div>
+        </div>
+        <p class="rpt-foot">Las lecciones se derivan del horario en Configuración Académica. Documento generado por Nexa.</p>
+    </article>
+</body>
+</html>

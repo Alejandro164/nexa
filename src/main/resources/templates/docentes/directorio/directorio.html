@@ -25,20 +25,62 @@
      @close-ficha.window="closeModal('docentes-ficha-container')"
      @keydown.escape.window="closeModal('docentes-modal-container'); closeModal('docentes-ficha-container')">
 
-    <div class="card" style="margin-bottom:1rem;">
-        <div class="card-header">
-            <h3 class="card-title">Buscar Docente</h3>
-            <div class="search-box">
-                <input type="text" class="form-input" name="q" placeholder="Buscar por cédula o nombre..."
-                       th:value="${q}"
-                       hx-get="/docentes/directorio/lista"
-                       hx-trigger="keyup changed delay:400ms, search"
-                       hx-target="#docentes-dir-content" hx-swap="innerHTML">
+    <div class="module-card">
+        <div class="module-card-header dir-card-header dir-filters">
+            <div class="dir-header filters-bar">
+                <select class="form-input" name="estado" aria-label="Filtrar por estado"
+                        hx-get="/docentes/directorio/lista"
+                        hx-trigger="change"
+                        hx-include="closest .dir-filters"
+                        hx-target="#docentes-dir-content"
+                        hx-swap="innerHTML">
+                    <option value="">Todos los estados</option>
+                    <option value="activo" th:selected="${estadoFiltro == null or estadoFiltro == 'activo'}">Activo</option>
+                    <option value="inactivo" th:selected="${estadoFiltro == 'inactivo'}">Inactivo</option>
+                </select>
+                <select class="form-input" name="materiaId" aria-label="Filtrar por materia"
+                        hx-get="/docentes/directorio/lista"
+                        hx-trigger="change"
+                        hx-include="closest .dir-filters"
+                        hx-target="#docentes-dir-content"
+                        hx-swap="innerHTML">
+                    <option value="" th:selected="${materiaFiltro == null}">Todas las materias</option>
+                    <option th:each="m : ${materiasFiltro}"
+                            th:value="${m.id}"
+                            th:text="${m.nombre}"
+                            th:selected="${materiaFiltro != null and materiaFiltro == m.id}">Materia</option>
+                </select>
+                <button class="btn-primary"
+                        hx-get="/docentes/directorio/form"
+                        hx-target="#docentes-modal-container" hx-swap="innerHTML"
+                        hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
+                        style="font-size:0.85rem;padding:8px 16px;">+ Registrar Docente</button>
+            </div>
+            <div class="dir-search">
+                <div class="search-box">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input id="docentes-dir-q" type="search" class="form-input" name="q"
+                           placeholder="Buscar por nombre o cédula..."
+                           aria-label="Buscar docente por nombre o cédula"
+                           autocomplete="off"
+                           th:value="${q}"
+                           hx-get="/docentes/directorio/lista"
+                           hx-trigger="keyup changed delay:300ms, search"
+                           hx-include="closest .dir-filters"
+                           hx-target="#docentes-dir-content"
+                           hx-swap="innerHTML">
+                </div>
+                <span id="docentes-dir-count" class="dir-count-badge"
+                      th:text="${docentes != null and #lists.size(docentes) == 1} ? '1 docente' : |${docentes != null ? #lists.size(docentes) : 0} docentes|">0 docentes</span>
             </div>
         </div>
+        <div id="docentes-dir-content" th:insert="~{docentes/directorio/lista :: tabla}"></div>
     </div>
-
-    <div id="docentes-dir-content" th:insert="~{docentes/directorio/lista :: content}"></div>
 
     <div id="docentes-modal-container" style="display:none;"></div>
     <div id="docentes-ficha-container" style="display:none;"></div>

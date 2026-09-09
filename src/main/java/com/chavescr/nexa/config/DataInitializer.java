@@ -14,17 +14,22 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Rol;
+import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.RolRepository;
+import com.chavescr.nexa.repository.TipoMateriaRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
 /**
@@ -41,6 +46,7 @@ import com.chavescr.nexa.repository.UsuarioRepository;
  */
 @Component
 @Profile("dev")
+@Order(10)
 public class DataInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);

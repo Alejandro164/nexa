@@ -1,21 +1,86 @@
 <div th:fragment="content" class="tab-pane" xmlns:th="http://www.thymeleaf.org">
     <div id="docentes-asignaciones-container" th:fragment="asignaciones-panel">
+        <style>
+            #docentes-asignaciones-container .filters-bar .academic-select {
+                min-width: 220px;
+            }
+            #docentes-asignaciones-container .disp-docente-wrap .academic-select {
+                min-width: 420px;
+                width: 440px;
+                max-width: min(520px, 100%);
+            }
+            #docentes-asignaciones-container .disp-docente-wrap .academic-select-trigger span:first-child {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            @media (max-width: 700px) {
+                #docentes-asignaciones-container .disp-docente-wrap .academic-select {
+                    min-width: 0;
+                    width: 100%;
+                }
+            }
+            #docentes-asignaciones-container .disp-report-btn {
+                flex-shrink: 0;
+                white-space: nowrap;
+            }
+            #docentes-asignaciones-container .disp-report-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+        </style>
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Carga Laboral y Asignaciones</h3>
-                <div class="form-group" style="margin-bottom:0;">
-                    <select class="form-input" name="periodoId" style="padding:6px 12px; font-size:0.85rem;"
+                <form class="filters-bar">
+                    <div class="disp-docente-wrap">
+                        <select class="form-input" name="docenteId"
+                                data-search
+                                data-search-placeholder="Buscar por nombre o cédula..."
+                                aria-label="Docente"
+                                hx-get="/docentes/asignaciones"
+                                hx-trigger="change"
+                                hx-target="#docentes-asignaciones-container"
+                                hx-swap="outerHTML"
+                                hx-include="closest form">
+                            <option value="" th:selected="${docenteSeleccionadoAsignaciones == null}">Todos los docentes</option>
+                            <option th:each="d : ${docentesAsignaciones}"
+                                    th:value="${d.id}"
+                                    th:selected="${d.id == docenteSeleccionadoAsignaciones}"
+                                    th:text="${#strings.isEmpty(d.cedula) ? d.nombre : d.nombre + ' · ' + d.cedula}">Docente</option>
+                        </select>
+                    </div>
+                    <select class="form-input" name="periodoId"
+                            aria-label="Período"
                             hx-get="/docentes/asignaciones"
                             hx-trigger="change"
                             hx-target="#docentes-asignaciones-container"
-                            hx-swap="outerHTML">
+                            hx-swap="outerHTML"
+                            hx-include="closest form">
                         <option value="" disabled th:selected="${periodoSeleccionadoAsignaciones == null}">Seleccione un período</option>
                         <option th:each="p : ${periodosActivosAsignaciones}"
                                 th:value="${p.id}"
                                 th:selected="${p.id == periodoSeleccionadoAsignaciones}"
                                 th:text="|${p.codigo} - ${p.descripcion}|">2026-I</option>
                     </select>
-                </div>
+                </form>
+                <a class="btn-primary disp-report-btn"
+                   th:if="${periodoSeleccionadoAsignaciones != null and docentesAsignaciones != null and !docentesAsignaciones.empty}"
+                   th:href="@{/docentes/asignaciones/reporte(periodoId=${periodoSeleccionadoAsignaciones}, docenteId=${docenteSeleccionadoAsignaciones})}"
+                   target="_blank" rel="noopener noreferrer">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    Generar reporte
+                </a>
+                <button type="button" class="btn-primary disp-report-btn" disabled
+                        th:unless="${periodoSeleccionadoAsignaciones != null and docentesAsignaciones != null and !docentesAsignaciones.empty}">
+                    Generar reporte
+                </button>
             </div>
             <div style="padding: 2rem;">
                 <div th:if="${periodosActivosAsignaciones == null or periodosActivosAsignaciones.empty}" class="academic-empty academic-empty-block">
@@ -24,13 +89,14 @@
                 <div th:if="${periodosActivosAsignaciones != null and !periodosActivosAsignaciones.empty and (carga == null or carga.empty)}" class="table-empty">
                     No hay docentes registrados.
                 </div>
-                <div th:unless="${periodosActivosAsignaciones == null or periodosActivosAsignaciones.empty}"
+                <div th:unless="${periodosActivosAsignaciones == null or periodosActivosAsignaciones.empty or carga == null or carga.empty}"
                      class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
                     <div th:each="c : ${carga}" style="border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; background: #fff;">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
                             <div>
                                 <h4 style="font-weight: 600; color: var(--text-primary); font-size: 1.1rem;" th:text="${c.docente.nombre}">Docente</h4>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);" th:text="${c.docente.email}">correo</p>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);"
+                                   th:text="${#strings.isEmpty(c.docente.cedula) ? (c.docente.email != null ? c.docente.email : '—') : c.docente.cedula}">cédula</p>
                             </div>
                             <div style="text-align: right;">
                                 <span class="badge"

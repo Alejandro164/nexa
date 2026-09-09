@@ -17,10 +17,10 @@
                 <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
             </div>
             <div class="modal-body">
-                <div th:if="${materias.empty or docentes.empty or aulas.empty}" class="academic-empty academic-empty-block">
-                    Debes tener materias activas, usuarios activos y aulas activas asociadas a la institución.
+                <div th:if="${materias.empty or aulas.empty}" class="academic-empty academic-empty-block">
+                    Debes tener materias activas y aulas activas asociadas a la institución.
                 </div>
-                <form th:unless="${materias.empty or docentes.empty or aulas.empty}"
+                <form th:unless="${materias.empty or aulas.empty}"
                       hx-post="/configuracion-academica/horario"
                       hx-target="#horario-panel"
                       hx-swap="outerHTML"
@@ -33,7 +33,13 @@
 
                     <div class="form-group">
                         <label class="form-label">Materia</label>
-                        <select class="form-input" name="materiaId" required>
+                        <select class="form-input" name="materiaId" required
+                                hx-get="/configuracion-academica/horario/docentes"
+                                hx-trigger="change"
+                                hx-target="#horario-docente-field"
+                                hx-swap="outerHTML"
+                                hx-include="closest form"
+                                hx-indicator="this">
                             <option value="" hidden>Seleccione una materia</option>
                             <option th:each="materia : ${materias}"
                                     th:value="${materia.id}"
@@ -41,16 +47,7 @@
                                     th:text="${materia.nombre}">Materia</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Profesor</label>
-                        <select class="form-input" name="docenteId" required>
-                            <option value="" hidden>Seleccione un profesor</option>
-                            <option th:each="docente : ${docentes}"
-                                    th:value="${docente.id}"
-                                    th:selected="${leccion.docente != null and leccion.docente.id == docente.id}"
-                                    th:text="${docente.nombre}">Profesor</option>
-                        </select>
-                    </div>
+                    <th:block th:replace="~{configuracion-academica/horario/form :: docentes-select}"></th:block>
                     <div class="form-group">
                         <label class="form-label">Aula</label>
                         <select class="form-input" name="aulaId" required>
@@ -81,6 +78,31 @@
             </div>
         </div>
     </div>
+</div>
+
+<div th:fragment="docentes-select" id="horario-docente-field" class="form-group">
+    <label class="form-label">Profesor</label>
+    <select class="form-input" name="docenteId"
+            th:required="${materiaId != null}"
+            th:disabled="${materiaId == null}">
+        <option value="" hidden
+                th:text="${materiaId == null
+                          ? 'Seleccione una materia primero'
+                          : (docentes.empty ? 'Sin profesores disponibles'
+                                            : 'Seleccione un profesor')}">
+            Seleccione un profesor
+        </option>
+        <option th:each="docente : ${docentes}"
+                th:value="${docente.id}"
+                th:selected="${docenteSeleccionadoId != null and docente.id == docenteSeleccionadoId}"
+                th:text="${docente.nombre}">Profesor</option>
+    </select>
+    <p class="academic-help" th:if="${materiaId != null and docentesAsociadosVacios}">
+        No hay profesores asociados a esta materia. Asígnalos en Docentes → Directorio.
+    </p>
+    <p class="academic-help" th:if="${materiaId != null and !docentesAsociadosVacios and docentes.empty}">
+        Ningún profesor de esta materia está disponible en esta lección.
+    </p>
 </div>
 </body>
 </html>

@@ -2,9 +2,12 @@ package com.chavescr.nexa.service;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +47,9 @@ public class ConfiguracionAcademicaService {
     private final HorarioLeccionRepository horarioRepository;
     private final UsuarioRepository usuarioRepository;
     private final AulaRepository aulaRepository;
+    private final DocenteMateriaService docenteMateriaService;
+    private final DocenteGuiaService docenteGuiaService;
+    private final DocenteBloqueoService docenteBloqueoService;
 
     public ConfiguracionAcademicaService(InstitucionRepository institucionRepository,
             PeriodoAcademicoRepository periodoRepository,
@@ -53,7 +59,10 @@ public class ConfiguracionAcademicaService {
             TipoAulaRepository tipoAulaRepository,
             HorarioLeccionRepository horarioRepository,
             UsuarioRepository usuarioRepository,
-            AulaRepository aulaRepository) {
+            AulaRepository aulaRepository,
+            DocenteMateriaService docenteMateriaService,
+            DocenteGuiaService docenteGuiaService,
+            DocenteBloqueoService docenteBloqueoService) {
         this.institucionRepository = institucionRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
@@ -63,6 +72,9 @@ public class ConfiguracionAcademicaService {
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
         this.aulaRepository = aulaRepository;
+        this.docenteMateriaService = docenteMateriaService;
+        this.docenteGuiaService = docenteGuiaService;
+        this.docenteBloqueoService = docenteBloqueoService;
     }
 
     @Transactional(readOnly = true)
@@ -100,6 +112,7 @@ public class ConfiguracionAcademicaService {
     public void eliminarPeriodo(Long institucionId, Long id) {
         PeriodoAcademico periodo = obtenerPeriodo(institucionId, id);
         horarioRepository.deleteByInstitucionIdAndPeriodoId(institucionId, id);
+        docenteBloqueoService.eliminarPorPeriodo(institucionId, id);
         periodoRepository.delete(periodo);
     }
 
@@ -133,6 +146,7 @@ public class ConfiguracionAcademicaService {
     public void eliminarNivel(Long institucionId, Long id) {
         NivelAcademico nivel = obtenerNivel(institucionId, id);
         horarioRepository.deleteByInstitucionIdAndNivelId(institucionId, id);
+        docenteGuiaService.eliminarPorNivel(institucionId, id);
         nivelRepository.delete(nivel);
     }
 
@@ -182,6 +196,7 @@ public class ConfiguracionAcademicaService {
     public void eliminarMateria(Long institucionId, Long id) {
         Materia materia = obtenerMateria(institucionId, id);
         horarioRepository.deleteByInstitucionIdAndMateriaId(institucionId, id);
+        docenteMateriaService.eliminarPorMateria(institucionId, id);
         materiaRepository.delete(materia);
     }
 
@@ -244,6 +259,40 @@ public class ConfiguracionAcademicaService {
         return usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, "ROLE_DOCENTE");
     }
 
+    /**
+     * Profesores activos asociados a la materia. Si se edita una lección cuyo
+     * docente ya no está asignado, se incluye para no romper el formulario.
+     */
+    @Transactional(readOnly = true)
+    public List<Usuario> listarDocentesPorMateria(Long institucionId, Long materiaId, Long docenteSeleccionadoId) {
+        if (materiaId == null) {
+            return List.of();
+        }
+        List<Usuario> docentes = new ArrayList<>(
+                docenteMateriaService.listarDocentesPorMateria(institucionId, materiaId));
+        if (docenteSeleccionadoId != null
+                && docentes.stream().noneMatch(docente -> docente.getId().equals(docenteSeleccionadoId))) {
+            usuarioRepository.findActivoByIdAndInstitucionId(docenteSeleccionadoId, institucionId)
+                    .ifPresent(docente -> docentes.add(0, docente));
+        }
+        return docentes;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Usuario> listarDocentesDisponibles(Long institucionId, Long materiaId, Long docenteSeleccionadoId,
+            Long periodoId, String dia, Integer numeroLeccion, Long leccionId) {
+        List<Usuario> docentes = listarDocentesPorMateria(institucionId, materiaId, docenteSeleccionadoId);
+        if (periodoId == null || dia == null || numeroLeccion == null) {
+            return docentes;
+        }
+        Set<Long> noDisponibles = new HashSet<>(horarioRepository.findDocenteIdsEnBloque(
+                institucionId, periodoId, dia, numeroLeccion, leccionId));
+        noDisponibles.addAll(docenteBloqueoService.docenteIds(institucionId, periodoId, dia, numeroLeccion));
+        return docentes.stream()
+                .filter(d -> Objects.equals(d.getId(), docenteSeleccionadoId) || !noDisponibles.contains(d.getId()))
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public Map<String, List<HorarioLeccion>> obtenerHorario(Long institucionId, Long periodoId, Long nivelId) {
         Map<String, List<HorarioLeccion>> horario = new LinkedHashMap<>();
@@ -269,6 +318,21 @@ public class ConfiguracionAcademicaService {
         return horario;
     }
 
+    /** Lecciones semanales por docente en un período (para el directorio). */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> contarLeccionesPorDocente(Long institucionId, Long periodoId) {
+        Map<Long, Long> conteo = new LinkedHashMap<>();
+        if (periodoId == null) {
+            return conteo;
+        }
+        for (Object[] fila : horarioRepository.countLeccionesGroupedByDocente(institucionId, periodoId)) {
+            Long docenteId = (Long) fila[0];
+            long total = ((Number) fila[1]).longValue();
+            conteo.put(docenteId, total);
+        }
+        return conteo;
+    }
+
     @Transactional(readOnly = true)
     public HorarioLeccion obtenerLeccionPorId(Long institucionId, Long id) {
         return horarioRepository.findByIdAndInstitucionId(id, institucionId)
@@ -284,6 +348,7 @@ public class ConfiguracionAcademicaService {
         if (!horaFin.isAfter(horaInicio)) {
             throw new IllegalArgumentException("La hora final debe ser posterior a la hora inicial");
         }
+        validarDocenteDeMateria(institucionId, materiaId, docenteId, id);
 
         boolean docenteOcupado = horarioRepository
                 .findByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
@@ -292,6 +357,9 @@ public class ConfiguracionAcademicaService {
                 .anyMatch(e -> !e.getId().equals(id));
         if (docenteOcupado) {
             throw new IllegalArgumentException("El docente ya tiene otra lección asignada en este horario");
+        }
+        if (docenteBloqueoService.estaBloqueado(institucionId, periodoId, docenteId, dia, numeroLeccion)) {
+            throw new IllegalArgumentException("El docente no está disponible en esta lección");
         }
 
         HorarioLeccion leccion;
@@ -331,8 +399,22 @@ public class ConfiguracionAcademicaService {
                 .orElseThrow(() -> new IllegalArgumentException("Lección no encontrada")));
     }
 
-    public String clave(String dia, Integer numeroLeccion) {
+    public static String clave(String dia, Integer numeroLeccion) {
         return numeroLeccion + "-" + dia;
+    }
+
+    private void validarDocenteDeMateria(Long institucionId, Long materiaId, Long docenteId, Long leccionId) {
+        if (docenteMateriaService.estaAsignado(institucionId, docenteId, materiaId)) {
+            return;
+        }
+        if (leccionId != null) {
+            HorarioLeccion actual = obtenerLeccionPorId(institucionId, leccionId);
+            if (actual.getDocente().getId().equals(docenteId)
+                    && actual.getMateria().getId().equals(materiaId)) {
+                return;
+            }
+        }
+        throw new IllegalArgumentException("El profesor no está asociado a esa materia");
     }
 
     private Institucion obtenerInstitucion(Long institucionId) {

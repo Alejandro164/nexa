@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="|Disponibilidad — ${docente.nombre}|">Reporte de disponibilidad</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/componentes.css}">
+    <style>
+        :root {
+            --rpt-ink: #0f172a;
+            --rpt-muted: #64748b;
+            --rpt-line: #cbd5e1;
+            --rpt-ocupado: #fee2e2;
+            --rpt-ocupado-ink: #991b1b;
+            --rpt-bloqueado: #ffedd5;
+            --rpt-bloqueado-ink: #c2410c;
+            --rpt-libre: #dcfce7;
+            --rpt-libre-ink: #166534;
+        }
+        body {
+            margin: 0;
+            background: #e2e8f0;
+            font-family: Inter, system-ui, sans-serif;
+            color: var(--rpt-ink);
+        }
+        .rpt-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 20px;
+            background: #fff;
+            border-bottom: 1px solid var(--rpt-line);
+        }
+        .rpt-sheet {
+            width: min(1100px, calc(100% - 32px));
+            margin: 24px auto 48px;
+            background: #fff;
+            border: 1px solid var(--rpt-line);
+            border-radius: 12px;
+            padding: 32px 36px 40px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+        .rpt-brand {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--primary, #2d5a87);
+            padding-bottom: 16px;
+            margin-bottom: 22px;
+        }
+        .rpt-brand h1 {
+            margin: 0;
+            font-size: 1.35rem;
+            letter-spacing: -0.02em;
+        }
+        .rpt-brand p {
+            margin: 4px 0 0;
+            color: var(--rpt-muted);
+            font-size: 0.88rem;
+        }
+        .rpt-meta {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px 18px;
+            margin-bottom: 22px;
+        }
+        .rpt-meta dt {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--rpt-muted);
+            font-weight: 600;
+        }
+        .rpt-meta dd {
+            margin: 2px 0 0;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+        .rpt-stats {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+            font-size: 0.82rem;
+            color: var(--rpt-muted);
+        }
+        .rpt-stats strong { color: var(--rpt-ink); }
+        .rpt-grid {
+            display: grid;
+            grid-template-columns: 78px repeat(5, 1fr);
+            border: 1px solid var(--rpt-line);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .rpt-head, .rpt-cell {
+            border-right: 1px solid var(--rpt-line);
+            border-bottom: 1px solid var(--rpt-line);
+            padding: 8px 6px;
+            text-align: center;
+        }
+        .rpt-head {
+            background: #f1f5f9;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .rpt-time {
+            background: #f8fafc;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--rpt-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .rpt-cell { font-size: 0.72rem; line-height: 1.25; min-height: 46px; }
+        .rpt-ocupado {
+            background: var(--rpt-ocupado);
+            color: var(--rpt-ocupado-ink);
+            font-weight: 600;
+        }
+        .rpt-bloqueado {
+            background: var(--rpt-bloqueado);
+            color: var(--rpt-bloqueado-ink);
+            font-weight: 600;
+        }
+        .rpt-libre {
+            background: var(--rpt-libre);
+            color: var(--rpt-libre-ink);
+            font-weight: 600;
+        }
+        .rpt-aula {
+            font-weight: 400;
+            color: #7f1d1d;
+        }
+        .rpt-legend {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            font-size: 0.78rem;
+            color: var(--rpt-muted);
+        }
+        .rpt-swatch {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 6px;
+            vertical-align: -2px;
+            border: 1px solid var(--rpt-line);
+        }
+        .rpt-signs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            margin-top: 48px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--rpt-muted);
+        }
+        .rpt-signs div {
+            border-top: 1px solid var(--rpt-line);
+            padding-top: 8px;
+        }
+        .rpt-foot {
+            margin-top: 22px;
+            font-size: 0.72rem;
+            color: var(--rpt-muted);
+        }
+        @media (max-width: 800px) {
+            .rpt-meta { grid-template-columns: 1fr 1fr; }
+        }
+        @media print {
+            @page { size: landscape A4; margin: 10mm; }
+            body { background: #fff; }
+            .rpt-toolbar { display: none !important; }
+            .rpt-sheet {
+                width: auto;
+                margin: 0;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="rpt-toolbar">
+        <button type="button" class="btn-secondary" onclick="window.close()">Cerrar</button>
+        <button type="button" class="btn-primary" onclick="window.print()">Imprimir / Guardar PDF</button>
+    </div>
+
+    <article class="rpt-sheet">
+        <header class="rpt-brand">
+            <div>
+                <h1 th:text="${institucionNombre != null ? institucionNombre : 'Nexa'}">Institución</h1>
+                <p>Reporte de disponibilidad semanal del docente</p>
+            </div>
+            <p th:text="|Generado ${#temporals.format(fechaGeneracion, 'dd/MM/yyyy HH:mm')}|">Generado</p>
+        </header>
+
+        <dl class="rpt-meta">
+            <div>
+                <dt>Docente</dt>
+                <dd th:text="${docente.nombre}">Nombre</dd>
+            </div>
+            <div>
+                <dt>Cédula</dt>
+                <dd th:text="${docente.cedula != null and !#strings.isEmpty(docente.cedula) ? docente.cedula : '—'}">0-0000-0000</dd>
+            </div>
+            <div>
+                <dt>Período</dt>
+                <dd th:text="|${periodo.codigo} — ${periodo.descripcion}|">2026-I</dd>
+            </div>
+            <div>
+                <dt>Vigencia</dt>
+                <dd th:text="|${#temporals.format(periodo.fechaInicio, 'dd/MM/yyyy')} – ${#temporals.format(periodo.fechaFin, 'dd/MM/yyyy')}|">01/01/2026 – 30/06/2026</dd>
+            </div>
+        </dl>
+
+        <div class="rpt-stats">
+            <span><strong th:text="${leccionesAsignadas}">0</strong> lecciones asignadas</span>
+            <span><strong th:text="${bloquesOcupados}">0</strong> bloques ocupados</span>
+            <span><strong th:text="${bloquesBloqueados}">0</strong> bloqueados</span>
+            <span><strong th:text="${bloquesLibres}">0</strong> disponibles de <span th:text="${totalBloques}">40</span></span>
+        </div>
+
+        <div class="rpt-grid">
+            <div class="rpt-head">Lección</div>
+            <div class="rpt-head" th:each="dia : ${dias}"
+                 th:text="${dia == 'MIERCOLES'} ? 'Miércoles' : ${#strings.capitalize(#strings.toLowerCase(dia))}">Lunes</div>
+
+            <th:block th:each="numero : ${lecciones}">
+                <div class="rpt-cell rpt-time" th:text="|Lección ${numero}|">Lección 1</div>
+                <th:block th:each="dia : ${dias}"
+                          th:with="clave=${numero + '-' + dia}, items=${horarioDocente.get(numero + '-' + dia)}, bloqueado=${bloqueos != null and bloqueos.contains(clave)}">
+                    <div th:if="${(items == null or items.empty) and !bloqueado}" class="rpt-cell rpt-libre">Disponible</div>
+                    <div th:if="${(items == null or items.empty) and bloqueado}" class="rpt-cell rpt-bloqueado">Bloqueado</div>
+                    <div th:unless="${items == null or items.empty}" class="rpt-cell rpt-ocupado">
+                        <div th:each="item : ${items}">
+                            <div th:text="${item.materia.nombre}">Materia</div>
+                            <div th:text="${item.nivel.nombreCompleto}" style="font-weight:500;">Sección</div>
+                            <div class="rpt-aula" th:if="${item.aula != null}" th:text="${item.aula.nombre}">Aula</div>
+                        </div>
+                    </div>
+                </th:block>
+            </th:block>
+        </div>
+
+        <div class="rpt-legend">
+            <span><span class="rpt-swatch" style="background:var(--rpt-ocupado);"></span>Ocupado</span>
+            <span><span class="rpt-swatch" style="background:var(--rpt-bloqueado);"></span>Bloqueado</span>
+            <span><span class="rpt-swatch" style="background:var(--rpt-libre);"></span>Disponible</span>
+        </div>
+
+        <div class="rpt-signs">
+            <div>Coordinación académica</div>
+            <div>Docente</div>
+        </div>
+        <p class="rpt-foot">
+            Los bloques bloqueados no aparecen al asignar horario. Documento generado por Nexa.
+        </p>
+    </article>
+</body>
+</html>
