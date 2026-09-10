@@ -18,12 +18,14 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 /**
- * Incidencia disciplinaria de un estudiante (llamada, amonestación o boleta).
- * La nota de conducta del período se calcula restando {@link #puntosDescontados} de 100.
+ * Incidencia disciplinaria de un estudiante (llamada de atención o boleta).
+ * Solo las boletas restan {@link #puntosDescontados} de 100.
+ * Las llamadas de atención se registran para seguimiento y no bajan la nota.
  */
 @Entity
 @Table(name = "incidentes_conducta", indexes = {
         @Index(name = "idx_incidente_conducta_inst_periodo", columnList = "institucion_id, periodo_id"),
+        @Index(name = "idx_incidente_conducta_inst_periodo_tipo", columnList = "institucion_id, periodo_id, tipo"),
         @Index(name = "idx_incidente_conducta_estudiante_periodo",
                 columnList = "institucion_id, periodo_id, estudiante_id")
 })
@@ -73,18 +75,17 @@ public class IncidenteConducta {
     private LocalDateTime fechaCreacion;
 
     public enum TipoIncidente {
-        LLAMADA_ATENCION(5),
-        AMONESTACION(10),
-        BOLETA(15);
+        LLAMADA_ATENCION(false),
+        BOLETA(true);
 
-        private final int puntosPorDefecto;
+        private final boolean afectaNota;
 
-        TipoIncidente(int puntosPorDefecto) {
-            this.puntosPorDefecto = puntosPorDefecto;
+        TipoIncidente(boolean afectaNota) {
+            this.afectaNota = afectaNota;
         }
 
-        public int puntosPorDefecto() {
-            return puntosPorDefecto;
+        public boolean afectaNota() {
+            return afectaNota;
         }
     }
 
@@ -98,8 +99,8 @@ public class IncidenteConducta {
         if (this.estado == null) {
             this.estado = EstadoIncidente.PENDIENTE;
         }
-        if (this.puntosDescontados == null && this.tipo != null) {
-            this.puntosDescontados = this.tipo.puntosPorDefecto();
+        if (this.puntosDescontados == null && this.tipo != null && !this.tipo.afectaNota()) {
+            this.puntosDescontados = 0;
         }
     }
 

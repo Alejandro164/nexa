@@ -17,7 +17,6 @@ import com.chavescr.nexa.dto.FilaNotaConducta;
 import com.chavescr.nexa.dto.PanelNotaConducta;
 import com.chavescr.nexa.dto.ResumenNotaConducta;
 import com.chavescr.nexa.entity.IncidenteConducta;
-import com.chavescr.nexa.entity.IncidenteConducta.EstadoIncidente;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
 import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.NivelAcademico;
@@ -87,7 +86,7 @@ public class NotaConductaService {
         PeriodoAcademico periodo = resolverPeriodo(periodos, periodoId);
         if (periodo == null) {
             return new PanelNotaConducta(periodos, grados, List.of(), List.of(),
-                    new ResumenNotaConducta(0, 0, 0, 0, 0), null, grado, nivelId,
+                    new ResumenNotaConducta(0, 0, 0, 0), null, grado, nivelId,
                     "Configure un período académico para registrar las notas de conducta.");
         }
 
@@ -297,13 +296,13 @@ public class NotaConductaService {
     private FilaNotaConducta construirFila(Usuario estudiante, PeriodoAcademico periodo,
             List<IncidenteConducta> incidentes, boolean enviada) {
         int descuento = incidentes.stream()
+                .filter(i -> i.getTipo() != null && i.getTipo().afectaNota())
                 .mapToInt(i -> i.getPuntosDescontados() != null ? i.getPuntosDescontados() : 0)
                 .sum();
         int nota = Math.max(0, NOTA_INICIAL - descuento);
         String categoriaCss = categoriaCss(nota);
         long llamadas = contar(incidentes, TipoIncidente.LLAMADA_ATENCION);
         long boletas = contar(incidentes, TipoIncidente.BOLETA);
-        long amonestaciones = contar(incidentes, TipoIncidente.AMONESTACION);
 
         String seccion = "Sin sección";
         if (estudiante.getNivelAcademico() != null) {
@@ -312,7 +311,7 @@ public class NotaConductaService {
         }
 
         return new FilaNotaConducta(estudiante, seccion, nota, etiquetaCategoria(categoriaCss), categoriaCss,
-                observaciones(nota, llamadas, boletas, amonestaciones), periodo.getCodigo(), enviada,
+                observaciones(nota, llamadas, boletas), periodo.getCodigo(), enviada,
                 iniciales(estudiante.getNombre()), colorAvatar(estudiante.getId()));
     }
 
@@ -321,21 +320,13 @@ public class NotaConductaService {
                 : (int) Math.round(filas.stream().mapToInt(FilaNotaConducta::getNota).average().orElse(0));
         long llamadas = contar(incidentes, TipoIncidente.LLAMADA_ATENCION);
         long boletas = contar(incidentes, TipoIncidente.BOLETA);
-        long amonestacionesPendientes = incidentes.stream()
-                .filter(i -> i.getTipo() == TipoIncidente.AMONESTACION)
-                .filter(i -> i.getEstado() == EstadoIncidente.PENDIENTE)
-                .count();
-        return new ResumenNotaConducta(promedio, llamadas, boletas, amonestacionesPendientes, filas.size());
+        return new ResumenNotaConducta(promedio, llamadas, boletas, filas.size());
     }
 
-    static String observaciones(int nota, long llamadas, long boletas, long amonestaciones) {
+    static String observaciones(int nota, long llamadas, long boletas) {
         if (boletas > 0) {
             return "Conducta deficiente. " + cantidad(boletas, "boleta", "boletas")
                     + " por falta grave. Debe mejorar urgentemente su comportamiento.";
-        }
-        if (amonestaciones > 0) {
-            return "Ha recibido " + cantidad(amonestaciones, "amonestación", "amonestaciones")
-                    + " este período. Requiere seguimiento cercano.";
         }
         if (llamadas >= 3) {
             return "Requiere mejorar su conducta. Ha recibido "

@@ -61,7 +61,7 @@
             /* ---- Stats ---- */
             .conducta-stats {
                 display: grid;
-                grid-template-columns: repeat(4, 1fr);
+                grid-template-columns: repeat(3, 1fr);
                 gap: 1rem;
                 margin-bottom: 1.5rem;
             }
@@ -373,11 +373,19 @@
                         Notas de Conducta
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'llamadas' }"
-                            @click="activeTab = 'llamadas'">
+                            @click="activeTab = 'llamadas'"
+                            hx-get="/conducta/llamadas"
+                            hx-target="#llamadas-panel"
+                            hx-trigger="click once"
+                            hx-swap="innerHTML">
                         Llamadas de Atención
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'boletas' }"
-                            @click="activeTab = 'boletas'">
+                            @click="activeTab = 'boletas'"
+                            hx-get="/conducta/boletas"
+                            hx-target="#boletas-panel"
+                            hx-trigger="click once"
+                            hx-swap="innerHTML">
                         Boletas
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'lecciones-guia' }"
@@ -396,11 +404,19 @@
             </div>
 
             <div x-show="activeTab === 'llamadas'" class="tab-pane" x-cloak>
-                <div th:replace="~{conducta/llamadas/llamadas :: content}"></div>
+                <div id="llamadas-panel">
+                    <div class="table-card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando llamadas de atención…</div>
+                    </div>
+                </div>
             </div>
 
             <div x-show="activeTab === 'boletas'" class="tab-pane" x-cloak>
-                <div th:replace="~{conducta/boletas/boletas :: content}"></div>
+                <div id="boletas-panel">
+                    <div class="table-card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando boletas…</div>
+                    </div>
+                </div>
             </div>
 
             <div x-show="activeTab === 'lecciones-guia'" class="tab-pane" x-cloak>

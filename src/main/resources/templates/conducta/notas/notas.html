@@ -20,11 +20,6 @@
             <span class="stat-value" th:text="${resumen != null ? resumen.boletas : 0}">0</span>
             <span style="font-size:0.78rem;color:var(--text-secondary);">Faltas graves</span>
         </div>
-        <div class="stat-card pendiente">
-            <span class="stat-label">Amonestaciones</span>
-            <span class="stat-value" th:text="${resumen != null ? resumen.amonestacionesPendientes : 0}">0</span>
-            <span style="font-size:0.78rem;color:var(--text-secondary);">Pendientes de resolución</span>
-        </div>
     </div>
 
     <div class="table-card">

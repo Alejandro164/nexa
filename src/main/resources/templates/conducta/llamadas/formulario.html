@@ -1,0 +1,64 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
+        <div class="modal-dialog" style="max-width: 560px;">
+            <div class="modal-loading-overlay htmx-indicator" id="modal-loading-overlay">
+                <div class="spinner"></div>
+                <span>Guardando...</span>
+            </div>
+            <div class="modal-header">
+                <h3 class="modal-title">Nueva Llamada de Atención</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div th:if="${avisoPeriodo}" class="form-alert-error" th:text="${avisoPeriodo}"></div>
+                <form hx-post="/conducta/llamadas"
+                      hx-target="#llamadas-panel" hx-swap="innerHTML"
+                      hx-indicator="#modal-loading-overlay"
+                      hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()">
+                    <input type="hidden" name="periodoId" th:value="${periodoId}">
+                    <input type="hidden" name="grado" th:value="${grado}">
+                    <input type="hidden" name="nivelId" th:value="${nivelId}">
+
+                    <div class="form-group">
+                        <label class="form-label">Estudiante *</label>
+                        <select class="form-input" name="estudianteId" required data-search
+                                data-search-placeholder="Buscar por nombre, cédula o sección..."
+                                th:disabled="${avisoPeriodo != null or estudiantes == null or estudiantes.empty}">
+                            <option value="" disabled selected>-- Seleccionar --</option>
+                            <option th:each="e : ${estudiantes}" th:value="${e.id}"
+                                    th:text="${e.nombre + ' · ' + (e.cedula != null ? e.cedula : 'Sin cédula') + ' · ' + (e.nivelAcademico != null ? e.nivelAcademico.grado + '-' + e.nivelAcademico.seccion : 'Sin sección')}">Estudiante</option>
+                        </select>
+                        <p th:if="${estudiantes == null or estudiantes.empty}" class="text-muted text-sm"
+                           style="margin: 6px 0 0 0;">No hay estudiantes en el filtro seleccionado.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Fecha *</label>
+                        <input class="form-input" type="date" name="fecha" required
+                               th:value="${fecha}" th:disabled="${avisoPeriodo != null}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Motivo *</label>
+                        <input class="form-input" type="text" name="motivo" required maxlength="500"
+                               placeholder="Ej. Uso de celular en clase sin autorización"
+                               th:disabled="${avisoPeriodo != null}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-textarea" name="descripcion" maxlength="2000"
+                                  placeholder="Detalles adicionales (opcional)"
+                                  th:disabled="${avisoPeriodo != null}"></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
+                        <button type="submit" class="btn-primary"
+                                th:disabled="${avisoPeriodo != null or estudiantes == null or estudiantes.empty}">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

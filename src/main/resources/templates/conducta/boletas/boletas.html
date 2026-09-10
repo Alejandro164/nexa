@@ -1,27 +1,45 @@
-<div th:fragment="content" id="boletas-panel" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org" style="position: relative;">
+    <div id="boletas-loading" class="htmx-indicator panel-loading-overlay">
+        <div class="spinner"></div>
+        <span>Cargando...</span>
+    </div>
+
     <div class="table-card">
         <div class="conducta-toolbar">
-            <div class="conducta-filters-row">
+            <div class="conducta-filters-row boletas-filtros">
                 <label class="conducta-field">
                     <span>Período</span>
-                    <select class="form-input" aria-label="Período">
-                        <option value="I-2026">I-2026</option>
-                        <option value="II-2026" selected>II-2026</option>
+                    <select class="form-input" name="periodoId" aria-label="Período"
+                            hx-get="/conducta/boletas" hx-target="#boletas-panel" hx-swap="innerHTML"
+                            hx-include=".boletas-filtros" hx-indicator="#boletas-loading">
+                        <option th:if="${periodos == null or periodos.empty}" value="" disabled selected>Sin períodos</option>
+                        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
+                                th:selected="${periodoId != null and periodoId == p.id}"></option>
                     </select>
                 </label>
                 <label class="conducta-field">
                     <span>Grado</span>
-                    <select class="form-input" aria-label="Grado">
-                        <option value="" selected>Todos los grados</option>
+                    <select class="form-input" name="grado" aria-label="Grado"
+                            hx-get="/conducta/boletas" hx-target="#boletas-panel" hx-swap="innerHTML"
+                            hx-include=".boletas-filtros" hx-indicator="#boletas-loading">
+                        <option value="">Todos los grados</option>
+                        <option th:each="g : ${grados}" th:value="${g}" th:text="${g}"
+                                th:selected="${grado != null and grado == g}"></option>
                     </select>
                 </label>
                 <label class="conducta-field">
                     <span>Sección</span>
-                    <select class="form-input" aria-label="Sección">
-                        <option value="" selected>Todas las secciones</option>
+                    <select class="form-input" name="nivelId" aria-label="Sección"
+                            hx-get="/conducta/boletas" hx-target="#boletas-panel" hx-swap="innerHTML"
+                            hx-include=".boletas-filtros" hx-indicator="#boletas-loading">
+                        <option value="">Todas las secciones</option>
+                        <option th:each="s : ${secciones}" th:value="${s.id}"
+                                th:text="${s.grado + '-' + s.seccion}"
+                                th:selected="${nivelId != null and nivelId == s.id}"></option>
                     </select>
                 </label>
-                <span class="table-card-count">4 registros</span>
+                <span class="table-card-count"
+                      th:text="${(filas != null ? #lists.size(filas) : 0) + ' registros'}">0 registros</span>
             </div>
             <div class="conducta-search-row">
                 <div class="conducta-search">
@@ -31,11 +49,17 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input class="filter-input" type="search" placeholder="Nombre o cédula..."
-                           aria-label="Buscar estudiante">
+                    <input id="boletas-buscar" class="filter-input" type="search" placeholder="Nombre o cédula..."
+                           aria-label="Buscar estudiante" autocomplete="off">
                 </div>
                 <div class="conducta-actions">
-                    <button type="button" class="conducta-btn conducta-btn-primary">
+                    <button type="button" class="conducta-btn conducta-btn-primary"
+                            th:disabled="${avisoPeriodo != null}"
+                            hx-get="/conducta/boletas/form"
+                            hx-target="#modal-container"
+                            hx-swap="innerHTML"
+                            hx-include=".boletas-filtros"
+                            onclick="abrirModalAcademico()">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -46,107 +70,82 @@
                 </div>
             </div>
         </div>
+        <div th:if="${avisoPeriodo}" class="form-alert-error" style="margin: 1rem 1.5rem;" th:text="${avisoPeriodo}"></div>
         <div style="overflow-x: auto;">
-                        <table class="conducta-table">
-                            <thead>
-                                <tr>
-                                    <th>Nº Boleta</th>
-                                    <th>Estudiante</th>
-                                    <th>Sección</th>
-                                    <th>Fecha</th>
-                                    <th>Falta</th>
-                                    <th>Sanción</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td style="font-weight:700;color:var(--primary);">B-2026-001</td>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">1-A</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>02/08/2026</td>
-                                    <td>Agresión física a un compañero</td>
-                                    <td>Suspensión 3 días</td>
-                                    <td><span class="badge-xs badge-enproceso">En Proceso</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs btn-ghost">Imprimir</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:700;color:var(--primary);">B-2026-002</td>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#7c3aed;">CD</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Carlos Díaz Castro</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">1-A</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>15/07/2026</td>
-                                    <td>Daño a mobiliario escolar</td>
-                                    <td>Reparación del daño y trabajo comunitario</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs btn-ghost">Imprimir</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:700;color:var(--primary);">B-2026-003</td>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#0891b2;">MV</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Mateo Vargas Solís</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">1-A</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>10/07/2026</td>
-                                    <td>Reincidencia en uso de vocabulario inadecuado</td>
-                                    <td>Carta de compromiso firmada por el encargado</td>
-                                    <td><span class="badge-xs badge-resuelto">Resuelto</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs btn-ghost">Imprimir</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:700;color:var(--primary);">B-2026-004</td>
-                                    <td>
-                                        <div class="student-cell">
-                                            <div class="student-avatar" style="background:#e11d48;">FC</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#0f172a;">Fernando Chavarría</div>
-                                                <div style="font-size:0.75rem;color:var(--text-secondary);">1-A</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>1-A</td>
-                                    <td>05/07/2026</td>
-                                    <td>Copió durante la prueba de Estudios Sociales</td>
-                                    <td>Anulación de la prueba. Debe repetirla.</td>
-                                    <td><span class="badge-xs badge-apelado">Apelado</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-xs btn-ghost">Ver</button>
-                                        <button class="btn-xs btn-ghost">Imprimir</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <table class="conducta-table">
+                <thead>
+                    <tr>
+                        <th>Nº Boleta</th>
+                        <th>Estudiante</th>
+                        <th>Sección</th>
+                        <th>Fecha</th>
+                        <th>Falta</th>
+                        <th>Puntos</th>
+                        <th>Sanción</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="boletas-tbody">
+                    <tr th:if="${filas == null or filas.empty}">
+                        <td colspan="9" class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <div th:text="${avisoPeriodo != null ? avisoPeriodo : 'No hay boletas en el filtro seleccionado.'}">
+                                No hay boletas
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:each="f : ${filas}"
+                        th:attr="data-search=${#strings.toLowerCase(f.estudiante.nombre + ' ' + (f.estudiante.cedula != null ? f.estudiante.cedula : '') + ' ' + f.motivo + ' ' + f.numero)}">
+                        <td style="font-weight:700;color:var(--primary);" th:text="${f.numero}">B-2026-001</td>
+                        <td>
+                            <div class="student-cell">
+                                <div class="student-avatar" th:style="${'background:' + f.colorAvatar}"
+                                     th:text="${f.iniciales}">VS</div>
+                                <div>
+                                    <div style="font-weight:600;color:#0f172a;" th:text="${f.estudiante.nombre}">Nombre</div>
+                                    <div style="font-size:0.75rem;color:var(--text-secondary);"
+                                         th:text="${f.estudiante.cedula != null ? f.estudiante.cedula : 'Sin cédula'}">cédula</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td th:text="${f.seccion}">1-A</td>
+                        <td th:text="${f.fecha != null ? #temporals.format(f.fecha, 'dd/MM/yyyy') : '—'}">01/01/2026</td>
+                        <td th:text="${f.motivo}">Falta</td>
+                        <td>
+                            <span class="nota-num nota-deficiente" th:text="${'-' + f.puntos}">-15</span>
+                        </td>
+                        <td th:text="${f.descripcion != null and !#strings.isEmpty(f.descripcion) ? f.descripcion : '—'}">Sanción</td>
+                        <td>
+                            <span class="badge-xs" th:classappend="${'badge-' + f.estadoCss}"
+                                  th:text="${f.estadoLabel}">Pendiente</span>
+                        </td>
+                        <td class="actions-cell">
+                            <button type="button" class="btn-xs" th:if="${f.puedeResolver}"
+                                    style="background:#fef3c7;color:#92400e;padding:5px 12px;border-radius:6px;font-weight:600;border:none;cursor:pointer;"
+                                    hx-post="/conducta/boletas/resolver"
+                                    hx-target="#boletas-panel" hx-swap="innerHTML"
+                                    hx-include=".boletas-filtros" hx-indicator="#boletas-loading"
+                                    hx-confirm="¿Marcar esta boleta como resuelta? Los puntos ya descontados se mantienen."
+                                    th:attr="hx-vals=|js:{incidenteId: ${f.id}}|">Resolver</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var input = document.getElementById('boletas-buscar');
+            var tbody = document.getElementById('boletas-tbody');
+            if (!input || !tbody) return;
+            input.addEventListener('input', function () {
+                var f = this.value.trim().toLowerCase();
+                tbody.querySelectorAll('tr[data-search]').forEach(function (tr) {
+                    var hay = !f || (tr.getAttribute('data-search') || '').indexOf(f) !== -1;
+                    tr.style.display = hay ? '' : 'none';
+                });
+            });
+        })();
+    </script>
 </div>
