@@ -36,7 +36,21 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 public class ConfiguracionAcademicaService {
 
     public static final List<String> DIAS = List.of("LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES");
-    public static final List<Integer> LECCIONES = List.of(1, 2, 3, 4, 5, 6, 7, 8);
+    public static final List<Integer> LECCIONES = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+    public static final LocalTime INICIO_JORNADA = LocalTime.of(7, 0);
+    public static final int MINUTOS_LECCION = 40;
+    public static final int MINUTOS_RECREO = 10;
+    public static final int LECCIONES_POR_BLOQUE = 2;
+
+    public record FranjaHoraria(LocalTime inicio, LocalTime fin) {
+        public LocalTime getInicio() {
+            return inicio;
+        }
+
+        public LocalTime getFin() {
+            return fin;
+        }
+    }
 
     private final InstitucionRepository institucionRepository;
     private final PeriodoAcademicoRepository periodoRepository;
@@ -293,6 +307,16 @@ public class ConfiguracionAcademicaService {
                 .toList();
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void normalizarHorasOficiales(Long institucionId, Long periodoId, Long nivelId) {
+        if (periodoId == null || nivelId == null) {
+            return;
+        }
+        horarioRepository.findByInstitucionIdAndPeriodoIdAndNivelIdOrderByNumeroLeccionAsc(
+                institucionId, periodoId, nivelId)
+                .forEach(ConfiguracionAcademicaService::aplicarHorarioOficial);
+    }
+
     @Transactional(readOnly = true)
     public Map<String, List<HorarioLeccion>> obtenerHorario(Long institucionId, Long periodoId, Long nivelId) {
         Map<String, List<HorarioLeccion>> horario = new LinkedHashMap<>();
@@ -340,13 +364,9 @@ public class ConfiguracionAcademicaService {
     }
 
     public HorarioLeccion guardarLeccion(Long institucionId, Long id, Long periodoId, Long nivelId,
-            Long materiaId, Long docenteId, Long aulaId, String dia, Integer numeroLeccion,
-            LocalTime horaInicio, LocalTime horaFin) {
+            Long materiaId, Long docenteId, Long aulaId, String dia, Integer numeroLeccion) {
         if (!DIAS.contains(dia) || !LECCIONES.contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
-        }
-        if (!horaFin.isAfter(horaInicio)) {
-            throw new IllegalArgumentException("La hora final debe ser posterior a la hora inicial");
         }
         validarDocenteDeMateria(institucionId, materiaId, docenteId, id);
 
@@ -389,8 +409,7 @@ public class ConfiguracionAcademicaService {
         leccion.setAula(obtenerAula(institucionId, aulaId));
         leccion.setDia(dia);
         leccion.setNumeroLeccion(numeroLeccion);
-        leccion.setHoraInicio(horaInicio);
-        leccion.setHoraFin(horaFin);
+        aplicarHorarioOficial(leccion);
         return horarioRepository.save(leccion);
     }
 
@@ -401,6 +420,52 @@ public class ConfiguracionAcademicaService {
 
     public static String clave(String dia, Integer numeroLeccion) {
         return numeroLeccion + "-" + dia;
+    }
+
+    /**
+     * Reloj oficial: lecciones de 40 min consecutivas; 10 min de receso solo
+     * entre bloques de dos lecciones (después de 2, 4, 6, 8 y 10).
+     */
+    public static LocalTime horaInicioLeccion(int numeroLeccion) {
+        int indice = numeroLeccion - 1;
+        int bloque = indice / LECCIONES_POR_BLOQUE;
+        int posicionEnBloque = indice % LECCIONES_POR_BLOQUE;
+        int minutos = bloque * (LECCIONES_POR_BLOQUE * MINUTOS_LECCION + MINUTOS_RECREO)
+                + posicionEnBloque * MINUTOS_LECCION;
+        return INICIO_JORNADA.plusMinutes(minutos);
+    }
+
+    public static LocalTime horaFinLeccion(int numeroLeccion) {
+        return horaInicioLeccion(numeroLeccion).plusMinutes(MINUTOS_LECCION);
+    }
+
+    public static FranjaHoraria franjaLeccion(int numeroLeccion) {
+        return new FranjaHoraria(horaInicioLeccion(numeroLeccion), horaFinLeccion(numeroLeccion));
+    }
+
+    public static Map<Integer, FranjaHoraria> franjasOficiales() {
+        Map<Integer, FranjaHoraria> franjas = new LinkedHashMap<>();
+        for (Integer numero : LECCIONES) {
+            franjas.put(numero, franjaLeccion(numero));
+        }
+        return franjas;
+    }
+
+    public static Map<Integer, FranjaHoraria> recreosOficiales() {
+        Map<Integer, FranjaHoraria> recreos = new LinkedHashMap<>();
+        Integer ultima = LECCIONES.get(LECCIONES.size() - 1);
+        for (Integer numero : LECCIONES) {
+            if (numero % LECCIONES_POR_BLOQUE == 0 && !numero.equals(ultima)) {
+                LocalTime inicio = horaFinLeccion(numero);
+                recreos.put(numero, new FranjaHoraria(inicio, inicio.plusMinutes(MINUTOS_RECREO)));
+            }
+        }
+        return recreos;
+    }
+
+    public static void aplicarHorarioOficial(HorarioLeccion leccion) {
+        leccion.setHoraInicio(horaInicioLeccion(leccion.getNumeroLeccion()));
+        leccion.setHoraFin(horaFinLeccion(leccion.getNumeroLeccion()));
     }
 
     private void validarDocenteDeMateria(Long institucionId, Long materiaId, Long docenteId, Long leccionId) {

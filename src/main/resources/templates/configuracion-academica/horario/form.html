@@ -58,17 +58,12 @@
                                     th:text="|${aula.nombre} (${aula.capacidad})|">Aula</option>
                         </select>
                     </div>
-                    <div class="academic-form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Hora inicio</label>
-                            <input class="form-input" type="time" name="horaInicio" required
-                                   th:value="${leccion.horaInicio}">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Hora fin</label>
-                            <input class="form-input" type="time" name="horaFin" required
-                                   th:value="${leccion.horaFin}">
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Horario</label>
+                        <p class="academic-help" style="margin: 0;">
+                            <span th:text="|${#temporals.format(leccion.horaInicio, 'HH:mm')} – ${#temporals.format(leccion.horaFin, 'HH:mm')}|">07:00 – 07:40</span>
+                            · 40 min seguidos; el receso de 10 min queda entre bloques.
+                        </p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>

@@ -1,8 +1,5 @@
 package com.chavescr.nexa.controller;
 
-import java.time.LocalTime;
-
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -189,12 +186,10 @@ public class ConfiguracionAcademicaController {
             leccion = service.obtenerLeccionPorId(institucionId, id);
         } else {
             leccion = new HorarioLeccion();
-            LocalTime inicio = LocalTime.of(7, 0).plusMinutes((long) (numeroLeccion - 1) * 50);
-            leccion.setHoraInicio(inicio);
-            leccion.setHoraFin(inicio.plusMinutes(40));
             leccion.setDia(dia);
             leccion.setNumeroLeccion(numeroLeccion);
         }
+        ConfiguracionAcademicaService.aplicarHorarioOficial(leccion);
         model.addAttribute("leccion", leccion);
         model.addAttribute("periodoId", periodoId);
         model.addAttribute("nivelId", nivelId);
@@ -237,13 +232,11 @@ public class ConfiguracionAcademicaController {
             @RequestParam Long aulaId,
             @RequestParam String dia,
             @RequestParam Integer numeroLeccion,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime horaInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime horaFin,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
             service.guardarLeccion(institucionId, id, periodoId, nivelId, materiaId, docenteId, aulaId,
-                    dia, numeroLeccion, horaInicio, horaFin);
+                    dia, numeroLeccion);
         } catch (IllegalArgumentException e) {
             cargarHorario(model, institucionId, periodoId, nivelId);
             notificarError(response, e.getMessage());
@@ -282,6 +275,7 @@ public class ConfiguracionAcademicaController {
         if (nivelId == null && !niveles.isEmpty()) {
             nivelId = niveles.get(0).getId();
         }
+        service.normalizarHorasOficiales(institucionId, periodoId, nivelId);
         var horario = service.obtenerHorario(institucionId, periodoId, nivelId);
         int totalLecciones = horario.values().stream().mapToInt(java.util.List::size).sum();
         model.addAttribute("periodosActivos", periodos);
@@ -290,6 +284,8 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("nivelSeleccionado", nivelId);
         model.addAttribute("dias", ConfiguracionAcademicaService.DIAS);
         model.addAttribute("lecciones", ConfiguracionAcademicaService.LECCIONES);
+        model.addAttribute("franjas", ConfiguracionAcademicaService.franjasOficiales());
+        model.addAttribute("recreos", ConfiguracionAcademicaService.recreosOficiales());
         model.addAttribute("horario", horario);
         model.addAttribute("totalLecciones", totalLecciones);
     }

@@ -120,6 +120,8 @@ class ProyectoApplicationTests {
 		context.setVariable("nivelSeleccionado", 1L);
 		context.setVariable("dias", ConfiguracionAcademicaService.DIAS);
 		context.setVariable("lecciones", ConfiguracionAcademicaService.LECCIONES);
+		context.setVariable("franjas", ConfiguracionAcademicaService.franjasOficiales());
+		context.setVariable("recreos", ConfiguracionAcademicaService.recreosOficiales());
 		context.setVariable("horario", Map.of("1-LUNES", List.of(leccion)));
 		context.setVariable("leccion", leccion);
 		context.setVariable("periodoId", 1L);

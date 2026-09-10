@@ -36,6 +36,7 @@ public class DatabaseIndexInitializer {
                 "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_fecha ON bitacora_evento (institucion_id, fecha DESC)",
                 "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_modulo ON bitacora_evento (institucion_id, modulo, fecha DESC)",
                 "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo ON incidentes_conducta (institucion_id, periodo_id)",
+                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo_tipo ON incidentes_conducta (institucion_id, periodo_id, tipo)",
                 "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_estudiante_periodo ON incidentes_conducta (institucion_id, periodo_id, estudiante_id)"
         };
 
@@ -49,7 +50,19 @@ public class DatabaseIndexInitializer {
         }
 
         log.info("=== Índices verificados ===");
+        eliminarAmonestacionesConducta();
         eliminarExtraclase();
+    }
+
+    private void eliminarAmonestacionesConducta() {
+        try {
+            int eliminadas = jdbcTemplate.update("DELETE FROM incidentes_conducta WHERE tipo = 'AMONESTACION'");
+            if (eliminadas > 0) {
+                log.info("Se eliminaron {} amonestaciones de conducta estudiantil", eliminadas);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudieron eliminar amonestaciones de conducta: {}", e.getMessage());
+        }
     }
 
     private void eliminarExtraclase() {
