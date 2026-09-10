@@ -252,6 +252,11 @@
             .conducta-btn-primary:hover {
                 background: #1e3a5f;
             }
+            .conducta-btn:disabled,
+            .btn-xs:disabled {
+                opacity: 0.55;
+                cursor: not-allowed;
+            }
 
             .conducta-table { width: 100%; border-collapse: collapse; }
             .conducta-table th {
@@ -383,7 +388,11 @@
             </div>
 
             <div x-show="activeTab === 'notas'" class="tab-pane">
-                <div th:replace="~{conducta/notas/notas :: content}"></div>
+                <div id="notas-panel" hx-get="/conducta/notas" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="table-card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando notas de conducta…</div>
+                    </div>
+                </div>
             </div>
 
             <div x-show="activeTab === 'llamadas'" class="tab-pane" x-cloak>
@@ -399,6 +408,22 @@
             </div>
 
         </div>
+
+        <script th:inline="none">
+            if (!window.conductaEventsRegistrados) {
+                document.addEventListener('academicoGuardado', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje);
+                    }
+                });
+                document.addEventListener('academicoError', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje, 'error');
+                    }
+                });
+                window.conductaEventsRegistrados = true;
+            }
+        </script>
 
     </main>
     </th:block>

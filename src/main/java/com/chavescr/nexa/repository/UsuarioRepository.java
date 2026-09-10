@@ -1,5 +1,6 @@
 package com.chavescr.nexa.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -87,6 +88,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
        @Query("SELECT DISTINCT p FROM Usuario e JOIN e.padres p WHERE e.id = :estudianteId ORDER BY p.nombre")
        List<Usuario> findPadresByEstudianteId(@Param("estudianteId") Long estudianteId);
 
+       @Query("SELECT e.id, p FROM Usuario e JOIN e.padres p WHERE e.id IN :ids")
+       List<Object[]> findPadresByEstudianteIds(@Param("ids") Collection<Long> ids);
+
        @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Usuario p JOIN p.estudiantes e " +
                      "WHERE p.id = :padreId AND e.id = :estudianteId")
        boolean existeVinculoPadreEstudiante(@Param("padreId") Long padreId, @Param("estudianteId") Long estudianteId);
@@ -98,6 +102,24 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
        @Query("SELECT u FROM Usuario u WHERE u.nivelAcademico.id = :nivelId AND u.activo = true ORDER BY u.nombre")
        List<Usuario> findEstudiantesActivosByNivelId(@Param("nivelId") Long nivelId);
+
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r LEFT JOIN FETCH u.nivelAcademico n "
+                     + "WHERE i.id = :institucionId AND u.activo = true AND r.nombre = 'ROLE_ESTUDIANTE' "
+                     + "AND (:nivelId IS NULL OR n.id = :nivelId) "
+                     + "AND (:grado IS NULL OR n.grado = :grado) "
+                     + "ORDER BY u.nombre")
+       List<Usuario> findEstudiantesActivosConNivel(@Param("institucionId") Long institucionId,
+                     @Param("grado") Integer grado, @Param("nivelId") Long nivelId);
+
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r LEFT JOIN FETCH u.nivelAcademico n "
+                     + "WHERE i.id = :institucionId AND u.activo = true AND r.nombre = 'ROLE_ESTUDIANTE' "
+                     + "AND n.id IN :nivelIds "
+                     + "AND (:nivelId IS NULL OR n.id = :nivelId) "
+                     + "AND (:grado IS NULL OR n.grado = :grado) "
+                     + "ORDER BY u.nombre")
+       List<Usuario> findEstudiantesActivosConNivelEn(@Param("institucionId") Long institucionId,
+                     @Param("nivelIds") Collection<Long> nivelIds, @Param("grado") Integer grado,
+                     @Param("nivelId") Long nivelId);
 
        List<Usuario> findByActivoTrueOrderByNombreAsc();
 }
