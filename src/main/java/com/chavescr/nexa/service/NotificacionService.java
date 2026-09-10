@@ -33,11 +33,7 @@ public class NotificacionService {
         if (usuario == null) {
             throw new IllegalArgumentException("Usuario no encontrado");
         }
-        Notificacion notificacion = new Notificacion();
-        notificacion.setUsuario(usuario);
-        notificacion.setMensaje(mensaje);
-        notificacion.setEnlace(enlace);
-        notificacionRepository.save(notificacion);
+        notificacionRepository.save(nueva(usuario, mensaje, enlace));
     }
 
     public void crearTodas(List<Usuario> destinatarios, String mensaje, String enlace) {
@@ -46,11 +42,22 @@ public class NotificacionService {
         }
         List<Notificacion> lote = new ArrayList<>(destinatarios.size());
         for (Usuario usuario : destinatarios) {
-            Notificacion notificacion = new Notificacion();
-            notificacion.setUsuario(usuario);
-            notificacion.setMensaje(mensaje);
-            notificacion.setEnlace(enlace);
-            lote.add(notificacion);
+            lote.add(nueva(usuario, mensaje, enlace));
+        }
+        guardarTodas(lote);
+    }
+
+    public Notificacion nueva(Usuario usuario, String mensaje, String enlace) {
+        Notificacion notificacion = new Notificacion();
+        notificacion.setUsuario(usuario);
+        notificacion.setMensaje(mensaje);
+        notificacion.setEnlace(enlace);
+        return notificacion;
+    }
+
+    public void guardarTodas(List<Notificacion> lote) {
+        if (lote == null || lote.isEmpty()) {
+            return;
         }
         notificacionRepository.saveAll(lote);
     }

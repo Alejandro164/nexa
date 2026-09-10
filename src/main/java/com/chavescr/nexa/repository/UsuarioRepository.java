@@ -82,6 +82,12 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
        Optional<Usuario> findActivoByIdAndInstitucionId(@Param("usuarioId") Long usuarioId,
                      @Param("institucionId") Long institucionId);
 
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r LEFT JOIN FETCH u.nivelAcademico "
+                     + "WHERE u.id = :usuarioId AND i.id = :institucionId AND u.activo = true "
+                     + "AND r.nombre = 'ROLE_ESTUDIANTE'")
+       Optional<Usuario> findEstudianteActivoConNivel(@Param("usuarioId") Long usuarioId,
+                     @Param("institucionId") Long institucionId);
+
        @Query("SELECT DISTINCT e FROM Usuario p JOIN p.estudiantes e WHERE p.id = :padreId ORDER BY e.nombre")
        List<Usuario> findEstudiantesByPadreId(@Param("padreId") Long padreId);
 

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +22,7 @@ import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
 import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.NotaConducta;
+import com.chavescr.nexa.entity.Notificacion;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.IncidenteConductaRepository;
@@ -108,12 +108,8 @@ public class NotaConductaService {
         List<Usuario> estudiantes = listarEstudiantes(institucionId, grado, nivelId, nivelesVisibles, docenteId != null);
         List<Long> estudianteIds = estudiantes.stream().map(Usuario::getId).toList();
 
-        Map<Long, List<IncidenteConducta>> porEstudiante = estudianteIds.isEmpty()
-                ? Map.of()
-                : incidenteRepository
-                        .findByInstitucionIdAndPeriodoIdAndEstudianteIdIn(institucionId, periodo.getId(), estudianteIds)
-                        .stream()
-                        .collect(Collectors.groupingBy(i -> i.getEstudiante().getId()));
+        Map<Long, List<IncidenteConducta>> porEstudiante = agruparIncidentes(
+                institucionId, periodo.getId(), estudianteIds);
 
         Set<Long> enviadas = estudianteIds.isEmpty()
                 ? Set.of()
@@ -146,7 +142,7 @@ public class NotaConductaService {
         }
         PeriodoAcademico periodo = periodoRepository.findByIdAndInstitucionId(periodoId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
-        Usuario estudiante = usuarioRepository.findActivoByIdAndInstitucionId(estudianteId, institucionId)
+        Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
         exigirAlcance(institucionId, docenteId, estudiante);
 
@@ -188,12 +184,10 @@ public class NotaConductaService {
 
         List<Long> estudianteIds = panel.getFilas().stream().map(f -> f.getEstudiante().getId()).toList();
         Map<Long, List<Usuario>> padresPorEstudiante = agruparPadres(estudianteIds);
-        Map<Long, NotaConducta> existentes = notaRepository
-                .findByInstitucionIdAndPeriodoId(institucionId, periodo.getId())
-                .stream()
-                .collect(Collectors.toMap(n -> n.getEstudiante().getId(), n -> n, (a, b) -> a));
+        Map<Long, NotaConducta> existentes = notasExistentes(institucionId, periodo.getId(), estudianteIds);
 
         List<NotaConducta> aGuardar = new ArrayList<>();
+        List<Notificacion> notificaciones = new ArrayList<>();
         int enviados = 0;
         int sinEncargado = 0;
         for (FilaNotaConducta fila : panel.getFilas()) {
@@ -203,12 +197,16 @@ public class NotaConductaService {
                 continue;
             }
             aGuardar.add(prepararEnvio(institucion, periodo, fila.getEstudiante(), fila, existentes));
-            notificacionService.crearTodas(padres, mensajePadres(fila.getEstudiante(), fila), "/portal-padres");
+            String mensaje = mensajePadres(fila.getEstudiante(), fila);
+            for (Usuario padre : padres) {
+                notificaciones.add(notificacionService.nueva(padre, mensaje, "/portal-padres"));
+            }
             enviados++;
         }
         if (!aGuardar.isEmpty()) {
             notaRepository.saveAll(aGuardar);
         }
+        notificacionService.guardarTodas(notificaciones);
 
         if (enviados == 0) {
             throw new IllegalArgumentException(
@@ -257,6 +255,30 @@ public class NotaConductaService {
             porEstudiante.computeIfAbsent(estudianteId, id -> new ArrayList<>()).add(padre);
         }
         return porEstudiante;
+    }
+
+    private Map<Long, List<IncidenteConducta>> agruparIncidentes(Long institucionId, Long periodoId,
+            List<Long> estudianteIds) {
+        if (estudianteIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, List<IncidenteConducta>> porEstudiante = new HashMap<>();
+        for (Object[] fila : incidenteRepository.findDeEstudiantes(institucionId, periodoId, estudianteIds)) {
+            porEstudiante.computeIfAbsent((Long) fila[0], id -> new ArrayList<>())
+                    .add((IncidenteConducta) fila[1]);
+        }
+        return porEstudiante;
+    }
+
+    private Map<Long, NotaConducta> notasExistentes(Long institucionId, Long periodoId, List<Long> estudianteIds) {
+        Map<Long, NotaConducta> existentes = new HashMap<>();
+        if (estudianteIds.isEmpty()) {
+            return existentes;
+        }
+        for (Object[] fila : notaRepository.findDeEstudiantes(institucionId, periodoId, estudianteIds)) {
+            existentes.put((Long) fila[0], (NotaConducta) fila[1]);
+        }
+        return existentes;
     }
 
     private void exigirAlcance(Long institucionId, Long docenteId, Usuario estudiante) {
