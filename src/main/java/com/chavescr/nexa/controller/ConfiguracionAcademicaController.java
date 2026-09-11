@@ -1,5 +1,9 @@
 package com.chavescr.nexa.controller;
 
+import java.time.LocalTime;
+import java.util.List;
+
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.ConfiguracionInstitucion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
@@ -189,8 +194,13 @@ public class ConfiguracionAcademicaController {
             leccion.setDia(dia);
             leccion.setNumeroLeccion(numeroLeccion);
         }
-        ConfiguracionAcademicaService.aplicarHorarioOficial(leccion);
+        ConfiguracionInstitucion config = service.obtenerConfiguracion(institucionId);
+        if (!config.getDias().contains(dia) || !config.getLecciones().contains(numeroLeccion)) {
+            throw new IllegalArgumentException("Día o número de lección inválido");
+        }
         model.addAttribute("leccion", leccion);
+        model.addAttribute("franja", config.franjas().get(numeroLeccion));
+        model.addAttribute("configJornada", config);
         model.addAttribute("periodoId", periodoId);
         model.addAttribute("nivelId", nivelId);
         Long materiaId = leccion.getMateria() != null ? leccion.getMateria().getId() : null;
@@ -258,12 +268,49 @@ public class ConfiguracionAcademicaController {
         return "configuracion-academica/horario/horario :: content";
     }
 
+    @GetMapping("/jornada")
+    public String jornada(Model model, HttpSession session) {
+        cargarJornada(model, requerirInstitucion(session));
+        return "configuracion-academica/jornada/jornada :: content";
+    }
+
+    @PostMapping("/jornada")
+    public String guardarJornada(@RequestParam Integer cantidadLecciones,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime inicioJornada,
+            @RequestParam Integer minutosLeccion,
+            @RequestParam Integer minutosRecreo,
+            @RequestParam Integer leccionesPorBloque,
+            @RequestParam(required = false) Integer leccionAlmuerzo,
+            @RequestParam(required = false) Integer minutosAlmuerzo,
+            @RequestParam(name = "dias", required = false) List<String> dias,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        try {
+            service.guardarJornada(institucionId, cantidadLecciones, inicioJornada, minutosLeccion,
+                    minutosRecreo, leccionesPorBloque, leccionAlmuerzo, minutosAlmuerzo, dias);
+            cargarJornada(model, institucionId);
+            response.setHeader("HX-Trigger",
+                    "{\"academicoGuardado\":{\"mensaje\":\"Jornada lectiva actualizada\",\"recargarHorario\":true}}");
+        } catch (IllegalArgumentException e) {
+            cargarJornada(model, institucionId);
+            notificarError(response, e.getMessage());
+        }
+        return "configuracion-academica/jornada/jornada :: content";
+    }
+
     private void cargarPagina(Model model, Long institucionId) {
         model.addAttribute("periodos", service.listarPeriodos(institucionId));
         model.addAttribute("niveles", service.listarNiveles(institucionId));
         model.addAttribute("materias", service.listarMaterias(institucionId));
         model.addAttribute("aulas", service.listarAulas(institucionId));
         cargarHorario(model, institucionId, null, null);
+        model.addAttribute("configJornada", service.obtenerConfiguracion(institucionId));
+        model.addAttribute("diasCatalogo", ConfiguracionInstitucion.DIAS_CATALOGO);
+    }
+
+    private void cargarJornada(Model model, Long institucionId) {
+        model.addAttribute("configJornada", service.obtenerConfiguracion(institucionId));
+        model.addAttribute("diasCatalogo", ConfiguracionInstitucion.DIAS_CATALOGO);
     }
 
     private void cargarHorario(Model model, Long institucionId, Long periodoId, Long nivelId) {
@@ -275,17 +322,18 @@ public class ConfiguracionAcademicaController {
         if (nivelId == null && !niveles.isEmpty()) {
             nivelId = niveles.get(0).getId();
         }
-        service.normalizarHorasOficiales(institucionId, periodoId, nivelId);
         var horario = service.obtenerHorario(institucionId, periodoId, nivelId);
         int totalLecciones = horario.values().stream().mapToInt(java.util.List::size).sum();
+        var config = service.obtenerConfiguracion(institucionId);
         model.addAttribute("periodosActivos", periodos);
         model.addAttribute("nivelesActivos", niveles);
         model.addAttribute("periodoSeleccionado", periodoId);
         model.addAttribute("nivelSeleccionado", nivelId);
-        model.addAttribute("dias", ConfiguracionAcademicaService.DIAS);
-        model.addAttribute("lecciones", ConfiguracionAcademicaService.LECCIONES);
-        model.addAttribute("franjas", ConfiguracionAcademicaService.franjasOficiales());
-        model.addAttribute("recreos", ConfiguracionAcademicaService.recreosOficiales());
+        model.addAttribute("dias", config.getDias());
+        model.addAttribute("lecciones", config.getLecciones());
+        model.addAttribute("franjas", config.franjas());
+        model.addAttribute("recreos", config.recreos());
+        model.addAttribute("almuerzos", config.almuerzos());
         model.addAttribute("horario", horario);
         model.addAttribute("totalLecciones", totalLecciones);
     }

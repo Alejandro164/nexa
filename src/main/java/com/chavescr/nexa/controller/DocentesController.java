@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.dto.CargaLaboralDocenteDTO;
+import com.chavescr.nexa.entity.ConfiguracionInstitucion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
@@ -228,8 +229,8 @@ public class DocentesController {
                 .obtenerHorarioPorDocente(institucionId, periodoId, docenteId);
         Set<String> bloqueos = docenteBloqueoService.claves(institucionId, periodoId, docenteId);
 
-        int totalBloques = ConfiguracionAcademicaService.DIAS.size()
-                * ConfiguracionAcademicaService.LECCIONES.size();
+        var config = configuracionAcademicaService.obtenerConfiguracion(institucionId);
+        int totalBloques = config.getDias().size() * config.getLecciones().size();
         int bloquesOcupados = 0;
         int leccionesAsignadas = 0;
         for (List<HorarioLeccion> items : horario.values()) {
@@ -248,8 +249,8 @@ public class DocentesController {
         model.addAttribute("institucionNombre", session.getAttribute("SESSION_INSTITUCION_NOMBRE"));
         model.addAttribute("docente", docente);
         model.addAttribute("periodo", periodo);
-        model.addAttribute("dias", ConfiguracionAcademicaService.DIAS);
-        model.addAttribute("lecciones", ConfiguracionAcademicaService.LECCIONES);
+        model.addAttribute("dias", config.getDias());
+        model.addAttribute("lecciones", config.getLecciones());
         model.addAttribute("horarioDocente", horario);
         model.addAttribute("bloqueos", bloqueos);
         model.addAttribute("bloquesOcupados", bloquesOcupados);
@@ -408,6 +409,8 @@ public class DocentesController {
             periodoId = periodos.get(0).getId();
         }
 
+        var config = institucionId == null ? ConfiguracionInstitucion.predeterminada(null)
+                : configuracionAcademicaService.obtenerConfiguracion(institucionId);
         Map<String, List<HorarioLeccion>> horario = institucionId == null ? Map.of()
                 : configuracionAcademicaService.obtenerHorarioPorDocente(institucionId, periodoId, docenteId);
         Set<String> bloqueos = institucionId == null ? Set.of()
@@ -417,8 +420,8 @@ public class DocentesController {
         model.addAttribute("periodosActivosDisponibilidad", periodos);
         model.addAttribute("docenteSeleccionado", docenteId);
         model.addAttribute("periodoSeleccionadoDisponibilidad", periodoId);
-        model.addAttribute("dias", ConfiguracionAcademicaService.DIAS);
-        model.addAttribute("lecciones", ConfiguracionAcademicaService.LECCIONES);
+        model.addAttribute("dias", config.getDias());
+        model.addAttribute("lecciones", config.getLecciones());
         model.addAttribute("horarioDocente", horario);
         model.addAttribute("bloqueos", bloqueos);
     }

@@ -23,17 +23,20 @@ public class DocenteBloqueoService {
     private final UsuarioRepository usuarioRepository;
     private final PeriodoAcademicoRepository periodoRepository;
     private final InstitucionRepository institucionRepository;
+    private final ConfiguracionInstitucionService configuracionInstitucionService;
 
     public DocenteBloqueoService(DocenteBloqueoLeccionRepository bloqueoRepository,
             HorarioLeccionRepository horarioRepository,
             UsuarioRepository usuarioRepository,
             PeriodoAcademicoRepository periodoRepository,
-            InstitucionRepository institucionRepository) {
+            InstitucionRepository institucionRepository,
+            ConfiguracionInstitucionService configuracionInstitucionService) {
         this.bloqueoRepository = bloqueoRepository;
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
         this.periodoRepository = periodoRepository;
         this.institucionRepository = institucionRepository;
+        this.configuracionInstitucionService = configuracionInstitucionService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
@@ -61,8 +64,8 @@ public class DocenteBloqueoService {
 
     @Transactional(rollbackFor = Exception.class)
     public void alternar(Long institucionId, Long docenteId, Long periodoId, String dia, Integer numeroLeccion) {
-        if (!ConfiguracionAcademicaService.DIAS.contains(dia)
-                || !ConfiguracionAcademicaService.LECCIONES.contains(numeroLeccion)) {
+        var config = configuracionInstitucionService.obtener(institucionId);
+        if (!config.getDias().contains(dia) || !config.getLecciones().contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
         }
         if (!horarioRepository

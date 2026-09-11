@@ -27,6 +27,10 @@ public interface DocenteBloqueoLeccionRepository extends JpaRepository<DocenteBl
     boolean existsByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
             Long institucionId, Long periodoId, Long docenteId, String dia, Integer numeroLeccion);
 
+    boolean existsByInstitucionIdAndNumeroLeccionGreaterThan(Long institucionId, Integer numeroLeccion);
+
+    boolean existsByInstitucionIdAndDia(Long institucionId, String dia);
+
     void deleteByDocenteId(Long docenteId);
 
     void deleteByInstitucionIdAndPeriodoId(Long institucionId, Long periodoId);

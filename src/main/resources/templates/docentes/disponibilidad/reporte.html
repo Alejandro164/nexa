@@ -233,10 +233,11 @@
             <span><strong th:text="${bloquesLibres}">0</strong> disponibles de <span th:text="${totalBloques}">40</span></span>
         </div>
 
-        <div class="rpt-grid">
+        <div class="rpt-grid"
+             th:style="|grid-template-columns: 78px repeat(${#lists.size(dias)}, 1fr);|">
             <div class="rpt-head">Lección</div>
             <div class="rpt-head" th:each="dia : ${dias}"
-                 th:text="${dia == 'MIERCOLES'} ? 'Miércoles' : ${#strings.capitalize(#strings.toLowerCase(dia))}">Lunes</div>
+                 th:text="${T(com.chavescr.nexa.entity.ConfiguracionInstitucion).etiquetaDia(dia)}">Lunes</div>
 
             <th:block th:each="numero : ${lecciones}">
                 <div class="rpt-cell rpt-time" th:text="|Lección ${numero}|">Lección 1</div>

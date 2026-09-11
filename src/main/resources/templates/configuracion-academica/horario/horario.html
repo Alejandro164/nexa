@@ -56,10 +56,11 @@
         </div>
 
         <div th:unless="${periodosActivos.empty or nivelesActivos.empty}" class="schedule-scroll">
-            <div class="schedule-grid">
+            <div class="schedule-grid"
+                 th:style="|--schedule-days:${#lists.size(dias)}; min-width: calc(100px + ${#lists.size(dias)} * 150px)|">
                 <div class="schedule-head schedule-hour">Lección</div>
                 <div class="schedule-head" th:each="dia : ${dias}"
-                     th:text="${#strings.capitalize(#strings.toLowerCase(dia))}">Lunes</div>
+                     th:text="${T(com.chavescr.nexa.entity.ConfiguracionInstitucion).etiquetaDia(dia)}">Lunes</div>
 
                 <th:block th:each="numero : ${lecciones}">
                     <div class="schedule-hour">
@@ -91,7 +92,7 @@
                                 <strong th:text="${item.materia.nombre}">Matemáticas</strong>
                                 <span th:text="${item.docente.nombre}">Docente</span>
                                 <span th:text="${item.aula.nombre}">Aula</span>
-                                <small th:text="|${#temporals.format(item.horaInicio, 'HH:mm')} - ${#temporals.format(item.horaFin, 'HH:mm')}|">07:00 - 07:40</small>
+                                <small th:text="|${#temporals.format(franjas.get(numero).inicio, 'HH:mm')} - ${#temporals.format(franjas.get(numero).fin, 'HH:mm')}|">07:00 - 07:40</small>
                                 <button type="button" class="schedule-remove" title="Eliminar asignación"
                                         th:attr="data-delete-url=|/configuracion-academica/horario/${item.id}?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}|,
                                                  data-delete-message=|¿Deseas eliminar la lección de ${item.materia.nombre} del horario?|"
@@ -112,7 +113,19 @@
 
                     </th:block>
 
-                    <div th:if="${recreos.containsKey(numero)}" class="schedule-break">
+                    <div th:if="${almuerzos != null and almuerzos.containsKey(numero)}" class="schedule-break schedule-lunch">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                            <path d="M7 2v20"/>
+                            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+                        </svg>
+                        Almuerzo
+                        <span class="schedule-break-time"
+                              th:text="|${#temporals.format(almuerzos.get(numero).inicio, 'HH:mm')} – ${#temporals.format(almuerzos.get(numero).fin, 'HH:mm')}|">11:20 – 12:00</span>
+                    </div>
+                    <div th:if="${recreos != null and recreos.containsKey(numero)}" class="schedule-break">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
                              fill="none" stroke="currentColor" stroke-width="2.5"
                              stroke-linecap="round" stroke-linejoin="round">
