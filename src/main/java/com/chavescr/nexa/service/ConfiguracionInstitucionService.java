@@ -48,15 +48,15 @@ public class ConfiguracionInstitucionService {
 
     @Transactional(rollbackFor = Exception.class)
     public ConfiguracionInstitucion guardar(Long institucionId, Integer cantidadLecciones, LocalTime inicioJornada,
-            Integer minutosLeccion, Integer minutosRecreo, Integer leccionesPorBloque,
-            Integer leccionAlmuerzo, Integer minutosAlmuerzo, List<String> dias) {
+            Integer minutosLeccion, Integer minutosRecreo, List<Integer> minutosRecreos,
+            Integer leccionesPorBloque, Integer leccionAlmuerzo, Integer minutosAlmuerzo, List<String> dias) {
         if (minutosAlmuerzo == null) {
             minutosAlmuerzo = ConfiguracionInstitucion.MINUTOS_ALMUERZO_PREDETERMINADOS;
         }
         if (leccionAlmuerzo == null && minutosAlmuerzo > 0) {
             leccionAlmuerzo = ConfiguracionInstitucion.LECCION_ALMUERZO_PREDETERMINADA;
         }
-        validar(cantidadLecciones, inicioJornada, minutosLeccion, minutosRecreo, leccionesPorBloque,
+        validar(cantidadLecciones, inicioJornada, minutosLeccion, minutosRecreo, minutosRecreos, leccionesPorBloque,
                 leccionAlmuerzo, minutosAlmuerzo, dias);
         validarReduccionContraHorario(institucionId, cantidadLecciones, dias);
 
@@ -64,6 +64,12 @@ public class ConfiguracionInstitucionService {
         config.setCantidadLecciones(cantidadLecciones);
         config.setInicioJornada(inicioJornada);
         config.setMinutosLeccion(minutosLeccion);
+        if (minutosRecreos != null) {
+            config.setListaDuracionesRecreos(minutosRecreos);
+        }
+        if (minutosRecreo == null) {
+            minutosRecreo = minutosRecreoRespaldo(minutosRecreos, config.getMinutosRecreo());
+        }
         config.setMinutosRecreo(minutosRecreo);
         config.setLeccionesPorBloque(leccionesPorBloque);
         config.setLeccionAlmuerzo(leccionAlmuerzo);
@@ -75,8 +81,8 @@ public class ConfiguracionInstitucionService {
     }
 
     private void validar(Integer cantidadLecciones, LocalTime inicioJornada, Integer minutosLeccion,
-            Integer minutosRecreo, Integer leccionesPorBloque, Integer leccionAlmuerzo,
-            Integer minutosAlmuerzo, List<String> dias) {
+            Integer minutosRecreo, List<Integer> minutosRecreos, Integer leccionesPorBloque,
+            Integer leccionAlmuerzo, Integer minutosAlmuerzo, List<String> dias) {
         if (cantidadLecciones == null || cantidadLecciones < 1 || cantidadLecciones > 16) {
             throw new IllegalArgumentException("La cantidad de lecciones debe estar entre 1 y 16");
         }
@@ -86,8 +92,15 @@ public class ConfiguracionInstitucionService {
         if (minutosLeccion == null || minutosLeccion < 20 || minutosLeccion > 90) {
             throw new IllegalArgumentException("La duración de cada lección debe estar entre 20 y 90 minutos");
         }
-        if (minutosRecreo == null || minutosRecreo < 0 || minutosRecreo > 60) {
+        if (minutosRecreo != null && (minutosRecreo < 0 || minutosRecreo > 60)) {
             throw new IllegalArgumentException("El recreo debe estar entre 0 y 60 minutos");
+        }
+        if (minutosRecreos != null) {
+            for (Integer minutos : minutosRecreos) {
+                if (minutos == null || minutos < 0 || minutos > 60) {
+                    throw new IllegalArgumentException("Cada recreo debe estar entre 0 y 60 minutos");
+                }
+            }
         }
         if (leccionesPorBloque == null || leccionesPorBloque < 1 || leccionesPorBloque > cantidadLecciones) {
             throw new IllegalArgumentException("Las lecciones por bloque deben estar entre 1 y la cantidad total");
@@ -108,6 +121,16 @@ public class ConfiguracionInstitucionService {
                 throw new IllegalArgumentException("Día laboral inválido");
             }
         }
+    }
+
+    private Integer minutosRecreoRespaldo(List<Integer> minutosRecreos, Integer actual) {
+        if (minutosRecreos != null && !minutosRecreos.isEmpty()) {
+            return minutosRecreos.get(minutosRecreos.size() - 1);
+        }
+        if (actual != null) {
+            return actual;
+        }
+        return ConfiguracionInstitucion.MINUTOS_RECREO_PREDETERMINADOS;
     }
 
     private void validarReduccionContraHorario(Long institucionId, Integer cantidadLecciones, List<String> dias) {

@@ -278,7 +278,8 @@ public class ConfiguracionAcademicaController {
     public String guardarJornada(@RequestParam Integer cantidadLecciones,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime inicioJornada,
             @RequestParam Integer minutosLeccion,
-            @RequestParam Integer minutosRecreo,
+            @RequestParam(required = false) Integer minutosRecreo,
+            @RequestParam(name = "minutosRecreos", required = false) List<Integer> minutosRecreos,
             @RequestParam Integer leccionesPorBloque,
             @RequestParam(required = false) Integer leccionAlmuerzo,
             @RequestParam(required = false) Integer minutosAlmuerzo,
@@ -287,7 +288,7 @@ public class ConfiguracionAcademicaController {
         Long institucionId = requerirInstitucion(session);
         try {
             service.guardarJornada(institucionId, cantidadLecciones, inicioJornada, minutosLeccion,
-                    minutosRecreo, leccionesPorBloque, leccionAlmuerzo, minutosAlmuerzo, dias);
+                    minutosRecreo, minutosRecreos, leccionesPorBloque, leccionAlmuerzo, minutosAlmuerzo, dias);
             cargarJornada(model, institucionId);
             response.setHeader("HX-Trigger",
                     "{\"academicoGuardado\":{\"mensaje\":\"Jornada lectiva actualizada\",\"recargarHorario\":true}}");
