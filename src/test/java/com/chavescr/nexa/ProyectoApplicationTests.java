@@ -22,13 +22,13 @@ import com.chavescr.nexa.dto.DiaCalendarioDTO;
 import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.ConfiguracionInstitucion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.service.ConfiguracionAcademicaService;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -118,10 +118,15 @@ class ProyectoApplicationTests {
 		context.setVariable("nivelesActivos", List.of(nivel));
 		context.setVariable("periodoSeleccionado", 1L);
 		context.setVariable("nivelSeleccionado", 1L);
-		context.setVariable("dias", ConfiguracionAcademicaService.DIAS);
-		context.setVariable("lecciones", ConfiguracionAcademicaService.LECCIONES);
-		context.setVariable("franjas", ConfiguracionAcademicaService.franjasOficiales());
-		context.setVariable("recreos", ConfiguracionAcademicaService.recreosOficiales());
+		ConfiguracionInstitucion configJornada = ConfiguracionInstitucion.predeterminada(null);
+		context.setVariable("dias", configJornada.getDias());
+		context.setVariable("lecciones", configJornada.getLecciones());
+		context.setVariable("franjas", configJornada.franjas());
+		context.setVariable("recreos", configJornada.recreos());
+		context.setVariable("almuerzos", configJornada.almuerzos());
+		context.setVariable("configJornada", configJornada);
+		context.setVariable("franja", configJornada.franjas().get(1));
+		context.setVariable("diasCatalogo", ConfiguracionInstitucion.DIAS_CATALOGO);
 		context.setVariable("horario", Map.of("1-LUNES", List.of(leccion)));
 		context.setVariable("leccion", leccion);
 		context.setVariable("periodoId", 1L);
@@ -141,6 +146,7 @@ class ProyectoApplicationTests {
 				"configuracion-academica/aulas/form",
 				"configuracion-academica/horario/horario",
 				"configuracion-academica/horario/form",
+				"configuracion-academica/jornada/jornada",
 				"configuracion-academica/components/confirmar-eliminacion");
 
 		templates.forEach(template -> assertFalse(templateEngine.process(template, context).isBlank()));
