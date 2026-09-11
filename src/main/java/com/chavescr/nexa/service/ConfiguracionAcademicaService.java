@@ -85,10 +85,11 @@ public class ConfiguracionAcademicaService {
 
     @Transactional(rollbackFor = Exception.class)
     public ConfiguracionInstitucion guardarJornada(Long institucionId, Integer cantidadLecciones,
-            LocalTime inicioJornada, Integer minutosLeccion, Integer minutosRecreo,
+            LocalTime inicioJornada, Integer minutosLeccion, Integer minutosRecreo, List<Integer> minutosRecreos,
             Integer leccionesPorBloque, Integer leccionAlmuerzo, Integer minutosAlmuerzo, List<String> dias) {
         return configuracionInstitucionService.guardar(institucionId, cantidadLecciones, inicioJornada,
-                minutosLeccion, minutosRecreo, leccionesPorBloque, leccionAlmuerzo, minutosAlmuerzo, dias);
+                minutosLeccion, minutosRecreo, minutosRecreos, leccionesPorBloque, leccionAlmuerzo,
+                minutosAlmuerzo, dias);
     }
 
     @Transactional(readOnly = true)

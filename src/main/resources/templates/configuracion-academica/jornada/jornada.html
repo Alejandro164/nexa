@@ -3,6 +3,7 @@
      th:data-inicio-jornada="${#temporals.format(configJornada.inicioJornada, 'HH:mm')}"
      th:data-minutos-leccion="${configJornada.minutosLeccion}"
      th:data-minutos-recreo="${configJornada.minutosRecreo}"
+     th:data-duraciones-recreos="${configJornada.duracionesRecreos}"
      th:data-lecciones-por-bloque="${configJornada.leccionesPorBloque}"
      th:data-leccion-almuerzo="${configJornada.leccionAlmuerzo}"
      th:data-minutos-almuerzo="${configJornada.minutosAlmuerzo}"
@@ -69,12 +70,6 @@
                                        x-model.number="minutosLeccion"
                                        th:value="${configJornada.minutosLeccion}">
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Minutos de recreo</label>
-                                <input class="form-input" type="number" name="minutosRecreo" min="0" max="60" required
-                                       x-model.number="minutosRecreo"
-                                       th:value="${configJornada.minutosRecreo}">
-                            </div>
                             <div class="form-group jornada-field-wide">
                                 <label class="form-label">Lecciones por bloque</label>
                                 <input class="form-input" type="number" name="leccionesPorBloque" min="1" max="16" required
@@ -83,6 +78,32 @@
                                 <p class="academic-help">El recreo se inserta después de cada bloque. Con 2, queda entre 2-3, 4-5, 6-7…</p>
                             </div>
                         </div>
+                    </section>
+
+                    <section class="jornada-section">
+                        <div class="jornada-section-head">
+                            <h4>Recreos</h4>
+                            <p>Cada receso se configura por separado. En colegios MEP suele ser 15 min, luego 20 y después del almuerzo 10. Con 0 minutos ese receso no se inserta.</p>
+                        </div>
+                        <div class="jornada-recreos" x-show="huecosRecreo.length">
+                            <template x-for="(hueco, i) in huecosRecreo" :key="hueco.leccion">
+                                <div class="jornada-recreo">
+                                    <div class="form-group" style="margin: 0;">
+                                        <label class="form-label"
+                                               :for="'minutos-recreo-' + hueco.leccion"
+                                               x-text="etiquetaHueco(hueco)"></label>
+                                        <div class="jornada-recreo-min">
+                                            <input class="form-input" type="number" name="minutosRecreos"
+                                                   min="0" max="60" required
+                                                   :id="'minutos-recreo-' + hueco.leccion"
+                                                   x-model.number="minutosRecreos[i]">
+                                            <span>min</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <p class="academic-help" x-show="huecosRecreo.length === 0">Con este reloj no hay recreos. Reduce las lecciones por bloque o aumenta las del día.</p>
                     </section>
 
                     <section class="jornada-section">

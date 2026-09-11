@@ -444,27 +444,47 @@
                 grid-column: 1 / -1;
                 display: flex;
                 align-items: center;
+                justify-content: center;
                 gap: 8px;
                 padding: 0 14px;
                 min-height: 28px;
-                background: #f1f5f9;
+                background: #cfe0ef;
                 border-right: 1px solid var(--border);
-                border-bottom: 1px solid var(--border);
+                border-bottom: 1px solid #b4cce0;
                 font-size: 0.7rem;
                 font-weight: 700;
-                color: #94a3b8;
+                color: #2d5a87;
+            }
+            .schedule-break-copy {
+                display: flex;
+                align-items: baseline;
+                gap: 0.55rem;
+                min-width: 0;
+            }
+            .schedule-break-name {
                 text-transform: uppercase;
                 letter-spacing: 0.07em;
             }
             .schedule-break-time {
-                margin-left: auto;
+                font-variant-numeric: tabular-nums;
+                font-weight: 700;
+                letter-spacing: 0;
+            }
+            .schedule-break-mins {
+                font-size: 0.68rem;
                 font-weight: 600;
-                letter-spacing: 0.04em;
-                text-transform: none;
+                color: inherit;
+                opacity: 0.72;
+            }
+            .schedule-break-mins::before {
+                content: '·';
+                margin-right: 0.4rem;
+                opacity: 0.55;
             }
             .schedule-lunch {
                 background: #fff7ed;
                 color: #c2410c;
+                border-bottom-color: #fed7aa;
             }
             .jornada-card {
                 position: relative;
@@ -535,6 +555,26 @@
             .jornada-field-wide {
                 grid-column: 1 / -1;
             }
+            .jornada-recreos {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+            }
+            .jornada-recreo-min {
+                display: flex;
+                align-items: center;
+                gap: 0.45rem;
+            }
+            .jornada-recreo-min span {
+                font-size: 0.78rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+            }
+            @media (max-width: 640px) {
+                .jornada-recreos {
+                    grid-template-columns: 1fr;
+                }
+            }
             .jornada-preview {
                 padding: 1.35rem 1.35rem 1.6rem;
                 background: #f8fafc;
@@ -587,8 +627,8 @@
                 font-weight: 600;
             }
             .jornada-timeline .is-break {
-                background: #f1f5f9;
-                color: #64748b;
+                background: #cfe0ef;
+                color: #2d5a87;
                 text-transform: uppercase;
                 letter-spacing: 0.06em;
                 font-size: 0.72rem;
@@ -899,10 +939,40 @@
                     inicioJornada: d.inicioJornada || '07:00',
                     minutosLeccion: Number(d.minutosLeccion || 40),
                     minutosRecreo: Number(d.minutosRecreo || 10),
+                    minutosRecreos: parseDuracionesRecreos(d.duracionesRecreos),
                     leccionesPorBloque: Number(d.leccionesPorBloque || 2),
                     leccionAlmuerzo: Number(d.leccionAlmuerzo || 6),
                     minutosAlmuerzo: d.minutosAlmuerzo == null || d.minutosAlmuerzo === '' ? 40 : Number(d.minutosAlmuerzo),
                     diasSeleccionados: (d.dias || '').split(',').filter(Boolean),
+                    init: function () {
+                        var self = this;
+                        this.alinearRecreos();
+                        this.$watch('cantidadLecciones', function () { self.alinearRecreos(); });
+                        this.$watch('leccionesPorBloque', function () { self.alinearRecreos(); });
+                        this.$watch('leccionAlmuerzo', function () { self.alinearRecreos(); });
+                        this.$watch('minutosAlmuerzo', function () { self.alinearRecreos(); });
+                    },
+                    alinearRecreos: function () {
+                        var n = this.huecosRecreo.length;
+                        var respaldo = Number(this.minutosRecreo) || 10;
+                        while (this.minutosRecreos.length < n) {
+                            var ultimo = this.minutosRecreos.length
+                                ? this.minutosRecreos[this.minutosRecreos.length - 1]
+                                : respaldo;
+                            this.minutosRecreos.push(ultimo);
+                        }
+                    },
+                    etiquetaHueco: function (hueco) {
+                        var bloque = Number(this.leccionesPorBloque) || 1;
+                        var hasta = hueco.leccion;
+                        var desde = Math.max(1, hasta - bloque + 1);
+                        var bloqueTexto = desde === hasta
+                            ? 'lección ' + hasta
+                            : (hasta === desde + 1
+                                ? 'lecciones ' + desde + ' y ' + hasta
+                                : 'lecciones ' + desde + ' a ' + hasta);
+                        return 'Receso ' + hueco.orden + ' · ' + bloqueTexto;
+                    },
                     sumarMinutos: function (hora, minutos) {
                         var partes = String(hora || '07:00').split(':');
                         var total = ((Number(partes[0]) || 0) * 60 + (Number(partes[1]) || 0) + Number(minutos || 0)) % 1440;
@@ -910,15 +980,32 @@
                         return String(Math.floor(total / 60)).padStart(2, '0') + ':'
                             + String(total % 60).padStart(2, '0');
                     },
+                    get huecosRecreo() {
+                        var n = Number(this.cantidadLecciones) || 0;
+                        var bloque = Number(this.leccionesPorBloque) || 1;
+                        var minAlmuerzo = Number(this.minutosAlmuerzo) || 0;
+                        var leccionAlmuerzo = Number(this.leccionAlmuerzo) || 0;
+                        var huecos = [];
+                        if (bloque <= 0) {
+                            return huecos;
+                        }
+                        for (var i = 1; i < n; i++) {
+                            var hayAlmuerzo = minAlmuerzo > 0 && leccionAlmuerzo === i;
+                            if (!hayAlmuerzo && i % bloque === 0) {
+                                huecos.push({ leccion: i, orden: huecos.length + 1 });
+                            }
+                        }
+                        return huecos;
+                    },
                     get lineas() {
                         var n = Number(this.cantidadLecciones) || 0;
                         var duracion = Number(this.minutosLeccion) || 0;
-                        var recreo = Number(this.minutosRecreo) || 0;
                         var bloque = Number(this.leccionesPorBloque) || 1;
                         var minAlmuerzo = Number(this.minutosAlmuerzo) || 0;
                         var leccionAlmuerzo = Number(this.leccionAlmuerzo) || 0;
                         var cursor = this.inicioJornada || '07:00';
                         var out = [];
+                        var indiceRecreo = 0;
                         for (var i = 1; i <= n; i++) {
                             var ini = cursor;
                             var fin = this.sumarMinutos(ini, duracion);
@@ -931,7 +1018,7 @@
                             });
                             cursor = fin;
                             var hayAlmuerzo = minAlmuerzo > 0 && leccionAlmuerzo === i && i !== n;
-                            var hayRecreo = !hayAlmuerzo && recreo > 0 && bloque > 0 && i % bloque === 0 && i !== n;
+                            var esHueco = !hayAlmuerzo && bloque > 0 && i % bloque === 0 && i !== n;
                             if (hayAlmuerzo) {
                                 var finAlmuerzo = this.sumarMinutos(cursor, minAlmuerzo);
                                 out.push({
@@ -939,19 +1026,23 @@
                                     tipo: 'almuerzo',
                                     inicio: cursor,
                                     fin: finAlmuerzo,
-                                    etiqueta: 'Almuerzo'
+                                    etiqueta: 'Almuerzo · ' + minAlmuerzo + ' min'
                                 });
                                 cursor = finAlmuerzo;
-                            } else if (hayRecreo) {
-                                var finRecreo = this.sumarMinutos(cursor, recreo);
-                                out.push({
-                                    clave: 'r-' + i,
-                                    tipo: 'recreo',
-                                    inicio: cursor,
-                                    fin: finRecreo,
-                                    etiqueta: 'Receso'
-                                });
-                                cursor = finRecreo;
+                            } else if (esHueco) {
+                                var recreo = Number(this.minutosRecreos[indiceRecreo]) || 0;
+                                indiceRecreo += 1;
+                                if (recreo > 0) {
+                                    var finRecreo = this.sumarMinutos(cursor, recreo);
+                                    out.push({
+                                        clave: 'r-' + i,
+                                        tipo: 'recreo',
+                                        inicio: cursor,
+                                        fin: finRecreo,
+                                        etiqueta: 'Receso · ' + recreo + ' min'
+                                    });
+                                    cursor = finRecreo;
+                                }
                             }
                         }
                         return out;
@@ -961,6 +1052,16 @@
                         return lineas.length ? lineas[lineas.length - 1].fin : '—';
                     }
                 };
+            }
+
+            function parseDuracionesRecreos(raw) {
+                if (!raw || !String(raw).trim()) {
+                    return [];
+                }
+                return String(raw).split(',').map(function (valor) {
+                    var minutos = Number(String(valor).trim());
+                    return Number.isFinite(minutos) ? minutos : 10;
+                });
             }
 
             function cerrarSelectoresAcademicos(excepto) {

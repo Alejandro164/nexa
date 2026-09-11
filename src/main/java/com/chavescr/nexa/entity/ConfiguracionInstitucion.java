@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import jakarta.persistence.Column;
@@ -56,6 +57,7 @@ public class ConfiguracionInstitucion {
     public static final LocalTime INICIO_JORNADA_PREDETERMINADO = LocalTime.of(7, 0);
     public static final int MINUTOS_LECCION_PREDETERMINADOS = 40;
     public static final int MINUTOS_RECREO_PREDETERMINADOS = 10;
+    public static final List<Integer> DURACIONES_RECREOS_PREDETERMINADAS = List.of(15, 20, 10);
     public static final int LECCIONES_POR_BLOQUE_PREDETERMINADAS = 2;
     public static final int LECCION_ALMUERZO_PREDETERMINADA = 6;
     public static final int MINUTOS_ALMUERZO_PREDETERMINADOS = 40;
@@ -67,6 +69,10 @@ public class ConfiguracionInstitucion {
 
         public LocalTime getFin() {
             return fin;
+        }
+
+        public int getMinutos() {
+            return (int) java.time.Duration.between(inicio, fin).toMinutes();
         }
     }
 
@@ -89,6 +95,11 @@ public class ConfiguracionInstitucion {
 
     @Column(nullable = false)
     private Integer minutosRecreo = MINUTOS_RECREO_PREDETERMINADOS;
+
+    @Column(name = "duraciones_recreos", length = 80)
+    private String duracionesRecreos = DURACIONES_RECREOS_PREDETERMINADAS.stream()
+            .map(String::valueOf)
+            .collect(Collectors.joining(","));
 
     @Column(nullable = false)
     private Integer leccionesPorBloque = LECCIONES_POR_BLOQUE_PREDETERMINADAS;
@@ -154,22 +165,104 @@ public class ConfiguracionInstitucion {
     }
 
     public boolean hayRecreoDespues(int numeroLeccion) {
+        return minutosRecreoDespues(numeroLeccion) > 0;
+    }
+
+    public int minutosRecreoDespues(int numeroLeccion) {
+        if (!esHuecoRecreo(numeroLeccion)) {
+            return 0;
+        }
+        return minutosRecreoEnIndice(indiceHuecoRecreo(numeroLeccion));
+    }
+
+    public List<Integer> listaDuracionesRecreos() {
+        if (duracionesRecreos == null || duracionesRecreos.isBlank()) {
+            return List.of();
+        }
+        List<Integer> valores = new ArrayList<>();
+        for (String parte : duracionesRecreos.split(",")) {
+            String recorte = parte.trim();
+            if (recorte.isEmpty()) {
+                continue;
+            }
+            try {
+                valores.add(limitarMinutosRecreo(Integer.parseInt(recorte)));
+            } catch (NumberFormatException e) {
+                valores.add(MINUTOS_RECREO_PREDETERMINADOS);
+            }
+        }
+        return valores;
+    }
+
+    public void setListaDuracionesRecreos(List<Integer> minutos) {
+        if (minutos == null || minutos.isEmpty()) {
+            this.duracionesRecreos = "";
+            return;
+        }
+        this.duracionesRecreos = minutos.stream()
+                .map(valor -> String.valueOf(limitarMinutosRecreo(valor)))
+                .collect(Collectors.joining(","));
+    }
+
+    public String etiquetaRecreos() {
+        List<Integer> duraciones = new ArrayList<>();
+        for (Integer numero : getLecciones()) {
+            if (hayRecreoDespues(numero)) {
+                duraciones.add(minutosRecreoDespues(numero));
+            }
+        }
+        if (duraciones.isEmpty()) {
+            return "sin recreos";
+        }
+        if (duraciones.stream().distinct().count() == 1) {
+            return "recreo de " + duraciones.get(0) + " min entre bloques";
+        }
+        if (duraciones.size() == 2) {
+            return "recreos de " + duraciones.get(0) + " y " + duraciones.get(1) + " min";
+        }
+        String cuerpo = duraciones.subList(0, duraciones.size() - 1).stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(", "));
+        return "recreos de " + cuerpo + " y " + duraciones.get(duraciones.size() - 1) + " min";
+    }
+
+    private boolean esHuecoRecreo(int numeroLeccion) {
         if (hayAlmuerzoDespues(numeroLeccion)) {
             return false;
         }
-        int recreo = minutosRecreoEfectivos();
         int bloque = Objects.requireNonNullElse(leccionesPorBloque, LECCIONES_POR_BLOQUE_PREDETERMINADAS);
-        if (recreo <= 0 || bloque <= 0 || cantidadLecciones == null || numeroLeccion >= cantidadLecciones) {
-            return false;
+        return bloque > 0 && cantidadLecciones != null && numeroLeccion < cantidadLecciones
+                && numeroLeccion % bloque == 0;
+    }
+
+    private int indiceHuecoRecreo(int numeroLeccion) {
+        int indice = 0;
+        for (int numero = 1; numero < numeroLeccion; numero++) {
+            if (esHuecoRecreo(numero)) {
+                indice++;
+            }
         }
-        return numeroLeccion % bloque == 0;
+        return indice;
+    }
+
+    private int minutosRecreoEnIndice(int indice) {
+        List<Integer> duraciones = listaDuracionesRecreos();
+        if (indice >= 0 && indice < duraciones.size()) {
+            return duraciones.get(indice);
+        }
+        return minutosRecreoEfectivos();
+    }
+
+    private int limitarMinutosRecreo(Integer minutos) {
+        int valor = minutos == null ? MINUTOS_RECREO_PREDETERMINADOS : minutos;
+        return Math.max(0, Math.min(60, valor));
     }
 
     private int minutosPausaDespues(int numeroLeccion) {
         if (hayAlmuerzoDespues(numeroLeccion)) {
             return minutosAlmuerzoEfectivos();
         }
-        return hayRecreoDespues(numeroLeccion) ? minutosRecreoEfectivos() : 0;
+        return minutosRecreoDespues(numeroLeccion);
     }
 
     private int minutosLeccionEfectivos() {
@@ -201,7 +294,7 @@ public class ConfiguracionInstitucion {
         for (Integer numero : getLecciones()) {
             if (hayRecreoDespues(numero)) {
                 LocalTime inicio = horaFinLeccion(numero);
-                recreos.put(numero, new FranjaHoraria(inicio, inicio.plusMinutes(minutosRecreoEfectivos())));
+                recreos.put(numero, new FranjaHoraria(inicio, inicio.plusMinutes(minutosRecreoDespues(numero))));
             }
         }
         return recreos;
@@ -269,6 +362,14 @@ public class ConfiguracionInstitucion {
 
     public void setMinutosRecreo(Integer minutosRecreo) {
         this.minutosRecreo = minutosRecreo;
+    }
+
+    public String getDuracionesRecreos() {
+        return duracionesRecreos;
+    }
+
+    public void setDuracionesRecreos(String duracionesRecreos) {
+        this.duracionesRecreos = duracionesRecreos;
     }
 
     public Integer getLeccionesPorBloque() {
