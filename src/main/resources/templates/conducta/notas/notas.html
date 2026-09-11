@@ -1,49 +1,63 @@
-<div th:fragment="content" id="notas-panel" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org" style="position: relative;">
+    <div id="notas-loading" class="htmx-indicator panel-loading-overlay">
+        <div class="spinner"></div>
+        <span>Cargando...</span>
+    </div>
+
     <div class="conducta-stats">
         <div class="stat-card positiva">
             <span class="stat-label">Nota Promedio</span>
-            <span class="stat-value">86</span>
+            <span class="stat-value" th:text="${resumen != null ? resumen.promedio : 0}">0</span>
             <span style="font-size:0.78rem;color:var(--text-secondary);">Promedio general de conducta</span>
         </div>
         <div class="stat-card">
             <span class="stat-label">Llamadas de Atención</span>
-            <span class="stat-value">12</span>
+            <span class="stat-value" th:text="${resumen != null ? resumen.llamadas : 0}">0</span>
             <span style="font-size:0.78rem;color:var(--text-secondary);">Este período</span>
         </div>
         <div class="stat-card negativa">
             <span class="stat-label">Boletas Emitidas</span>
-            <span class="stat-value">4</span>
+            <span class="stat-value" th:text="${resumen != null ? resumen.boletas : 0}">0</span>
             <span style="font-size:0.78rem;color:var(--text-secondary);">Faltas graves</span>
         </div>
-        <div class="stat-card pendiente">
-            <span class="stat-label">Amonestaciones</span>
-            <span class="stat-value">2</span>
-            <span style="font-size:0.78rem;color:var(--text-secondary);">Pendientes de resolución</span>
-        </div>
     </div>
+
     <div class="table-card">
         <div class="conducta-toolbar">
-            <div class="conducta-filters-row">
+            <div class="conducta-filters-row notas-filtros">
                 <label class="conducta-field">
                     <span>Período</span>
-                    <select class="form-input" aria-label="Período">
-                        <option value="I-2026">I-2026</option>
-                        <option value="II-2026" selected>II-2026</option>
+                    <select class="form-input" name="periodoId" aria-label="Período"
+                            hx-get="/conducta/notas" hx-target="#notas-panel" hx-swap="innerHTML"
+                            hx-include=".notas-filtros" hx-indicator="#notas-loading">
+                        <option th:if="${periodos == null or periodos.empty}" value="" disabled selected>Sin períodos</option>
+                        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
+                                th:selected="${periodoId != null and periodoId == p.id}"></option>
                     </select>
                 </label>
                 <label class="conducta-field">
                     <span>Grado</span>
-                    <select class="form-input" aria-label="Grado">
-                        <option value="" selected>Todos los grados</option>
+                    <select class="form-input" name="grado" aria-label="Grado"
+                            hx-get="/conducta/notas" hx-target="#notas-panel" hx-swap="innerHTML"
+                            hx-include=".notas-filtros" hx-indicator="#notas-loading">
+                        <option value="">Todos los grados</option>
+                        <option th:each="g : ${grados}" th:value="${g}" th:text="${g}"
+                                th:selected="${grado != null and grado == g}"></option>
                     </select>
                 </label>
                 <label class="conducta-field">
                     <span>Sección</span>
-                    <select class="form-input" aria-label="Sección">
-                        <option value="" selected>Todas las secciones</option>
+                    <select class="form-input" name="nivelId" aria-label="Sección"
+                            hx-get="/conducta/notas" hx-target="#notas-panel" hx-swap="innerHTML"
+                            hx-include=".notas-filtros" hx-indicator="#notas-loading">
+                        <option value="">Todas las secciones</option>
+                        <option th:each="s : ${secciones}" th:value="${s.id}"
+                                th:text="${s.grado + '-' + s.seccion}"
+                                th:selected="${nivelId != null and nivelId == s.id}"></option>
                     </select>
                 </label>
-                <span class="table-card-count">8 estudiantes</span>
+                <span class="table-card-count"
+                      th:text="${(resumen != null ? resumen.totalEstudiantes : 0) + ' estudiantes'}">0 estudiantes</span>
             </div>
             <div class="conducta-search-row">
                 <div class="conducta-search">
@@ -53,11 +67,11 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input class="filter-input" type="search" placeholder="Nombre o cédula..."
-                           aria-label="Buscar estudiante">
+                    <input id="notas-buscar" class="filter-input" type="search" placeholder="Nombre o cédula..."
+                           aria-label="Buscar estudiante" autocomplete="off">
                 </div>
                 <div class="conducta-actions">
-                    <button type="button" class="conducta-btn conducta-btn-secondary">
+                    <button type="button" class="conducta-btn conducta-btn-secondary" onclick="window.print()">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -68,7 +82,12 @@
                         </svg>
                         Reporte
                     </button>
-                    <button type="button" class="conducta-btn conducta-btn-primary">
+                    <button type="button" class="conducta-btn conducta-btn-primary"
+                            th:disabled="${avisoPeriodo != null or filas == null or filas.empty}"
+                            hx-post="/conducta/notas/enviar"
+                            hx-target="#notas-panel" hx-swap="innerHTML"
+                            hx-include=".notas-filtros" hx-indicator="#notas-loading"
+                            hx-confirm="¿Enviar las notas de conducta del filtro actual a los encargados?">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -79,6 +98,7 @@
                 </div>
             </div>
         </div>
+        <div th:if="${avisoPeriodo}" class="form-alert-error" style="margin: 1rem 1.5rem;" th:text="${avisoPeriodo}"></div>
         <div style="overflow-x: auto;">
             <table class="conducta-table">
                 <thead>
@@ -92,161 +112,66 @@
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <div class="student-cell">
-                                <div class="student-avatar" style="background:#2d5a87;">VS</div>
-                                <div>
-                                    <div style="font-weight:600;color:#0f172a;">Valeria Solano Mora</div>
-                                    <div style="font-size:0.75rem;color:var(--text-secondary);">9-2345-6789</div>
-                                </div>
+                <tbody id="notas-tbody">
+                    <tr th:if="${filas == null or filas.empty}">
+                        <td colspan="7" class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <div th:text="${avisoPeriodo != null ? avisoPeriodo : 'No hay estudiantes en el filtro seleccionado.'}">
+                                No hay estudiantes
                             </div>
-                        </td>
-                        <td>1-A</td>
-                        <td><span class="nota-num nota-excelente">95</span></td>
-                        <td><span class="badge-xs badge-excelente">Excelente</span></td>
-                        <td>Excelente comportamiento. Ayuda a sus compañeros y mantiene una actitud positiva en clase.</td>
-                        <td>II-2026</td>
-                        <td class="actions-cell">
-                            <button class="btn-xs primary" title="Enviar nota">📤 Enviar</button>
                         </td>
                     </tr>
-                    <tr>
+                    <tr th:each="f : ${filas}"
+                        th:attr="data-search=${#strings.toLowerCase(f.estudiante.nombre + ' ' + (f.estudiante.cedula != null ? f.estudiante.cedula : ''))}">
                         <td>
                             <div class="student-cell">
-                                <div class="student-avatar" style="background:#059669;">GB</div>
+                                <div class="student-avatar" th:style="${'background:' + f.colorAvatar}"
+                                     th:text="${f.iniciales}">VS</div>
                                 <div>
-                                    <div style="font-weight:600;color:#0f172a;">Gabriela Brenes Gómez</div>
-                                    <div style="font-size:0.75rem;color:var(--text-secondary);">9-0028-9971</div>
+                                    <div style="font-weight:600;color:#0f172a;" th:text="${f.estudiante.nombre}">Nombre</div>
+                                    <div style="font-size:0.75rem;color:var(--text-secondary);"
+                                         th:text="${f.estudiante.cedula != null ? f.estudiante.cedula : 'Sin cédula'}">cédula</div>
                                 </div>
                             </div>
                         </td>
-                        <td>1-A</td>
-                        <td><span class="nota-num nota-excelente">100</span></td>
-                        <td><span class="badge-xs badge-excelente">Excelente</span></td>
-                        <td>Estudiante ejemplar. Nunca ha tenido llamadas de atención. Participa activamente.</td>
-                        <td>II-2026</td>
-                        <td class="actions-cell">
-                            <button class="btn-xs primary" title="Enviar nota">📤 Enviar</button>
-                        </td>
-                    </tr>
-                    <tr>
+                        <td th:text="${f.seccion}">1-A</td>
                         <td>
-                            <div class="student-cell">
-                                <div class="student-avatar" style="background:#0284c7;">MS</div>
-                                <div>
-                                    <div style="font-weight:600;color:#0f172a;">Melissa Sánchez Gutiérrez</div>
-                                    <div style="font-size:0.75rem;color:var(--text-secondary);">9-0034-9965</div>
-                                </div>
-                            </div>
+                            <span class="nota-num" th:classappend="${'nota-' + f.categoriaCss}"
+                                  th:text="${f.nota}">95</span>
                         </td>
-                        <td>1-A</td>
-                        <td><span class="nota-num nota-bueno">82</span></td>
-                        <td><span class="badge-xs badge-bueno">Bueno</span></td>
-                        <td>Generalmente cumple con las normas. Ha tenido 1 llamado de atención por conversar en clase.</td>
-                        <td>II-2026</td>
-                        <td class="actions-cell">
-                            <button class="btn-xs primary" title="Enviar nota">📤 Enviar</button>
-                        </td>
-                    </tr>
-                    <tr>
                         <td>
-                            <div class="student-cell">
-                                <div class="student-avatar" style="background:#7c3aed;">CD</div>
-                                <div>
-                                    <div style="font-weight:600;color:#0f172a;">Carlos Díaz Castro</div>
-                                    <div style="font-size:0.75rem;color:var(--text-secondary);">9-0040-9959</div>
-                                </div>
-                            </div>
+                            <span class="badge-xs" th:classappend="${'badge-' + f.categoriaCss}"
+                                  th:text="${f.categoria}">Excelente</span>
                         </td>
-                        <td>1-A</td>
-                        <td><span class="nota-num nota-regular">68</span></td>
-                        <td><span class="badge-xs badge-regular">Regular</span></td>
-                        <td>Requiere mejorar su conducta. Ha recibido 3 llamadas de atención este período.</td>
-                        <td>II-2026</td>
+                        <td th:text="${f.observaciones}">Observaciones</td>
+                        <td th:text="${f.periodoCodigo}">II-2026</td>
                         <td class="actions-cell">
-                            <button class="btn-xs primary" title="Enviar nota">📤 Enviar</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="student-cell">
-                                <div class="student-avatar" style="background:#e11d48;">FC</div>
-                                <div>
-                                    <div style="font-weight:600;color:#0f172a;">Fernando Chavarría Quesada</div>
-                                    <div style="font-size:0.75rem;color:var(--text-secondary);">9-0046-9953</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>1-A</td>
-                        <td><span class="nota-num nota-deficiente">55</span></td>
-                        <td><span class="badge-xs badge-deficiente">Deficiente</span></td>
-                        <td>Conducta deficiente. 1 boleta por falta grave. Debe mejorar urgentemente su comportamiento.</td>
-                        <td>II-2026</td>
-                        <td class="actions-cell">
-                            <button class="btn-xs primary" title="Enviar nota">📤 Enviar</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="student-cell">
-                                <div class="student-avatar" style="background:#ca8a04;">FJ</div>
-                                <div>
-                                    <div style="font-weight:600;color:#0f172a;">Francisco Jiménez Pérez</div>
-                                    <div style="font-size:0.75rem;color:var(--text-secondary);">9-0052-9947</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>7-A</td>
-                        <td><span class="nota-num nota-excelente">92</span></td>
-                        <td><span class="badge-xs badge-excelente">Excelente</span></td>
-                        <td>Muy buen comportamiento. Responsable y respetuoso con docentes y compañeros.</td>
-                        <td>II-2026</td>
-                        <td class="actions-cell">
-                            <button class="btn-xs primary" title="Enviar nota">📤 Enviar</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="student-cell">
-                                <div class="student-avatar" style="background:#db2777;">LF</div>
-                                <div>
-                                    <div style="font-weight:600;color:#0f172a;">Lucía Fernández Rojas</div>
-                                    <div style="font-size:0.75rem;color:var(--text-secondary);">3-6001-0101</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>7-A</td>
-                        <td><span class="nota-num nota-excelente">97</span></td>
-                        <td><span class="badge-xs badge-excelente">Excelente</span></td>
-                        <td>Siempre cumple con las normas. Excelente disciplina y presentación personal.</td>
-                        <td>II-2026</td>
-                        <td class="actions-cell">
-                            <button class="btn-xs primary" title="Enviar nota">📤 Enviar</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="student-cell">
-                                <div class="student-avatar" style="background:#0891b2;">MV</div>
-                                <div>
-                                    <div style="font-weight:600;color:#0f172a;">Mateo Vargas Solís</div>
-                                    <div style="font-size:0.75rem;color:var(--text-secondary);">3-6002-0202</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>7-A</td>
-                        <td><span class="nota-num nota-bueno">80</span></td>
-                        <td><span class="badge-xs badge-bueno">Bueno</span></td>
-                        <td>Comportamiento aceptable. A veces se distrae en clase pero responde a las correcciones.</td>
-                        <td>II-2026</td>
-                        <td class="actions-cell">
-                            <button class="btn-xs primary" title="Enviar nota">📤 Enviar</button>
+                            <button type="button" class="btn-xs primary"
+                                    th:title="${f.enviada ? 'Reenviar nota a los encargados' : 'Enviar nota a los encargados'}"
+                                    th:text="${f.enviada ? 'Reenviar' : 'Enviar'}"
+                                    th:disabled="${avisoPeriodo != null}"
+                                    hx-post="/conducta/notas/enviar"
+                                    hx-target="#notas-panel" hx-swap="innerHTML"
+                                    hx-include=".notas-filtros" hx-indicator="#notas-loading"
+                                    th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}}|">Enviar</button>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
+    <script>
+        (function () {
+            var input = document.getElementById('notas-buscar');
+            var tbody = document.getElementById('notas-tbody');
+            if (!input || !tbody) return;
+            input.addEventListener('input', function () {
+                var f = this.value.trim().toLowerCase();
+                tbody.querySelectorAll('tr[data-search]').forEach(function (tr) {
+                    var hay = !f || (tr.getAttribute('data-search') || '').indexOf(f) !== -1;
+                    tr.style.display = hay ? '' : 'none';
+                });
+            });
+        })();
+    </script>
 </div>

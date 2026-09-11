@@ -36,7 +36,8 @@ public class IndicadorCotidiano {
     @Column(length = 500)
     private String descripcion;
 
-    @Column(nullable = false)
+    /** Null = ponderado: el sistema reparte el porcentaje restante entre estos indicadores. */
+    @Column
     private Integer porcentaje;
 
     @Column(name = "puntos_totales")
@@ -104,5 +105,9 @@ public class IndicadorCotidiano {
 
     public void setPuntosTotales(Integer puntosTotales) {
         this.puntosTotales = puntosTotales;
+    }
+
+    public boolean isPonderado() {
+        return porcentaje == null;
     }
 }

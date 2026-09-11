@@ -1,14 +1,7 @@
 <div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
     <div class="card">
-        <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 1rem;">
-            <div>
-                <h3 class="card-title">Indicadores de Trabajo Cotidiano</h3>
-                <p class="text-muted text-sm" style="margin:4px 0 0 0;">
-                    Defina los indicadores de aprendizaje que evaluará durante el trabajo cotidiano en clase.
-                </p>
-            </div>
-            <div style="border-top: 1px solid var(--border);"></div>
-            <div class="filters-bar">
+        <div class="card-header">
+            <div class="filters-bar" style="width: 100%;">
                 <select class="form-input" style="max-width: 200px;" name="nivelId"
                         hx-get="/gestion-academica/cotidiano/indicadores"
                         hx-target="#indicadores-panel" hx-swap="innerHTML"
@@ -25,7 +18,7 @@
                     <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
                             th:selected="${materiaId != null and materiaId == m.id}"></option>
                 </select>
-                <button class="btn btn-primary" style="width: 220px; height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap;"
+                <button class="btn btn-primary" style="width: 220px; height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap; margin-left: auto;"
                         th:if="${nivelId != null and materiaId != null}"
                         th:attr="hx-get='/gestion-academica/cotidiano/indicadores/form?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
                         hx-target="#modal-container" hx-swap="innerHTML"
@@ -63,7 +56,12 @@
                                       th:text="${#numbers.formatDecimal(promedioPorIndicador.get(i.id), 1, 1)} + '%'">85.0%</span>
                                 <span th:unless="${promedioPorIndicador.get(i.id)} != null" class="text-muted">—</span>
                             </td>
-                            <td><span class="badge badge-primary" th:text="${i.porcentaje} + '%'">15%</span></td>
+                            <td>
+                                <span th:if="${i.ponderado}" class="badge badge-info"
+                                      th:text="'Ponderado · ' + ${#numbers.formatDecimal(pesosEfectivos.get(i.id), 1, 1)} + '%'">Ponderado · 50.0%</span>
+                                <span th:unless="${i.ponderado}" class="badge badge-primary"
+                                      th:text="${#numbers.formatDecimal(pesosEfectivos.get(i.id), 1, 1)} + '%'">15.0%</span>
+                            </td>
                             <td>
                                 <span th:if="${i.puntosTotales != null}" th:text="${i.puntosTotales} + ' pts'">50 pts</span>
                                 <span th:unless="${i.puntosTotales != null}" class="text-muted">N/A</span>
@@ -104,7 +102,8 @@
                     <tfoot>
                         <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
                             <td colspan="2">Total asignado</td>
-                            <td><span style="color: var(--primary);" th:text="${totalAsignado} + '%'">0%</span></td>
+                            <td><span style="color: var(--primary);"
+                                      th:text="${#numbers.formatDecimal(totalAsignado, 1, 1)} + '%'">0.0%</span></td>
                             <td></td>
                             <td></td>
                             <td></td>

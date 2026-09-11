@@ -52,10 +52,13 @@ public class ProyectoEstudiantilController {
     }
 
     @GetMapping("/form")
-    public String nuevoProyecto(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model) {
+    public String nuevoProyecto(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
+            HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("proyecto", new ProyectoDefinicion());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
+        cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, null);
         return "gestion-academica/proyectos/proyecto-form :: form-content";
     }
 
@@ -66,6 +69,7 @@ public class ProyectoEstudiantilController {
         model.addAttribute("proyecto", service.obtenerProyecto(institucionId, id));
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
+        cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, id);
         return "gestion-academica/proyectos/proyecto-form :: form-content";
     }
 
@@ -136,7 +140,8 @@ public class ProyectoEstudiantilController {
         List<ProyectoDefinicion> proyectos = nivelId != null && materiaId != null && periodoActivo != null
                 ? service.listarProyectos(institucionId, nivelId, materiaId, periodoActivo.getId())
                 : List.of();
-        int total = proyectos.stream().mapToInt(ProyectoDefinicion::getPorcentaje).sum();
+        var pesosEfectivos = service.calcularPesosEfectivos(proyectos);
+        double total = pesosEfectivos.values().stream().mapToDouble(Double::doubleValue).sum();
 
         int totalEstudiantesSeccion = nivelId != null ? service.contarEstudiantesActivos(nivelId) : 0;
         var evaluadosPorProyecto = service.contarEvaluadosPorProyecto(proyectos.stream().map(ProyectoDefinicion::getId).toList());
@@ -147,11 +152,37 @@ public class ProyectoEstudiantilController {
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("proyectos", proyectos);
+        model.addAttribute("pesosEfectivos", pesosEfectivos);
         model.addAttribute("totalAsignado", total);
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorProyecto", evaluadosPorProyecto);
         model.addAttribute("promedioPorProyecto", promedioPorProyecto);
+    }
+
+    private void cargarContextoPorcentaje(Model model, Long institucionId, Long nivelId, Long materiaId,
+            Long proyectoId) {
+        var periodoActivo = service.obtenerPeriodoActivoOpcional(institucionId);
+        List<ProyectoDefinicion> proyectos = periodoActivo != null
+                ? service.listarProyectos(institucionId, nivelId, materiaId, periodoActivo.getId())
+                : List.of();
+        int sumaFijosOtros = proyectos.stream()
+                .filter(p -> proyectoId == null || !p.getId().equals(proyectoId))
+                .filter(p -> p.getPorcentaje() != null)
+                .mapToInt(ProyectoDefinicion::getPorcentaje)
+                .sum();
+        long ponderadosOtros = proyectos.stream()
+                .filter(p -> proyectoId == null || !p.getId().equals(proyectoId))
+                .filter(ProyectoDefinicion::isPonderado)
+                .count();
+        int topeFijos = ponderadosOtros > 0 ? 99 : 100;
+        int disponible = Math.max(0, topeFijos - sumaFijosOtros);
+        long nPonderados = ponderadosOtros + 1;
+        model.addAttribute("porcentajeDisponible", disponible);
+        model.addAttribute("ponderadosOtros", ponderadosOtros);
+        model.addAttribute("sinCupoPorcentaje", sumaFijosOtros >= 100);
+        model.addAttribute("pesoPonderadoEstimado",
+                nPonderados == 0 ? 0.0 : Math.max(0, 100 - sumaFijosOtros) / (double) nPonderados);
     }
 
     private Long requerirInstitucion(HttpSession session) {

@@ -1,5 +1,6 @@
 package com.chavescr.nexa.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -25,11 +26,40 @@ public class NotificacionService {
     public void crear(Long usuarioId, String mensaje, String enlace) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        crear(usuario, mensaje, enlace);
+    }
+
+    public void crear(Usuario usuario, String mensaje, String enlace) {
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuario no encontrado");
+        }
+        notificacionRepository.save(nueva(usuario, mensaje, enlace));
+    }
+
+    public void crearTodas(List<Usuario> destinatarios, String mensaje, String enlace) {
+        if (destinatarios == null || destinatarios.isEmpty()) {
+            return;
+        }
+        List<Notificacion> lote = new ArrayList<>(destinatarios.size());
+        for (Usuario usuario : destinatarios) {
+            lote.add(nueva(usuario, mensaje, enlace));
+        }
+        guardarTodas(lote);
+    }
+
+    public Notificacion nueva(Usuario usuario, String mensaje, String enlace) {
         Notificacion notificacion = new Notificacion();
         notificacion.setUsuario(usuario);
         notificacion.setMensaje(mensaje);
         notificacion.setEnlace(enlace);
-        notificacionRepository.save(notificacion);
+        return notificacion;
+    }
+
+    public void guardarTodas(List<Notificacion> lote) {
+        if (lote == null || lote.isEmpty()) {
+            return;
+        }
+        notificacionRepository.saveAll(lote);
     }
 
     @Transactional(readOnly = true)

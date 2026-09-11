@@ -56,10 +56,13 @@ public class IndicadorCotidianoController {
     }
 
     @GetMapping("/form")
-    public String nuevoIndicador(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model) {
+    public String nuevoIndicador(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
+            HttpSession session) {
+        Long institucionId = requerirInstitucion(session);
         model.addAttribute("indicador", new IndicadorCotidiano());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
+        cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, null);
         return "gestion-academica/cotidiano/indicador-form :: form-content";
     }
 
@@ -70,6 +73,7 @@ public class IndicadorCotidianoController {
         model.addAttribute("indicador", service.obtenerIndicador(institucionId, id));
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
+        cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, id);
         return "gestion-academica/cotidiano/indicador-form :: form-content";
     }
 
@@ -138,7 +142,8 @@ public class IndicadorCotidianoController {
         List<IndicadorCotidiano> indicadores = nivelId != null && materiaId != null
                 ? service.listarIndicadores(institucionId, nivelId, materiaId)
                 : List.of();
-        int total = indicadores.stream().mapToInt(IndicadorCotidiano::getPorcentaje).sum();
+        var pesosEfectivos = service.calcularPesosEfectivos(indicadores);
+        double total = pesosEfectivos.values().stream().mapToDouble(Double::doubleValue).sum();
 
         var periodoActivo = evaluacionService.obtenerPeriodoActivoOpcional(institucionId);
         int totalEstudiantesSeccion = nivelId != null ? evaluacionService.contarEstudiantesActivos(nivelId) : 0;
@@ -154,11 +159,34 @@ public class IndicadorCotidianoController {
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("indicadores", indicadores);
+        model.addAttribute("pesosEfectivos", pesosEfectivos);
         model.addAttribute("totalAsignado", total);
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorIndicador", evaluadosPorIndicador);
         model.addAttribute("promedioPorIndicador", promedioPorIndicador);
+    }
+
+    private void cargarContextoPorcentaje(Model model, Long institucionId, Long nivelId, Long materiaId,
+            Long indicadorId) {
+        List<IndicadorCotidiano> indicadores = service.listarIndicadores(institucionId, nivelId, materiaId);
+        int sumaFijosOtros = indicadores.stream()
+                .filter(i -> indicadorId == null || !i.getId().equals(indicadorId))
+                .filter(i -> i.getPorcentaje() != null)
+                .mapToInt(IndicadorCotidiano::getPorcentaje)
+                .sum();
+        long ponderadosOtros = indicadores.stream()
+                .filter(i -> indicadorId == null || !i.getId().equals(indicadorId))
+                .filter(IndicadorCotidiano::isPonderado)
+                .count();
+        int topeFijos = ponderadosOtros > 0 ? 99 : 100;
+        int disponible = Math.max(0, topeFijos - sumaFijosOtros);
+        long nPonderados = ponderadosOtros + 1;
+        model.addAttribute("porcentajeDisponible", disponible);
+        model.addAttribute("ponderadosOtros", ponderadosOtros);
+        model.addAttribute("sinCupoPorcentaje", sumaFijosOtros >= 100);
+        model.addAttribute("pesoPonderadoEstimado",
+                nPonderados == 0 ? 0.0 : Math.max(0, 100 - sumaFijosOtros) / (double) nPonderados);
     }
 
     private Long requerirInstitucion(HttpSession session) {

@@ -1,5 +1,6 @@
 package com.chavescr.nexa.service;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -100,8 +101,34 @@ public class ProyectoEstudiantilService {
     }
 
     /**
+     * Peso efectivo de cada proyecto dentro del componente (base 100).
+     * Los de porcentaje fijo conservan su valor; el resto (100 − suma de fijos) se reparte
+     * equitativamente entre los ponderados (porcentaje null).
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> calcularPesosEfectivos(List<ProyectoDefinicion> proyectos) {
+        Map<Long, Double> pesos = new LinkedHashMap<>();
+        if (proyectos == null || proyectos.isEmpty()) {
+            return pesos;
+        }
+        int sumaFijos = proyectos.stream()
+                .filter(p -> p.getPorcentaje() != null)
+                .mapToInt(ProyectoDefinicion::getPorcentaje)
+                .sum();
+        long ponderados = proyectos.stream().filter(ProyectoDefinicion::isPonderado).count();
+        double resto = Math.max(0, 100 - sumaFijos);
+        double pesoPonderado = ponderados == 0 ? 0 : resto / ponderados;
+        for (ProyectoDefinicion proyecto : proyectos) {
+            pesos.put(proyecto.getId(),
+                    proyecto.isPonderado() ? pesoPonderado : proyecto.getPorcentaje().doubleValue());
+        }
+        return pesos;
+    }
+
+    /**
      * A diferencia de indicadores/tareas, en los proyectos los puntos totales son obligatorios: la
      * calificación siempre se deriva de puntosObtenidos/puntosTotales, nunca se ingresa directamente.
+     * El porcentaje sí puede ser ponderado (null): el sistema reparte el resto hasta 100%.
      */
     public ProyectoDefinicion guardarProyecto(Long institucionId, Long nivelId, Long materiaId,
             ProyectoDefinicion datos) {
@@ -114,23 +141,38 @@ public class ProyectoEstudiantilService {
         if (datos.getTitulo() == null || datos.getTitulo().isBlank()) {
             throw new IllegalArgumentException("Debes indicar el nombre del proyecto");
         }
-        if (datos.getPorcentaje() == null) {
-            throw new IllegalArgumentException("Debes indicar el porcentaje del proyecto");
-        }
-        if (datos.getPorcentaje() < 0 || datos.getPorcentaje() > 100) {
-            throw new IllegalArgumentException("El porcentaje debe estar entre 0 y 100");
-        }
-        int sumaExistente = listarProyectos(institucionId, nivelId, materiaId, periodoActivo.getId()).stream()
-                .filter(p -> !p.getId().equals(datos.getId()))
-                .mapToInt(ProyectoDefinicion::getPorcentaje)
-                .sum();
-        if (sumaExistente + datos.getPorcentaje() > 100) {
-            throw new IllegalArgumentException(
-                    "La suma de los proyectos no puede superar 100% (actual: " + sumaExistente + "%)");
-        }
-
         if (datos.getPuntosTotales() == null || datos.getPuntosTotales() <= 0) {
             throw new IllegalArgumentException("Debes indicar los puntos totales del proyecto");
+        }
+
+        List<ProyectoDefinicion> existentes = listarProyectos(institucionId, nivelId, materiaId, periodoActivo.getId());
+        int sumaFijosOtros = existentes.stream()
+                .filter(p -> datos.getId() == null || !p.getId().equals(datos.getId()))
+                .filter(p -> p.getPorcentaje() != null)
+                .mapToInt(ProyectoDefinicion::getPorcentaje)
+                .sum();
+        long ponderadosOtros = existentes.stream()
+                .filter(p -> datos.getId() == null || !p.getId().equals(datos.getId()))
+                .filter(ProyectoDefinicion::isPonderado)
+                .count();
+        Integer porcentaje = datos.getPorcentaje();
+        if (porcentaje != null) {
+            if (porcentaje < 1 || porcentaje > 100) {
+                throw new IllegalArgumentException("El porcentaje debe estar entre 1 y 100");
+            }
+            if (sumaFijosOtros + porcentaje > 100) {
+                throw new IllegalArgumentException(
+                        "La suma de los porcentajes fijos no puede superar 100% (disponible: "
+                                + (100 - sumaFijosOtros) + "%)");
+            }
+            if (ponderadosOtros > 0 && sumaFijosOtros + porcentaje >= 100) {
+                throw new IllegalArgumentException(
+                        "Debes dejar un porcentaje disponible para los proyectos ponderados (máximo: "
+                                + Math.max(0, 99 - sumaFijosOtros) + "%)");
+            }
+        } else if (sumaFijosOtros >= 100) {
+            throw new IllegalArgumentException(
+                    "El 100% ya está asignado a proyectos con porcentaje fijo. Reduce uno de ellos para poder ponderar este.");
         }
 
         ProyectoDefinicion proyecto = datos.getId() != null
@@ -144,7 +186,7 @@ public class ProyectoEstudiantilService {
         }
         proyecto.setTitulo(datos.getTitulo().trim());
         proyecto.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
-        proyecto.setPorcentaje(datos.getPorcentaje());
+        proyecto.setPorcentaje(porcentaje);
         proyecto.setPuntosTotales(datos.getPuntosTotales());
         return proyectoRepository.save(proyecto);
     }

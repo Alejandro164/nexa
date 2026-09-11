@@ -61,7 +61,7 @@
             /* ---- Stats ---- */
             .conducta-stats {
                 display: grid;
-                grid-template-columns: repeat(4, 1fr);
+                grid-template-columns: repeat(3, 1fr);
                 gap: 1rem;
                 margin-bottom: 1.5rem;
             }
@@ -252,6 +252,11 @@
             .conducta-btn-primary:hover {
                 background: #1e3a5f;
             }
+            .conducta-btn:disabled,
+            .btn-xs:disabled {
+                opacity: 0.55;
+                cursor: not-allowed;
+            }
 
             .conducta-table { width: 100%; border-collapse: collapse; }
             .conducta-table th {
@@ -368,11 +373,19 @@
                         Notas de Conducta
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'llamadas' }"
-                            @click="activeTab = 'llamadas'">
+                            @click="activeTab = 'llamadas'"
+                            hx-get="/conducta/llamadas"
+                            hx-target="#llamadas-panel"
+                            hx-trigger="click once"
+                            hx-swap="innerHTML">
                         Llamadas de Atención
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'boletas' }"
-                            @click="activeTab = 'boletas'">
+                            @click="activeTab = 'boletas'"
+                            hx-get="/conducta/boletas"
+                            hx-target="#boletas-panel"
+                            hx-trigger="click once"
+                            hx-swap="innerHTML">
                         Boletas
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'lecciones-guia' }"
@@ -383,15 +396,27 @@
             </div>
 
             <div x-show="activeTab === 'notas'" class="tab-pane">
-                <div th:replace="~{conducta/notas/notas :: content}"></div>
+                <div id="notas-panel" hx-get="/conducta/notas" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="table-card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando notas de conducta…</div>
+                    </div>
+                </div>
             </div>
 
             <div x-show="activeTab === 'llamadas'" class="tab-pane" x-cloak>
-                <div th:replace="~{conducta/llamadas/llamadas :: content}"></div>
+                <div id="llamadas-panel">
+                    <div class="table-card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando llamadas de atención…</div>
+                    </div>
+                </div>
             </div>
 
             <div x-show="activeTab === 'boletas'" class="tab-pane" x-cloak>
-                <div th:replace="~{conducta/boletas/boletas :: content}"></div>
+                <div id="boletas-panel">
+                    <div class="table-card">
+                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando boletas…</div>
+                    </div>
+                </div>
             </div>
 
             <div x-show="activeTab === 'lecciones-guia'" class="tab-pane" x-cloak>
@@ -399,6 +424,22 @@
             </div>
 
         </div>
+
+        <script th:inline="none">
+            if (!window.conductaEventsRegistrados) {
+                document.addEventListener('academicoGuardado', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje);
+                    }
+                });
+                document.addEventListener('academicoError', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje, 'error');
+                    }
+                });
+                window.conductaEventsRegistrados = true;
+            }
+        </script>
 
     </main>
     </th:block>

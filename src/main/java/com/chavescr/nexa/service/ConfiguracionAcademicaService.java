@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.ConfiguracionInstitucion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.Materia;
@@ -35,9 +36,6 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 @Transactional
 public class ConfiguracionAcademicaService {
 
-    public static final List<String> DIAS = List.of("LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES");
-    public static final List<Integer> LECCIONES = List.of(1, 2, 3, 4, 5, 6, 7, 8);
-
     private final InstitucionRepository institucionRepository;
     private final PeriodoAcademicoRepository periodoRepository;
     private final NivelAcademicoRepository nivelRepository;
@@ -50,6 +48,7 @@ public class ConfiguracionAcademicaService {
     private final DocenteMateriaService docenteMateriaService;
     private final DocenteGuiaService docenteGuiaService;
     private final DocenteBloqueoService docenteBloqueoService;
+    private final ConfiguracionInstitucionService configuracionInstitucionService;
 
     public ConfiguracionAcademicaService(InstitucionRepository institucionRepository,
             PeriodoAcademicoRepository periodoRepository,
@@ -62,7 +61,8 @@ public class ConfiguracionAcademicaService {
             AulaRepository aulaRepository,
             DocenteMateriaService docenteMateriaService,
             DocenteGuiaService docenteGuiaService,
-            DocenteBloqueoService docenteBloqueoService) {
+            DocenteBloqueoService docenteBloqueoService,
+            ConfiguracionInstitucionService configuracionInstitucionService) {
         this.institucionRepository = institucionRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
@@ -75,6 +75,20 @@ public class ConfiguracionAcademicaService {
         this.docenteMateriaService = docenteMateriaService;
         this.docenteGuiaService = docenteGuiaService;
         this.docenteBloqueoService = docenteBloqueoService;
+        this.configuracionInstitucionService = configuracionInstitucionService;
+    }
+
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public ConfiguracionInstitucion obtenerConfiguracion(Long institucionId) {
+        return configuracionInstitucionService.obtener(institucionId);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ConfiguracionInstitucion guardarJornada(Long institucionId, Integer cantidadLecciones,
+            LocalTime inicioJornada, Integer minutosLeccion, Integer minutosRecreo,
+            Integer leccionesPorBloque, Integer leccionAlmuerzo, Integer minutosAlmuerzo, List<String> dias) {
+        return configuracionInstitucionService.guardar(institucionId, cantidadLecciones, inicioJornada,
+                minutosLeccion, minutosRecreo, leccionesPorBloque, leccionAlmuerzo, minutosAlmuerzo, dias);
     }
 
     @Transactional(readOnly = true)
@@ -340,13 +354,10 @@ public class ConfiguracionAcademicaService {
     }
 
     public HorarioLeccion guardarLeccion(Long institucionId, Long id, Long periodoId, Long nivelId,
-            Long materiaId, Long docenteId, Long aulaId, String dia, Integer numeroLeccion,
-            LocalTime horaInicio, LocalTime horaFin) {
-        if (!DIAS.contains(dia) || !LECCIONES.contains(numeroLeccion)) {
+            Long materiaId, Long docenteId, Long aulaId, String dia, Integer numeroLeccion) {
+        ConfiguracionInstitucion config = obtenerConfiguracion(institucionId);
+        if (!config.getDias().contains(dia) || !config.getLecciones().contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
-        }
-        if (!horaFin.isAfter(horaInicio)) {
-            throw new IllegalArgumentException("La hora final debe ser posterior a la hora inicial");
         }
         validarDocenteDeMateria(institucionId, materiaId, docenteId, id);
 
@@ -389,8 +400,7 @@ public class ConfiguracionAcademicaService {
         leccion.setAula(obtenerAula(institucionId, aulaId));
         leccion.setDia(dia);
         leccion.setNumeroLeccion(numeroLeccion);
-        leccion.setHoraInicio(horaInicio);
-        leccion.setHoraFin(horaFin);
+        config.aplicarHorario(leccion);
         return horarioRepository.save(leccion);
     }
 

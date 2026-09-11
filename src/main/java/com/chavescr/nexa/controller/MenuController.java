@@ -37,11 +37,6 @@ public class MenuController {
         return htmxRequest ? "comedor/index :: htmx-content" : "comedor/index";
     }
 
-    @GetMapping("/conducta")
-    public String conducta(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "conducta/index :: htmx-content" : "conducta/index";
-    }
-
     @GetMapping("/notas")
     public String notas(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "notas/index :: htmx-content" : "notas/index";

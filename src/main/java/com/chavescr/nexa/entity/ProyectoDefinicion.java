@@ -40,7 +40,8 @@ public class ProyectoDefinicion {
     @Column(length = 1000)
     private String descripcion;
 
-    @Column(nullable = false)
+    /** Null = ponderado: el sistema reparte el porcentaje restante entre estos proyectos. */
+    @Column
     private Integer porcentaje;
 
     @Column(name = "puntos_totales", nullable = false)
@@ -116,5 +117,9 @@ public class ProyectoDefinicion {
 
     public void setPuntosTotales(Integer puntosTotales) {
         this.puntosTotales = puntosTotales;
+    }
+
+    public boolean isPonderado() {
+        return porcentaje == null;
     }
 }

@@ -100,9 +100,9 @@ public class TareaCalificacionService {
     }
 
     /**
-     * Si la tarea tiene puntosTotales definidos, la calificación se calcula a partir de
-     * puntosObtenidos; si no, se ingresa directamente (0-100). Los puntos totales de la tarea son
-     * opcionales, así que este método soporta ambos modos según esa tarea en particular.
+     * Las tareas nuevas siempre tienen puntosTotales. Si la tarea los define, la calificación se
+     * calcula a partir de puntosObtenidos; si un registro anterior no los tiene, se ingresa
+     * directamente (0-100).
      */
     public FilaTareaCalificacion registrarCalificacion(Long institucionId, Long estudianteId, Long tareaDefinicionId,
             Long periodoId, Integer calificacion, Integer puntosObtenidos, String observacion) {

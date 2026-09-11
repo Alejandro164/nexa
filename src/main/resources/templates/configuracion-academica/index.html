@@ -27,7 +27,7 @@
                 display: flex;
                 width: 100%;
                 box-shadow: var(--shadow-sm);
-                overflow: visible;
+                overflow-x: auto;
             }
             .config-tabs-container::-webkit-scrollbar {
                 display: none;
@@ -43,8 +43,8 @@
                 align-items: center;
                 justify-content: center;
                 gap: 8px;
-                padding: 10px 16px;
-                font-size: 0.85rem;
+                padding: 10px 12px;
+                font-size: 0.82rem;
                 font-weight: 600;
                 color: var(--text-secondary);
                 text-decoration: none;
@@ -402,7 +402,7 @@
             .schedule-grid {
                 min-width: 920px;
                 display: grid;
-                grid-template-columns: 100px repeat(5, minmax(150px, 1fr));
+                grid-template-columns: 100px repeat(var(--schedule-days, 5), minmax(150px, 1fr));
                 border-top: 1px solid var(--border);
                 border-left: 1px solid var(--border);
             }
@@ -423,12 +423,19 @@
                 min-height: 92px;
                 padding: 0.75rem 0.5rem;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
                 justify-content: center;
+                gap: 0.2rem;
                 text-align: center;
                 background: #f8fafc;
                 color: var(--text-secondary);
                 font-size: 0.76rem;
+            }
+            .schedule-hour small {
+                font-size: 0.68rem;
+                font-weight: 600;
+                color: #94a3b8;
             }
             .schedule-head.schedule-hour {
                 min-height: auto;
@@ -448,6 +455,161 @@
                 color: #94a3b8;
                 text-transform: uppercase;
                 letter-spacing: 0.07em;
+            }
+            .schedule-break-time {
+                margin-left: auto;
+                font-weight: 600;
+                letter-spacing: 0.04em;
+                text-transform: none;
+            }
+            .schedule-lunch {
+                background: #fff7ed;
+                color: #c2410c;
+            }
+            .jornada-card {
+                position: relative;
+            }
+            .jornada-body {
+                display: grid;
+                grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
+                gap: 0;
+                align-items: stretch;
+            }
+            .jornada-form {
+                padding: 1.35rem 1.5rem 1.6rem;
+                border-right: 1px solid var(--border);
+            }
+            .jornada-section + .jornada-section {
+                margin-top: 1.6rem;
+            }
+            .jornada-section-head h4 {
+                margin: 0;
+                font-size: 0.92rem;
+                font-weight: 700;
+                color: var(--text-primary);
+            }
+            .jornada-section-head p {
+                margin: 0.25rem 0 0.9rem;
+                color: var(--text-secondary);
+                font-size: 0.82rem;
+                line-height: 1.45;
+            }
+            .jornada-days {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .jornada-day {
+                position: relative;
+                min-width: 58px;
+                padding: 0.55rem 0.7rem;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background: #fff;
+                text-align: center;
+                font-size: 0.82rem;
+                font-weight: 700;
+                color: var(--text-secondary);
+                cursor: pointer;
+                transition: border-color 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s;
+            }
+            .jornada-day input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+            .jornada-day:hover {
+                border-color: #cbd5e1;
+            }
+            .jornada-day.is-on {
+                color: #fff;
+                background: var(--primary);
+                border-color: var(--primary);
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.22);
+            }
+            .jornada-fields {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+            }
+            .jornada-field-wide {
+                grid-column: 1 / -1;
+            }
+            .jornada-preview {
+                padding: 1.35rem 1.35rem 1.6rem;
+                background: #f8fafc;
+            }
+            .jornada-preview-head {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 0.75rem;
+                margin-bottom: 0.9rem;
+            }
+            .jornada-preview-head h4 {
+                margin: 0;
+                font-size: 0.92rem;
+                font-weight: 700;
+            }
+            .jornada-preview-head span {
+                font-size: 0.78rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+            }
+            .jornada-timeline {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                max-height: 520px;
+                overflow: auto;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                background: #fff;
+            }
+            .jornada-timeline li {
+                display: grid;
+                grid-template-columns: 118px 1fr;
+                gap: 0.6rem;
+                align-items: center;
+                padding: 0.55rem 0.8rem;
+                border-bottom: 1px solid var(--border);
+                font-size: 0.8rem;
+            }
+            .jornada-timeline li:last-child {
+                border-bottom: 0;
+            }
+            .jornada-timeline .jornada-time {
+                font-variant-numeric: tabular-nums;
+                font-weight: 700;
+                color: var(--text-secondary);
+            }
+            .jornada-timeline .is-lesson .jornada-label {
+                font-weight: 600;
+            }
+            .jornada-timeline .is-break {
+                background: #f1f5f9;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                font-size: 0.72rem;
+                font-weight: 700;
+            }
+            .jornada-timeline .is-lunch {
+                background: #fff7ed;
+                color: #c2410c;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                font-size: 0.72rem;
+                font-weight: 700;
+            }
+            @media (max-width: 900px) {
+                .jornada-body {
+                    grid-template-columns: 1fr;
+                }
+                .jornada-form {
+                    border-right: 0;
+                    border-bottom: 1px solid var(--border);
+                }
             }
             .schedule-slot {
                 min-height: 92px;
@@ -651,6 +813,10 @@
                             @click="activeTab = 'horario'; recargarHorarioAcademico()">
                         Horario
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'jornada' }"
+                            @click="activeTab = 'jornada'">
+                        Jornada
+                    </button>
                 </div>
             </div>
 
@@ -677,6 +843,10 @@
             <!-- Contenido Visual de Horario -->
             <div x-show="activeTab === 'horario'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-academica/horario/horario :: content}"></div>
+            </div>
+
+            <div x-show="activeTab === 'jornada'" class="tab-pane" x-cloak>
+                <div th:replace="~{configuracion-academica/jornada/jornada :: content}"></div>
             </div>
 
         </div>
@@ -720,6 +890,77 @@
                     url += '?' + parametros.toString();
                 }
                 htmx.ajax('GET', url, {target: '#horario-panel', swap: 'outerHTML'});
+            }
+
+            function jornadaLectiva(el) {
+                var d = el && el.dataset ? el.dataset : {};
+                return {
+                    cantidadLecciones: Number(d.cantidadLecciones || 12),
+                    inicioJornada: d.inicioJornada || '07:00',
+                    minutosLeccion: Number(d.minutosLeccion || 40),
+                    minutosRecreo: Number(d.minutosRecreo || 10),
+                    leccionesPorBloque: Number(d.leccionesPorBloque || 2),
+                    leccionAlmuerzo: Number(d.leccionAlmuerzo || 6),
+                    minutosAlmuerzo: d.minutosAlmuerzo == null || d.minutosAlmuerzo === '' ? 40 : Number(d.minutosAlmuerzo),
+                    diasSeleccionados: (d.dias || '').split(',').filter(Boolean),
+                    sumarMinutos: function (hora, minutos) {
+                        var partes = String(hora || '07:00').split(':');
+                        var total = ((Number(partes[0]) || 0) * 60 + (Number(partes[1]) || 0) + Number(minutos || 0)) % 1440;
+                        total = (total + 1440) % 1440;
+                        return String(Math.floor(total / 60)).padStart(2, '0') + ':'
+                            + String(total % 60).padStart(2, '0');
+                    },
+                    get lineas() {
+                        var n = Number(this.cantidadLecciones) || 0;
+                        var duracion = Number(this.minutosLeccion) || 0;
+                        var recreo = Number(this.minutosRecreo) || 0;
+                        var bloque = Number(this.leccionesPorBloque) || 1;
+                        var minAlmuerzo = Number(this.minutosAlmuerzo) || 0;
+                        var leccionAlmuerzo = Number(this.leccionAlmuerzo) || 0;
+                        var cursor = this.inicioJornada || '07:00';
+                        var out = [];
+                        for (var i = 1; i <= n; i++) {
+                            var ini = cursor;
+                            var fin = this.sumarMinutos(ini, duracion);
+                            out.push({
+                                clave: 'l-' + i,
+                                tipo: 'leccion',
+                                inicio: ini,
+                                fin: fin,
+                                etiqueta: 'Lección ' + i
+                            });
+                            cursor = fin;
+                            var hayAlmuerzo = minAlmuerzo > 0 && leccionAlmuerzo === i && i !== n;
+                            var hayRecreo = !hayAlmuerzo && recreo > 0 && bloque > 0 && i % bloque === 0 && i !== n;
+                            if (hayAlmuerzo) {
+                                var finAlmuerzo = this.sumarMinutos(cursor, minAlmuerzo);
+                                out.push({
+                                    clave: 'a-' + i,
+                                    tipo: 'almuerzo',
+                                    inicio: cursor,
+                                    fin: finAlmuerzo,
+                                    etiqueta: 'Almuerzo'
+                                });
+                                cursor = finAlmuerzo;
+                            } else if (hayRecreo) {
+                                var finRecreo = this.sumarMinutos(cursor, recreo);
+                                out.push({
+                                    clave: 'r-' + i,
+                                    tipo: 'recreo',
+                                    inicio: cursor,
+                                    fin: finRecreo,
+                                    etiqueta: 'Receso'
+                                });
+                                cursor = finRecreo;
+                            }
+                        }
+                        return out;
+                    },
+                    get finJornada() {
+                        var lineas = this.lineas;
+                        return lineas.length ? lineas[lineas.length - 1].fin : '—';
+                    }
+                };
             }
 
             function cerrarSelectoresAcademicos(excepto) {
@@ -913,10 +1154,19 @@
             }
 
             if (!window.academicoEventsRegistrados) {
+                document.body.addEventListener('htmx:afterSwap', function (event) {
+                    var panel = event.detail && event.detail.elt;
+                    if (panel && panel.id === 'jornada-panel' && window.Alpine && !panel._x_dataStack) {
+                        Alpine.initTree(panel);
+                    }
+                });
                 document.addEventListener('academicoGuardado', function (event) {
                     cerrarModalAcademico();
                     if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
                         showNotification(event.detail.mensaje);
+                    }
+                    if (event.detail && event.detail.recargarHorario && typeof recargarHorarioAcademico === 'function') {
+                        recargarHorarioAcademico();
                     }
                 });
                 document.addEventListener('academicoError', function (event) {
