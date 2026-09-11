@@ -1,17 +1,14 @@
-<div th:fragment="content" id="jornada-panel" xmlns:th="http://www.thymeleaf.org">
-    <script th:inline="javascript">
-        window.__JORNADA = {
-            cantidadLecciones: /*[[${configJornada.cantidadLecciones}]]*/ 12,
-            inicioJornada: /*[[${#temporals.format(configJornada.inicioJornada, 'HH:mm')}]]*/ '07:00',
-            minutosLeccion: /*[[${configJornada.minutosLeccion}]]*/ 40,
-            minutosRecreo: /*[[${configJornada.minutosRecreo}]]*/ 10,
-            leccionesPorBloque: /*[[${configJornada.leccionesPorBloque}]]*/ 2,
-            leccionAlmuerzo: /*[[${configJornada.leccionAlmuerzo}]]*/ 6,
-            minutosAlmuerzo: /*[[${configJornada.minutosAlmuerzo}]]*/ 40,
-            diasSeleccionados: /*[[${configJornada.dias}]]*/ []
-        };
-    </script>
-    <div class="card jornada-card" x-data="jornadaLectiva(window.__JORNADA)">
+<div th:fragment="content" id="jornada-panel" xmlns:th="http://www.thymeleaf.org"
+     th:data-cantidad-lecciones="${configJornada.cantidadLecciones}"
+     th:data-inicio-jornada="${#temporals.format(configJornada.inicioJornada, 'HH:mm')}"
+     th:data-minutos-leccion="${configJornada.minutosLeccion}"
+     th:data-minutos-recreo="${configJornada.minutosRecreo}"
+     th:data-lecciones-por-bloque="${configJornada.leccionesPorBloque}"
+     th:data-leccion-almuerzo="${configJornada.leccionAlmuerzo}"
+     th:data-minutos-almuerzo="${configJornada.minutosAlmuerzo}"
+     th:data-dias="${configJornada.diasLaborales}"
+     x-data="jornadaLectiva($el)">
+    <div class="card jornada-card">
         <form hx-post="/configuracion-academica/jornada"
               hx-target="#jornada-panel"
               hx-swap="outerHTML"
@@ -40,7 +37,9 @@
                             <label th:each="dia : ${diasCatalogo}" class="jornada-day"
                                    :class="{ 'is-on': diasSeleccionados.includes($el.dataset.dia) }"
                                    th:attr="data-dia=${dia}">
-                                <input type="checkbox" name="dias" th:value="${dia}" x-model="diasSeleccionados">
+                                <input type="checkbox" name="dias" th:value="${dia}"
+                                       th:checked="${configJornada.dias.contains(dia)}"
+                                       x-model="diasSeleccionados">
                                 <span th:text="${T(com.chavescr.nexa.entity.ConfiguracionInstitucion).etiquetaCorta(dia)}">Lun</span>
                             </label>
                         </div>

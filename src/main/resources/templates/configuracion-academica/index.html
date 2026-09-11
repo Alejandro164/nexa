@@ -892,17 +892,17 @@
                 htmx.ajax('GET', url, {target: '#horario-panel', swap: 'outerHTML'});
             }
 
-            function jornadaLectiva(inicial) {
-                inicial = inicial || {};
+            function jornadaLectiva(el) {
+                var d = el && el.dataset ? el.dataset : {};
                 return {
-                    cantidadLecciones: Number(inicial.cantidadLecciones || 12),
-                    inicioJornada: inicial.inicioJornada || '07:00',
-                    minutosLeccion: Number(inicial.minutosLeccion || 40),
-                    minutosRecreo: Number(inicial.minutosRecreo || 10),
-                    leccionesPorBloque: Number(inicial.leccionesPorBloque || 2),
-                    leccionAlmuerzo: Number(inicial.leccionAlmuerzo || 6),
-                    minutosAlmuerzo: inicial.minutosAlmuerzo == null ? 40 : Number(inicial.minutosAlmuerzo),
-                    diasSeleccionados: (inicial.diasSeleccionados || []).slice(),
+                    cantidadLecciones: Number(d.cantidadLecciones || 12),
+                    inicioJornada: d.inicioJornada || '07:00',
+                    minutosLeccion: Number(d.minutosLeccion || 40),
+                    minutosRecreo: Number(d.minutosRecreo || 10),
+                    leccionesPorBloque: Number(d.leccionesPorBloque || 2),
+                    leccionAlmuerzo: Number(d.leccionAlmuerzo || 6),
+                    minutosAlmuerzo: d.minutosAlmuerzo == null || d.minutosAlmuerzo === '' ? 40 : Number(d.minutosAlmuerzo),
+                    diasSeleccionados: (d.dias || '').split(',').filter(Boolean),
                     sumarMinutos: function (hora, minutos) {
                         var partes = String(hora || '07:00').split(':');
                         var total = ((Number(partes[0]) || 0) * 60 + (Number(partes[1]) || 0) + Number(minutos || 0)) % 1440;
@@ -1154,6 +1154,12 @@
             }
 
             if (!window.academicoEventsRegistrados) {
+                document.body.addEventListener('htmx:afterSwap', function (event) {
+                    var panel = event.detail && event.detail.elt;
+                    if (panel && panel.id === 'jornada-panel' && window.Alpine && !panel._x_dataStack) {
+                        Alpine.initTree(panel);
+                    }
+                });
                 document.addEventListener('academicoGuardado', function (event) {
                     cerrarModalAcademico();
                     if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
