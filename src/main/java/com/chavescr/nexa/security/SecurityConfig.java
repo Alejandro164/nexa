@@ -94,8 +94,9 @@ public class SecurityConfig {
                         // Recursos públicos
                         .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
 
-                        // ── Administración: solo ADMIN, salvo Config. Académica (también DIRECTOR) ──
-                        .requestMatchers("/configuracion-academica/**").hasAnyAuthority(ADMIN, DIRECTOR)
+                        // ── Administración: solo ADMIN, salvo Config. Académica e Institucional (también DIRECTOR) ──
+                        .requestMatchers("/configuracion-academica/**", "/configuracion-institucional/**")
+                                .hasAnyAuthority(ADMIN, DIRECTOR)
                         .requestMatchers("/configuracion/**", "/usuarios/**", "/seguridad", "/instituciones/**",
                                 "/componentes").hasAuthority(ADMIN)
 

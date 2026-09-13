@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Configuración Institucional — Nexa</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Configuración Institucional</h2>
+    <p layout:fragment="page-subtitle">Jornada, componentes y bloqueos de lección de esta institución</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">Configuración Institucional</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Jornada, componentes y bloqueos de lección de esta institución</p>
+    <main layout:fragment="content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar { display: none; }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 12px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane { animation: fadeIn 0.35s ease-out; }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .academic-help {
+                color: var(--text-secondary);
+                font-size: 0.84rem;
+                margin-top: 0.3rem;
+            }
+            .institucional-form {
+                padding: 1.5rem;
+            }
+            .institucional-form .form-input,
+            .institucional-form .form-select {
+                padding-left: 0.75rem;
+            }
+            .institucional-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+            }
+            .institucional-grid .span-2 { grid-column: span 2; }
+            @media (max-width: 768px) {
+                .institucional-grid,
+                .institucional-grid .span-2 {
+                    grid-template-columns: 1fr;
+                    grid-column: span 1;
+                }
+            }
+            .institucional-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.75rem;
+                border-top: 1px solid var(--border);
+                padding-top: 1.25rem;
+                margin-top: 0.5rem;
+            }
+        </style>
+
+        <div x-data>
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': $store.institucional.activeTab === 'jornada' }"
+                            @click="$store.institucional.activeTab = 'jornada'">
+                        Jornada
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': $store.institucional.activeTab === 'componentes' }"
+                            @click="$store.institucional.activeTab = 'componentes'">
+                        Componentes
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': $store.institucional.activeTab === 'bloqueo-leccion' }"
+                            @click="$store.institucional.activeTab = 'bloqueo-leccion'">
+                        Bloqueo lección
+                    </button>
+                </div>
+            </div>
+
+            <div x-show="$store.institucional.activeTab === 'jornada'" class="tab-pane">
+                <div th:replace="~{configuracion-institucional/jornada/jornada :: content}"></div>
+            </div>
+            <div x-show="$store.institucional.activeTab === 'componentes'" class="tab-pane" x-cloak>
+                <div th:replace="~{configuracion-institucional/componentes/componentes :: content}"></div>
+            </div>
+            <div x-show="$store.institucional.activeTab === 'bloqueo-leccion'" class="tab-pane" x-cloak>
+                <div th:replace="~{configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content}"></div>
+            </div>
+        </div>
+
+        <script>
+            (function asegurarStoreInstitucional() {
+                function crear() {
+                    if (!window.Alpine || typeof Alpine.store !== 'function') {
+                        return;
+                    }
+                    if (!Alpine.store('institucional')) {
+                        Alpine.store('institucional', { activeTab: 'jornada' });
+                    }
+                }
+                crear();
+                document.addEventListener('alpine:init', crear);
+            })();
+        </script>
+    </main>
+    </th:block>
+
+</body>
+
+</html>

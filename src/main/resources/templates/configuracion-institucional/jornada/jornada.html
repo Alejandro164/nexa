@@ -1,0 +1,30 @@
+<div th:fragment="content" id="institucional-jornada-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Jornada lectiva</h3>
+                <p class="academic-help">Reloj propio de esta institución: días laborales, lecciones y pausas del día.</p>
+            </div>
+        </div>
+        <form class="institucional-form" onsubmit="return false;">
+            <div class="institucional-grid">
+                <div class="form-group">
+                    <label class="form-label">Inicio de jornada</label>
+                    <input class="form-input" type="time" name="inicioJornada" value="07:00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Minutos por lección</label>
+                    <input class="form-input" type="number" name="minutosLeccion" min="20" max="90" value="40">
+                </div>
+                <div class="form-group span-2">
+                    <label class="form-label">Días laborales</label>
+                    <input class="form-input" type="text" name="dias"
+                           placeholder="Lunes a viernes" value="Lunes, Martes, Miércoles, Jueves, Viernes">
+                </div>
+            </div>
+            <div class="institucional-actions">
+                <button type="button" class="btn btn-primary">Guardar jornada</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,36 @@
+<div th:fragment="content" id="institucional-bloqueo-leccion-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Bloqueo de lección</h3>
+                <p class="academic-help">Marca lecciones que no se pueden asignar en el horario de esta institución.</p>
+            </div>
+        </div>
+        <form class="institucional-form" onsubmit="return false;">
+            <div class="institucional-grid">
+                <div class="form-group">
+                    <label class="form-label">Día</label>
+                    <select class="form-select" name="dia">
+                        <option value="LUNES">Lunes</option>
+                        <option value="MARTES">Martes</option>
+                        <option value="MIERCOLES">Miércoles</option>
+                        <option value="JUEVES">Jueves</option>
+                        <option value="VIERNES">Viernes</option>
+                        <option value="SABADO">Sábado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Número de lección</label>
+                    <input class="form-input" type="number" name="numeroLeccion" min="1" max="16" value="1">
+                </div>
+                <div class="form-group span-2">
+                    <label class="form-label">Motivo</label>
+                    <input class="form-input" type="text" name="motivo" placeholder="Recreo, reunión, acto cívico…">
+                </div>
+            </div>
+            <div class="institucional-actions">
+                <button type="button" class="btn btn-primary">Guardar bloqueo</button>
+            </div>
+        </form>
+    </div>
+</div>
