@@ -147,8 +147,8 @@ class ProyectoApplicationTests {
 				"configuracion-academica/aulas/form",
 				"configuracion-academica/horario/horario",
 				"configuracion-academica/horario/form",
-				"configuracion-academica/jornada/jornada",
-				"configuracion-academica/components/confirmar-eliminacion");
+				"configuracion-academica/components/confirmar-eliminacion",
+				"configuracion-institucional/jornada/jornada");
 
 		templates.forEach(template -> assertFalse(templateEngine.process(template, context).isBlank()));
 
@@ -165,6 +165,12 @@ class ProyectoApplicationTests {
 		assertTrue(horarioRenderizado.contains("schedule-slot schedule-slot-multi"));
 		assertFalse(horarioRenderizado.contains(
 				"periodoId=1&amp;amp;nivelId=1"));
+
+		String jornadaRenderizado = templateEngine.process(
+				"configuracion-institucional/jornada/jornada", context);
+		assertTrue(jornadaRenderizado.contains("/configuracion-institucional/jornada"));
+		assertTrue(jornadaRenderizado.contains("Guardar jornada"));
+		assertFalse(jornadaRenderizado.contains("/configuracion-academica/jornada"));
 	}
 
 	@Test

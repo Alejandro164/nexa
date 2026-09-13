@@ -1,9 +1,5 @@
 package com.chavescr.nexa.controller;
 
-import java.time.LocalTime;
-import java.util.List;
-
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.ConfiguracionInstitucion;
-import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
@@ -269,45 +264,12 @@ public class ConfiguracionAcademicaController {
         return "configuracion-academica/horario/horario :: content";
     }
 
-    @GetMapping("/jornada")
-    public String jornada(Model model, HttpSession session) {
-        cargarJornada(model, requerirInstitucion(session));
-        return "configuracion-academica/jornada/jornada :: content";
-    }
-
-    @PostMapping("/jornada")
-    public String guardarJornada(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime inicioJornada,
-            @RequestParam Integer minutosLeccion,
-            @RequestParam(required = false) String bloquesJornada,
-            @RequestParam(name = "dias", required = false) List<String> dias,
-            Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
-        try {
-            service.guardarJornada(institucionId, inicioJornada, minutosLeccion, bloquesJornada, dias);
-            cargarJornada(model, institucionId);
-            response.setHeader("HX-Trigger",
-                    "{\"academicoGuardado\":{\"mensaje\":\"Jornada lectiva actualizada\",\"recargarHorario\":true}}");
-        } catch (IllegalArgumentException e) {
-            cargarJornada(model, institucionId);
-            notificarError(response, e.getMessage());
-        }
-        return "configuracion-academica/jornada/jornada :: content";
-    }
-
     private void cargarPagina(Model model, Long institucionId) {
         model.addAttribute("periodos", service.listarPeriodos(institucionId));
         model.addAttribute("niveles", service.listarNiveles(institucionId));
         model.addAttribute("materias", service.listarMaterias(institucionId));
         model.addAttribute("aulas", service.listarAulas(institucionId));
         cargarHorario(model, institucionId, null, null);
-        model.addAttribute("configJornada", service.obtenerConfiguracion(institucionId));
-        model.addAttribute("diasCatalogo", DiaLaboral.CATALOGO);
-    }
-
-    private void cargarJornada(Model model, Long institucionId) {
-        model.addAttribute("configJornada", service.obtenerConfiguracion(institucionId));
-        model.addAttribute("diasCatalogo", DiaLaboral.CATALOGO);
     }
 
     private void cargarHorario(Model model, Long institucionId, Long periodoId, Long nivelId) {

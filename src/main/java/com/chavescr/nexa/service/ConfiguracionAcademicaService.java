@@ -1,6 +1,5 @@
 package com.chavescr.nexa.service;
 
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -81,13 +80,6 @@ public class ConfiguracionAcademicaService {
     @Transactional(readOnly = true, rollbackFor = Exception.class)
     public ConfiguracionInstitucion obtenerConfiguracion(Long institucionId) {
         return configuracionInstitucionService.obtener(institucionId);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public ConfiguracionInstitucion guardarJornada(Long institucionId, LocalTime inicioJornada,
-            Integer minutosLeccion, String bloquesJornada, List<String> dias) {
-        return configuracionInstitucionService.guardar(institucionId, inicioJornada, minutosLeccion,
-                bloquesJornada, dias);
     }
 
     @Transactional(readOnly = true)
