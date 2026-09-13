@@ -1,0 +1,25 @@
+<div th:fragment="content" id="entregas-entregas-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Entregas</h3>
+                <p class="academic-help">Trabajos que el estudiante ya entregó en este período.</p>
+            </div>
+        </div>
+        <form class="entregas-form" onsubmit="return false;">
+            <div class="entregas-grid">
+                <div class="form-group span-2">
+                    <label class="form-label">Nombre de la entrega</label>
+                    <input class="form-input" type="text" name="nombre" placeholder="Ej. Guía de práctica 1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fecha de entrega</label>
+                    <input class="form-input" type="date" name="fechaEntrega">
+                </div>
+            </div>
+            <div class="entregas-actions">
+                <button type="button" class="btn btn-primary">Guardar entrega</button>
+            </div>
+        </form>
+    </div>
+</div>

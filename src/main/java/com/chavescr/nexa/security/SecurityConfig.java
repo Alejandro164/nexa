@@ -122,6 +122,7 @@ public class SecurityConfig {
                         // ── Resto de módulos operativos: abiertos a todo el staff (ADMIN/DIRECTOR/DOCENTE) ──
                         .requestMatchers("/docentes/**", "/control-de-acceso/**", "/gestion-academica/**",
                                 "/gestion-especial/**", "/evaluacion-academica/**", "/conducta/**", "/notas/**",
+                                "/entregas-academicas/**",
                                 "/comedor/**",
                                 "/reportes/**", "/contacto/**", "/mis-cursos/**", "/nube-nexa/**", "/archivos/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
