@@ -486,14 +486,15 @@
                 color: #c2410c;
                 border-bottom-color: #fed7aa;
             }
-            .jornada-card {
+            .card.jornada-card {
                 position: relative;
+                overflow: visible;
             }
             .jornada-body {
                 display: grid;
                 grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
                 gap: 0;
-                align-items: stretch;
+                align-items: start;
             }
             .jornada-form {
                 padding: 1.35rem 1.5rem 1.6rem;
@@ -552,39 +553,138 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 1rem;
             }
-            .jornada-field-wide {
+            .jornada-total {
                 grid-column: 1 / -1;
+                display: flex;
+                align-items: baseline;
+                gap: 0.7rem;
+                padding: 0.85rem 1rem;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                background: #f8fafc;
             }
-            .jornada-recreos {
+            .jornada-total-num {
+                font-size: 1.7rem;
+                font-weight: 800;
+                line-height: 1;
+                font-variant-numeric: tabular-nums;
+                color: var(--primary);
+            }
+            .jornada-total-label {
+                font-size: 0.84rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+            }
+            .jornada-bloques {
                 display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 1rem;
+                gap: 0.85rem;
+            }
+            .jornada-bloque {
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                background: #fff;
+                padding: 0.9rem 1rem 1rem;
+            }
+            .jornada-bloque-head {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 0.75rem;
+                margin-bottom: 0.85rem;
+            }
+            .jornada-bloque-head h5 {
+                margin: 0;
+                font-size: 0.86rem;
+                font-weight: 700;
+                color: var(--text-primary);
+            }
+            .jornada-bloque-head p {
+                margin: 0.15rem 0 0;
+                font-size: 0.78rem;
+                color: var(--text-secondary);
+            }
+            .jornada-bloque-body {
+                display: grid;
+                grid-template-columns: 110px minmax(0, 1fr);
+                gap: 0.9rem 1rem;
+                align-items: start;
+            }
+            .jornada-bloque-pausa {
+                display: grid;
+                gap: 0.5rem;
+            }
+            .jornada-pausa-ops {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .jornada-pausa-ops button {
+                border: 1px solid var(--border);
+                background: #fff;
+                color: var(--text-secondary);
+                border-radius: 9px;
+                padding: 0.38rem 0.7rem;
+                font-size: 0.76rem;
+                font-weight: 700;
+                cursor: pointer;
+                transition: border-color 0.2s, background 0.2s, color 0.2s;
+            }
+            .jornada-pausa-ops button:hover {
+                border-color: #cbd5e1;
+            }
+            .jornada-pausa-ops button.is-on {
+                color: #fff;
+                background: var(--primary);
+                border-color: var(--primary);
+            }
+            .jornada-bloque-fin {
+                margin: 0.35rem 0 0;
+                font-size: 0.8rem;
+                font-weight: 700;
+                color: var(--text-secondary);
             }
             .jornada-recreo-min {
                 display: flex;
                 align-items: center;
                 gap: 0.45rem;
+                max-width: 140px;
             }
             .jornada-recreo-min span {
                 font-size: 0.78rem;
                 font-weight: 600;
                 color: var(--text-secondary);
             }
+            .jornada-add-bloque {
+                margin-top: 0.9rem;
+            }
             @media (max-width: 640px) {
-                .jornada-recreos {
+                .jornada-bloque-body {
                     grid-template-columns: 1fr;
                 }
             }
             .jornada-preview {
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
                 padding: 1.35rem 1.35rem 1.6rem;
                 background: #f8fafc;
+                position: sticky;
+                top: calc(var(--topbar-height) + 12px);
+                z-index: 4;
+                max-height: calc(100vh - var(--topbar-height) - 24px);
+                border-bottom-right-radius: var(--radius);
+                box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
             }
             .jornada-preview-head {
                 display: flex;
                 align-items: baseline;
                 justify-content: space-between;
                 gap: 0.75rem;
-                margin-bottom: 0.9rem;
+                margin: -1.35rem -1.35rem 0.9rem;
+                padding: 0.95rem 1.35rem 0.85rem;
+                flex-shrink: 0;
+                background: #f8fafc;
+                border-bottom: 1px solid var(--border);
             }
             .jornada-preview-head h4 {
                 margin: 0;
@@ -600,8 +700,10 @@
                 list-style: none;
                 margin: 0;
                 padding: 0;
-                max-height: 520px;
+                flex: 1 1 auto;
+                min-height: 0;
                 overflow: auto;
+                overscroll-behavior: contain;
                 border: 1px solid var(--border);
                 border-radius: 12px;
                 background: #fff;
@@ -649,6 +751,15 @@
                 .jornada-form {
                     border-right: 0;
                     border-bottom: 1px solid var(--border);
+                }
+                .jornada-preview {
+                    position: static;
+                    max-height: none;
+                    box-shadow: none;
+                    border-bottom-left-radius: var(--radius);
+                }
+                .jornada-timeline {
+                    max-height: min(520px, 70vh);
                 }
             }
             .schedule-slot {
@@ -833,66 +944,80 @@
             }
         </style>
 
-        <div x-data="{ activeTab: 'periodos' }">
+        <div x-data>
             <!-- Menú Horizontal de 4 Botones -->
             <div class="config-tabs-container">
                 <div class="config-tabs">
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'periodos' }" @click="activeTab = 'periodos'">
+                    <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'periodos' }"
+                            @click="$store.academico.activeTab = 'periodos'">
                         Períodos
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'niveles' }" @click="activeTab = 'niveles'">
+                    <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'niveles' }"
+                            @click="$store.academico.activeTab = 'niveles'">
                         Niveles
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'materias' }" @click="activeTab = 'materias'">
+                    <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'materias' }"
+                            @click="$store.academico.activeTab = 'materias'">
                         Materias
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'aulas' }" @click="activeTab = 'aulas'">
+                    <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'aulas' }"
+                            @click="$store.academico.activeTab = 'aulas'">
                         Aulas
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'horario' }"
-                            @click="activeTab = 'horario'; recargarHorarioAcademico()">
+                    <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'horario' }"
+                            @click="$store.academico.activeTab = 'horario'; recargarHorarioAcademico()">
                         Horario
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'jornada' }"
-                            @click="activeTab = 'jornada'; recargarJornadaAcademica()">
+                    <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'jornada' }"
+                            @click="$store.academico.activeTab = 'jornada'">
                         Jornada
                     </button>
                 </div>
             </div>
 
             <!-- Contenido Visual de Períodos -->
-            <div x-show="activeTab === 'periodos'" class="tab-pane">
+            <div x-show="$store.academico.activeTab === 'periodos'" class="tab-pane">
                 <div th:replace="~{configuracion-academica/periodos/periodos :: content}"></div>
             </div>
 
             <!-- Contenido Visual de Niveles -->
-            <div x-show="activeTab === 'niveles'" class="tab-pane" x-cloak>
+            <div x-show="$store.academico.activeTab === 'niveles'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-academica/niveles/niveles :: content}"></div>
             </div>
 
             <!-- Contenido Visual de Materias -->
-            <div x-show="activeTab === 'materias'" class="tab-pane" x-cloak>
+            <div x-show="$store.academico.activeTab === 'materias'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-academica/materias/materias :: content}"></div>
             </div>
 
             <!-- Contenido Visual de Aulas -->
-            <div x-show="activeTab === 'aulas'" class="tab-pane" x-cloak>
+            <div x-show="$store.academico.activeTab === 'aulas'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-academica/aulas/aulas :: content}"></div>
             </div>
 
             <!-- Contenido Visual de Horario -->
-            <div x-show="activeTab === 'horario'" class="tab-pane" x-cloak>
+            <div x-show="$store.academico.activeTab === 'horario'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-academica/horario/horario :: content}"></div>
             </div>
-
-            <div x-show="activeTab === 'jornada'" class="tab-pane" x-cloak>
-                <div th:replace="~{configuracion-academica/jornada/jornada :: content}"></div>
-            </div>
-
         </div>
+
+        <div th:replace="~{configuracion-academica/jornada/jornada :: content}"></div>
         <div th:replace="~{configuracion-academica/components/confirmar-eliminacion :: modal}"></div>
         <script>
             window.academicDeleteRequest = null;
+
+            (function asegurarStoreAcademico() {
+                function crear() {
+                    if (!window.Alpine || typeof Alpine.store !== 'function') {
+                        return;
+                    }
+                    if (!Alpine.store('academico')) {
+                        Alpine.store('academico', { activeTab: 'periodos' });
+                    }
+                }
+                crear();
+                document.addEventListener('alpine:init', crear);
+            })();
 
             function abrirModalAcademico() {
                 var modal = document.getElementById('modal-container');
@@ -945,55 +1070,261 @@
 
             window.inicializarJornadaLectiva = function inicializarJornadaLectiva(el) {
                 var panel = !el ? document.getElementById('jornada-panel')
-                    : (el.id === 'jornada-panel' ? el : el.querySelector('#jornada-panel'));
-                if (!panel || !window.Alpine) {
+                    : (el.id === 'jornada-panel' ? el : el.querySelector && el.querySelector('#jornada-panel'));
+                if (!panel || !window.Alpine || panel._x_dataStack) {
                     return;
                 }
-                if (!panel._x_dataStack) {
-                    Alpine.initTree(panel);
-                }
+                Alpine.initTree(panel);
             };
 
             window.jornadaLectiva = function jornadaLectiva(el) {
                 var d = el && el.dataset ? el.dataset : {};
+                var maxLecciones = 16;
+                var bloques = parseBloquesJornada(d.bloques, maxLecciones);
                 return {
-                    cantidadLecciones: Number(d.cantidadLecciones || 12),
+                    bloques: bloques,
+                    siguienteId: bloques.reduce(function (max, bloque) {
+                        return Math.max(max, Number(bloque.id) || 0);
+                    }, 0) + 1,
                     inicioJornada: d.inicioJornada || '07:00',
                     minutosLeccion: Number(d.minutosLeccion || 40),
-                    minutosRecreo: Number(d.minutosRecreo || 10),
-                    minutosRecreos: parseDuracionesRecreos(d.duracionesRecreos),
-                    leccionesPorBloque: Number(d.leccionesPorBloque || 2),
-                    leccionAlmuerzo: Number(d.leccionAlmuerzo || 6),
-                    minutosAlmuerzo: d.minutosAlmuerzo == null || d.minutosAlmuerzo === '' ? 40 : Number(d.minutosAlmuerzo),
                     diasSeleccionados: (d.dias || '').split(',').filter(Boolean),
+                    bloquesHtml: '',
                     init: function () {
-                        var self = this;
-                        this.alinearRecreos();
-                        this.$watch('cantidadLecciones', function () { self.alinearRecreos(); });
-                        this.$watch('leccionesPorBloque', function () { self.alinearRecreos(); });
-                        this.$watch('leccionAlmuerzo', function () { self.alinearRecreos(); });
-                        this.$watch('minutosAlmuerzo', function () { self.alinearRecreos(); });
+                        this.pintarBloques();
                     },
-                    alinearRecreos: function () {
-                        var n = this.huecosRecreo.length;
-                        var respaldo = Number(this.minutosRecreo) || 10;
-                        while (this.minutosRecreos.length < n) {
-                            var ultimo = this.minutosRecreos.length
-                                ? this.minutosRecreos[this.minutosRecreos.length - 1]
-                                : respaldo;
-                            this.minutosRecreos.push(ultimo);
+                    get cantidadLecciones() {
+                        return this.bloques.reduce(function (suma, bloque) {
+                            return suma + (Number(bloque.lecciones) || 0);
+                        }, 0);
+                    },
+                    get bloquesSerializados() {
+                        var ultimo = this.bloques.length - 1;
+                        return this.bloques.map(function (bloque, i) {
+                            var pausa = i === ultimo ? 'ninguna' : (bloque.pausa || 'ninguna');
+                            var minutos = Number(bloque.minutos);
+                            if (i === ultimo || pausa === 'ninguna' || !Number.isFinite(minutos) || minutos <= 0) {
+                                pausa = 'ninguna';
+                                minutos = 0;
+                            } else {
+                                minutos = Math.min(Math.floor(minutos), pausa === 'almuerzo' ? 120 : 60);
+                            }
+                            var lecciones = Number(bloque.lecciones);
+                            lecciones = Number.isFinite(lecciones) && lecciones > 0
+                                ? Math.min(maxLecciones, Math.floor(lecciones))
+                                : 1;
+                            return lecciones + ':' + pausa + ':' + minutos;
+                        }).join('|');
+                    },
+                    rangoBloque: function (index) {
+                        var desde = 1;
+                        for (var i = 0; i < index; i++) {
+                            desde += Number(this.bloques[i].lecciones) || 0;
+                        }
+                        var hasta = desde + (Number(this.bloques[index].lecciones) || 0) - 1;
+                        if (hasta < desde) {
+                            return 'Sin lecciones';
+                        }
+                        if (desde === hasta) {
+                            return 'Lección ' + desde;
+                        }
+                        if (hasta === desde + 1) {
+                            return 'Lecciones ' + desde + ' y ' + hasta;
+                        }
+                        return 'Lecciones ' + desde + ' a ' + hasta;
+                    },
+                    maxLeccionesBloque: function (index) {
+                        var propias = Number(this.bloques[index].lecciones) || 0;
+                        return Math.max(1, maxLecciones - (this.cantidadLecciones - propias));
+                    },
+                    limitarLecciones: function (bloque) {
+                        var n = Number(bloque.lecciones);
+                        if (!Number.isFinite(n)) {
+                            return;
+                        }
+                        var otros = this.bloques.reduce(function (suma, actual) {
+                            return suma + (actual === bloque ? 0 : (Number(actual.lecciones) || 0));
+                        }, 0);
+                        var tope = Math.max(1, maxLecciones - otros);
+                        if (n > tope) {
+                            bloque.lecciones = tope;
                         }
                     },
-                    etiquetaHueco: function (hueco) {
-                        var bloque = Number(this.leccionesPorBloque) || 1;
-                        var hasta = hueco.leccion;
-                        var desde = Math.max(1, hasta - bloque + 1);
-                        var bloqueTexto = desde === hasta
-                            ? 'lección ' + hasta
-                            : (hasta === desde + 1
-                                ? 'lecciones ' + desde + ' y ' + hasta
-                                : 'lecciones ' + desde + ' a ' + hasta);
-                        return 'Receso ' + hueco.orden + ' · ' + bloqueTexto;
+                    normalizarLecciones: function (bloque) {
+                        var n = Number(bloque.lecciones);
+                        if (!Number.isFinite(n) || n < 1) {
+                            n = 1;
+                        }
+                        var otros = this.bloques.reduce(function (suma, actual) {
+                            return suma + (actual === bloque ? 0 : (Number(actual.lecciones) || 0));
+                        }, 0);
+                        bloque.lecciones = Math.min(Math.floor(n), Math.max(1, maxLecciones - otros));
+                    },
+                    agregarBloque: function () {
+                        var restante = maxLecciones - this.cantidadLecciones;
+                        if (restante <= 0) {
+                            return;
+                        }
+                        var anterior = this.bloques[this.bloques.length - 1];
+                        if (anterior && anterior.pausa === 'ninguna') {
+                            this.asignarPausa(anterior, 'receso');
+                        }
+                        this.bloques.push({
+                            id: this.siguienteId++,
+                            lecciones: Math.min(2, restante),
+                            pausa: 'ninguna',
+                            minutos: 0
+                        });
+                        this.pintarBloques();
+                    },
+                    quitarBloque: function (index) {
+                        if (this.bloques.length <= 1) {
+                            return;
+                        }
+                        this.bloques.splice(index, 1);
+                        this.pintarBloques();
+                    },
+                    asignarPausa: function (bloque, pausa) {
+                        bloque.pausa = pausa;
+                        if (pausa === 'ninguna') {
+                            bloque.minutos = 0;
+                            this.pintarBloques();
+                            return;
+                        }
+                        if (!Number(bloque.minutos)) {
+                            bloque.minutos = pausa === 'almuerzo' ? 40 : 10;
+                        }
+                        this.normalizarMinutos(bloque);
+                        this.pintarBloques();
+                    },
+                    onBloquesClick: function (event) {
+                        var boton = event.target.closest('[data-jornada-accion]');
+                        if (!boton) {
+                            return;
+                        }
+                        var index = Number(boton.getAttribute('data-jornada-index'));
+                        var bloque = this.bloques[index];
+                        if (!bloque) {
+                            return;
+                        }
+                        if (boton.getAttribute('data-jornada-accion') === 'quitar') {
+                            this.quitarBloque(index);
+                            return;
+                        }
+                        if (boton.getAttribute('data-jornada-accion') === 'pausa') {
+                            this.asignarPausa(bloque, boton.getAttribute('data-jornada-pausa'));
+                        }
+                    },
+                    onBloquesInput: function (event) {
+                        var campo = event.target.getAttribute('data-jornada-campo');
+                        var index = Number(event.target.getAttribute('data-jornada-index'));
+                        var bloque = this.bloques[index];
+                        if (!bloque) {
+                            return;
+                        }
+                        if (campo === 'lecciones') {
+                            bloque.lecciones = Number(event.target.value);
+                            this.limitarLecciones(bloque);
+                            event.target.value = bloque.lecciones;
+                        } else if (campo === 'minutos') {
+                            bloque.minutos = Number(event.target.value);
+                            this.limitarMinutos(bloque);
+                            if (Number.isFinite(Number(bloque.minutos))) {
+                                event.target.value = bloque.minutos;
+                            }
+                        }
+                    },
+                    onBloquesChange: function (event) {
+                        var campo = event.target.getAttribute('data-jornada-campo');
+                        var index = Number(event.target.getAttribute('data-jornada-index'));
+                        var bloque = this.bloques[index];
+                        if (!bloque) {
+                            return;
+                        }
+                        if (campo === 'lecciones') {
+                            this.normalizarLecciones(bloque);
+                            this.pintarBloques();
+                        } else if (campo === 'minutos') {
+                            this.normalizarMinutos(bloque);
+                            this.pintarBloques();
+                        }
+                    },
+                    pintarBloques: function () {
+                        var self = this;
+                        var ultimo = this.bloques.length - 1;
+                        this.bloquesHtml = this.bloques.map(function (bloque, i) {
+                            var max = self.maxLeccionesBloque(i);
+                            var html = '<article class="jornada-bloque">'
+                                + '<header class="jornada-bloque-head"><div>'
+                                + '<h5>Bloque ' + (i + 1) + '</h5>'
+                                + '<p>' + escapeHtmlJornada(self.rangoBloque(i)) + '</p>'
+                                + '</div>';
+                            if (self.bloques.length > 1) {
+                                html += '<button type="button" class="btn-xs btn-ghost" data-jornada-accion="quitar" data-jornada-index="' + i + '" title="Quitar bloque">Quitar</button>';
+                            }
+                            html += '</header><div class="jornada-bloque-body">'
+                                + '<div class="form-group" style="margin: 0;">'
+                                + '<label class="form-label" for="lecciones-bloque-' + bloque.id + '">Lecciones</label>'
+                                + '<input class="form-input" type="number" min="1" max="' + max + '" id="lecciones-bloque-' + bloque.id + '"'
+                                + ' data-jornada-campo="lecciones" data-jornada-index="' + i + '" value="' + (Number(bloque.lecciones) || 1) + '">'
+                                + '</div>';
+                            if (i < ultimo) {
+                                html += '<div class="jornada-bloque-pausa">'
+                                    + '<span class="form-label">Después del bloque</span>'
+                                    + '<div class="jornada-pausa-ops" role="group" aria-label="Pausa del bloque ' + (i + 1) + '">'
+                                    + '<button type="button" class="' + (bloque.pausa === 'receso' ? 'is-on' : '') + '" data-jornada-accion="pausa" data-jornada-pausa="receso" data-jornada-index="' + i + '">Receso</button>'
+                                    + '<button type="button" class="' + (bloque.pausa === 'almuerzo' ? 'is-on' : '') + '" data-jornada-accion="pausa" data-jornada-pausa="almuerzo" data-jornada-index="' + i + '">Almuerzo</button>'
+                                    + '<button type="button" class="' + (bloque.pausa === 'ninguna' ? 'is-on' : '') + '" data-jornada-accion="pausa" data-jornada-pausa="ninguna" data-jornada-index="' + i + '">Sin pausa</button>'
+                                    + '</div>';
+                                if (bloque.pausa !== 'ninguna') {
+                                    html += '<div class="jornada-recreo-min">'
+                                        + '<input class="form-input" type="number" min="0" max="' + (bloque.pausa === 'almuerzo' ? 120 : 60) + '"'
+                                        + ' data-jornada-campo="minutos" data-jornada-index="' + i + '" value="' + (Number(bloque.minutos) || 0) + '">'
+                                        + '<span>min</span></div>';
+                                }
+                                html += '</div>';
+                            } else {
+                                html += '<p class="jornada-bloque-fin">Fin de la jornada</p>';
+                            }
+                            html += '</div></article>';
+                            return html;
+                        }).join('');
+                    },
+                    normalizarMinutos: function (bloque) {
+                        var max = bloque.pausa === 'almuerzo' ? 120 : 60;
+                        var n = Number(bloque.minutos);
+                        if (!Number.isFinite(n) || n < 0) {
+                            n = 0;
+                        }
+                        bloque.minutos = Math.min(Math.floor(n), max);
+                    },
+                    limitarMinutos: function (bloque) {
+                        var n = Number(bloque.minutos);
+                        if (!Number.isFinite(n)) {
+                            return;
+                        }
+                        var max = bloque.pausa === 'almuerzo' ? 120 : 60;
+                        if (n > max) {
+                            bloque.minutos = max;
+                        } else if (n < 0) {
+                            bloque.minutos = 0;
+                        }
+                    },
+                    prepararEnvio: function (event) {
+                        var self = this;
+                        this.bloques.forEach(function (bloque) {
+                            self.normalizarLecciones(bloque);
+                            self.normalizarMinutos(bloque);
+                        });
+                        var minutos = Number(this.minutosLeccion);
+                        if (!Number.isFinite(minutos) || minutos < 20) {
+                            this.minutosLeccion = 20;
+                        } else if (minutos > 90) {
+                            this.minutosLeccion = 90;
+                        }
+                        if (this.diasSeleccionados.length === 0 || this.cantidadLecciones < 1) {
+                            event.preventDefault();
+                        }
                     },
                     sumarMinutos: function (hora, minutos) {
                         var partes = String(hora || '07:00').split(':');
@@ -1002,88 +1333,116 @@
                         return String(Math.floor(total / 60)).padStart(2, '0') + ':'
                             + String(total % 60).padStart(2, '0');
                     },
-                    get huecosRecreo() {
-                        var n = Number(this.cantidadLecciones) || 0;
-                        var bloque = Number(this.leccionesPorBloque) || 1;
-                        var minAlmuerzo = Number(this.minutosAlmuerzo) || 0;
-                        var leccionAlmuerzo = Number(this.leccionAlmuerzo) || 0;
-                        var huecos = [];
-                        if (bloque <= 0) {
-                            return huecos;
-                        }
-                        for (var i = 1; i < n; i++) {
-                            var hayAlmuerzo = minAlmuerzo > 0 && leccionAlmuerzo === i;
-                            if (!hayAlmuerzo && i % bloque === 0) {
-                                huecos.push({ leccion: i, orden: huecos.length + 1 });
-                            }
-                        }
-                        return huecos;
-                    },
                     get lineas() {
-                        var n = Number(this.cantidadLecciones) || 0;
+                        var self = this;
                         var duracion = Number(this.minutosLeccion) || 0;
-                        var bloque = Number(this.leccionesPorBloque) || 1;
-                        var minAlmuerzo = Number(this.minutosAlmuerzo) || 0;
-                        var leccionAlmuerzo = Number(this.leccionAlmuerzo) || 0;
                         var cursor = this.inicioJornada || '07:00';
                         var out = [];
-                        var indiceRecreo = 0;
-                        for (var i = 1; i <= n; i++) {
-                            var ini = cursor;
-                            var fin = this.sumarMinutos(ini, duracion);
-                            out.push({
-                                clave: 'l-' + i,
-                                tipo: 'leccion',
-                                inicio: ini,
-                                fin: fin,
-                                etiqueta: 'Lección ' + i
-                            });
-                            cursor = fin;
-                            var hayAlmuerzo = minAlmuerzo > 0 && leccionAlmuerzo === i && i !== n;
-                            var esHueco = !hayAlmuerzo && bloque > 0 && i % bloque === 0 && i !== n;
-                            if (hayAlmuerzo) {
-                                var finAlmuerzo = this.sumarMinutos(cursor, minAlmuerzo);
+                        var numero = 1;
+                        this.bloques.forEach(function (bloque, indice) {
+                            var lecciones = Number(bloque.lecciones) || 0;
+                            for (var i = 0; i < lecciones; i++) {
+                                var ini = cursor;
+                                var fin = self.sumarMinutos(ini, duracion);
                                 out.push({
-                                    clave: 'a-' + i,
-                                    tipo: 'almuerzo',
-                                    inicio: cursor,
-                                    fin: finAlmuerzo,
-                                    etiqueta: 'Almuerzo · ' + minAlmuerzo + ' min'
+                                    clave: 'l-' + numero,
+                                    tipo: 'leccion',
+                                    inicio: ini,
+                                    fin: fin,
+                                    etiqueta: 'Lección ' + numero
                                 });
-                                cursor = finAlmuerzo;
-                            } else if (esHueco) {
-                                var recreo = Number(this.minutosRecreos[indiceRecreo]) || 0;
-                                indiceRecreo += 1;
-                                if (recreo > 0) {
-                                    var finRecreo = this.sumarMinutos(cursor, recreo);
-                                    out.push({
-                                        clave: 'r-' + i,
-                                        tipo: 'recreo',
-                                        inicio: cursor,
-                                        fin: finRecreo,
-                                        etiqueta: 'Receso · ' + recreo + ' min'
-                                    });
-                                    cursor = finRecreo;
-                                }
+                                cursor = fin;
+                                numero += 1;
                             }
-                        }
+                            if (indice === self.bloques.length - 1) {
+                                return;
+                            }
+                            var minutos = Number(bloque.minutos) || 0;
+                            if (minutos <= 0 || bloque.pausa === 'ninguna') {
+                                return;
+                            }
+                            var finPausa = self.sumarMinutos(cursor, minutos);
+                            out.push({
+                                clave: 'p-' + bloque.id,
+                                tipo: bloque.pausa === 'almuerzo' ? 'almuerzo' : 'recreo',
+                                inicio: cursor,
+                                fin: finPausa,
+                                etiqueta: (bloque.pausa === 'almuerzo' ? 'Almuerzo' : 'Receso') + ' · ' + minutos + ' min'
+                            });
+                            cursor = finPausa;
+                        });
                         return out;
                     },
                     get finJornada() {
                         var lineas = this.lineas;
                         return lineas.length ? lineas[lineas.length - 1].fin : '—';
+                    },
+                    get lineasHtml() {
+                        return this.lineas.map(function (linea) {
+                            var clase = linea.tipo === 'recreo' ? 'is-break'
+                                : (linea.tipo === 'almuerzo' ? 'is-lunch' : 'is-lesson');
+                            return '<li class="' + clase + '">'
+                                + '<span class="jornada-time">' + escapeHtmlJornada(linea.inicio) + ' – ' + escapeHtmlJornada(linea.fin) + '</span>'
+                                + '<span class="jornada-label">' + escapeHtmlJornada(linea.etiqueta) + '</span>'
+                                + '</li>';
+                        }).join('');
                     }
                 };
             }
 
-            function parseDuracionesRecreos(raw) {
+            function escapeHtmlJornada(valor) {
+                return String(valor == null ? '' : valor)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function parseBloquesJornada(raw, maxLecciones) {
+                maxLecciones = maxLecciones || 16;
                 if (!raw || !String(raw).trim()) {
-                    return [];
+                    return bloquesJornadaPredeterminados();
                 }
-                return String(raw).split(',').map(function (valor) {
-                    var minutos = Number(String(valor).trim());
-                    return Number.isFinite(minutos) ? minutos : 10;
+                var bloques = [];
+                String(raw).split('|').forEach(function (parte, i) {
+                    var recorte = String(parte).trim();
+                    if (!recorte) {
+                        return;
+                    }
+                    var bits = recorte.split(':');
+                    if (bits.length < 3) {
+                        return;
+                    }
+                    var lecciones = Number(bits[0]);
+                    var pausa = bits[1] === 'receso' || bits[1] === 'almuerzo' ? bits[1] : 'ninguna';
+                    var minutos = Number(bits[2]);
+                    if (!Number.isFinite(lecciones) || lecciones < 1) {
+                        return;
+                    }
+                    if (pausa === 'ninguna' || !Number.isFinite(minutos) || minutos < 0) {
+                        minutos = 0;
+                    } else {
+                        minutos = Math.min(Math.floor(minutos), pausa === 'almuerzo' ? 120 : 60);
+                    }
+                    bloques.push({
+                        id: i + 1,
+                        lecciones: Math.min(maxLecciones, Math.floor(lecciones)),
+                        pausa: pausa,
+                        minutos: minutos
+                    });
                 });
+                return bloques.length ? bloques : bloquesJornadaPredeterminados();
+            }
+
+            function bloquesJornadaPredeterminados() {
+                return [
+                    { id: 1, lecciones: 2, pausa: 'receso', minutos: 15 },
+                    { id: 2, lecciones: 2, pausa: 'receso', minutos: 20 },
+                    { id: 3, lecciones: 2, pausa: 'almuerzo', minutos: 40 },
+                    { id: 4, lecciones: 2, pausa: 'receso', minutos: 10 },
+                    { id: 5, lecciones: 2, pausa: 'receso', minutos: 10 },
+                    { id: 6, lecciones: 2, pausa: 'ninguna', minutos: 0 }
+                ];
             }
 
             function cerrarSelectoresAcademicos(excepto) {
@@ -1278,8 +1637,12 @@
 
             if (!window.academicoEventsRegistrados) {
                 document.body.addEventListener('htmx:afterSwap', function (event) {
-                    if (typeof window.inicializarJornadaLectiva === 'function') {
-                        window.inicializarJornadaLectiva(event.detail && event.detail.elt);
+                    var elt = event.detail && event.detail.elt;
+                    if (!elt || typeof window.inicializarJornadaLectiva !== 'function') {
+                        return;
+                    }
+                    if (elt.id === 'jornada-panel' || (elt.querySelector && elt.querySelector('#jornada-panel'))) {
+                        window.inicializarJornadaLectiva(elt);
                     }
                 });
                 document.addEventListener('academicoGuardado', function (event) {

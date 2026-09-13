@@ -237,7 +237,7 @@
              th:style="|grid-template-columns: 78px repeat(${#lists.size(dias)}, 1fr);|">
             <div class="rpt-head">Lección</div>
             <div class="rpt-head" th:each="dia : ${dias}"
-                 th:text="${T(com.chavescr.nexa.entity.ConfiguracionInstitucion).etiquetaDia(dia)}">Lunes</div>
+                 th:text="${T(com.chavescr.nexa.entity.DiaLaboral).etiqueta(dia)}">Lunes</div>
 
             <th:block th:each="numero : ${lecciones}">
                 <div class="rpt-cell rpt-time" th:text="|Lección ${numero}|">Lección 1</div>

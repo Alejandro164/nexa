@@ -23,6 +23,7 @@ import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.ConfiguracionInstitucion;
+import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
@@ -126,7 +127,7 @@ class ProyectoApplicationTests {
 		context.setVariable("almuerzos", configJornada.almuerzos());
 		context.setVariable("configJornada", configJornada);
 		context.setVariable("franja", configJornada.franjas().get(1));
-		context.setVariable("diasCatalogo", ConfiguracionInstitucion.DIAS_CATALOGO);
+		context.setVariable("diasCatalogo", DiaLaboral.CATALOGO);
 		context.setVariable("horario", Map.of("1-LUNES", List.of(leccion)));
 		context.setVariable("leccion", leccion);
 		context.setVariable("periodoId", 1L);

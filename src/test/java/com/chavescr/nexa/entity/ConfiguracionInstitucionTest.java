@@ -2,12 +2,15 @@ package com.chavescr.nexa.entity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+
+import com.chavescr.nexa.entity.Jornada.BloqueJornada;
 
 class ConfiguracionInstitucionTest {
 
@@ -58,5 +61,60 @@ class ConfiguracionInstitucionTest {
         assertEquals(LocalTime.of(8, 35), config.horaInicioLeccion(3));
         assertEquals(LocalTime.of(9, 15), config.horaInicioLeccion(4));
         assertEquals(LocalTime.of(9, 55), config.horaInicioLeccion(5));
+    }
+
+    @Test
+    void bloquesDeTamanoDistintoSumanLeccionesYPausas() {
+        ConfiguracionInstitucion config = ConfiguracionInstitucion.predeterminada(null);
+        config.aplicarBloques(List.of(
+                new BloqueJornada(3, "receso", 15),
+                new BloqueJornada(3, "almuerzo", 40),
+                new BloqueJornada(2, "receso", 10),
+                new BloqueJornada(4, "ninguna", 0)));
+
+        assertEquals(12, config.getCantidadLecciones());
+        assertTrue(config.hayRecreoDespues(3));
+        assertFalse(config.hayRecreoDespues(2));
+        assertTrue(config.hayAlmuerzoDespues(6));
+        assertFalse(config.hayRecreoDespues(6));
+        assertEquals(LocalTime.of(9, 0), config.recreos().get(3).inicio());
+        assertEquals(15, config.recreos().get(3).getMinutos());
+        assertEquals(LocalTime.of(9, 15), config.horaInicioLeccion(4));
+        assertEquals(LocalTime.of(11, 15), config.almuerzos().get(6).inicio());
+        assertEquals(LocalTime.of(11, 55), config.horaInicioLeccion(7));
+        assertEquals(10, config.minutosRecreoDespues(8));
+        assertEquals("recreos de 15 y 10 min", config.etiquetaRecreos());
+        assertEquals("3:receso:15|3:almuerzo:40|2:receso:10|4:ninguna:0", config.serializarBloques());
+    }
+
+    @Test
+    void elUltimoBloqueNuncaInsertaPausaAunqueVengaConReceso() {
+        ConfiguracionInstitucion config = ConfiguracionInstitucion.predeterminada(null);
+        config.aplicarBloques(List.of(
+                new BloqueJornada(2, "receso", 15),
+                new BloqueJornada(2, "receso", 20)));
+
+        assertEquals("2:receso:15|2:ninguna:0", config.getBloquesJornada());
+        assertFalse(config.hayRecreoDespues(4));
+        assertFalse(config.recreos().containsKey(4));
+        assertEquals(LocalTime.of(9, 55), config.horaFinLeccion(4));
+    }
+
+    @Test
+    void recesoEnCeroSeGuardaComoSinPausa() {
+        ConfiguracionInstitucion config = ConfiguracionInstitucion.predeterminada(null);
+        config.aplicarBloques(List.of(
+                new BloqueJornada(2, "receso", 0),
+                new BloqueJornada(2, "ninguna", 0)));
+
+        assertEquals("2:ninguna:0|2:ninguna:0", config.getBloquesJornada());
+        assertFalse(config.hayRecreoDespues(2));
+        assertEquals(LocalTime.of(8, 20), config.horaInicioLeccion(3));
+    }
+
+    @Test
+    void parseoEstrictoRechazaUnBloqueRoto() {
+        assertThrows(IllegalArgumentException.class,
+                () -> Jornada.parsearBloques("2:receso:15|roto", true));
     }
 }

@@ -8,8 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.ConfiguracionInstitucion;
+import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Jornada;
+import com.chavescr.nexa.entity.Jornada.BloqueJornada;
+import com.chavescr.nexa.entity.Jornada.TipoPausa;
 import com.chavescr.nexa.repository.ConfiguracionInstitucionRepository;
 import com.chavescr.nexa.repository.DocenteBloqueoLeccionRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
@@ -47,90 +51,65 @@ public class ConfiguracionInstitucionService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ConfiguracionInstitucion guardar(Long institucionId, Integer cantidadLecciones, LocalTime inicioJornada,
-            Integer minutosLeccion, Integer minutosRecreo, List<Integer> minutosRecreos,
-            Integer leccionesPorBloque, Integer leccionAlmuerzo, Integer minutosAlmuerzo, List<String> dias) {
-        if (minutosAlmuerzo == null) {
-            minutosAlmuerzo = ConfiguracionInstitucion.MINUTOS_ALMUERZO_PREDETERMINADOS;
-        }
-        if (leccionAlmuerzo == null && minutosAlmuerzo > 0) {
-            leccionAlmuerzo = ConfiguracionInstitucion.LECCION_ALMUERZO_PREDETERMINADA;
-        }
-        validar(cantidadLecciones, inicioJornada, minutosLeccion, minutosRecreo, minutosRecreos, leccionesPorBloque,
-                leccionAlmuerzo, minutosAlmuerzo, dias);
+    public ConfiguracionInstitucion guardar(Long institucionId, LocalTime inicioJornada,
+            Integer minutosLeccion, String bloquesJornada, List<String> dias) {
+        List<BloqueJornada> bloques = Jornada.normalizarBloques(Jornada.parsearBloques(bloquesJornada, true));
+        validar(inicioJornada, minutosLeccion, bloques, dias);
+        int cantidadLecciones = bloques.stream().mapToInt(BloqueJornada::lecciones).sum();
         validarReduccionContraHorario(institucionId, cantidadLecciones, dias);
 
         ConfiguracionInstitucion config = obtenerOCrear(institucionId);
-        config.setCantidadLecciones(cantidadLecciones);
         config.setInicioJornada(inicioJornada);
         config.setMinutosLeccion(minutosLeccion);
-        if (minutosRecreos != null) {
-            config.setListaDuracionesRecreos(minutosRecreos);
-        }
-        if (minutosRecreo == null) {
-            minutosRecreo = minutosRecreoRespaldo(minutosRecreos, config.getMinutosRecreo());
-        }
-        config.setMinutosRecreo(minutosRecreo);
-        config.setLeccionesPorBloque(leccionesPorBloque);
-        config.setLeccionAlmuerzo(leccionAlmuerzo);
-        config.setMinutosAlmuerzo(minutosAlmuerzo);
+        config.aplicarBloques(bloques);
         config.setDias(dias);
         ConfiguracionInstitucion guardada = configuracionRepository.save(config);
         normalizarHoras(institucionId, guardada);
         return guardada;
     }
 
-    private void validar(Integer cantidadLecciones, LocalTime inicioJornada, Integer minutosLeccion,
-            Integer minutosRecreo, List<Integer> minutosRecreos, Integer leccionesPorBloque,
-            Integer leccionAlmuerzo, Integer minutosAlmuerzo, List<String> dias) {
-        if (cantidadLecciones == null || cantidadLecciones < 1 || cantidadLecciones > 16) {
-            throw new IllegalArgumentException("La cantidad de lecciones debe estar entre 1 y 16");
-        }
+    private void validar(LocalTime inicioJornada, Integer minutosLeccion,
+            List<BloqueJornada> bloques, List<String> dias) {
         if (inicioJornada == null) {
             throw new IllegalArgumentException("Indica la hora de inicio de la jornada");
         }
         if (minutosLeccion == null || minutosLeccion < 20 || minutosLeccion > 90) {
             throw new IllegalArgumentException("La duración de cada lección debe estar entre 20 y 90 minutos");
         }
-        if (minutosRecreo != null && (minutosRecreo < 0 || minutosRecreo > 60)) {
-            throw new IllegalArgumentException("El recreo debe estar entre 0 y 60 minutos");
+        if (bloques == null || bloques.isEmpty()) {
+            throw new IllegalArgumentException("Agrega al menos un bloque de lecciones");
         }
-        if (minutosRecreos != null) {
-            for (Integer minutos : minutosRecreos) {
-                if (minutos == null || minutos < 0 || minutos > 60) {
-                    throw new IllegalArgumentException("Cada recreo debe estar entre 0 y 60 minutos");
-                }
+        int total = 0;
+        for (int i = 0; i < bloques.size(); i++) {
+            BloqueJornada bloque = bloques.get(i);
+            if (bloque.lecciones() < 1 || bloque.lecciones() > Jornada.MAX_LECCIONES) {
+                throw new IllegalArgumentException("Cada bloque debe tener entre 1 y 16 lecciones");
+            }
+            total += bloque.lecciones();
+            boolean ultimo = i == bloques.size() - 1;
+            if (ultimo) {
+                continue;
+            }
+            if (bloque.pausa() == TipoPausa.RECESO
+                    && (bloque.minutos() < 0 || bloque.minutos() > 60)) {
+                throw new IllegalArgumentException("El receso debe estar entre 0 y 60 minutos");
+            }
+            if (bloque.pausa() == TipoPausa.ALMUERZO
+                    && (bloque.minutos() < 0 || bloque.minutos() > 120)) {
+                throw new IllegalArgumentException("El almuerzo debe estar entre 0 y 120 minutos");
             }
         }
-        if (leccionesPorBloque == null || leccionesPorBloque < 1 || leccionesPorBloque > cantidadLecciones) {
-            throw new IllegalArgumentException("Las lecciones por bloque deben estar entre 1 y la cantidad total");
-        }
-        if (minutosAlmuerzo == null || minutosAlmuerzo < 0 || minutosAlmuerzo > 120) {
-            throw new IllegalArgumentException("El almuerzo debe estar entre 0 y 120 minutos");
-        }
-        if (minutosAlmuerzo > 0 && (leccionAlmuerzo == null || leccionAlmuerzo < 1
-                || leccionAlmuerzo >= cantidadLecciones)) {
-            throw new IllegalArgumentException(
-                    "El almuerzo debe quedar después de una lección que no sea la última");
+        if (total < 1 || total > Jornada.MAX_LECCIONES) {
+            throw new IllegalArgumentException("La cantidad de lecciones debe estar entre 1 y 16");
         }
         if (dias == null || dias.isEmpty()) {
             throw new IllegalArgumentException("Selecciona al menos un día laboral");
         }
         for (String dia : dias) {
-            if (!ConfiguracionInstitucion.DIAS_CATALOGO.contains(dia)) {
+            if (!DiaLaboral.CATALOGO.contains(dia)) {
                 throw new IllegalArgumentException("Día laboral inválido");
             }
         }
-    }
-
-    private Integer minutosRecreoRespaldo(List<Integer> minutosRecreos, Integer actual) {
-        if (minutosRecreos != null && !minutosRecreos.isEmpty()) {
-            return minutosRecreos.get(minutosRecreos.size() - 1);
-        }
-        if (actual != null) {
-            return actual;
-        }
-        return ConfiguracionInstitucion.MINUTOS_RECREO_PREDETERMINADOS;
     }
 
     private void validarReduccionContraHorario(Long institucionId, Integer cantidadLecciones, List<String> dias) {
@@ -146,15 +125,19 @@ public class ConfiguracionInstitucionService {
                             || bloqueoRepository.existsByInstitucionIdAndDia(institucionId, dia))) {
                 throw new IllegalArgumentException(
                         "Hay asignaciones o bloqueos el "
-                                + ConfiguracionInstitucion.etiquetaDia(dia)
+                                + DiaLaboral.etiqueta(dia)
                                 + ". Elimínalos del horario antes de quitar ese día.");
             }
         }
     }
 
     private void normalizarHoras(Long institucionId, ConfiguracionInstitucion config) {
+        Jornada jornada = config.jornada();
         List<HorarioLeccion> lecciones = horarioRepository.findByInstitucionId(institucionId);
-        lecciones.forEach(config::aplicarHorario);
+        for (HorarioLeccion leccion : lecciones) {
+            leccion.setHoraInicio(jornada.horaInicioLeccion(leccion.getNumeroLeccion()));
+            leccion.setHoraFin(jornada.horaFinLeccion(leccion.getNumeroLeccion()));
+        }
         horarioRepository.saveAll(lecciones);
     }
 

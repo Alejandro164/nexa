@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.ConfiguracionInstitucion;
+import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
@@ -275,20 +276,15 @@ public class ConfiguracionAcademicaController {
     }
 
     @PostMapping("/jornada")
-    public String guardarJornada(@RequestParam Integer cantidadLecciones,
+    public String guardarJornada(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime inicioJornada,
             @RequestParam Integer minutosLeccion,
-            @RequestParam(required = false) Integer minutosRecreo,
-            @RequestParam(name = "minutosRecreos", required = false) List<Integer> minutosRecreos,
-            @RequestParam Integer leccionesPorBloque,
-            @RequestParam(required = false) Integer leccionAlmuerzo,
-            @RequestParam(required = false) Integer minutosAlmuerzo,
+            @RequestParam(required = false) String bloquesJornada,
             @RequestParam(name = "dias", required = false) List<String> dias,
             Model model, HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
         try {
-            service.guardarJornada(institucionId, cantidadLecciones, inicioJornada, minutosLeccion,
-                    minutosRecreo, minutosRecreos, leccionesPorBloque, leccionAlmuerzo, minutosAlmuerzo, dias);
+            service.guardarJornada(institucionId, inicioJornada, minutosLeccion, bloquesJornada, dias);
             cargarJornada(model, institucionId);
             response.setHeader("HX-Trigger",
                     "{\"academicoGuardado\":{\"mensaje\":\"Jornada lectiva actualizada\",\"recargarHorario\":true}}");
@@ -306,12 +302,12 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("aulas", service.listarAulas(institucionId));
         cargarHorario(model, institucionId, null, null);
         model.addAttribute("configJornada", service.obtenerConfiguracion(institucionId));
-        model.addAttribute("diasCatalogo", ConfiguracionInstitucion.DIAS_CATALOGO);
+        model.addAttribute("diasCatalogo", DiaLaboral.CATALOGO);
     }
 
     private void cargarJornada(Model model, Long institucionId) {
         model.addAttribute("configJornada", service.obtenerConfiguracion(institucionId));
-        model.addAttribute("diasCatalogo", ConfiguracionInstitucion.DIAS_CATALOGO);
+        model.addAttribute("diasCatalogo", DiaLaboral.CATALOGO);
     }
 
     private void cargarHorario(Model model, Long institucionId, Long periodoId, Long nivelId) {

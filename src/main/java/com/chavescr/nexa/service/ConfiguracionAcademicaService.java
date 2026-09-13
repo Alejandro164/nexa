@@ -84,12 +84,10 @@ public class ConfiguracionAcademicaService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ConfiguracionInstitucion guardarJornada(Long institucionId, Integer cantidadLecciones,
-            LocalTime inicioJornada, Integer minutosLeccion, Integer minutosRecreo, List<Integer> minutosRecreos,
-            Integer leccionesPorBloque, Integer leccionAlmuerzo, Integer minutosAlmuerzo, List<String> dias) {
-        return configuracionInstitucionService.guardar(institucionId, cantidadLecciones, inicioJornada,
-                minutosLeccion, minutosRecreo, minutosRecreos, leccionesPorBloque, leccionAlmuerzo,
-                minutosAlmuerzo, dias);
+    public ConfiguracionInstitucion guardarJornada(Long institucionId, LocalTime inicioJornada,
+            Integer minutosLeccion, String bloquesJornada, List<String> dias) {
+        return configuracionInstitucionService.guardar(institucionId, inicioJornada, minutosLeccion,
+                bloquesJornada, dias);
     }
 
     @Transactional(readOnly = true)
@@ -401,7 +399,9 @@ public class ConfiguracionAcademicaService {
         leccion.setAula(obtenerAula(institucionId, aulaId));
         leccion.setDia(dia);
         leccion.setNumeroLeccion(numeroLeccion);
-        config.aplicarHorario(leccion);
+        var jornada = config.jornada();
+        leccion.setHoraInicio(jornada.horaInicioLeccion(numeroLeccion));
+        leccion.setHoraFin(jornada.horaFinLeccion(numeroLeccion));
         return horarioRepository.save(leccion);
     }
 
