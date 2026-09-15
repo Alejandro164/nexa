@@ -1,36 +1,773 @@
-<div th:fragment="content" id="institucional-bloqueo-leccion-panel" xmlns:th="http://www.thymeleaf.org">
-    <div class="card">
+<div th:fragment="content" id="institucional-bloqueo-leccion-panel" xmlns:th="http://www.thymeleaf.org"
+     x-data="bloqueoLeccion()">
+    <style>
+        .bloqueo-card { position: relative; overflow: visible; }
+        .bloqueo-body {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(320px, 1.15fr);
+            gap: 0;
+            align-items: start;
+        }
+        .bloqueo-form {
+            padding: 1.35rem 1.5rem 1.6rem;
+            border-right: 1px solid var(--border);
+        }
+        .bloqueo-section + .bloqueo-section { margin-top: 1.45rem; }
+        .bloqueo-section-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.7rem;
+        }
+        .bloqueo-section-head h4 {
+            margin: 0;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .bloqueo-section-head p,
+        .bloqueo-hint {
+            margin: 0.2rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            line-height: 1.45;
+        }
+        .bloqueo-links {
+            display: flex;
+            gap: 0.65rem;
+            flex-shrink: 0;
+        }
+        .bloqueo-links button {
+            border: 0;
+            background: none;
+            padding: 0;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            cursor: pointer;
+        }
+        .bloqueo-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .bloqueo-chip {
+            min-width: 42px;
+            padding: 0.5rem 0.65rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s;
+        }
+        .bloqueo-chip:hover { border-color: #cbd5e1; }
+        .bloqueo-chip.is-on {
+            color: #fff;
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 4px 14px rgba(45, 90, 135, 0.22);
+        }
+        .bloqueo-chip-grado { min-width: 78px; }
+        .bloqueo-modos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .bloqueo-modo {
+            text-align: left;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            padding: 0.85rem 0.95rem;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+        }
+        .bloqueo-modo:hover { border-color: #cbd5e1; }
+        .bloqueo-modo.is-on {
+            border-color: var(--primary);
+            background: #f0f6fb;
+            box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
+        }
+        .bloqueo-modo strong {
+            display: block;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.2rem;
+        }
+        .bloqueo-modo span {
+            display: block;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            color: var(--text-secondary);
+        }
+        .bloqueo-rules {
+            display: grid;
+            gap: 0.65rem;
+        }
+        .bloqueo-rule {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            padding: 0.8rem 0.9rem;
+        }
+        .bloqueo-rule h5 {
+            margin: 0;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .bloqueo-rule p {
+            margin: 0.2rem 0 0;
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .bloqueo-empty {
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 0.9rem 1rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: #f8fafc;
+        }
+        .bloqueo-preview {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: 1.35rem 1.35rem 1.6rem;
+            background: #f8fafc;
+            position: sticky;
+            top: calc(var(--topbar-height) + 12px);
+            z-index: 4;
+            max-height: calc(100vh - var(--topbar-height) - 24px);
+            border-bottom-right-radius: var(--radius);
+        }
+        .bloqueo-preview-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin: -1.35rem -1.35rem 0.9rem;
+            padding: 0.95rem 1.35rem 0.85rem;
+            flex-shrink: 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .bloqueo-preview-head h4 {
+            margin: 0;
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+        .bloqueo-preview-head span {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .bloqueo-preview-grados {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0.9rem;
+        }
+        .bloqueo-preview-grados > em {
+            font-style: normal;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        .bloqueo-table {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: auto;
+            overscroll-behavior: contain;
+            padding: 0.15rem;
+        }
+        .bloqueo-head-row,
+        .bloqueo-row {
+            display: grid;
+            gap: 6px;
+            align-items: stretch;
+        }
+        .bloqueo-head {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 0.15rem 0 0.2rem;
+        }
+        .bloqueo-hour {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.35rem;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+        .bloqueo-cell {
+            min-height: 42px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.35rem 0.4rem;
+            line-height: 1.2;
+            transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+        }
+        .bloqueo-cell:hover { border-color: #cbd5e1; }
+        .bloqueo-cell.is-picking {
+            box-shadow: 0 0 0 2px rgba(45, 90, 135, 0.35);
+        }
+        .bloqueo-cell.is-cerrada {
+            background: #ffedd5;
+            color: #c2410c;
+            border-color: #fdba74;
+        }
+        .bloqueo-cell.is-tipo-BASICA { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+        .bloqueo-cell.is-tipo-COMPLEMENTARIA { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+        .bloqueo-cell.is-tipo-ESPECIALIDAD { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+        .bloqueo-cell.is-tipo-TALLER { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+        .bloqueo-cell.is-tipo-DEPORTIVA { background: #dcfce7; color: #166534; border-color: #86efac; }
+        .bloqueo-cell.is-tipo-MUSICA { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+        .bloqueo-cell.is-tipo-ARTE { background: #fce7f3; color: #9d174d; border-color: #f9a8d4; }
+        .bloqueo-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1rem;
+            margin-top: 0.85rem;
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+        }
+        .bloqueo-swatch {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            margin-right: 5px;
+            vertical-align: -1px;
+            border: 1px solid var(--border);
+            background: #fff;
+        }
+        .bloqueo-swatch.is-cerrada { background: #ffedd5; border-color: #fdba74; }
+        .bloqueo-swatch.is-tipo { background: #dcfce7; border-color: #86efac; }
+        @media (max-width: 960px) {
+            .bloqueo-body { grid-template-columns: 1fr; }
+            .bloqueo-form { border-right: 0; border-bottom: 1px solid var(--border); }
+            .bloqueo-preview {
+                position: static;
+                max-height: none;
+                border-bottom-left-radius: var(--radius);
+            }
+            .bloqueo-modos { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    <div class="card bloqueo-card">
         <div class="card-header">
             <div>
                 <h3 class="card-title">Bloqueo de lección</h3>
-                <p class="academic-help">Marca lecciones que no se pueden asignar en el horario de esta institución.</p>
+                <p class="academic-help">El bloqueo es por grado: sétimo puede seguir libre y décimo reservar las mismas lecciones, por ejemplo para Deportiva.</p>
             </div>
+            <button type="button" class="btn btn-primary" disabled title="El guardado se conecta después">Guardar bloqueos</button>
         </div>
-        <form class="institucional-form" onsubmit="return false;">
-            <div class="institucional-grid">
-                <div class="form-group">
-                    <label class="form-label">Día</label>
-                    <select class="form-select" name="dia">
-                        <option value="LUNES">Lunes</option>
-                        <option value="MARTES">Martes</option>
-                        <option value="MIERCOLES">Miércoles</option>
-                        <option value="JUEVES">Jueves</option>
-                        <option value="VIERNES">Viernes</option>
-                        <option value="SABADO">Sábado</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Número de lección</label>
-                    <input class="form-input" type="number" name="numeroLeccion" min="1" max="16" value="1">
-                </div>
-                <div class="form-group span-2">
-                    <label class="form-label">Motivo</label>
-                    <input class="form-input" type="text" name="motivo" placeholder="Recreo, reunión, acto cívico…">
-                </div>
+
+        <div class="bloqueo-body">
+            <div class="bloqueo-form">
+                <section class="bloqueo-section">
+                    <div class="bloqueo-section-head">
+                        <div>
+                            <h4>Lecciones</h4>
+                            <p>Puedes marcar una o varias. Las seleccionadas se aplican juntas.</p>
+                        </div>
+                        <div class="bloqueo-links">
+                            <button type="button" @click="marcarLecciones('todas')">Todas</button>
+                            <button type="button" @click="marcarLecciones('ninguna')">Ninguna</button>
+                        </div>
+                    </div>
+                    <div class="bloqueo-chips" role="group" aria-label="Número de lección">
+                        <template x-for="n in numeros" :key="n">
+                            <button type="button" class="bloqueo-chip"
+                                    :class="{ 'is-on': leccionesSel.includes(n) }"
+                                    :aria-pressed="leccionesSel.includes(n)"
+                                    @click="alternarLeccion(n)"
+                                    x-text="n">1</button>
+                        </template>
+                    </div>
+                </section>
+
+                <section class="bloqueo-section">
+                    <div class="bloqueo-section-head">
+                        <div>
+                            <h4>Días</h4>
+                            <p>La regla cubre la combinación de lecciones y días.</p>
+                        </div>
+                        <div class="bloqueo-links">
+                            <button type="button" @click="marcarDias('laborales')">Lun a Vie</button>
+                            <button type="button" @click="marcarDias('ninguno')">Ninguno</button>
+                        </div>
+                    </div>
+                    <div class="bloqueo-chips" role="group" aria-label="Días">
+                        <template x-for="dia in catalogoDias" :key="dia.codigo">
+                            <button type="button" class="bloqueo-chip"
+                                    :class="{ 'is-on': diasSel.includes(dia.codigo) }"
+                                    :aria-pressed="diasSel.includes(dia.codigo)"
+                                    @click="alternarDia(dia.codigo)"
+                                    x-text="dia.corto">Lun</button>
+                        </template>
+                    </div>
+                </section>
+
+                <section class="bloqueo-section">
+                    <div class="bloqueo-section-head">
+                        <div>
+                            <h4>Grados</h4>
+                            <p>No tiene que aplicar a toda la institución. Los sétimos pueden quedar libres y los décimos no.</p>
+                        </div>
+                        <div class="bloqueo-links">
+                            <button type="button" @click="marcarGrados('todos')">Todos</button>
+                            <button type="button" @click="marcarGrados('ninguno')">Ninguno</button>
+                        </div>
+                    </div>
+                    <div class="bloqueo-chips" role="group" aria-label="Grados académicos">
+                        <template x-for="grado in catalogoGrados" :key="grado.numero">
+                            <button type="button" class="bloqueo-chip bloqueo-chip-grado"
+                                    :class="{ 'is-on': gradosSel.includes(grado.numero) }"
+                                    :aria-pressed="gradosSel.includes(grado.numero)"
+                                    @click="alternarGrado(grado.numero)"
+                                    x-text="grado.nombre">Décimo</button>
+                        </template>
+                    </div>
+                </section>
+
+                <section class="bloqueo-section">
+                    <div class="bloqueo-section-head">
+                        <div>
+                            <h4>Qué hacer con esas lecciones</h4>
+                            <p>No usarlas en el horario, o restringirlas a un tipo de materia.</p>
+                        </div>
+                    </div>
+                    <div class="bloqueo-modos" role="group" aria-label="Tipo de bloqueo">
+                        <button type="button" class="bloqueo-modo"
+                                :class="{ 'is-on': modo === 'cerrada' }"
+                                :aria-pressed="modo === 'cerrada'"
+                                @click="modo = 'cerrada'">
+                            <strong>No usar</strong>
+                            <span>Quedan fuera del horario. Nadie puede asignar materias ahí.</span>
+                        </button>
+                        <button type="button" class="bloqueo-modo"
+                                :class="{ 'is-on': modo === 'tipo' }"
+                                :aria-pressed="modo === 'tipo'"
+                                @click="modo = 'tipo'">
+                            <strong>Solo un tipo</strong>
+                            <span>Únicamente materias de ese tipo se pueden agregar en esas lecciones.</span>
+                        </button>
+                    </div>
+                    <div class="form-group" style="margin: 0.9rem 0 0;" x-show="modo === 'tipo'">
+                        <label class="form-label" for="bloqueo-tipo-materia">Tipo de materia permitido</label>
+                        <select class="form-select" id="bloqueo-tipo-materia" x-model="tipoCodigo">
+                            <template x-for="tipo in tipos" :key="tipo.codigo">
+                                <option :value="tipo.codigo" x-text="tipo.nombre">Deportiva</option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0.9rem 0 0;">
+                        <label class="form-label" for="bloqueo-motivo">Motivo <span style="font-weight:500;color:var(--text-secondary)">(opcional)</span></label>
+                        <input class="form-input" id="bloqueo-motivo" type="text" x-model="motivo"
+                               placeholder="Educación física, acto cívico, no usar última lección…">
+                    </div>
+                    <p class="bloqueo-hint" style="margin-top: 0.7rem;" x-text="resumenBorrador">Lecciones 5 y 6 · Lun a Vie · Décimo · Solo Deportiva</p>
+                    <div class="institucional-actions" style="border-top: 0; padding-top: 0.9rem; margin-top: 0.2rem;">
+                        <button type="button" class="btn btn-primary" :disabled="!puedeAplicar" @click="aplicar()">
+                            Aplicar a la grilla
+                        </button>
+                    </div>
+                </section>
+
+                <section class="bloqueo-section">
+                    <div class="bloqueo-section-head">
+                        <div>
+                            <h4>Reglas activas</h4>
+                            <p>Cada regla vale solo para los grados que marcaste. Cambia de grado en la grilla para verlo.</p>
+                        </div>
+                    </div>
+                    <div class="bloqueo-empty" x-show="reglas.length === 0">
+                        Todavía no hay bloqueos. Elige lecciones, el modo y pulsa Aplicar.
+                    </div>
+                    <div class="bloqueo-rules" x-show="reglas.length > 0">
+                        <template x-for="regla in reglas" :key="regla.id">
+                            <article class="bloqueo-rule">
+                                <div>
+                                    <h5 x-text="tituloRegla(regla)">Lecciones 5 y 6 · Solo Deportiva</h5>
+                                    <p>
+                                        <span x-text="etiquetaDias(regla.dias)">Lun a Vie</span>
+                                        <span x-text="' · ' + etiquetaGrados(regla.grados)"> · Décimo</span>
+                                        <span x-show="regla.motivo" x-text="' · ' + regla.motivo"></span>
+                                    </p>
+                                </div>
+                                <button type="button" class="btn-xs btn-ghost" @click="quitar(regla.id)">Quitar</button>
+                            </article>
+                        </template>
+                    </div>
+                </section>
             </div>
-            <div class="institucional-actions">
-                <button type="button" class="btn btn-primary">Guardar bloqueo</button>
-            </div>
-        </form>
+
+            <aside class="bloqueo-preview">
+                <div class="bloqueo-preview-head">
+                    <h4>Grilla semanal</h4>
+                    <span>Clic en una celda para tomarla en el formulario</span>
+                </div>
+                <div class="bloqueo-preview-grados">
+                    <em>Viendo</em>
+                    <template x-for="grado in catalogoGrados" :key="'ver-' + grado.numero">
+                        <button type="button" class="bloqueo-chip bloqueo-chip-grado"
+                                :class="{ 'is-on': gradoVista === grado.numero }"
+                                :aria-pressed="gradoVista === grado.numero"
+                                @click="gradoVista = grado.numero"
+                                x-text="grado.nombre">Décimo</button>
+                    </template>
+                </div>
+                <div class="bloqueo-table">
+                    <div class="bloqueo-head-row" :style="gridCols">
+                        <div class="bloqueo-head">Lección</div>
+                        <template x-for="dia in catalogoDias" :key="'h-' + dia.codigo">
+                            <div class="bloqueo-head" x-text="dia.corto">Lun</div>
+                        </template>
+                    </div>
+                    <template x-for="n in numeros" :key="'r-' + n">
+                        <div class="bloqueo-row" :style="gridCols">
+                            <div class="bloqueo-hour" x-text="'L' + n">L1</div>
+                            <template x-for="dia in catalogoDias" :key="n + '-' + dia.codigo">
+                                <button type="button" class="bloqueo-cell"
+                                        :class="claseCelda(n, dia.codigo)"
+                                        :title="tituloCelda(n, dia.codigo)"
+                                        @click="elegirCelda(n, dia.codigo)"
+                                        x-text="textoCelda(n, dia.codigo)">Libre</button>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+                <div class="bloqueo-legend">
+                    <span><span class="bloqueo-swatch"></span>Libre — cualquier materia</span>
+                    <span><span class="bloqueo-swatch is-cerrada"></span>No usar</span>
+                    <span><span class="bloqueo-swatch is-tipo"></span>Solo un tipo (ej. Deportiva)</span>
+                    <span>La grilla muestra un grado a la vez</span>
+                </div>
+            </aside>
+        </div>
     </div>
+
+    <script>
+        window.bloqueoLeccion = function bloqueoLeccion() {
+            var laborales = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+            return {
+                numeros: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                catalogoDias: [
+                    { codigo: 'LUNES', corto: 'Lun' },
+                    { codigo: 'MARTES', corto: 'Mar' },
+                    { codigo: 'MIERCOLES', corto: 'Mié' },
+                    { codigo: 'JUEVES', corto: 'Jue' },
+                    { codigo: 'VIERNES', corto: 'Vie' },
+                    { codigo: 'SABADO', corto: 'Sáb' }
+                ],
+                tipos: [
+                    { codigo: 'BASICA', nombre: 'Básica' },
+                    { codigo: 'COMPLEMENTARIA', nombre: 'Complementaria' },
+                    { codigo: 'ESPECIALIDAD', nombre: 'Especialidad' },
+                    { codigo: 'TALLER', nombre: 'Taller' },
+                    { codigo: 'DEPORTIVA', nombre: 'Deportiva' },
+                    { codigo: 'MUSICA', nombre: 'Música' },
+                    { codigo: 'ARTE', nombre: 'Arte' }
+                ],
+                catalogoGrados: [
+                    { numero: 7, nombre: 'Sétimo' },
+                    { numero: 8, nombre: 'Octavo' },
+                    { numero: 9, nombre: 'Noveno' },
+                    { numero: 10, nombre: 'Décimo' },
+                    { numero: 11, nombre: 'Undécimo' },
+                    { numero: 12, nombre: 'Duodécimo' }
+                ],
+                leccionesSel: [5, 6],
+                diasSel: laborales.slice(),
+                gradosSel: [10],
+                gradoVista: 10,
+                modo: 'tipo',
+                tipoCodigo: 'DEPORTIVA',
+                motivo: '',
+                siguienteId: 1,
+                reglas: [],
+                init: function () {
+                    this.aplicar();
+                },
+                get puedeAplicar() {
+                    return this.leccionesSel.length > 0 && this.diasSel.length > 0
+                        && this.gradosSel.length > 0
+                        && (this.modo === 'cerrada' || !!this.tipoCodigo);
+                },
+                get gridCols() {
+                    return 'grid-template-columns: 52px repeat(' + this.catalogoDias.length + ', minmax(0, 1fr))';
+                },
+                get resumenBorrador() {
+                    if (!this.puedeAplicar) {
+                        return 'Elige al menos una lección, un día y un grado.';
+                    }
+                    return this.etiquetaLecciones(this.leccionesSel)
+                        + ' · ' + this.etiquetaDias(this.diasSel)
+                        + ' · ' + this.etiquetaGrados(this.gradosSel)
+                        + ' · ' + this.etiquetaModo(this.modo, this.tipoCodigo);
+                },
+                nombreTipo: function (codigo) {
+                    var tipo = this.tipos.find(function (item) {
+                        return item.codigo === codigo;
+                    });
+                    return tipo ? tipo.nombre : codigo;
+                },
+                etiquetaModo: function (modo, tipoCodigo) {
+                    return modo === 'cerrada' ? 'No usar' : 'Solo ' + this.nombreTipo(tipoCodigo);
+                },
+                etiquetaLecciones: function (nums) {
+                    var orden = nums.slice().sort(function (a, b) { return a - b; });
+                    if (orden.length === 0) {
+                        return 'Ninguna lección';
+                    }
+                    if (orden.length === 1) {
+                        return 'Lección ' + orden[0];
+                    }
+                    var corrida = orden.every(function (n, i) {
+                        return i === 0 || n === orden[i - 1] + 1;
+                    });
+                    if (orden.length === 2) {
+                        return 'Lecciones ' + orden[0] + ' y ' + orden[1];
+                    }
+                    if (corrida) {
+                        return 'Lecciones ' + orden[0] + ' a ' + orden[orden.length - 1];
+                    }
+                    return 'Lecciones ' + orden.join(', ');
+                },
+                etiquetaDias: function (codigos) {
+                    var self = this;
+                    var orden = this.catalogoDias
+                        .map(function (dia) { return dia.codigo; })
+                        .filter(function (codigo) { return codigos.indexOf(codigo) !== -1; });
+                    if (orden.length === 0) {
+                        return 'Ningún día';
+                    }
+                    if (orden.length === this.catalogoDias.length) {
+                        return 'Toda la semana';
+                    }
+                    if (orden.length === 5 && laborales.every(function (dia) {
+                        return orden.indexOf(dia) !== -1;
+                    })) {
+                        return 'Lun a Vie';
+                    }
+                    return orden.map(function (codigo) {
+                        var dia = self.catalogoDias.find(function (item) {
+                            return item.codigo === codigo;
+                        });
+                        return dia ? dia.corto : codigo;
+                    }).join(', ');
+                },
+                etiquetaGrados: function (numeros) {
+                    var self = this;
+                    var orden = this.catalogoGrados
+                        .map(function (grado) { return grado.numero; })
+                        .filter(function (numero) { return numeros.indexOf(numero) !== -1; });
+                    if (orden.length === 0) {
+                        return 'Ningún grado';
+                    }
+                    if (orden.length === this.catalogoGrados.length) {
+                        return 'Todos los grados';
+                    }
+                    var nombres = orden.map(function (numero) {
+                        var grado = self.catalogoGrados.find(function (item) {
+                            return item.numero === numero;
+                        });
+                        return grado ? grado.nombre : String(numero);
+                    });
+                    if (nombres.length === 1) {
+                        return nombres[0];
+                    }
+                    if (nombres.length === 2) {
+                        return nombres[0] + ' y ' + nombres[1];
+                    }
+                    var corrida = orden.every(function (n, i) {
+                        return i === 0 || n === orden[i - 1] + 1;
+                    });
+                    if (corrida) {
+                        return nombres[0] + ' a ' + nombres[nombres.length - 1];
+                    }
+                    return nombres.join(', ');
+                },
+                tituloRegla: function (regla) {
+                    return this.etiquetaLecciones(regla.lecciones) + ' · ' + this.etiquetaModo(regla.modo, regla.tipoCodigo);
+                },
+                celda: function (leccion, dia) {
+                    var hallada = null;
+                    var grado = this.gradoVista;
+                    this.reglas.forEach(function (regla) {
+                        if (regla.lecciones.indexOf(leccion) !== -1
+                                && regla.dias.indexOf(dia) !== -1
+                                && regla.grados && regla.grados.indexOf(grado) !== -1) {
+                            hallada = regla;
+                        }
+                    });
+                    return hallada;
+                },
+                claseCelda: function (leccion, dia) {
+                    var clases = [];
+                    if (this.leccionesSel.indexOf(leccion) !== -1
+                            && this.diasSel.indexOf(dia) !== -1
+                            && this.gradosSel.indexOf(this.gradoVista) !== -1) {
+                        clases.push('is-picking');
+                    }
+                    var regla = this.celda(leccion, dia);
+                    if (!regla) {
+                        return clases.join(' ');
+                    }
+                    if (regla.modo === 'cerrada') {
+                        clases.push('is-cerrada');
+                    } else {
+                        clases.push('is-tipo-' + regla.tipoCodigo);
+                    }
+                    return clases.join(' ');
+                },
+                textoCelda: function (leccion, dia) {
+                    var regla = this.celda(leccion, dia);
+                    if (!regla) {
+                        return 'Libre';
+                    }
+                    return regla.modo === 'cerrada' ? 'No usar' : this.nombreTipo(regla.tipoCodigo);
+                },
+                tituloCelda: function (leccion, dia) {
+                    var regla = this.celda(leccion, dia);
+                    var base = this.etiquetaGrados([this.gradoVista])
+                        + ' · Lección ' + leccion + ' · ' + this.etiquetaDias([dia]);
+                    if (!regla) {
+                        return base + ' · Libre';
+                    }
+                    var extra = this.etiquetaModo(regla.modo, regla.tipoCodigo);
+                    return regla.motivo ? base + ' · ' + extra + ' · ' + regla.motivo : base + ' · ' + extra;
+                },
+                alternarLeccion: function (n) {
+                    var i = this.leccionesSel.indexOf(n);
+                    if (i === -1) {
+                        this.leccionesSel.push(n);
+                        this.leccionesSel.sort(function (a, b) { return a - b; });
+                        return;
+                    }
+                    this.leccionesSel.splice(i, 1);
+                },
+                alternarDia: function (codigo) {
+                    var i = this.diasSel.indexOf(codigo);
+                    if (i === -1) {
+                        this.diasSel.push(codigo);
+                        return;
+                    }
+                    this.diasSel.splice(i, 1);
+                },
+                marcarLecciones: function (cual) {
+                    this.leccionesSel = cual === 'todas' ? this.numeros.slice() : [];
+                },
+                marcarDias: function (cual) {
+                    this.diasSel = cual === 'laborales' ? laborales.slice() : [];
+                },
+                alternarGrado: function (numero) {
+                    var i = this.gradosSel.indexOf(numero);
+                    if (i === -1) {
+                        this.gradosSel.push(numero);
+                        this.gradosSel.sort(function (a, b) { return a - b; });
+                        this.gradoVista = numero;
+                        return;
+                    }
+                    this.gradosSel.splice(i, 1);
+                },
+                marcarGrados: function (cual) {
+                    this.gradosSel = cual === 'todos'
+                        ? this.catalogoGrados.map(function (grado) { return grado.numero; })
+                        : [];
+                },
+                elegirCelda: function (leccion, dia) {
+                    this.leccionesSel = [leccion];
+                    this.diasSel = [dia];
+                    this.gradosSel = [this.gradoVista];
+                    var regla = this.celda(leccion, dia);
+                    if (!regla) {
+                        return;
+                    }
+                    this.gradosSel = regla.grados.slice();
+                    this.modo = regla.modo;
+                    if (regla.tipoCodigo) {
+                        this.tipoCodigo = regla.tipoCodigo;
+                    }
+                    this.motivo = regla.motivo || '';
+                },
+                aplicar: function () {
+                    if (!this.puedeAplicar) {
+                        return;
+                    }
+                    this.reglas.push({
+                        id: this.siguienteId++,
+                        lecciones: this.leccionesSel.slice(),
+                        dias: this.diasSel.slice(),
+                        grados: this.gradosSel.slice(),
+                        modo: this.modo,
+                        tipoCodigo: this.modo === 'tipo' ? this.tipoCodigo : null,
+                        motivo: (this.motivo || '').trim()
+                    });
+                    this.gradoVista = this.gradosSel[0];
+                },
+                quitar: function (id) {
+                    this.reglas = this.reglas.filter(function (regla) {
+                        return regla.id !== id;
+                    });
+                }
+            };
+        };
+
+        window.inicializarBloqueoLeccion = function inicializarBloqueoLeccion(el) {
+            var panel = !el ? document.getElementById('institucional-bloqueo-leccion-panel')
+                : (el.id === 'institucional-bloqueo-leccion-panel' ? el
+                    : el.querySelector && el.querySelector('#institucional-bloqueo-leccion-panel'));
+            if (!panel || !window.Alpine || panel._x_dataStack) {
+                return;
+            }
+            Alpine.initTree(panel);
+        };
+
+        if (!window.bloqueoLeccionHtmx) {
+            document.body.addEventListener('htmx:afterSwap', function (event) {
+                var elt = event.detail && event.detail.elt;
+                if (!elt || typeof window.inicializarBloqueoLeccion !== 'function') {
+                    return;
+                }
+                if (elt.id === 'institucional-bloqueo-leccion-panel'
+                        || (elt.querySelector && elt.querySelector('#institucional-bloqueo-leccion-panel'))) {
+                    window.inicializarBloqueoLeccion(elt);
+                }
+            });
+            window.bloqueoLeccionHtmx = true;
+        }
+
+        if (document.getElementById('institucional-bloqueo-leccion-panel')) {
+            window.inicializarBloqueoLeccion(document.getElementById('institucional-bloqueo-leccion-panel'));
+        }
+    </script>
 </div>
