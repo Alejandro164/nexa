@@ -105,8 +105,16 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
 
     boolean existsByInstitucionIdAndDia(Long institucionId, String dia);
 
+    boolean existsByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
+            Long institucionId, Long periodoId, Long nivelId, String dia, Integer numeroLeccion);
+
     void deleteByInstitucionIdAndPeriodoId(Long institucionId, Long periodoId);
     void deleteByInstitucionIdAndNivelId(Long institucionId, Long nivelId);
     void deleteByInstitucionIdAndMateriaId(Long institucionId, Long materiaId);
     void deleteByInstitucionIdAndAulaId(Long institucionId, Long aulaId);
+
+    @Query("SELECT DISTINCT h.docente.id, h.materia.id, h.nivel.id FROM HorarioLeccion h "
+            + "WHERE h.institucion.id = :institucionId AND h.periodo.id = :periodoId")
+    List<Object[]> findCombosDocenteMateriaNivel(
+            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId);
 }

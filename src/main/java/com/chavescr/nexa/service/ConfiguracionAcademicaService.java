@@ -7,7 +7,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +50,8 @@ public class ConfiguracionAcademicaService {
     private final DocenteMateriaService docenteMateriaService;
     private final DocenteGuiaService docenteGuiaService;
     private final DocenteBloqueoService docenteBloqueoService;
+    private final SeccionBloqueoService seccionBloqueoService;
+    private final EnvioNotasDocenteService envioNotasDocenteService;
     private final ConfiguracionInstitucionService configuracionInstitucionService;
 
     public ConfiguracionAcademicaService(InstitucionRepository institucionRepository,
@@ -62,6 +66,8 @@ public class ConfiguracionAcademicaService {
             DocenteMateriaService docenteMateriaService,
             DocenteGuiaService docenteGuiaService,
             DocenteBloqueoService docenteBloqueoService,
+            SeccionBloqueoService seccionBloqueoService,
+            EnvioNotasDocenteService envioNotasDocenteService,
             ConfiguracionInstitucionService configuracionInstitucionService) {
         this.institucionRepository = institucionRepository;
         this.periodoRepository = periodoRepository;
@@ -75,6 +81,8 @@ public class ConfiguracionAcademicaService {
         this.docenteMateriaService = docenteMateriaService;
         this.docenteGuiaService = docenteGuiaService;
         this.docenteBloqueoService = docenteBloqueoService;
+        this.seccionBloqueoService = seccionBloqueoService;
+        this.envioNotasDocenteService = envioNotasDocenteService;
         this.configuracionInstitucionService = configuracionInstitucionService;
     }
 
@@ -112,6 +120,21 @@ public class ConfiguracionAcademicaService {
         if (datos.getFechaFin().isBefore(datos.getFechaInicio())) {
             throw new IllegalArgumentException("La fecha final no puede ser anterior a la fecha inicial");
         }
+        if (datos.getId() == null) {
+            periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId)
+                    .stream().findFirst()
+                    .ifPresent(actual -> {
+                        var pendientes = envioNotasDocenteService.listarPendientes(institucionId, actual.getId());
+                        if (!pendientes.isEmpty()) {
+                            String nombres = pendientes.stream()
+                                    .map(EnvioNotasDocenteService.DocentePendiente::nombre)
+                                    .collect(Collectors.joining(", "));
+                            throw new IllegalArgumentException(
+                                    "No se puede crear un nuevo período: faltan " + pendientes.size()
+                                            + " docente(s) por enviar notas del período actual (" + nombres + ")");
+                        }
+                    });
+        }
         PeriodoAcademico periodo = datos.getId() == null
                 ? new PeriodoAcademico()
                 : obtenerPeriodo(institucionId, datos.getId());
@@ -128,6 +151,8 @@ public class ConfiguracionAcademicaService {
         PeriodoAcademico periodo = obtenerPeriodo(institucionId, id);
         horarioRepository.deleteByInstitucionIdAndPeriodoId(institucionId, id);
         docenteBloqueoService.eliminarPorPeriodo(institucionId, id);
+        seccionBloqueoService.eliminarPorPeriodo(institucionId, id);
+        envioNotasDocenteService.eliminarPorPeriodo(institucionId, id);
         periodoRepository.delete(periodo);
     }
 
@@ -162,6 +187,7 @@ public class ConfiguracionAcademicaService {
         NivelAcademico nivel = obtenerNivel(institucionId, id);
         horarioRepository.deleteByInstitucionIdAndNivelId(institucionId, id);
         docenteGuiaService.eliminarPorNivel(institucionId, id);
+        seccionBloqueoService.eliminarPorNivel(institucionId, id);
         nivelRepository.delete(nivel);
     }
 
@@ -360,6 +386,14 @@ public class ConfiguracionAcademicaService {
         if (!config.getDias().contains(dia) || !config.getLecciones().contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
         }
+        Materia materia = obtenerMateria(institucionId, materiaId);
+        seccionBloqueoService.tipoBloqueado(institucionId, periodoId, nivelId, dia, numeroLeccion)
+                .filter(tipo -> materia.getTipoMateria() == null
+                        || !materia.getTipoMateria().getId().equals(tipo.getId()))
+                .ifPresent(tipo -> {
+                    throw new IllegalArgumentException(
+                            "Esta lección está bloqueada para materias de tipo " + tipo.getNombre());
+                });
         validarDocenteDeMateria(institucionId, materiaId, docenteId, id);
 
         boolean docenteOcupado = horarioRepository
@@ -395,7 +429,7 @@ public class ConfiguracionAcademicaService {
         leccion.setInstitucion(obtenerInstitucion(institucionId));
         leccion.setPeriodo(obtenerPeriodo(institucionId, periodoId));
         leccion.setNivel(obtenerNivel(institucionId, nivelId));
-        leccion.setMateria(obtenerMateria(institucionId, materiaId));
+        leccion.setMateria(materia);
         leccion.setDocente(usuarioRepository.findActivoByIdAndInstitucionId(docenteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Docente no válido para la institución")));
         leccion.setAula(obtenerAula(institucionId, aulaId));
@@ -408,6 +442,33 @@ public class ConfiguracionAcademicaService {
     public void eliminarLeccion(Long institucionId, Long id) {
         horarioRepository.delete(horarioRepository.findByIdAndInstitucionId(id, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Lección no encontrada")));
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, TipoMateria> obtenerBloqueosSeccion(Long institucionId, Long periodoId, Long nivelId) {
+        return seccionBloqueoService.mapa(institucionId, periodoId, nivelId);
+    }
+
+    /** Materias activas, acotadas al tipo bloqueado en ese slot (si lo hay). */
+    @Transactional(readOnly = true)
+    public List<Materia> listarMateriasDisponibles(Long institucionId, Long nivelId, Long periodoId, String dia,
+            Integer numeroLeccion, Long materiaSeleccionadaId) {
+        List<Materia> materias = listarMateriasActivas(institucionId);
+        Optional<TipoMateria> tipoBloqueado = seccionBloqueoService.tipoBloqueado(
+                institucionId, periodoId, nivelId, dia, numeroLeccion);
+        if (tipoBloqueado.isEmpty()) {
+            return materias;
+        }
+        Long tipoId = tipoBloqueado.get().getId();
+        return materias.stream()
+                .filter(m -> Objects.equals(m.getId(), materiaSeleccionadaId)
+                        || (m.getTipoMateria() != null && m.getTipoMateria().getId().equals(tipoId)))
+                .toList();
+    }
+
+    public void alternarBloqueoSeccion(Long institucionId, Long periodoId, Long nivelId, String dia,
+            Integer numeroLeccion, Long tipoMateriaId) {
+        seccionBloqueoService.alternar(institucionId, periodoId, nivelId, dia, numeroLeccion, tipoMateriaId);
     }
 
     public static String clave(String dia, Integer numeroLeccion) {
