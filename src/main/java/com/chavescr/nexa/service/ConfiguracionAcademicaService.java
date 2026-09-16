@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,7 @@ public class ConfiguracionAcademicaService {
     private final DocenteGuiaService docenteGuiaService;
     private final DocenteBloqueoService docenteBloqueoService;
     private final SeccionBloqueoService seccionBloqueoService;
+    private final EnvioNotasDocenteService envioNotasDocenteService;
     private final ConfiguracionInstitucionService configuracionInstitucionService;
 
     public ConfiguracionAcademicaService(InstitucionRepository institucionRepository,
@@ -65,6 +67,7 @@ public class ConfiguracionAcademicaService {
             DocenteGuiaService docenteGuiaService,
             DocenteBloqueoService docenteBloqueoService,
             SeccionBloqueoService seccionBloqueoService,
+            EnvioNotasDocenteService envioNotasDocenteService,
             ConfiguracionInstitucionService configuracionInstitucionService) {
         this.institucionRepository = institucionRepository;
         this.periodoRepository = periodoRepository;
@@ -79,6 +82,7 @@ public class ConfiguracionAcademicaService {
         this.docenteGuiaService = docenteGuiaService;
         this.docenteBloqueoService = docenteBloqueoService;
         this.seccionBloqueoService = seccionBloqueoService;
+        this.envioNotasDocenteService = envioNotasDocenteService;
         this.configuracionInstitucionService = configuracionInstitucionService;
     }
 
@@ -116,6 +120,21 @@ public class ConfiguracionAcademicaService {
         if (datos.getFechaFin().isBefore(datos.getFechaInicio())) {
             throw new IllegalArgumentException("La fecha final no puede ser anterior a la fecha inicial");
         }
+        if (datos.getId() == null) {
+            periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId)
+                    .stream().findFirst()
+                    .ifPresent(actual -> {
+                        var pendientes = envioNotasDocenteService.listarPendientes(institucionId, actual.getId());
+                        if (!pendientes.isEmpty()) {
+                            String nombres = pendientes.stream()
+                                    .map(EnvioNotasDocenteService.DocentePendiente::nombre)
+                                    .collect(Collectors.joining(", "));
+                            throw new IllegalArgumentException(
+                                    "No se puede crear un nuevo período: faltan " + pendientes.size()
+                                            + " docente(s) por enviar notas del período actual (" + nombres + ")");
+                        }
+                    });
+        }
         PeriodoAcademico periodo = datos.getId() == null
                 ? new PeriodoAcademico()
                 : obtenerPeriodo(institucionId, datos.getId());
@@ -133,6 +152,7 @@ public class ConfiguracionAcademicaService {
         horarioRepository.deleteByInstitucionIdAndPeriodoId(institucionId, id);
         docenteBloqueoService.eliminarPorPeriodo(institucionId, id);
         seccionBloqueoService.eliminarPorPeriodo(institucionId, id);
+        envioNotasDocenteService.eliminarPorPeriodo(institucionId, id);
         periodoRepository.delete(periodo);
     }
 

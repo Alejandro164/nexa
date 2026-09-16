@@ -83,13 +83,17 @@ public class PromedioService {
         return materiaRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
     }
 
+    /** El período activo más reciente de la institución (o null si no hay ninguno). */
+    public PeriodoAcademico periodoActual(Long institucionId) {
+        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId)
+                .stream().findFirst().orElse(null);
+    }
+
     public List<FilaPromedio> calcularPromedio(Long institucionId, Long nivelId, Long materiaId) {
-        List<PeriodoAcademico> periodosActivos = periodoRepository
-                .findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId);
-        if (periodosActivos.isEmpty()) {
+        PeriodoAcademico periodo = periodoActual(institucionId);
+        if (periodo == null) {
             return List.of();
         }
-        PeriodoAcademico periodo = periodosActivos.get(0);
         Long periodoId = periodo.getId();
 
         List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);

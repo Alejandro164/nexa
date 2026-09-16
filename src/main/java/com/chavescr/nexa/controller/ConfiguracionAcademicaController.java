@@ -63,7 +63,13 @@ public class ConfiguracionAcademicaController {
     public String guardarPeriodo(@ModelAttribute PeriodoAcademico periodo, Model model,
             HttpSession session, HttpServletResponse response) {
         Long institucionId = requerirInstitucion(session);
-        service.guardarPeriodo(institucionId, periodo);
+        try {
+            service.guardarPeriodo(institucionId, periodo);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("periodos", service.listarPeriodos(institucionId));
+            notificarError(response, e.getMessage());
+            return "configuracion-academica/periodos/periodos :: content";
+        }
         model.addAttribute("periodos", service.listarPeriodos(institucionId));
         notificarGuardado(response, "Período guardado correctamente");
         return "configuracion-academica/periodos/periodos :: content";

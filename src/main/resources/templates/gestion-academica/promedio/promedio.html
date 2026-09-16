@@ -33,6 +33,26 @@
         </div>
 
         <th:block th:if="${nivelId != null and materiaId != null}">
+            <div th:if="${esDocente}"
+                 style="margin: 1rem 1.5rem 0; padding: 0.85rem 1rem; border-radius: 10px; background: var(--input-bg); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                <span th:unless="${notasEnviadas}" style="color: var(--text-secondary); font-size: 0.85rem;">
+                    Cuando termines de calificar esta sección, envía las notas finales.
+                </span>
+                <span th:if="${notasEnviadas}" class="badge badge-success">✓ Notas enviadas</span>
+                <div style="display:flex; gap:0.5rem;">
+                    <button th:unless="${notasEnviadas}" type="button" class="btn-primary"
+                            th:attr="hx-post=@{/gestion-academica/promedio/enviar(nivelId=${nivelId}, materiaId=${materiaId})}"
+                            hx-target="#promedio-panel" hx-swap="innerHTML">
+                        Enviar notas finales
+                    </button>
+                    <button th:if="${notasEnviadas}" type="button" class="btn-secondary"
+                            th:attr="hx-post=@{/gestion-academica/promedio/enviar/deshacer(nivelId=${nivelId}, materiaId=${materiaId})}"
+                            hx-target="#promedio-panel" hx-swap="innerHTML">
+                        Deshacer envío
+                    </button>
+                </div>
+            </div>
+
             <div class="table-container">
                 <table class="table">
                     <thead>
