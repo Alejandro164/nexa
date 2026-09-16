@@ -105,6 +105,9 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
 
     boolean existsByInstitucionIdAndDia(Long institucionId, String dia);
 
+    boolean existsByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
+            Long institucionId, Long periodoId, Long nivelId, String dia, Integer numeroLeccion);
+
     void deleteByInstitucionIdAndPeriodoId(Long institucionId, Long periodoId);
     void deleteByInstitucionIdAndNivelId(Long institucionId, Long nivelId);
     void deleteByInstitucionIdAndMateriaId(Long institucionId, Long materiaId);

@@ -30,6 +30,12 @@
                     <input type="hidden" name="nivelId" th:value="${nivelId}">
                     <input type="hidden" name="dia" th:value="${leccion.dia}">
                     <input type="hidden" name="numeroLeccion" th:value="${leccion.numeroLeccion}">
+                    <input type="hidden" name="tipoBloqueoId" th:if="${tipoBloqueoId != null}" th:value="${tipoBloqueoId}">
+
+                    <p class="academic-help" th:if="${tipoMateriaBloqueada != null}"
+                       th:text="|Esta lección solo admite materias de tipo: ${tipoMateriaBloqueada.nombre}|">
+                        Esta lección solo admite materias de tipo: Deportiva
+                    </p>
 
                     <div class="form-group">
                         <label class="form-label">Materia</label>
@@ -79,8 +85,8 @@
 <div th:fragment="docentes-select" id="horario-docente-field" class="form-group">
     <label class="form-label">Profesor</label>
     <select class="form-input" name="docenteId"
-            th:required="${materiaId != null}"
-            th:disabled="${materiaId == null}">
+            th:required="${materiaId != null and !docentes.empty}"
+            th:disabled="${materiaId == null or docentes.empty}">
         <option value="" hidden
                 th:text="${materiaId == null
                           ? 'Seleccione una materia primero'
