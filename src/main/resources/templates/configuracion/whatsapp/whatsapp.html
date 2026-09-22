@@ -1,0 +1,184 @@
+<div th:fragment="content" id="whatsapp-panel" xmlns:th="http://www.thymeleaf.org">
+
+    <style>
+        .whatsapp-help {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin: 4px 0 0;
+        }
+
+        .whatsapp-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .whatsapp-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .whatsapp-toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 0.5rem;
+        }
+
+        .whatsapp-toggle {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .whatsapp-toggle input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .whatsapp-toggle-track {
+            position: absolute;
+            inset: 0;
+            background: #e2e8f0;
+            border-radius: 9999px;
+            pointer-events: none;
+            transition: background .15s;
+        }
+
+        .whatsapp-toggle input:checked+.whatsapp-toggle-track {
+            background: var(--primary);
+        }
+
+        .whatsapp-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+            pointer-events: none;
+            transition: transform .15s;
+        }
+
+        .whatsapp-toggle input:checked~.whatsapp-toggle-thumb {
+            transform: translateX(18px);
+        }
+    </style>
+
+    <div th:if="${sinInstitucionAdmin}" class="card" style="padding: 2.5rem; text-align: center;">
+        <p style="color: var(--text-secondary);">Selecciona una institución en la barra lateral para configurar la
+            conexión con WhatsApp.</p>
+    </div>
+
+    <div th:unless="${sinInstitucionAdmin}">
+        <div class="card">
+            <form hx-post="/configuracion/whatsapp" hx-target="#whatsapp-panel" hx-swap="outerHTML"
+                  hx-indicator="#whatsapp-loading">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">WhatsApp Business (Meta Cloud API)</h3>
+                        <p class="whatsapp-help">Conecta el número de WhatsApp Business de la institución para poder
+                            enviar notificaciones a padres y personal.</p>
+                    </div>
+                    <span class="badge" th:classappend="${whatsappConfig.activo} ? 'badge-success' : 'badge-secondary'"
+                          th:text="${whatsappConfig.activo} ? 'Envío activo' : 'Envío desactivado'">Envío
+                        desactivado</span>
+                </div>
+
+                <div id="whatsapp-loading" class="htmx-indicator panel-loading-overlay"
+                     style="align-items: center; justify-content: flex-start; padding-top: 4rem;">
+                    <div class="spinner"></div>
+                    <span>Guardando...</span>
+                </div>
+
+                <div style="padding: 2rem;">
+                    <div class="whatsapp-form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Phone Number ID</label>
+                            <input class="form-input" type="text" name="phoneNumberId" required
+                                   th:value="${whatsappConfig.phoneNumberId}" placeholder="Ej: 109876543210123">
+                            <p class="whatsapp-help">Meta Business Suite → WhatsApp → Configuración de la API.</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ID de cuenta de WhatsApp Business (opcional)</label>
+                            <input class="form-input" type="text" name="businessAccountId"
+                                   th:value="${whatsappConfig.businessAccountId}" placeholder="Ej: 123456789012345">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Número para mostrar</label>
+                            <input class="form-input" type="text" name="numeroMostrar"
+                                   th:value="${whatsappConfig.numeroMostrar}" placeholder="Ej: +506 8888-8888">
+                            <p class="whatsapp-help">Solo para identificarlo en esta pantalla; no afecta el envío.</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Token de acceso</label>
+                            <input class="form-input" type="password" name="accessToken" autocomplete="off"
+                                   th:placeholder="${whatsappConfig.tieneToken()} ? 'Dejar en blanco para mantener el token actual' : 'Token permanente del System User de Meta'">
+                            <p class="whatsapp-help">Se guarda cifrado. Usa un token permanente de un System User, no
+                                el token temporal de prueba.</p>
+                        </div>
+                    </div>
+
+                    <div class="whatsapp-toggle-row">
+                        <label class="whatsapp-toggle">
+                            <input type="checkbox" name="activo" th:checked="${whatsappConfig.activo}">
+                            <span class="whatsapp-toggle-track"></span><span class="whatsapp-toggle-thumb"></span>
+                        </label>
+                        <div>
+                            <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">Habilitar
+                                envío de notificaciones</div>
+                            <div class="whatsapp-help">Con esto desactivado, la conexión queda guardada pero ninguna
+                                funcionalidad enviará mensajes automáticos.</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1.5rem;">
+                        <button type="submit" class="btn btn-primary">Guardar configuración</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="card" th:if="${whatsappConfig.id != null}" style="margin-top: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title">Probar conexión</h3>
+                <span th:if="${whatsappConfig.ultimaPruebaExitosa != null}" class="badge badge-success"
+                      th:text="'Última prueba: ' + ${#temporals.format(whatsappConfig.ultimaPruebaExitosa, 'dd/MM/yyyy HH:mm')}">Última
+                    prueba</span>
+            </div>
+            <div style="padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between;">
+                    <p class="whatsapp-help" style="margin: 0;">Valida el Phone Number ID y el token guardados contra
+                        la API de Meta, sin enviar ningún mensaje.</p>
+                    <button class="btn btn-secondary" hx-post="/configuracion/whatsapp/probar"
+                            hx-target="#whatsapp-panel" hx-swap="outerHTML" hx-indicator="#whatsapp-loading">
+                        Probar conexión
+                    </button>
+                </div>
+                <form hx-post="/configuracion/whatsapp/prueba-mensaje" hx-target="#whatsapp-panel"
+                      hx-swap="outerHTML" hx-indicator="#whatsapp-loading"
+                      style="display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                    <div class="form-group" style="margin: 0; flex: 1; min-width: 220px;">
+                        <label class="form-label">Enviar mensaje de prueba a</label>
+                        <input class="form-input" type="text" name="telefonoPrueba" required
+                               placeholder="Ej: 50688888888">
+                        <p class="whatsapp-help">Incluye el código de país. El destinatario debe existir en WhatsApp.
+                        </p>
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Enviar mensaje de prueba</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

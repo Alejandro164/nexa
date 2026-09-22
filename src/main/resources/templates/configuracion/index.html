@@ -381,6 +381,38 @@
                     </div>
                 </div>
 
+                <!-- Integraciones -->
+                <div class="nav-dropdown" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                    <button class="config-tab-btn" :class="{'active': ['whatsapp'].includes(activeTab)}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Integraciones
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </button>
+                    <div class="nav-dropdown-panel" style="border-radius: 14px; top: calc(100% + 5px);" x-show="open">
+                        <button class="nav-dropdown-item" @click="activeTab = 'whatsapp'; open = false"
+                            :class="{'active': activeTab === 'whatsapp'}">
+                            <span class="item-icon" style="background:rgba(34,197,94,0.1)">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16a34a"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+                                </svg>
+                            </span>
+                            <span class="item-text">
+                                <span class="item-title">WhatsApp</span>
+                                <span class="item-desc">Conexión y envío de notificaciones</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
                 </div>
             </div>
 
@@ -698,9 +730,30 @@
                     </div>
                 </div>
 
+                <!-- 13. WhatsApp -->
+                <div x-show="activeTab === 'whatsapp'" x-cloak>
+                    <div th:replace="~{configuracion/whatsapp/whatsapp :: content}"></div>
+                </div>
+
             </div>
 
         </div>
+
+        <script>
+            if (!window.whatsappEventsRegistrados) {
+                document.addEventListener('whatsappGuardado', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje);
+                    }
+                });
+                document.addEventListener('whatsappError', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje, 'error');
+                    }
+                });
+                window.whatsappEventsRegistrados = true;
+            }
+        </script>
     </main>
     </th:block>
 
