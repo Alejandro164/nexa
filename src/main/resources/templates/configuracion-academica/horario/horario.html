@@ -79,7 +79,7 @@
                  th:style="|--schedule-days:${#lists.size(dias)}; min-width: calc(100px + ${#lists.size(dias)} * 150px)|">
                 <div class="schedule-head schedule-hour">Lección</div>
                 <div class="schedule-head" th:each="dia : ${dias}"
-                     th:text="${T(com.chavescr.nexa.entity.ConfiguracionInstitucion).etiquetaDia(dia)}">Lunes</div>
+                     th:text="${T(com.chavescr.nexa.entity.DiaLaboral).etiqueta(dia)}">Lunes</div>
 
                 <th:block th:each="numero : ${lecciones}">
                     <div class="schedule-hour">

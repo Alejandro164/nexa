@@ -19,6 +19,7 @@ public enum ModuloSistema {
     EVALUACION_ACADEMICA("/evaluacion-academica", "Evaluación Académica"),
     CONDUCTA("/conducta", "Conducta"),
     NOTAS("/notas", "Notas"),
+    ENTREGAS_ACADEMICAS("/entregas-academicas", "Entregas académicas"),
     COMEDOR("/comedor", "Comedor"),
     NUBE("/nube-nexa", "Nube Nexa"),
     ARCHIVO_GRADUADOS("/archivo-graduados", "Archivo Graduados"),
@@ -31,6 +32,7 @@ public enum ModuloSistema {
     COMPONENTES("/componentes", "Componentes"),
     CONFIGURACION("/configuracion", "Configuración"),
     CONFIGURACION_ACADEMICA("/configuracion-academica", "Configuración Académica"),
+    CONFIGURACION_INSTITUCIONAL("/configuracion-institucional", "Configuración Institucional"),
     USUARIOS("/usuarios", "Usuarios"),
     SEGURIDAD("/seguridad", "Seguridad"),
     INSTITUCIONES("/instituciones", "Instituciones");

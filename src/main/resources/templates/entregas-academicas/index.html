@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Entregas académicas — Nexa</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Entregas académicas</h2>
+    <p layout:fragment="page-subtitle">Entregas, pendientes y mantenimiento académico</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">Entregas académicas</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Entregas, pendientes y mantenimiento académico</p>
+    <main layout:fragment="content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar { display: none; }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 12px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane { animation: fadeIn 0.35s ease-out; }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .academic-help {
+                color: var(--text-secondary);
+                font-size: 0.84rem;
+                margin-top: 0.3rem;
+            }
+            .entregas-form {
+                padding: 1.5rem;
+            }
+            .entregas-form .form-input,
+            .entregas-form .form-select {
+                padding-left: 0.75rem;
+            }
+            .entregas-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+            }
+            .entregas-grid .span-2 { grid-column: span 2; }
+            @media (max-width: 768px) {
+                .entregas-grid,
+                .entregas-grid .span-2 {
+                    grid-template-columns: 1fr;
+                    grid-column: span 1;
+                }
+            }
+            .entregas-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.75rem;
+                border-top: 1px solid var(--border);
+                padding-top: 1.25rem;
+                margin-top: 0.5rem;
+            }
+        </style>
+
+        <div x-data>
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button class="config-tab-btn" :class="{ 'active': $store.entregas.activeTab === 'entregas' }"
+                            @click="$store.entregas.activeTab = 'entregas'">
+                        Entregas
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': $store.entregas.activeTab === 'pendientes' }"
+                            @click="$store.entregas.activeTab = 'pendientes'">
+                        Pendientes
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': $store.entregas.activeTab === 'mantenimiento' }"
+                            @click="$store.entregas.activeTab = 'mantenimiento'">
+                        Mantenimiento
+                    </button>
+                </div>
+            </div>
+
+            <div x-show="$store.entregas.activeTab === 'entregas'" class="tab-pane">
+                <div th:replace="~{entregas-academicas/entregas/entregas :: content}"></div>
+            </div>
+            <div x-show="$store.entregas.activeTab === 'pendientes'" class="tab-pane" x-cloak>
+                <div th:replace="~{entregas-academicas/pendientes/pendientes :: content}"></div>
+            </div>
+            <div x-show="$store.entregas.activeTab === 'mantenimiento'" class="tab-pane" x-cloak>
+                <div th:replace="~{entregas-academicas/mantenimiento/mantenimiento :: content}"></div>
+            </div>
+        </div>
+
+        <script>
+            (function asegurarStoreEntregas() {
+                function crear() {
+                    if (!window.Alpine || typeof Alpine.store !== 'function') {
+                        return;
+                    }
+                    if (!Alpine.store('entregas')) {
+                        Alpine.store('entregas', { activeTab: 'entregas' });
+                    }
+                }
+                crear();
+                document.addEventListener('alpine:init', crear);
+            })();
+        </script>
+    </main>
+    </th:block>
+
+</body>
+
+</html>

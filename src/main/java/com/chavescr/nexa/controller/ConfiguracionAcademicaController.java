@@ -1,9 +1,5 @@
 package com.chavescr.nexa.controller;
 
-import java.time.LocalTime;
-import java.util.List;
-
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.BloqueoLeccion;
 import com.chavescr.nexa.entity.ConfiguracionInstitucion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
@@ -214,12 +211,17 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("tipoBloqueoId", tipoBloqueoId);
         Long materiaId = leccion.getMateria() != null ? leccion.getMateria().getId() : null;
         Long docenteId = leccion.getDocente() != null ? leccion.getDocente().getId() : null;
+        BloqueoLeccion bloqueo = service.bloqueoDeCelda(institucionId, nivelId, dia, numeroLeccion);
+        boolean leccionCerrada = bloqueo != null && bloqueo.estaCerrada();
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("docenteSeleccionadoId", docenteId);
-        model.addAttribute("materias", service.listarMateriasDisponibles(
-                institucionId, nivelId, periodoId, dia, numeroLeccion, materiaId));
-        model.addAttribute("tipoMateriaBloqueada", service.obtenerBloqueosSeccion(institucionId, periodoId, nivelId)
-                .get(ConfiguracionAcademicaService.clave(dia, numeroLeccion)));
+        model.addAttribute("leccionCerrada", leccionCerrada);
+        model.addAttribute("bloqueoMotivo", bloqueo != null ? bloqueo.getMotivo() : null);
+        model.addAttribute("bloqueoTipoNombre",
+                bloqueo != null && bloqueo.getTipoMateria() != null ? bloqueo.getTipoMateria().getNombre() : null);
+        model.addAttribute("materias", leccionCerrada
+                ? java.util.List.of()
+                : service.listarMateriasParaHorario(institucionId, nivelId, dia, numeroLeccion, materiaId));
         model.addAttribute("docentes", service.listarDocentesDisponibles(
                 institucionId, materiaId, docenteId, periodoId, dia, numeroLeccion, id));
         model.addAttribute("docentesAsociadosVacios",
@@ -302,50 +304,13 @@ public class ConfiguracionAcademicaController {
         return "configuracion-academica/horario/horario :: content";
     }
 
-    @GetMapping("/jornada")
-    public String jornada(Model model, HttpSession session) {
-        cargarJornada(model, requerirInstitucion(session));
-        return "configuracion-academica/jornada/jornada :: content";
-    }
-
-    @PostMapping("/jornada")
-    public String guardarJornada(@RequestParam Integer cantidadLecciones,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime inicioJornada,
-            @RequestParam Integer minutosLeccion,
-            @RequestParam(required = false) Integer minutosRecreo,
-            @RequestParam(name = "minutosRecreos", required = false) List<Integer> minutosRecreos,
-            @RequestParam Integer leccionesPorBloque,
-            @RequestParam(required = false) Integer leccionAlmuerzo,
-            @RequestParam(required = false) Integer minutosAlmuerzo,
-            @RequestParam(name = "dias", required = false) List<String> dias,
-            Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
-        try {
-            service.guardarJornada(institucionId, cantidadLecciones, inicioJornada, minutosLeccion,
-                    minutosRecreo, minutosRecreos, leccionesPorBloque, leccionAlmuerzo, minutosAlmuerzo, dias);
-            cargarJornada(model, institucionId);
-            response.setHeader("HX-Trigger",
-                    "{\"academicoGuardado\":{\"mensaje\":\"Jornada lectiva actualizada\",\"recargarHorario\":true}}");
-        } catch (IllegalArgumentException e) {
-            cargarJornada(model, institucionId);
-            notificarError(response, e.getMessage());
-        }
-        return "configuracion-academica/jornada/jornada :: content";
-    }
-
     private void cargarPagina(Model model, Long institucionId) {
         model.addAttribute("periodos", service.listarPeriodos(institucionId));
         model.addAttribute("niveles", service.listarNiveles(institucionId));
         model.addAttribute("materias", service.listarMaterias(institucionId));
         model.addAttribute("aulas", service.listarAulas(institucionId));
         cargarHorario(model, institucionId, null, null, null);
-        model.addAttribute("configJornada", service.obtenerConfiguracion(institucionId));
-        model.addAttribute("diasCatalogo", ConfiguracionInstitucion.DIAS_CATALOGO);
-    }
 
-    private void cargarJornada(Model model, Long institucionId) {
-        model.addAttribute("configJornada", service.obtenerConfiguracion(institucionId));
-        model.addAttribute("diasCatalogo", ConfiguracionInstitucion.DIAS_CATALOGO);
     }
 
     private void cargarHorario(Model model, Long institucionId, Long periodoId, Long nivelId, Long tipoBloqueoId) {

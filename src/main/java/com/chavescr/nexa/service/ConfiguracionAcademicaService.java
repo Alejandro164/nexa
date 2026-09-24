@@ -1,6 +1,5 @@
 package com.chavescr.nexa.service;
 
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.BloqueoLeccion;
 import com.chavescr.nexa.entity.ConfiguracionInstitucion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Institucion;
@@ -50,6 +50,7 @@ public class ConfiguracionAcademicaService {
     private final DocenteMateriaService docenteMateriaService;
     private final DocenteGuiaService docenteGuiaService;
     private final DocenteBloqueoService docenteBloqueoService;
+    private final BloqueoLeccionService bloqueoLeccionService;
     private final SeccionBloqueoService seccionBloqueoService;
     private final EnvioNotasDocenteService envioNotasDocenteService;
     private final ConfiguracionInstitucionService configuracionInstitucionService;
@@ -66,6 +67,7 @@ public class ConfiguracionAcademicaService {
             DocenteMateriaService docenteMateriaService,
             DocenteGuiaService docenteGuiaService,
             DocenteBloqueoService docenteBloqueoService,
+            BloqueoLeccionService bloqueoLeccionService,
             SeccionBloqueoService seccionBloqueoService,
             EnvioNotasDocenteService envioNotasDocenteService,
             ConfiguracionInstitucionService configuracionInstitucionService) {
@@ -81,23 +83,16 @@ public class ConfiguracionAcademicaService {
         this.docenteMateriaService = docenteMateriaService;
         this.docenteGuiaService = docenteGuiaService;
         this.docenteBloqueoService = docenteBloqueoService;
+        this.bloqueoLeccionService = bloqueoLeccionService;
         this.seccionBloqueoService = seccionBloqueoService;
         this.envioNotasDocenteService = envioNotasDocenteService;
+
         this.configuracionInstitucionService = configuracionInstitucionService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
     public ConfiguracionInstitucion obtenerConfiguracion(Long institucionId) {
         return configuracionInstitucionService.obtener(institucionId);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public ConfiguracionInstitucion guardarJornada(Long institucionId, Integer cantidadLecciones,
-            LocalTime inicioJornada, Integer minutosLeccion, Integer minutosRecreo, List<Integer> minutosRecreos,
-            Integer leccionesPorBloque, Integer leccionAlmuerzo, Integer minutosAlmuerzo, List<String> dias) {
-        return configuracionInstitucionService.guardar(institucionId, cantidadLecciones, inicioJornada,
-                minutosLeccion, minutosRecreo, minutosRecreos, leccionesPorBloque, leccionAlmuerzo,
-                minutosAlmuerzo, dias);
     }
 
     @Transactional(readOnly = true)
@@ -199,6 +194,20 @@ public class ConfiguracionAcademicaService {
     @Transactional(readOnly = true)
     public List<Materia> listarMateriasActivas(Long institucionId) {
         return materiaRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Materia> listarMateriasParaHorario(Long institucionId, Long nivelId, String dia,
+            Integer numeroLeccion, Long materiaActualId) {
+        NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
+        return bloqueoLeccionService.filtrarMaterias(institucionId, nivel.getGrado(), dia, numeroLeccion,
+                listarMateriasActivas(institucionId), materiaActualId);
+    }
+
+    @Transactional(readOnly = true)
+    public BloqueoLeccion bloqueoDeCelda(Long institucionId, Long nivelId, String dia, Integer numeroLeccion) {
+        NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
+        return bloqueoLeccionService.vigente(institucionId, nivel.getGrado(), dia, numeroLeccion);
     }
 
     @Transactional(readOnly = true)
@@ -407,6 +416,8 @@ public class ConfiguracionAcademicaService {
         if (docenteBloqueoService.estaBloqueado(institucionId, periodoId, docenteId, dia, numeroLeccion)) {
             throw new IllegalArgumentException("El docente no está disponible en esta lección");
         }
+        NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
+        bloqueoLeccionService.validarAsignacion(institucionId, nivel.getGrado(), dia, numeroLeccion, materia);
 
         HorarioLeccion leccion;
         if (id != null) {
@@ -428,14 +439,16 @@ public class ConfiguracionAcademicaService {
 
         leccion.setInstitucion(obtenerInstitucion(institucionId));
         leccion.setPeriodo(obtenerPeriodo(institucionId, periodoId));
-        leccion.setNivel(obtenerNivel(institucionId, nivelId));
+        leccion.setNivel(nivel);
         leccion.setMateria(materia);
         leccion.setDocente(usuarioRepository.findActivoByIdAndInstitucionId(docenteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Docente no válido para la institución")));
         leccion.setAula(obtenerAula(institucionId, aulaId));
         leccion.setDia(dia);
         leccion.setNumeroLeccion(numeroLeccion);
-        config.aplicarHorario(leccion);
+        var jornada = config.jornada();
+        leccion.setHoraInicio(jornada.horaInicioLeccion(numeroLeccion));
+        leccion.setHoraFin(jornada.horaFinLeccion(numeroLeccion));
         return horarioRepository.save(leccion);
     }
 

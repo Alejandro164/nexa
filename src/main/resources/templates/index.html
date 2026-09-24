@@ -63,12 +63,14 @@
             }
         });
         document.addEventListener('htmx:historyRestore', updateActiveSidebar);
-        document.addEventListener('academicoGuardado', function () {
+        function recargarBitacoraSiEstaAbierta() {
             var drawer = document.getElementById('bitacora-drawer');
             if (drawer && drawer.classList.contains('is-open') && typeof cargarBitacoraPanel === 'function') {
                 cargarBitacoraPanel();
             }
-        });
+        }
+        document.addEventListener('academicoGuardado', recargarBitacoraSiEstaAbierta);
+        document.addEventListener('institucionalGuardado', recargarBitacoraSiEstaAbierta);
 
         function cargarBitacoraPanel() {
             var panel = document.getElementById('bitacora-panel-body');

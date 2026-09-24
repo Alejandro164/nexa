@@ -1,0 +1,28 @@
+<div th:fragment="content" id="entregas-mantenimiento-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Mantenimiento</h3>
+                <p class="academic-help">Configura y da de alta las entregas académicas de la institución.</p>
+            </div>
+        </div>
+        <form class="entregas-form" onsubmit="return false;">
+            <div class="entregas-grid">
+                <div class="form-group span-2">
+                    <label class="form-label">Nombre</label>
+                    <input class="form-input" type="text" name="nombre" placeholder="Ej. Tarea, proyecto, examen">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Estado</label>
+                    <select class="form-select" name="activo">
+                        <option value="true">Activo</option>
+                        <option value="false">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="entregas-actions">
+                <button type="button" class="btn btn-primary">Guardar mantenimiento</button>
+            </div>
+        </form>
+    </div>
+</div>
