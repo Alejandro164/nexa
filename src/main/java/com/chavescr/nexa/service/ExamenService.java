@@ -142,6 +142,9 @@ public class ExamenService {
         if (datos.getPuntosTotales() == null || datos.getPuntosTotales() <= 0) {
             throw new IllegalArgumentException("Debes indicar los puntos totales de la prueba");
         }
+        if (datos.getFecha() == null) {
+            throw new IllegalArgumentException("Debes indicar la fecha");
+        }
 
         List<Examen> existentes = listarExamenes(institucionId, nivelId, materiaId, periodoActivo.getId());
         int sumaFijosOtros = existentes.stream()
@@ -184,6 +187,7 @@ public class ExamenService {
         }
         examen.setTitulo(datos.getTitulo().trim());
         examen.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
+        examen.setFecha(datos.getFecha());
         examen.setPorcentaje(porcentaje);
         examen.setPuntosTotales(datos.getPuntosTotales());
         return examenRepository.save(examen);

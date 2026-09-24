@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.dto.FilaRubro;
+import com.chavescr.nexa.dto.VistaComponente;
 import com.chavescr.nexa.entity.AccionHistorial;
 import com.chavescr.nexa.entity.ModuloAcademico;
 import com.chavescr.nexa.entity.ProyectoDefinicion;
@@ -48,29 +50,31 @@ public class ProyectoEstudiantilController {
             HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/proyectos/proyectos :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     @GetMapping("/form")
     public String nuevoProyecto(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
             HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("proyecto", new ProyectoDefinicion());
+        model.addAttribute("rubro", new ProyectoDefinicion());
+        model.addAttribute("vista", vistaProyectos());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, null);
-        return "gestion-academica/proyectos/proyecto-form :: form-content";
+        return "gestion-academica/componente/formulario :: form-content";
     }
 
     @GetMapping("/form/{id}")
     public String editarProyecto(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("proyecto", service.obtenerProyecto(institucionId, id));
+        model.addAttribute("rubro", service.obtenerProyecto(institucionId, id));
+        model.addAttribute("vista", vistaProyectos());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, id);
-        return "gestion-academica/proyectos/proyecto-form :: form-content";
+        return "gestion-academica/componente/formulario :: form-content";
     }
 
     @PostMapping
@@ -91,7 +95,7 @@ public class ProyectoEstudiantilController {
             notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/proyectos/proyectos :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     @DeleteMapping("/{id}")
@@ -110,7 +114,7 @@ public class ProyectoEstudiantilController {
             notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/proyectos/proyectos :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     private void notificarGuardado(HttpServletResponse response, String mensaje) {
@@ -158,6 +162,19 @@ public class ProyectoEstudiantilController {
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorProyecto", evaluadosPorProyecto);
         model.addAttribute("promedioPorProyecto", promedioPorProyecto);
+        model.addAttribute("vista", vistaProyectos());
+        model.addAttribute("rubros", proyectos.stream()
+                .map(p -> new FilaRubro(p.getId(), p.getTitulo(), p.getFecha(), p.isPonderado(), p.getPuntosTotales(),
+                        promedioPorProyecto.get(p.getId()), pesosEfectivos.get(p.getId()),
+                        evaluadosPorProyecto.get(p.getId())))
+                .toList());
+    }
+
+    private VistaComponente vistaProyectos() {
+        return new VistaComponente("proyectos-panel", "/gestion-academica/proyectos",
+                "/gestion-academica/proyectos", "/gestion-academica/proyectos/evaluacion/modal",
+                "proyectoId", "Proyecto", "Nuevo Proyecto", "No hay proyectos asignados.",
+                "Debes crear al menos una sección y una materia para asignar proyectos.");
     }
 
     private void cargarContextoPorcentaje(Model model, Long institucionId, Long nivelId, Long materiaId,

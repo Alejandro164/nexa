@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.dto.FilaRubro;
+import com.chavescr.nexa.dto.VistaComponente;
 import com.chavescr.nexa.entity.AccionHistorial;
 import com.chavescr.nexa.entity.ModuloAcademico;
 import com.chavescr.nexa.entity.TareaDefinicion;
@@ -51,29 +53,31 @@ public class TareaDefinicionController {
             HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/tareas/definiciones :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     @GetMapping("/form")
     public String nuevaTarea(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
             HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("tarea", new TareaDefinicion());
+        model.addAttribute("rubro", new TareaDefinicion());
+        model.addAttribute("vista", vistaTareas());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, null);
-        return "gestion-academica/tareas/definicion-form :: form-content";
+        return "gestion-academica/componente/formulario :: form-content";
     }
 
     @GetMapping("/form/{id}")
     public String editarTarea(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("tarea", service.obtenerTarea(institucionId, id));
+        model.addAttribute("rubro", service.obtenerTarea(institucionId, id));
+        model.addAttribute("vista", vistaTareas());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, id);
-        return "gestion-academica/tareas/definicion-form :: form-content";
+        return "gestion-academica/componente/formulario :: form-content";
     }
 
     @PostMapping
@@ -94,7 +98,7 @@ public class TareaDefinicionController {
             notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/tareas/definiciones :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     @DeleteMapping("/{id}")
@@ -113,7 +117,7 @@ public class TareaDefinicionController {
             notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/tareas/definiciones :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     private void notificarGuardado(HttpServletResponse response, String mensaje) {
@@ -164,6 +168,19 @@ public class TareaDefinicionController {
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorTarea", evaluadosPorTarea);
         model.addAttribute("promedioPorTarea", promedioPorTarea);
+        model.addAttribute("vista", vistaTareas());
+        model.addAttribute("rubros", tareas.stream()
+                .map(t -> new FilaRubro(t.getId(), t.getTitulo(), t.getFecha(), t.isPonderado(), t.getPuntosTotales(),
+                        promedioPorTarea.get(t.getId()), pesosEfectivos.get(t.getId()),
+                        evaluadosPorTarea.get(t.getId())))
+                .toList());
+    }
+
+    private VistaComponente vistaTareas() {
+        return new VistaComponente("tareas-definiciones-panel", "/gestion-academica/tareas/definiciones",
+                "/gestion-academica/tareas/definiciones", "/gestion-academica/tareas/evaluacion/modal",
+                "tareaId", "Tarea", "Nueva Tarea", "No hay tareas asignadas.",
+                "Debes crear al menos una sección y una materia para asignar tareas.");
     }
 
     private void cargarContextoPorcentaje(Model model, Long institucionId, Long nivelId, Long materiaId,

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.dto.FilaRubro;
+import com.chavescr.nexa.dto.VistaComponente;
 import com.chavescr.nexa.entity.AccionHistorial;
 import com.chavescr.nexa.entity.Examen;
 import com.chavescr.nexa.entity.ModuloAcademico;
@@ -48,29 +50,31 @@ public class ExamenController {
             HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/examenes/examenes :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     @GetMapping("/form")
     public String nuevaPrueba(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
             HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("examen", new Examen());
+        model.addAttribute("rubro", new Examen());
+        model.addAttribute("vista", vistaExamenes());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, null);
-        return "gestion-academica/examenes/examen-form :: form-content";
+        return "gestion-academica/componente/formulario :: form-content";
     }
 
     @GetMapping("/form/{id}")
     public String editarPrueba(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("examen", service.obtenerExamen(institucionId, id));
+        model.addAttribute("rubro", service.obtenerExamen(institucionId, id));
+        model.addAttribute("vista", vistaExamenes());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, id);
-        return "gestion-academica/examenes/examen-form :: form-content";
+        return "gestion-academica/componente/formulario :: form-content";
     }
 
     @PostMapping
@@ -91,7 +95,7 @@ public class ExamenController {
             notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/examenes/examenes :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     @DeleteMapping("/{id}")
@@ -110,7 +114,7 @@ public class ExamenController {
             notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/examenes/examenes :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     private void notificarGuardado(HttpServletResponse response, String mensaje) {
@@ -158,6 +162,19 @@ public class ExamenController {
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorExamen", evaluadosPorExamen);
         model.addAttribute("promedioPorExamen", promedioPorExamen);
+        model.addAttribute("vista", vistaExamenes());
+        model.addAttribute("rubros", examenes.stream()
+                .map(ex -> new FilaRubro(ex.getId(), ex.getTitulo(), ex.getFecha(), ex.isPonderado(),
+                        ex.getPuntosTotales(), promedioPorExamen.get(ex.getId()), pesosEfectivos.get(ex.getId()),
+                        evaluadosPorExamen.get(ex.getId())))
+                .toList());
+    }
+
+    private VistaComponente vistaExamenes() {
+        return new VistaComponente("examenes-panel", "/gestion-academica/examenes",
+                "/gestion-academica/examenes", "/gestion-academica/examenes/evaluacion/modal",
+                "examenId", "Prueba", "Nueva Prueba", "No hay pruebas programadas.",
+                "Debes crear al menos una sección y una materia para programar pruebas.");
     }
 
     private void cargarContextoPorcentaje(Model model, Long institucionId, Long nivelId, Long materiaId,

@@ -1,5 +1,7 @@
 package com.chavescr.nexa.entity;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -39,6 +41,9 @@ public class Examen {
 
     @Column(length = 1000)
     private String descripcion;
+
+    @Column
+    private LocalDate fecha;
 
     /** Null = ponderado: el sistema reparte el porcentaje restante entre estas pruebas. */
     @Column
@@ -101,6 +106,14 @@ public class Examen {
 
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
+    }
+
+    public LocalDate getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDate fecha) {
+        this.fecha = fecha;
     }
 
     public Integer getPorcentaje() {

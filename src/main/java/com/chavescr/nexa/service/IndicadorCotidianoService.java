@@ -14,6 +14,7 @@ import com.chavescr.nexa.repository.EvaluacionCotidianaRepository;
 import com.chavescr.nexa.repository.IndicadorCotidianoRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
+import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 
 @Service
 @Transactional
@@ -23,14 +24,16 @@ public class IndicadorCotidianoService {
     private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
     private final EvaluacionCotidianaRepository evaluacionRepository;
+    private final PeriodoAcademicoRepository periodoRepository;
 
     public IndicadorCotidianoService(IndicadorCotidianoRepository indicadorRepository,
             NivelAcademicoRepository nivelRepository, MateriaRepository materiaRepository,
-            EvaluacionCotidianaRepository evaluacionRepository) {
+            EvaluacionCotidianaRepository evaluacionRepository, PeriodoAcademicoRepository periodoRepository) {
         this.indicadorRepository = indicadorRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
         this.evaluacionRepository = evaluacionRepository;
+        this.periodoRepository = periodoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -86,6 +89,12 @@ public class IndicadorCotidianoService {
                 .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
         Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
+        if (periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).isEmpty()) {
+            throw new IllegalArgumentException("No hay un período académico activo");
+        }
+        if (datos.getFecha() == null) {
+            throw new IllegalArgumentException("Debes indicar la fecha");
+        }
 
         Integer puntosTotales = datos.getPuntosTotales();
         if (puntosTotales == null || puntosTotales < 1) {
@@ -130,6 +139,7 @@ public class IndicadorCotidianoService {
         indicador.setMateria(materia);
         indicador.setTitulo(datos.getTitulo().trim());
         indicador.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
+        indicador.setFecha(datos.getFecha());
         indicador.setPorcentaje(porcentaje);
         indicador.setPuntosTotales(puntosTotales);
         return indicadorRepository.save(indicador);

@@ -6,42 +6,49 @@
                 <span>Cargando...</span>
             </div>
             <div class="modal-header">
-                <h3 class="modal-title" th:text="${indicador.id == null ? 'Nuevo Indicador' : 'Editar Indicador'}">Indicador</h3>
+                <h3 class="modal-title"
+                    th:text="${rubro.id == null ? vista.botonNuevo : 'Editar ' + vista.etiqueta}">Rubro</h3>
                 <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
             </div>
             <div class="modal-body">
-                <form hx-post="/gestion-academica/cotidiano/indicadores"
-                      hx-target="#indicadores-panel" hx-swap="innerHTML"
+                <form th:attr="hx-post=${vista.formUrl}, hx-target=${'#' + vista.panelId}"
+                      hx-swap="innerHTML"
                       hx-indicator="#modal-loading-overlay"
                       hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()">
-                    <input type="hidden" name="id" th:value="${indicador.id}">
+                    <input type="hidden" name="id" th:value="${rubro.id}">
                     <input type="hidden" name="nivelId" th:value="${nivelId}">
                     <input type="hidden" name="materiaId" th:value="${materiaId}">
 
                     <div class="form-group">
-                        <label class="form-label">Indicador *</label>
+                        <label class="form-label" th:text="${vista.etiqueta} + ' *'">Nombre *</label>
                         <input class="form-input" type="text" name="titulo" required maxlength="200"
-                               th:value="${indicador.titulo}" placeholder="Ej. Resuelve ecuaciones lineales de primer grado">
+                               th:value="${rubro.titulo}">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Descripción</label>
-                        <textarea class="form-textarea" name="descripcion" maxlength="500"
-                                  th:text="${indicador.descripcion}" placeholder="¿Qué mide este indicador?"></textarea>
+                        <textarea class="form-textarea" name="descripcion" maxlength="1000"
+                                  th:text="${rubro.descripcion}"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Fecha *</label>
+                        <input class="form-input" type="date" name="fecha" required
+                               th:value="${rubro.fecha}">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Puntos totales *</label>
                         <div class="input-suffix-wrap">
                             <input class="form-input" type="number" name="puntosTotales" min="1" required
-                                   style="padding-left: 10px;" th:value="${indicador.puntosTotales}" placeholder="Ej. 50">
+                                   style="padding-left: 10px;" th:value="${rubro.puntosTotales}" placeholder="Ej. 50">
                             <span class="input-suffix">pts</span>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <div th:if="${sinCupoPorcentaje}" class="form-alert-error" style="margin-bottom: 10px;">
-                            El 100% ya está asignado a indicadores con porcentaje fijo. Reduce uno de ellos para poder agregar o ponderar este.
+                            El 100% ya está asignado con porcentaje fijo. Reduce uno para poder agregar o ponderar este.
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                             <label class="form-label" style="margin: 0;">Porcentaje</label>
@@ -56,9 +63,7 @@
                                 </button>
                                 <span class="info-tooltip-text" style="width: 280px;">
                                     Ponderado (recomendado): el sistema reparte lo que falte para 100% entre los
-                                    indicadores ponderados. Ejemplo: 2 ponderados → 50% cada uno. Si uno vale 40% fijo
-                                    y hay 2 ponderados, cada ponderado vale 30%. La suma de los porcentajes fijos no
-                                    puede superar 100%.
+                                    registros ponderados. La suma de los porcentajes fijos no puede superar 100%.
                                 </span>
                             </span>
                         </div>
@@ -66,39 +71,39 @@
                             <label class="radio-label">
                                 <input type="radio" name="modoPorcentaje" class="custom-radio" value="ponderado"
                                        id="modo-porcentaje-ponderado"
-                                       th:checked="${indicador.porcentaje == null}"
-                                       onchange="toggleModoPorcentajeIndicador()">
+                                       th:checked="${rubro.porcentaje == null}"
+                                       onchange="toggleModoPorcentajeComponente()">
                                 Ponderado
                             </label>
                             <label class="radio-label">
                                 <input type="radio" name="modoPorcentaje" class="custom-radio" value="fijo"
                                        id="modo-porcentaje-fijo"
-                                       th:checked="${indicador.porcentaje != null}"
-                                       onchange="toggleModoPorcentajeIndicador()">
+                                       th:checked="${rubro.porcentaje != null}"
+                                       onchange="toggleModoPorcentajeComponente()">
                                 Porcentaje fijo
                             </label>
                         </div>
-                        <div id="wrap-porcentaje-fijo" th:style="${indicador.porcentaje == null} ? 'display:none' : ''">
+                        <div id="wrap-porcentaje-fijo" th:style="${rubro.porcentaje == null} ? 'display:none' : ''">
                             <div class="input-suffix-wrap">
-                                <input class="form-input" type="number" name="porcentaje" id="indicador-porcentaje"
+                                <input class="form-input" type="number" name="porcentaje" id="componente-porcentaje"
                                        min="1" th:max="${porcentajeDisponible}"
                                        style="padding-left: 10px;"
-                                       th:value="${indicador.porcentaje}"
-                                       th:disabled="${indicador.porcentaje == null}"
-                                       th:required="${indicador.porcentaje != null}"
+                                       th:value="${rubro.porcentaje}"
+                                       th:disabled="${rubro.porcentaje == null}"
+                                       th:required="${rubro.porcentaje != null}"
                                        th:placeholder="|Máx. ${porcentajeDisponible}%|"
-                                       oninput="limitarPorcentajeIndicador(this)">
+                                       oninput="limitarPorcentajeComponente(this)">
                                 <span class="input-suffix">%</span>
                             </div>
                             <p class="text-muted text-sm" style="margin: 6px 0 0 0;"
                                th:text="'Disponible: ' + ${porcentajeDisponible} + '% de 100%. No se puede superar ese tope.'">
-                                Disponible: 100% de 100%. No se puede superar ese tope.
+                                Disponible: 100% de 100%.
                             </p>
                         </div>
                         <p id="hint-porcentaje-ponderado" class="text-muted text-sm" style="margin: 0;"
-                           th:style="${indicador.porcentaje != null} ? 'display:none; margin: 0;' : 'margin: 0;'"
-                           th:text="'El sistema asignará ' + ${#numbers.formatDecimal(pesoPonderadoEstimado, 1, 1)} + '% a este indicador (reparte el ' + ${porcentajeDisponible} + '% restante entre los ponderados).'">
-                            El sistema asignará 50.0% a este indicador.
+                           th:style="${rubro.porcentaje != null} ? 'display:none; margin: 0;' : 'margin: 0;'"
+                           th:text="'El sistema asignará ' + ${#numbers.formatDecimal(pesoPonderadoEstimado, 1, 1)} + '% (reparte el ' + ${porcentajeDisponible} + '% restante entre los ponderados).'">
+                            El sistema asignará 50.0%.
                         </p>
                     </div>
 
@@ -111,9 +116,9 @@
         </div>
     </div>
     <script>
-        window.toggleModoPorcentajeIndicador = function () {
+        window.toggleModoPorcentajeComponente = function () {
             var ponderado = document.getElementById('modo-porcentaje-ponderado');
-            var input = document.getElementById('indicador-porcentaje');
+            var input = document.getElementById('componente-porcentaje');
             var wrap = document.getElementById('wrap-porcentaje-fijo');
             var hint = document.getElementById('hint-porcentaje-ponderado');
             if (!ponderado || !input) return;
@@ -131,7 +136,7 @@
                 input.focus();
             }
         };
-        window.limitarPorcentajeIndicador = function (input) {
+        window.limitarPorcentajeComponente = function (input) {
             if (input.value === '') return;
             var val = Number(input.value);
             var tope = Math.min(100, Number(input.max) || 100);

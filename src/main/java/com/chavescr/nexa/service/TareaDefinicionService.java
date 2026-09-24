@@ -12,6 +12,7 @@ import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.TareaDefinicion;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
+import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 import com.chavescr.nexa.repository.TareaCalificacionRepository;
 import com.chavescr.nexa.repository.TareaDefinicionRepository;
 
@@ -23,14 +24,16 @@ public class TareaDefinicionService {
     private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
     private final TareaCalificacionRepository calificacionRepository;
+    private final PeriodoAcademicoRepository periodoRepository;
 
     public TareaDefinicionService(TareaDefinicionRepository tareaDefinicionRepository,
             NivelAcademicoRepository nivelRepository, MateriaRepository materiaRepository,
-            TareaCalificacionRepository calificacionRepository) {
+            TareaCalificacionRepository calificacionRepository, PeriodoAcademicoRepository periodoRepository) {
         this.tareaDefinicionRepository = tareaDefinicionRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
         this.calificacionRepository = calificacionRepository;
+        this.periodoRepository = periodoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -85,6 +88,12 @@ public class TareaDefinicionService {
                 .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
         Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
+        if (periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).isEmpty()) {
+            throw new IllegalArgumentException("No hay un período académico activo");
+        }
+        if (datos.getFecha() == null) {
+            throw new IllegalArgumentException("Debes indicar la fecha");
+        }
 
         Integer puntosTotales = datos.getPuntosTotales();
         if (puntosTotales == null || puntosTotales < 1) {

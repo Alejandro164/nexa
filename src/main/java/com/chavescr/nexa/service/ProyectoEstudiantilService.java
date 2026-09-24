@@ -144,6 +144,9 @@ public class ProyectoEstudiantilService {
         if (datos.getPuntosTotales() == null || datos.getPuntosTotales() <= 0) {
             throw new IllegalArgumentException("Debes indicar los puntos totales del proyecto");
         }
+        if (datos.getFecha() == null) {
+            throw new IllegalArgumentException("Debes indicar la fecha");
+        }
 
         List<ProyectoDefinicion> existentes = listarProyectos(institucionId, nivelId, materiaId, periodoActivo.getId());
         int sumaFijosOtros = existentes.stream()
@@ -186,6 +189,7 @@ public class ProyectoEstudiantilService {
         }
         proyecto.setTitulo(datos.getTitulo().trim());
         proyecto.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
+        proyecto.setFecha(datos.getFecha());
         proyecto.setPorcentaje(porcentaje);
         proyecto.setPuntosTotales(datos.getPuntosTotales());
         return proyectoRepository.save(proyecto);

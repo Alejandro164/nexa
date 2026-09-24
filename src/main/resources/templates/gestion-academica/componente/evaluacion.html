@@ -6,13 +6,13 @@
                 <span>Cargando...</span>
             </div>
             <div class="modal-header">
-                <h3 class="modal-title" th:text="'Evaluar: ' + ${proyecto.titulo}">Evaluar proyecto</h3>
+                <h3 class="modal-title" th:text="'Evaluar: ' + ${rubro.titulo}">Evaluar</h3>
                 <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
             </div>
             <div class="modal-body" style="max-height: 65vh; overflow-y: auto;">
                 <p class="text-muted text-sm" style="margin: 0 0 1rem;">
                     <span th:if="${periodoActivo != null}" th:text="'Período activo: ' + ${periodoActivo.codigo}">Período activo: 2028-2</span>
-                    <span th:text="' · Puntos totales: ' + ${proyecto.puntosTotales}"> · Puntos totales: 50</span>
+                    <span th:if="${rubro.puntosTotales != null}" th:text="' · Puntos totales: ' + ${rubro.puntosTotales}"> · Puntos totales: 50</span>
                 </p>
                 <div class="validacion-puntos-error form-alert-error" style="display:none; margin-bottom: 1rem;"></div>
                 <form id="calificaciones-modal-form" onsubmit="event.preventDefault();">
@@ -20,32 +20,35 @@
                         <thead>
                             <tr>
                                 <th>Estudiante</th>
-                                <th>Puntos obtenidos</th>
+                                <th th:if="${rubro.puntosTotales != null}">Puntos obtenidos</th>
                                 <th>Calificación</th>
                                 <th>Observación</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:if="${filas == null or filas.empty}">
-                                <td colspan="4" class="table-empty">No hay estudiantes activos en esta sección.</td>
+                                <td th:attr="colspan=${rubro.puntosTotales != null ? 4 : 3}" class="table-empty">No hay estudiantes activos en esta sección.</td>
                             </tr>
                             <tr th:each="f : ${filas}">
                                 <td style="font-weight:600;">
                                     <input type="hidden" name="estudianteId" th:value="${f.estudiante.id}">
                                     <span th:text="${f.estudiante.nombre}">Nombre</span>
                                 </td>
-                                <td>
+                                <td th:if="${rubro.puntosTotales != null}">
                                     <div class="input-suffix-wrap" style="max-width: 110px;">
                                         <input type="number" class="form-input" name="puntosObtenidos" min="0"
-                                               th:max="${proyecto.puntosTotales}"
+                                               th:max="${rubro.puntosTotales}"
                                                style="padding-left: 10px;" th:value="${f.puntosObtenidos}"
-                                               th:attr="oninput=|calcularCalificacionDesdeInput(this, ${proyecto.puntosTotales})|"
+                                               th:attr="oninput=|calcularCalificacionDesdeInput(this, ${rubro.puntosTotales})|"
                                                onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
                                         <span class="input-suffix">pts</span>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="calificacion-calculada"
+                                    <input th:if="${rubro.puntosTotales == null}" type="number" class="form-input"
+                                           name="calificacion" min="0" max="100"
+                                           style="max-width: 100px;" th:value="${f.calificacion}">
+                                    <span th:unless="${rubro.puntosTotales == null}" class="calificacion-calculada"
                                           th:text="${f.calificacion != null ? f.calificacion + '%' : '—'}">—</span>
                                 </td>
                                 <td>
@@ -61,9 +64,8 @@
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cerrar</button>
                 <button type="button" class="btn-primary btn-guardar-calificaciones"
-                        hx-post="/gestion-academica/proyectos/evaluacion/guardar-lote"
+                        th:attr="hx-post=${guardarUrl},hx-vals=${'js:{nivelId: ' + nivelId + ', materiaId: ' + materiaId + ', ' + idParam + ': ' + rubro.id + '}'}"
                         hx-include="#calificaciones-modal-form"
-                        th:attr="hx-vals=|js:{nivelId: ${nivelId}, materiaId: ${materiaId}, proyectoId: ${proyecto.id}}|"
                         hx-indicator="#modal-loading-overlay"
                         hx-swap="none">Guardar calificaciones</button>
             </div>

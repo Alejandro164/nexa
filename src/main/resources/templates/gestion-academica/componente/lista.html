@@ -3,16 +3,16 @@
         <div class="card-header">
             <div class="filters-bar" style="width: 100%;">
                 <select class="form-input" style="max-width: 200px;" name="nivelId"
-                        hx-get="/gestion-academica/proyectos"
-                        hx-target="#proyectos-panel" hx-swap="innerHTML"
+                        th:attr="hx-get=${vista.listUrl},hx-target=${'#' + vista.panelId}"
+                        hx-swap="innerHTML"
                         hx-include="[name='materiaId']">
                     <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
                     <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
                             th:selected="${nivelId != null and nivelId == n.id}"></option>
                 </select>
                 <select class="form-input" style="max-width: 220px;" name="materiaId"
-                        hx-get="/gestion-academica/proyectos"
-                        hx-target="#proyectos-panel" hx-swap="innerHTML"
+                        th:attr="hx-get=${vista.listUrl},hx-target=${'#' + vista.panelId}"
+                        hx-swap="innerHTML"
                         hx-include="[name='nivelId']">
                     <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
                     <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
@@ -20,20 +20,21 @@
                 </select>
                 <button class="btn btn-primary" style="width: 220px; height: 38px; padding-top: 0; padding-bottom: 0; white-space: nowrap; margin-left: auto;"
                         th:if="${nivelId != null and materiaId != null and periodoActivo != null}"
-                        th:attr="hx-get='/gestion-academica/proyectos/form?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                        th:attr="hx-get=${vista.formUrl} + '/form?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
                         hx-target="#modal-container" hx-swap="innerHTML"
-                        onclick="abrirModalAcademico()">Nuevo Proyecto</button>
+                        onclick="abrirModalAcademico()" th:text="${vista.botonNuevo}">Nuevo</button>
             </div>
         </div>
 
         <div th:if="${nivelId == null or materiaId == null}"
-             style="padding: 2rem; text-align:center; color: var(--text-secondary);">
-            Debes crear al menos una sección y una materia para asignar proyectos.
+             style="padding: 2rem; text-align:center; color: var(--text-secondary);"
+             th:text="${vista.mensajeSinSeccion}">
+            Debes crear al menos una sección y una materia.
         </div>
 
         <div th:if="${nivelId != null and materiaId != null and periodoActivo == null}"
              class="form-alert-error" style="margin: 1rem 1.5rem;">
-            No hay un período académico activo. Actívalo antes de crear proyectos.
+            No hay un período académico activo. Actívalo antes de crear registros.
         </div>
 
         <th:block th:if="${nivelId != null and materiaId != null and periodoActivo != null}">
@@ -42,8 +43,9 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Proyecto</th>
+                            <th th:text="${vista.etiqueta}">Rubro</th>
                             <th>Promedio</th>
+                            <th>Fecha</th>
                             <th>Porcentaje</th>
                             <th>Puntos Totales</th>
                             <th>Evaluados</th>
@@ -51,25 +53,32 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:if="${proyectos == null or proyectos.empty}">
-                            <td colspan="6" class="table-empty">No hay proyectos asignados.</td>
+                        <tr th:if="${rubros == null or rubros.empty}">
+                            <td colspan="7" class="table-empty" th:text="${vista.mensajeVacio}">No hay registros.</td>
                         </tr>
-                        <tr th:each="p, iter : ${proyectos}">
-                            <td><strong th:text="${p.titulo}">Proyecto</strong></td>
+                        <tr th:each="r : ${rubros}">
+                            <td><strong th:text="${r.titulo}">Rubro</strong></td>
                             <td>
-                                <span th:if="${promedioPorProyecto.get(p.id)} != null"
-                                      th:text="${#numbers.formatDecimal(promedioPorProyecto.get(p.id), 1, 1)} + '%'">85.0%</span>
-                                <span th:unless="${promedioPorProyecto.get(p.id)} != null" class="text-muted">—</span>
+                                <span th:if="${r.promedio != null}"
+                                      th:text="${#numbers.formatDecimal(r.promedio, 1, 1)} + '%'">85.0%</span>
+                                <span th:unless="${r.promedio != null}" class="text-muted">—</span>
                             </td>
                             <td>
-                                <span th:if="${p.ponderado}" class="badge badge-info"
-                                      th:text="'Ponderado · ' + ${#numbers.formatDecimal(pesosEfectivos.get(p.id), 1, 1)} + '%'">Ponderado · 50.0%</span>
-                                <span th:unless="${p.ponderado}" class="badge badge-primary"
-                                      th:text="${#numbers.formatDecimal(pesosEfectivos.get(p.id), 1, 1)} + '%'">15.0%</span>
+                                <span th:if="${r.fecha != null}" th:text="${#temporals.format(r.fecha, 'dd/MM/yyyy')}">01/01/2028</span>
+                                <span th:unless="${r.fecha != null}" class="text-muted">—</span>
                             </td>
-                            <td th:text="${p.puntosTotales} + ' pts'">50 pts</td>
                             <td>
-                                <th:block th:with="evaluados=${evaluadosPorProyecto.get(p.id) != null ? evaluadosPorProyecto.get(p.id) : 0},
+                                <span th:if="${r.ponderado}" class="badge badge-info"
+                                      th:text="'Ponderado · ' + ${#numbers.formatDecimal(r.peso, 1, 1)} + '%'">Ponderado · 50.0%</span>
+                                <span th:unless="${r.ponderado}" class="badge badge-primary"
+                                      th:text="${#numbers.formatDecimal(r.peso, 1, 1)} + '%'">15.0%</span>
+                            </td>
+                            <td>
+                                <span th:if="${r.puntosTotales != null}" th:text="${r.puntosTotales} + ' pts'">50 pts</span>
+                                <span th:unless="${r.puntosTotales != null}" class="text-muted">N/A</span>
+                            </td>
+                            <td>
+                                <th:block th:with="evaluados=${r.evaluados != null ? r.evaluados : 0},
                                                     pendientes=${totalEstudiantesSeccion - evaluados}">
                                     <span th:text="${evaluados} + ' / ' + ${totalEstudiantesSeccion}">0 / 20</span>
                                     <div class="text-muted text-sm"
@@ -79,21 +88,21 @@
                             <td>
                                 <div class="table-actions">
                                     <button class="btn-xs btn-ghost"
-                                            th:attr="hx-get='/gestion-academica/proyectos/evaluacion/modal?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId} + '&proyectoId=' + ${p.id}"
+                                            th:attr="hx-get=${vista.evalUrl} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId} + '&' + ${vista.evalParam} + '=' + ${r.id}"
                                             hx-target="#modal-container" hx-swap="innerHTML"
                                             onclick="abrirModalAcademico()"
                                             title="Evaluar">📝</button>
                                     <button class="btn-xs btn-ghost"
-                                            th:attr="hx-get='/gestion-academica/proyectos/form/' + ${p.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
+                                            th:attr="hx-get=${vista.formUrl} + '/form/' + ${r.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId}"
                                             hx-target="#modal-container" hx-swap="innerHTML"
                                             onclick="abrirModalAcademico()"
                                             title="Editar">✏️</button>
                                     <button class="btn-xs btn-danger-ghost"
                                             onclick="abrirConfirmacionAcademica(this)"
-                                            th:attr="data-delete-url='/gestion-academica/proyectos/' + ${p.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId},
-                                                     data-delete-target='#proyectos-panel',
-                                                     data-delete-title='Eliminar proyecto',
-                                                     data-delete-message='¿Deseas eliminar ' + ${p.titulo} + '? Esta acción no se puede deshacer.'"
+                                            th:attr="data-delete-url=${vista.formUrl} + '/' + ${r.id} + '?nivelId=' + ${nivelId} + '&materiaId=' + ${materiaId},
+                                                     data-delete-target=${'#' + vista.panelId},
+                                                     data-delete-title=${'Eliminar ' + vista.etiqueta},
+                                                     data-delete-message=${'¿Deseas eliminar ' + r.titulo + '? Esta acción no se puede deshacer.'}"
                                             title="Eliminar">🗑️</button>
                                 </div>
                             </td>
@@ -101,7 +110,7 @@
                     </tbody>
                     <tfoot>
                         <tr style="background: rgba(45,90,135,0.05); font-weight: 700; border-top: 2px solid var(--border);">
-                            <td colspan="2">Total asignado</td>
+                            <td colspan="3">Total asignado</td>
                             <td><span style="color: var(--primary);"
                                       th:text="${#numbers.formatDecimal(totalAsignado, 1, 1)} + '%'">0.0%</span></td>
                             <td></td>

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.dto.FilaRubro;
+import com.chavescr.nexa.dto.VistaComponente;
 import com.chavescr.nexa.entity.AccionHistorial;
 import com.chavescr.nexa.entity.IndicadorCotidiano;
 import com.chavescr.nexa.entity.ModuloAcademico;
@@ -52,29 +54,31 @@ public class IndicadorCotidianoController {
             HttpServletRequest request) {
         Long institucionId = requerirInstitucion(session);
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/cotidiano/indicadores :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     @GetMapping("/form")
     public String nuevoIndicador(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
             HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("indicador", new IndicadorCotidiano());
+        model.addAttribute("rubro", new IndicadorCotidiano());
+        model.addAttribute("vista", vistaCotidiano());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, null);
-        return "gestion-academica/cotidiano/indicador-form :: form-content";
+        return "gestion-academica/componente/formulario :: form-content";
     }
 
     @GetMapping("/form/{id}")
     public String editarIndicador(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
-        model.addAttribute("indicador", service.obtenerIndicador(institucionId, id));
+        model.addAttribute("rubro", service.obtenerIndicador(institucionId, id));
+        model.addAttribute("vista", vistaCotidiano());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         cargarContextoPorcentaje(model, institucionId, nivelId, materiaId, id);
-        return "gestion-academica/cotidiano/indicador-form :: form-content";
+        return "gestion-academica/componente/formulario :: form-content";
     }
 
     @PostMapping
@@ -95,7 +99,7 @@ public class IndicadorCotidianoController {
             notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/cotidiano/indicadores :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     @DeleteMapping("/{id}")
@@ -114,7 +118,7 @@ public class IndicadorCotidianoController {
             notificarError(response, e.getMessage());
         }
         cargarPanel(model, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
-        return "gestion-academica/cotidiano/indicadores :: content";
+        return "gestion-academica/componente/lista :: content";
     }
 
     private void notificarGuardado(HttpServletResponse response, String mensaje) {
@@ -165,6 +169,19 @@ public class IndicadorCotidianoController {
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("evaluadosPorIndicador", evaluadosPorIndicador);
         model.addAttribute("promedioPorIndicador", promedioPorIndicador);
+        model.addAttribute("vista", vistaCotidiano());
+        model.addAttribute("rubros", indicadores.stream()
+                .map(i -> new FilaRubro(i.getId(), i.getTitulo(), i.getFecha(), i.isPonderado(), i.getPuntosTotales(),
+                        promedioPorIndicador.get(i.getId()), pesosEfectivos.get(i.getId()),
+                        evaluadosPorIndicador.get(i.getId())))
+                .toList());
+    }
+
+    private VistaComponente vistaCotidiano() {
+        return new VistaComponente("indicadores-panel", "/gestion-academica/cotidiano/indicadores",
+                "/gestion-academica/cotidiano/indicadores", "/gestion-academica/cotidiano/evaluacion/modal",
+                "indicadorId", "Indicador", "Nuevo Indicador", "No hay indicadores definidos.",
+                "Debes crear al menos una sección y una materia para definir indicadores.");
     }
 
     private void cargarContextoPorcentaje(Model model, Long institucionId, Long nivelId, Long materiaId,

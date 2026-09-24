@@ -42,7 +42,7 @@ public class ProyectoCalificacionController {
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         cargarModal(model, institucionId, nivelId, materiaId, proyectoId);
-        return "gestion-academica/proyectos/evaluacion-modal :: modal-content";
+        return "gestion-academica/componente/evaluacion :: modal-content";
     }
 
     @PostMapping("/guardar-lote")
@@ -94,7 +94,7 @@ public class ProyectoCalificacionController {
                             + "\"promedioDesactualizado\":\"\"," + proyectoCalificado + "}");
         }
         cargarModal(model, institucionId, nivelId, materiaId, proyectoId);
-        return "gestion-academica/proyectos/evaluacion-modal :: modal-content";
+        return "gestion-academica/componente/evaluacion :: modal-content";
     }
 
     private String escaparJson(String texto) {
@@ -103,7 +103,9 @@ public class ProyectoCalificacionController {
 
     private void cargarModal(Model model, Long institucionId, Long nivelId, Long materiaId, Long proyectoId) {
         var proyecto = service.obtenerProyecto(institucionId, proyectoId);
-        model.addAttribute("proyecto", proyecto);
+        model.addAttribute("rubro", proyecto);
+        model.addAttribute("guardarUrl", "/gestion-academica/proyectos/evaluacion/guardar-lote");
+        model.addAttribute("idParam", "proyectoId");
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("periodoActivo", proyecto.getPeriodo());

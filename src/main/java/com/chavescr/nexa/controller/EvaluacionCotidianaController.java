@@ -42,7 +42,7 @@ public class EvaluacionCotidianaController {
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         cargarModal(model, institucionId, nivelId, materiaId, indicadorId);
-        return "gestion-academica/cotidiano/evaluacion-modal :: modal-content";
+        return "gestion-academica/componente/evaluacion :: modal-content";
     }
 
     @PostMapping("/guardar-lote")
@@ -98,7 +98,7 @@ public class EvaluacionCotidianaController {
                             + "\"promedioDesactualizado\":\"\"," + cotidianoCalificado + "}");
         }
         cargarModal(model, institucionId, nivelId, materiaId, indicadorId);
-        return "gestion-academica/cotidiano/evaluacion-modal :: modal-content";
+        return "gestion-academica/componente/evaluacion :: modal-content";
     }
 
     private String escaparJson(String texto) {
@@ -108,7 +108,9 @@ public class EvaluacionCotidianaController {
     private void cargarModal(Model model, Long institucionId, Long nivelId, Long materiaId, Long indicadorId) {
         var indicador = service.obtenerIndicador(institucionId, indicadorId);
         var periodoActivo = service.obtenerPeriodoActivo(institucionId);
-        model.addAttribute("indicador", indicador);
+        model.addAttribute("rubro", indicador);
+        model.addAttribute("guardarUrl", "/gestion-academica/cotidiano/evaluacion/guardar-lote");
+        model.addAttribute("idParam", "indicadorId");
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("periodoActivo", periodoActivo);

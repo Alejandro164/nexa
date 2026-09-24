@@ -42,7 +42,7 @@ public class ExamenCalificacionController {
             Model model, HttpSession session) {
         Long institucionId = requerirInstitucion(session);
         cargarModal(model, institucionId, nivelId, materiaId, examenId);
-        return "gestion-academica/examenes/evaluacion-modal :: modal-content";
+        return "gestion-academica/componente/evaluacion :: modal-content";
     }
 
     @PostMapping("/guardar-lote")
@@ -94,7 +94,7 @@ public class ExamenCalificacionController {
                             + "\"promedioDesactualizado\":\"\"," + examenCalificado + "}");
         }
         cargarModal(model, institucionId, nivelId, materiaId, examenId);
-        return "gestion-academica/examenes/evaluacion-modal :: modal-content";
+        return "gestion-academica/componente/evaluacion :: modal-content";
     }
 
     private String escaparJson(String texto) {
@@ -103,7 +103,9 @@ public class ExamenCalificacionController {
 
     private void cargarModal(Model model, Long institucionId, Long nivelId, Long materiaId, Long examenId) {
         var examen = service.obtenerExamen(institucionId, examenId);
-        model.addAttribute("examen", examen);
+        model.addAttribute("rubro", examen);
+        model.addAttribute("guardarUrl", "/gestion-academica/examenes/evaluacion/guardar-lote");
+        model.addAttribute("idParam", "examenId");
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("periodoActivo", examen.getPeriodo());

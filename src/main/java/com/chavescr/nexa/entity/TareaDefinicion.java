@@ -104,6 +104,14 @@ public class TareaDefinicion {
         this.fechaEntrega = fechaEntrega;
     }
 
+    public LocalDate getFecha() {
+        return fechaEntrega;
+    }
+
+    public void setFecha(LocalDate fecha) {
+        this.fechaEntrega = fecha;
+    }
+
     public Integer getPorcentaje() {
         return porcentaje;
     }
