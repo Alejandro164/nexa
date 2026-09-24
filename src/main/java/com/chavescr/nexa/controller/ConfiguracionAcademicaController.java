@@ -309,7 +309,7 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("niveles", service.listarNiveles(institucionId));
         model.addAttribute("materias", service.listarMaterias(institucionId));
         model.addAttribute("aulas", service.listarAulas(institucionId));
-        cargarHorario(model, institucionId, null, null);
+        cargarHorario(model, institucionId, null, null, null);
 
     }
 

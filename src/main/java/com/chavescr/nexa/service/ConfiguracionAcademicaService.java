@@ -51,6 +51,7 @@ public class ConfiguracionAcademicaService {
     private final DocenteGuiaService docenteGuiaService;
     private final DocenteBloqueoService docenteBloqueoService;
     private final BloqueoLeccionService bloqueoLeccionService;
+    private final SeccionBloqueoService seccionBloqueoService;
     private final EnvioNotasDocenteService envioNotasDocenteService;
     private final ConfiguracionInstitucionService configuracionInstitucionService;
 
@@ -67,6 +68,7 @@ public class ConfiguracionAcademicaService {
             DocenteGuiaService docenteGuiaService,
             DocenteBloqueoService docenteBloqueoService,
             BloqueoLeccionService bloqueoLeccionService,
+            SeccionBloqueoService seccionBloqueoService,
             EnvioNotasDocenteService envioNotasDocenteService,
             ConfiguracionInstitucionService configuracionInstitucionService) {
         this.institucionRepository = institucionRepository;
@@ -82,6 +84,7 @@ public class ConfiguracionAcademicaService {
         this.docenteGuiaService = docenteGuiaService;
         this.docenteBloqueoService = docenteBloqueoService;
         this.bloqueoLeccionService = bloqueoLeccionService;
+        this.seccionBloqueoService = seccionBloqueoService;
         this.envioNotasDocenteService = envioNotasDocenteService;
 
         this.configuracionInstitucionService = configuracionInstitucionService;
@@ -414,7 +417,6 @@ public class ConfiguracionAcademicaService {
             throw new IllegalArgumentException("El docente no está disponible en esta lección");
         }
         NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
-        Materia materia = obtenerMateria(institucionId, materiaId);
         bloqueoLeccionService.validarAsignacion(institucionId, nivel.getGrado(), dia, numeroLeccion, materia);
 
         HorarioLeccion leccion;
