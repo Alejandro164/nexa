@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.BloqueoLeccion;
 import com.chavescr.nexa.entity.ConfiguracionInstitucion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
@@ -201,9 +202,17 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("nivelId", nivelId);
         Long materiaId = leccion.getMateria() != null ? leccion.getMateria().getId() : null;
         Long docenteId = leccion.getDocente() != null ? leccion.getDocente().getId() : null;
+        BloqueoLeccion bloqueo = service.bloqueoDeCelda(institucionId, nivelId, dia, numeroLeccion);
+        boolean leccionCerrada = bloqueo != null && bloqueo.estaCerrada();
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("docenteSeleccionadoId", docenteId);
-        model.addAttribute("materias", service.listarMateriasActivas(institucionId));
+        model.addAttribute("leccionCerrada", leccionCerrada);
+        model.addAttribute("bloqueoMotivo", bloqueo != null ? bloqueo.getMotivo() : null);
+        model.addAttribute("bloqueoTipoNombre",
+                bloqueo != null && bloqueo.getTipoMateria() != null ? bloqueo.getTipoMateria().getNombre() : null);
+        model.addAttribute("materias", leccionCerrada
+                ? java.util.List.of()
+                : service.listarMateriasParaHorario(institucionId, nivelId, dia, numeroLeccion, materiaId));
         model.addAttribute("docentes", service.listarDocentesDisponibles(
                 institucionId, materiaId, docenteId, periodoId, dia, numeroLeccion, id));
         model.addAttribute("docentesAsociadosVacios",

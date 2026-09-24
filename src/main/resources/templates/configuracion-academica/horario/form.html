@@ -17,10 +17,23 @@
                 <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
             </div>
             <div class="modal-body">
-                <div th:if="${materias.empty or aulas.empty}" class="academic-empty academic-empty-block">
-                    Debes tener materias activas y aulas activas asociadas a la institución.
+                <div th:if="${leccionCerrada}" class="academic-empty academic-empty-block">
+                    Esta lección no se puede usar en el horario.
+                    <span th:if="${bloqueoMotivo != null and !#strings.isEmpty(bloqueoMotivo)}"
+                          th:text="| ${bloqueoMotivo}|">Motivo</span>
                 </div>
-                <form th:unless="${materias.empty or aulas.empty}"
+                <div th:unless="${leccionCerrada}" th:if="${materias.empty or aulas.empty}"
+                     class="academic-empty academic-empty-block">
+                    <th:block th:if="${bloqueoTipoNombre != null and materias.empty}">
+                        Esta lección está reservada para materias de tipo
+                        <strong th:text="${bloqueoTipoNombre}">Deportiva</strong>.
+                        No hay ninguna activa.
+                    </th:block>
+                    <th:block th:unless="${bloqueoTipoNombre != null and materias.empty}">
+                        Debes tener materias activas y aulas activas asociadas a la institución.
+                    </th:block>
+                </div>
+                <form th:unless="${leccionCerrada or materias.empty or aulas.empty}"
                       hx-post="/configuracion-academica/horario"
                       hx-target="#horario-panel"
                       hx-swap="outerHTML"
@@ -33,6 +46,9 @@
 
                     <div class="form-group">
                         <label class="form-label">Materia</label>
+                        <p class="academic-help" th:if="${bloqueoTipoNombre != null}" style="margin: 0 0 0.4rem;">
+                            Solo materias de tipo <span th:text="${bloqueoTipoNombre}">Deportiva</span>.
+                        </p>
                         <select class="form-input" name="materiaId" required
                                 hx-get="/configuracion-academica/horario/docentes"
                                 hx-trigger="change"
@@ -71,6 +87,9 @@
                         <button type="submit" class="btn-primary">Guardar asignación</button>
                     </div>
                 </form>
+                <div class="modal-footer" th:if="${leccionCerrada or materias.empty or aulas.empty}">
+                    <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cerrar</button>
+                </div>
             </div>
         </div>
     </div>

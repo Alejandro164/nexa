@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.BloqueoLeccion;
 import com.chavescr.nexa.entity.ConfiguracionInstitucion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Institucion;
@@ -47,6 +48,7 @@ public class ConfiguracionAcademicaService {
     private final DocenteMateriaService docenteMateriaService;
     private final DocenteGuiaService docenteGuiaService;
     private final DocenteBloqueoService docenteBloqueoService;
+    private final BloqueoLeccionService bloqueoLeccionService;
     private final ConfiguracionInstitucionService configuracionInstitucionService;
 
     public ConfiguracionAcademicaService(InstitucionRepository institucionRepository,
@@ -61,6 +63,7 @@ public class ConfiguracionAcademicaService {
             DocenteMateriaService docenteMateriaService,
             DocenteGuiaService docenteGuiaService,
             DocenteBloqueoService docenteBloqueoService,
+            BloqueoLeccionService bloqueoLeccionService,
             ConfiguracionInstitucionService configuracionInstitucionService) {
         this.institucionRepository = institucionRepository;
         this.periodoRepository = periodoRepository;
@@ -74,6 +77,7 @@ public class ConfiguracionAcademicaService {
         this.docenteMateriaService = docenteMateriaService;
         this.docenteGuiaService = docenteGuiaService;
         this.docenteBloqueoService = docenteBloqueoService;
+        this.bloqueoLeccionService = bloqueoLeccionService;
         this.configuracionInstitucionService = configuracionInstitucionService;
     }
 
@@ -163,6 +167,20 @@ public class ConfiguracionAcademicaService {
     @Transactional(readOnly = true)
     public List<Materia> listarMateriasActivas(Long institucionId) {
         return materiaRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Materia> listarMateriasParaHorario(Long institucionId, Long nivelId, String dia,
+            Integer numeroLeccion, Long materiaActualId) {
+        NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
+        return bloqueoLeccionService.filtrarMaterias(institucionId, nivel.getGrado(), dia, numeroLeccion,
+                listarMateriasActivas(institucionId), materiaActualId);
+    }
+
+    @Transactional(readOnly = true)
+    public BloqueoLeccion bloqueoDeCelda(Long institucionId, Long nivelId, String dia, Integer numeroLeccion) {
+        NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
+        return bloqueoLeccionService.vigente(institucionId, nivel.getGrado(), dia, numeroLeccion);
     }
 
     @Transactional(readOnly = true)
@@ -363,6 +381,9 @@ public class ConfiguracionAcademicaService {
         if (docenteBloqueoService.estaBloqueado(institucionId, periodoId, docenteId, dia, numeroLeccion)) {
             throw new IllegalArgumentException("El docente no está disponible en esta lección");
         }
+        NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
+        Materia materia = obtenerMateria(institucionId, materiaId);
+        bloqueoLeccionService.validarAsignacion(institucionId, nivel.getGrado(), dia, numeroLeccion, materia);
 
         HorarioLeccion leccion;
         if (id != null) {
@@ -384,8 +405,8 @@ public class ConfiguracionAcademicaService {
 
         leccion.setInstitucion(obtenerInstitucion(institucionId));
         leccion.setPeriodo(obtenerPeriodo(institucionId, periodoId));
-        leccion.setNivel(obtenerNivel(institucionId, nivelId));
-        leccion.setMateria(obtenerMateria(institucionId, materiaId));
+        leccion.setNivel(nivel);
+        leccion.setMateria(materia);
         leccion.setDocente(usuarioRepository.findActivoByIdAndInstitucionId(docenteId, institucionId)
                 .orElseThrow(() -> new IllegalArgumentException("Docente no válido para la institución")));
         leccion.setAula(obtenerAula(institucionId, aulaId));

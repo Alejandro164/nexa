@@ -419,16 +419,6 @@
                 document.addEventListener('alpine:init', crear);
             })();
 
-            window.inicializarJornadaLectiva = function inicializarJornadaLectiva(el) {
-                var panel = !el ? document.getElementById('institucional-jornada-panel')
-                    : (el.id === 'institucional-jornada-panel' ? el
-                        : el.querySelector && el.querySelector('#institucional-jornada-panel'));
-                if (!panel || !window.Alpine || panel._x_dataStack) {
-                    return;
-                }
-                Alpine.initTree(panel);
-            };
-
             window.jornadaLectiva = function jornadaLectiva(el) {
                 var d = el && el.dataset ? el.dataset : {};
                 var maxLecciones = 16;
@@ -798,16 +788,6 @@
             }
 
             if (!window.institucionalEventsRegistrados) {
-                document.body.addEventListener('htmx:afterSwap', function (event) {
-                    var elt = event.detail && event.detail.elt;
-                    if (!elt || typeof window.inicializarJornadaLectiva !== 'function') {
-                        return;
-                    }
-                    if (elt.id === 'institucional-jornada-panel'
-                            || (elt.querySelector && elt.querySelector('#institucional-jornada-panel'))) {
-                        window.inicializarJornadaLectiva(elt);
-                    }
-                });
                 document.addEventListener('institucionalGuardado', function (event) {
                     if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
                         showNotification(event.detail.mensaje);
@@ -819,10 +799,6 @@
                     }
                 });
                 window.institucionalEventsRegistrados = true;
-            }
-
-            if (document.getElementById('institucional-jornada-panel')) {
-                window.inicializarJornadaLectiva(document.getElementById('institucional-jornada-panel'));
             }
         </script>
     </main>

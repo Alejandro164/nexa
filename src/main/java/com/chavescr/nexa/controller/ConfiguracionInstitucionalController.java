@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.service.BloqueoLeccionService;
 import com.chavescr.nexa.service.ConfiguracionInstitucionService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,9 +28,14 @@ public class ConfiguracionInstitucionalController {
     @Autowired
     private ConfiguracionInstitucionService service;
 
+    @Autowired
+    private BloqueoLeccionService bloqueoLeccionService;
+
     @GetMapping
     public String index(Model model, HttpServletRequest request, HttpSession session) {
-        cargarJornada(model, requerirInstitucion(session));
+        Long institucionId = requerirInstitucion(session);
+        cargarJornada(model, institucionId);
+        cargarBloqueo(model, institucionId);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "configuracion-institucional/index :: htmx-content";
         }
@@ -69,14 +75,34 @@ public class ConfiguracionInstitucionalController {
     }
 
     @GetMapping("/bloqueo-leccion")
-    public String bloqueoLeccion(HttpSession session) {
-        requerirInstitucion(session);
+    public String bloqueoLeccion(Model model, HttpSession session) {
+        cargarBloqueo(model, requerirInstitucion(session));
+        return "configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content";
+    }
+
+    @PostMapping("/bloqueo-leccion")
+    public String guardarBloqueo(@RequestParam String reglas,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long institucionId = requerirInstitucion(session);
+        try {
+            bloqueoLeccionService.guardar(institucionId, reglas);
+            cargarBloqueo(model, institucionId);
+            response.setHeader("HX-Trigger",
+                    "{\"institucionalGuardado\":{\"mensaje\":\"Bloqueos de lección actualizados\"}}");
+        } catch (IllegalArgumentException e) {
+            cargarBloqueo(model, institucionId);
+            notificarError(response, e.getMessage());
+        }
         return "configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content";
     }
 
     private void cargarJornada(Model model, Long institucionId) {
         model.addAttribute("configJornada", service.obtener(institucionId));
         model.addAttribute("diasCatalogo", DiaLaboral.CATALOGO);
+    }
+
+    private void cargarBloqueo(Model model, Long institucionId) {
+        model.addAttribute("bloqueoEstadoJson", bloqueoLeccionService.estadoJson(institucionId));
     }
 
     private Long requerirInstitucion(HttpSession session) {

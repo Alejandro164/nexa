@@ -1,5 +1,6 @@
 <div th:fragment="content" id="institucional-bloqueo-leccion-panel" xmlns:th="http://www.thymeleaf.org"
-     x-data="bloqueoLeccion()">
+     th:attr="data-estado=${bloqueoEstadoJson}"
+     x-data="bloqueoLeccion($el)">
     <style>
         .bloqueo-card { position: relative; overflow: visible; }
         .bloqueo-body {
@@ -32,6 +33,10 @@
             color: var(--text-secondary);
             font-size: 0.8rem;
             line-height: 1.45;
+        }
+        .bloqueo-hint.is-error {
+            color: var(--error, #dc2626);
+            font-weight: 600;
         }
         .bloqueo-links {
             display: flex;
@@ -72,7 +77,18 @@
             border-color: var(--primary);
             box-shadow: 0 4px 14px rgba(45, 90, 135, 0.22);
         }
-        .bloqueo-chip-grado { min-width: 78px; }
+        .bloqueo-chip.is-blocked,
+        .bloqueo-chip:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+            background: #f8fafc;
+            color: var(--text-secondary);
+            box-shadow: none;
+        }
+        .bloqueo-chip.is-blocked:hover,
+        .bloqueo-chip:disabled:hover {
+            border-color: var(--border);
+        }
         .bloqueo-modos {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -233,15 +249,20 @@
             line-height: 1.2;
             transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
         }
-        .bloqueo-cell:hover { border-color: #cbd5e1; }
+        .bloqueo-cell:hover:not(:disabled) { border-color: #cbd5e1; }
         .bloqueo-cell.is-picking {
             box-shadow: 0 0 0 2px rgba(45, 90, 135, 0.35);
+        }
+        .bloqueo-cell:disabled {
+            opacity: 1;
+            cursor: not-allowed;
         }
         .bloqueo-cell.is-cerrada {
             background: #ffedd5;
             color: #c2410c;
             border-color: #fdba74;
         }
+        .bloqueo-cell.is-tipo { background: #dcfce7; color: #166534; border-color: #86efac; }
         .bloqueo-cell.is-tipo-BASICA { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
         .bloqueo-cell.is-tipo-COMPLEMENTARIA { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
         .bloqueo-cell.is-tipo-ESPECIALIDAD { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
@@ -281,13 +302,23 @@
         }
     </style>
 
+    <form hx-post="/configuracion-institucional/bloqueo-leccion"
+          hx-target="#institucional-bloqueo-leccion-panel"
+          hx-swap="outerHTML"
+          hx-indicator="#bloqueo-loading"
+          @submit="escribirReglas()">
+        <input type="hidden" name="reglas" x-ref="reglas" value="[]">
+        <div id="bloqueo-loading" class="htmx-indicator panel-loading-overlay" style="align-items: center; justify-content: flex-start; padding-top: 4rem;">
+            <div class="spinner"></div>
+            <span>Guardando...</span>
+        </div>
     <div class="card bloqueo-card">
         <div class="card-header">
             <div>
                 <h3 class="card-title">Bloqueo de lección</h3>
-                <p class="academic-help">El bloqueo es por grado: sétimo puede seguir libre y décimo reservar las mismas lecciones, por ejemplo para Deportiva.</p>
+                <p class="academic-help">El bloqueo es por grado: sétimo puede seguir libre y décimo reservar las mismas lecciones, por ejemplo para Deportiva. Solo aplica al crear el horario.</p>
             </div>
-            <button type="button" class="btn btn-primary" disabled title="El guardado se conecta después">Guardar bloqueos</button>
+            <button type="submit" class="btn btn-primary">Guardar bloqueos</button>
         </div>
 
         <div class="bloqueo-body">
@@ -306,8 +337,10 @@
                     <div class="bloqueo-chips" role="group" aria-label="Número de lección">
                         <template x-for="n in numeros" :key="n">
                             <button type="button" class="bloqueo-chip"
-                                    :class="{ 'is-on': leccionesSel.includes(n) }"
+                                    :class="{ 'is-on': leccionesSel.includes(n), 'is-blocked': leccionOcupada(n) }"
                                     :aria-pressed="leccionesSel.includes(n)"
+                                    :disabled="leccionOcupada(n)"
+                                    :title="leccionOcupada(n) ? 'Esta lección ya está bloqueada en la selección actual' : null"
                                     @click="alternarLeccion(n)"
                                     x-text="n">1</button>
                         </template>
@@ -328,8 +361,10 @@
                     <div class="bloqueo-chips" role="group" aria-label="Días">
                         <template x-for="dia in catalogoDias" :key="dia.codigo">
                             <button type="button" class="bloqueo-chip"
-                                    :class="{ 'is-on': diasSel.includes(dia.codigo) }"
+                                    :class="{ 'is-on': diasSel.includes(dia.codigo), 'is-blocked': diaOcupado(dia.codigo) }"
                                     :aria-pressed="diasSel.includes(dia.codigo)"
+                                    :disabled="diaOcupado(dia.codigo)"
+                                    :title="diaOcupado(dia.codigo) ? 'Ese día ya está bloqueado en la selección actual' : null"
                                     @click="alternarDia(dia.codigo)"
                                     x-text="dia.corto">Lun</button>
                         </template>
@@ -347,13 +382,18 @@
                             <button type="button" @click="marcarGrados('ninguno')">Ninguno</button>
                         </div>
                     </div>
-                    <div class="bloqueo-chips" role="group" aria-label="Grados académicos">
-                        <template x-for="grado in catalogoGrados" :key="grado.numero">
-                            <button type="button" class="bloqueo-chip bloqueo-chip-grado"
-                                    :class="{ 'is-on': gradosSel.includes(grado.numero) }"
-                                    :aria-pressed="gradosSel.includes(grado.numero)"
-                                    @click="alternarGrado(grado.numero)"
-                                    x-text="grado.nombre">Décimo</button>
+                    <div class="bloqueo-empty" x-show="grados.length === 0">
+                        Esta institución todavía no tiene niveles activos. Créalos en Configuración académica para poder bloquear lecciones.
+                    </div>
+                    <div class="bloqueo-chips" role="group" aria-label="Grados académicos" x-show="grados.length > 0">
+                        <template x-for="grado in grados" :key="grado">
+                            <button type="button" class="bloqueo-chip"
+                                    :class="{ 'is-on': gradosSel.includes(grado), 'is-blocked': gradoOcupado(grado) }"
+                                    :aria-pressed="gradosSel.includes(grado)"
+                                    :disabled="gradoOcupado(grado)"
+                                    :title="gradoOcupado(grado) ? 'Ese grado ya está bloqueado en la selección actual' : null"
+                                    @click="alternarGrado(grado)"
+                                    x-text="grado">10</button>
                         </template>
                     </div>
                 </section>
@@ -394,7 +434,7 @@
                         <input class="form-input" id="bloqueo-motivo" type="text" x-model="motivo"
                                placeholder="Educación física, acto cívico, no usar última lección…">
                     </div>
-                    <p class="bloqueo-hint" style="margin-top: 0.7rem;" x-text="resumenBorrador">Lecciones 5 y 6 · Lun a Vie · Décimo · Solo Deportiva</p>
+                    <p class="bloqueo-hint" :class="{ 'is-error': haySolape }" style="margin-top: 0.7rem;" x-text="resumenBorrador">Lecciones 5 y 6 · Lun a Vie · Décimo · Solo Deportiva</p>
                     <div class="institucional-actions" style="border-top: 0; padding-top: 0.9rem; margin-top: 0.2rem;">
                         <button type="button" class="btn btn-primary" :disabled="!puedeAplicar" @click="aplicar()">
                             Aplicar a la grilla
@@ -433,16 +473,16 @@
             <aside class="bloqueo-preview">
                 <div class="bloqueo-preview-head">
                     <h4>Grilla semanal</h4>
-                    <span>Clic en una celda para tomarla en el formulario</span>
+                    <span>Solo las celdas libres se pueden seleccionar</span>
                 </div>
                 <div class="bloqueo-preview-grados">
                     <em>Viendo</em>
-                    <template x-for="grado in catalogoGrados" :key="'ver-' + grado.numero">
-                        <button type="button" class="bloqueo-chip bloqueo-chip-grado"
-                                :class="{ 'is-on': gradoVista === grado.numero }"
-                                :aria-pressed="gradoVista === grado.numero"
-                                @click="gradoVista = grado.numero"
-                                x-text="grado.nombre">Décimo</button>
+                    <template x-for="grado in grados" :key="'ver-' + grado">
+                        <button type="button" class="bloqueo-chip"
+                                :class="{ 'is-on': gradoVista === grado }"
+                                :aria-pressed="gradoVista === grado"
+                                @click="gradoVista = grado"
+                                x-text="grado">10</button>
                     </template>
                 </div>
                 <div class="bloqueo-table">
@@ -459,6 +499,7 @@
                                 <button type="button" class="bloqueo-cell"
                                         :class="claseCelda(n, dia.codigo)"
                                         :title="tituloCelda(n, dia.codigo)"
+                                        :disabled="!!celda(n, dia.codigo)"
                                         @click="elegirCelda(n, dia.codigo)"
                                         x-text="textoCelda(n, dia.codigo)">Libre</button>
                             </template>
@@ -474,60 +515,107 @@
             </aside>
         </div>
     </div>
+    </form>
 
     <script>
-        window.bloqueoLeccion = function bloqueoLeccion() {
+        window.bloqueoLeccion = function bloqueoLeccion(el) {
+            var estado = {};
+            try {
+                estado = JSON.parse((el && el.dataset && el.dataset.estado) || '{}') || {};
+            } catch (e) {
+                estado = {};
+            }
             var laborales = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+            var nombresDia = {
+                LUNES: 'lunes',
+                MARTES: 'martes',
+                MIERCOLES: 'miércoles',
+                JUEVES: 'jueves',
+                VIERNES: 'viernes',
+                SABADO: 'sábado'
+            };
+            var numeros = Array.isArray(estado.numeros) && estado.numeros.length ? estado.numeros : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+            var catalogoDias = Array.isArray(estado.dias) && estado.dias.length ? estado.dias : [
+                { codigo: 'LUNES', corto: 'Lun' },
+                { codigo: 'MARTES', corto: 'Mar' },
+                { codigo: 'MIERCOLES', corto: 'Mié' },
+                { codigo: 'JUEVES', corto: 'Jue' },
+                { codigo: 'VIERNES', corto: 'Vie' }
+            ];
+            var tipos = Array.isArray(estado.tipos) && estado.tipos.length ? estado.tipos : [];
+            var grados = Array.isArray(estado.grados) ? estado.grados : [];
+            var reglas = Array.isArray(estado.reglas) ? estado.reglas : [];
+            var diasIniciales = catalogoDias
+                .map(function (dia) { return dia.codigo; })
+                .filter(function (codigo) { return laborales.indexOf(codigo) !== -1; });
+            if (diasIniciales.length === 0) {
+                diasIniciales = catalogoDias.map(function (dia) { return dia.codigo; });
+            }
+            var leccionesIniciales = [5, 6].filter(function (n) { return numeros.indexOf(n) !== -1; });
+            if (leccionesIniciales.length === 0) {
+                leccionesIniciales = numeros.slice(-2);
+            }
+            var gradoInicial = grados.indexOf(10) !== -1 ? 10 : (grados.length ? grados[0] : null);
+            var tipoDeportiva = tipos.some(function (tipo) { return tipo.codigo === 'DEPORTIVA'; })
+                ? 'DEPORTIVA'
+                : (tipos[0] ? tipos[0].codigo : '');
             return {
-                numeros: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                catalogoDias: [
-                    { codigo: 'LUNES', corto: 'Lun' },
-                    { codigo: 'MARTES', corto: 'Mar' },
-                    { codigo: 'MIERCOLES', corto: 'Mié' },
-                    { codigo: 'JUEVES', corto: 'Jue' },
-                    { codigo: 'VIERNES', corto: 'Vie' },
-                    { codigo: 'SABADO', corto: 'Sáb' }
-                ],
-                tipos: [
-                    { codigo: 'BASICA', nombre: 'Básica' },
-                    { codigo: 'COMPLEMENTARIA', nombre: 'Complementaria' },
-                    { codigo: 'ESPECIALIDAD', nombre: 'Especialidad' },
-                    { codigo: 'TALLER', nombre: 'Taller' },
-                    { codigo: 'DEPORTIVA', nombre: 'Deportiva' },
-                    { codigo: 'MUSICA', nombre: 'Música' },
-                    { codigo: 'ARTE', nombre: 'Arte' }
-                ],
-                catalogoGrados: [
-                    { numero: 7, nombre: 'Sétimo' },
-                    { numero: 8, nombre: 'Octavo' },
-                    { numero: 9, nombre: 'Noveno' },
-                    { numero: 10, nombre: 'Décimo' },
-                    { numero: 11, nombre: 'Undécimo' },
-                    { numero: 12, nombre: 'Duodécimo' }
-                ],
-                leccionesSel: [5, 6],
-                diasSel: laborales.slice(),
-                gradosSel: [10],
-                gradoVista: 10,
+                numeros: numeros,
+                catalogoDias: catalogoDias,
+                tipos: tipos,
+                grados: grados,
+                leccionesSel: leccionesIniciales,
+                diasSel: diasIniciales,
+                gradosSel: gradoInicial === null ? [] : [gradoInicial],
+                gradoVista: gradoInicial,
                 modo: 'tipo',
-                tipoCodigo: 'DEPORTIVA',
+                tipoCodigo: tipoDeportiva,
                 motivo: '',
-                siguienteId: 1,
-                reglas: [],
+                siguienteId: reglas.reduce(function (max, regla) {
+                    return Math.max(max, Number(regla.id) || 0);
+                }, 0) + 1,
+                reglas: reglas,
                 init: function () {
-                    this.aplicar();
+                    this.leccionesSel = this.leccionesSel.filter(function (n) {
+                        return !this.leccionOcupada(n);
+                    }.bind(this));
+                    this.escribirReglas();
+                },
+                escribirReglas: function () {
+                    if (this.$refs.reglas) {
+                        this.$refs.reglas.value = JSON.stringify(this.reglas);
+                    }
+                },
+                persistir: function () {
+                    this.escribirReglas();
+                    var form = this.$root.querySelector('form');
+                    if (form) {
+                        form.requestSubmit();
+                    }
+                },
+                get haySolape() {
+                    return this.leccionesSel.length > 0 && this.diasSel.length > 0
+                        && this.gradosSel.length > 0
+                        && this.solapaConReglas();
                 },
                 get puedeAplicar() {
                     return this.leccionesSel.length > 0 && this.diasSel.length > 0
                         && this.gradosSel.length > 0
-                        && (this.modo === 'cerrada' || !!this.tipoCodigo);
+                        && (this.modo === 'cerrada' || !!this.tipoCodigo)
+                        && !this.haySolape;
                 },
                 get gridCols() {
                     return 'grid-template-columns: 52px repeat(' + this.catalogoDias.length + ', minmax(0, 1fr))';
                 },
                 get resumenBorrador() {
-                    if (!this.puedeAplicar) {
+                    if (this.leccionesSel.length === 0 || this.diasSel.length === 0 || this.gradosSel.length === 0) {
                         return 'Elige al menos una lección, un día y un grado.';
+                    }
+                    if (this.haySolape) {
+                        return this.mensajeSolape();
+                    }
+                    if (this.modo === 'tipo' && !this.tipoCodigo) {
+                        return 'Elige el tipo de materia permitido.';
                     }
                     return this.etiquetaLecciones(this.leccionesSel)
                         + ' · ' + this.etiquetaDias(this.diasSel)
@@ -586,66 +674,119 @@
                     }).join(', ');
                 },
                 etiquetaGrados: function (numeros) {
-                    var self = this;
-                    var orden = this.catalogoGrados
-                        .map(function (grado) { return grado.numero; })
-                        .filter(function (numero) { return numeros.indexOf(numero) !== -1; });
+                    var catalogo = this.grados;
+                    var orden = (numeros || [])
+                        .filter(function (numero) { return numero !== null && numero !== undefined; })
+                        .slice()
+                        .sort(function (a, b) { return a - b; });
                     if (orden.length === 0) {
                         return 'Ningún grado';
                     }
-                    if (orden.length === this.catalogoGrados.length) {
+                    if (catalogo.length > 0 && catalogo.every(function (numero) {
+                        return orden.indexOf(numero) !== -1;
+                    })) {
                         return 'Todos los grados';
                     }
-                    var nombres = orden.map(function (numero) {
-                        var grado = self.catalogoGrados.find(function (item) {
-                            return item.numero === numero;
-                        });
-                        return grado ? grado.nombre : String(numero);
-                    });
-                    if (nombres.length === 1) {
-                        return nombres[0];
+                    if (orden.length === 1) {
+                        return 'Grado ' + orden[0];
                     }
-                    if (nombres.length === 2) {
-                        return nombres[0] + ' y ' + nombres[1];
+                    if (orden.length === 2) {
+                        return 'Grados ' + orden[0] + ' y ' + orden[1];
                     }
                     var corrida = orden.every(function (n, i) {
                         return i === 0 || n === orden[i - 1] + 1;
                     });
                     if (corrida) {
-                        return nombres[0] + ' a ' + nombres[nombres.length - 1];
+                        return 'Grados ' + orden[0] + ' a ' + orden[orden.length - 1];
                     }
-                    return nombres.join(', ');
+                    return 'Grados ' + orden.join(', ');
                 },
                 tituloRegla: function (regla) {
                     return this.etiquetaLecciones(regla.lecciones) + ' · ' + this.etiquetaModo(regla.modo, regla.tipoCodigo);
                 },
+                cubre: function (regla, leccion, dia, grado) {
+                    return !!regla
+                        && Array.isArray(regla.lecciones) && regla.lecciones.indexOf(leccion) !== -1
+                        && Array.isArray(regla.dias) && regla.dias.indexOf(dia) !== -1
+                        && Array.isArray(regla.grados) && regla.grados.indexOf(grado) !== -1;
+                },
+                celdaDe: function (leccion, dia, grado) {
+                    var self = this;
+                    return this.reglas.find(function (regla) {
+                        return self.cubre(regla, leccion, dia, grado);
+                    }) || null;
+                },
                 celda: function (leccion, dia) {
-                    var hallada = null;
-                    var grado = this.gradoVista;
-                    this.reglas.forEach(function (regla) {
-                        if (regla.lecciones.indexOf(leccion) !== -1
-                                && regla.dias.indexOf(dia) !== -1
-                                && regla.grados && regla.grados.indexOf(grado) !== -1) {
-                            hallada = regla;
-                        }
+                    return this.celdaDe(leccion, dia, this.gradoVista);
+                },
+                ocupada: function (leccion, dia, grado) {
+                    return !!this.celdaDe(leccion, dia, grado);
+                },
+                solapaSeleccion: function (lecciones, dias, grados) {
+                    var self = this;
+                    if (!lecciones.length || !dias.length || !grados.length) {
+                        return false;
+                    }
+                    return grados.some(function (grado) {
+                        return lecciones.some(function (leccion) {
+                            return dias.some(function (dia) {
+                                return self.ocupada(leccion, dia, grado);
+                            });
+                        });
                     });
-                    return hallada;
+                },
+                leccionOcupada: function (n) {
+                    return this.solapaSeleccion([n], this.diasSel, this.gradosSel);
+                },
+                diaOcupado: function (codigo) {
+                    return this.solapaSeleccion(this.leccionesSel, [codigo], this.gradosSel);
+                },
+                gradoOcupado: function (numero) {
+                    return this.solapaSeleccion(this.leccionesSel, this.diasSel, [numero]);
+                },
+                solapaConReglas: function () {
+                    return this.solapaSeleccion(this.leccionesSel, this.diasSel, this.gradosSel);
+                },
+                mensajeSolape: function () {
+                    var self = this;
+                    var conflicto = null;
+                    this.reglas.some(function (regla) {
+                        return self.gradosSel.some(function (grado) {
+                            return self.leccionesSel.some(function (leccion) {
+                                return self.diasSel.some(function (dia) {
+                                    if (!self.cubre(regla, leccion, dia, grado)) {
+                                        return false;
+                                    }
+                                    conflicto = { grado: grado, leccion: leccion, dia: dia };
+                                    return true;
+                                });
+                            });
+                        });
+                    });
+                    if (!conflicto) {
+                        return 'Esa lección ya está bloqueada. Quítala de las reglas activas si quieres cambiarla.';
+                    }
+                    return 'La lección ' + conflicto.leccion + ' del '
+                        + (nombresDia[conflicto.dia] || this.etiquetaDias([conflicto.dia]).toLowerCase())
+                        + ' en grado ' + conflicto.grado
+                        + ' ya está bloqueada. Quítala de las reglas activas si quieres cambiarla.';
                 },
                 claseCelda: function (leccion, dia) {
+                    var regla = this.celda(leccion, dia);
                     var clases = [];
-                    if (this.leccionesSel.indexOf(leccion) !== -1
+                    if (!regla
+                            && this.leccionesSel.indexOf(leccion) !== -1
                             && this.diasSel.indexOf(dia) !== -1
                             && this.gradosSel.indexOf(this.gradoVista) !== -1) {
                         clases.push('is-picking');
                     }
-                    var regla = this.celda(leccion, dia);
                     if (!regla) {
                         return clases.join(' ');
                     }
                     if (regla.modo === 'cerrada') {
                         clases.push('is-cerrada');
                     } else {
-                        clases.push('is-tipo-' + regla.tipoCodigo);
+                        clases.push('is-tipo is-tipo-' + regla.tipoCodigo);
                     }
                     return clases.join(' ');
                 },
@@ -664,11 +805,15 @@
                         return base + ' · Libre';
                     }
                     var extra = this.etiquetaModo(regla.modo, regla.tipoCodigo);
-                    return regla.motivo ? base + ' · ' + extra + ' · ' + regla.motivo : base + ' · ' + extra;
+                    return (regla.motivo ? base + ' · ' + extra + ' · ' + regla.motivo : base + ' · ' + extra)
+                        + ' · Ya bloqueada';
                 },
                 alternarLeccion: function (n) {
                     var i = this.leccionesSel.indexOf(n);
                     if (i === -1) {
+                        if (this.leccionOcupada(n)) {
+                            return;
+                        }
                         this.leccionesSel.push(n);
                         this.leccionesSel.sort(function (a, b) { return a - b; });
                         return;
@@ -678,20 +823,32 @@
                 alternarDia: function (codigo) {
                     var i = this.diasSel.indexOf(codigo);
                     if (i === -1) {
+                        if (this.diaOcupado(codigo)) {
+                            return;
+                        }
                         this.diasSel.push(codigo);
                         return;
                     }
                     this.diasSel.splice(i, 1);
                 },
                 marcarLecciones: function (cual) {
-                    this.leccionesSel = cual === 'todas' ? this.numeros.slice() : [];
+                    var self = this;
+                    this.leccionesSel = cual === 'todas'
+                        ? this.numeros.filter(function (n) { return !self.leccionOcupada(n); })
+                        : [];
                 },
                 marcarDias: function (cual) {
-                    this.diasSel = cual === 'laborales' ? laborales.slice() : [];
+                    var self = this;
+                    this.diasSel = cual === 'laborales'
+                        ? laborales.filter(function (codigo) { return !self.diaOcupado(codigo); })
+                        : [];
                 },
                 alternarGrado: function (numero) {
                     var i = this.gradosSel.indexOf(numero);
                     if (i === -1) {
+                        if (this.gradoOcupado(numero)) {
+                            return;
+                        }
                         this.gradosSel.push(numero);
                         this.gradosSel.sort(function (a, b) { return a - b; });
                         this.gradoVista = numero;
@@ -700,27 +857,21 @@
                     this.gradosSel.splice(i, 1);
                 },
                 marcarGrados: function (cual) {
+                    var self = this;
                     this.gradosSel = cual === 'todos'
-                        ? this.catalogoGrados.map(function (grado) { return grado.numero; })
+                        ? this.grados.filter(function (numero) { return !self.gradoOcupado(numero); })
                         : [];
                 },
                 elegirCelda: function (leccion, dia) {
-                    this.leccionesSel = [leccion];
-                    this.diasSel = [dia];
-                    this.gradosSel = [this.gradoVista];
-                    var regla = this.celda(leccion, dia);
-                    if (!regla) {
+                    if (this.celda(leccion, dia)) {
                         return;
                     }
-                    this.gradosSel = regla.grados.slice();
-                    this.modo = regla.modo;
-                    if (regla.tipoCodigo) {
-                        this.tipoCodigo = regla.tipoCodigo;
-                    }
-                    this.motivo = regla.motivo || '';
+                    this.leccionesSel = [leccion];
+                    this.diasSel = [dia];
+                    this.gradosSel = this.gradoVista === null ? [] : [this.gradoVista];
                 },
                 aplicar: function () {
-                    if (!this.puedeAplicar) {
+                    if (this.haySolape || !this.puedeAplicar) {
                         return;
                     }
                     this.reglas.push({
@@ -733,41 +884,27 @@
                         motivo: (this.motivo || '').trim()
                     });
                     this.gradoVista = this.gradosSel[0];
+                    this.leccionesSel = this.leccionesSel.filter(function (n) {
+                        return !this.leccionOcupada(n);
+                    }.bind(this));
+                    this.persistir();
                 },
                 quitar: function (id) {
                     this.reglas = this.reglas.filter(function (regla) {
                         return regla.id !== id;
                     });
+                    this.persistir();
                 }
             };
         };
-
-        window.inicializarBloqueoLeccion = function inicializarBloqueoLeccion(el) {
-            var panel = !el ? document.getElementById('institucional-bloqueo-leccion-panel')
-                : (el.id === 'institucional-bloqueo-leccion-panel' ? el
-                    : el.querySelector && el.querySelector('#institucional-bloqueo-leccion-panel'));
-            if (!panel || !window.Alpine || panel._x_dataStack) {
-                return;
-            }
-            Alpine.initTree(panel);
-        };
-
-        if (!window.bloqueoLeccionHtmx) {
-            document.body.addEventListener('htmx:afterSwap', function (event) {
-                var elt = event.detail && event.detail.elt;
-                if (!elt || typeof window.inicializarBloqueoLeccion !== 'function') {
-                    return;
-                }
-                if (elt.id === 'institucional-bloqueo-leccion-panel'
-                        || (elt.querySelector && elt.querySelector('#institucional-bloqueo-leccion-panel'))) {
-                    window.inicializarBloqueoLeccion(elt);
+        if (!window.bloqueoLeccionAlpineListo) {
+            document.addEventListener('htmx:afterSettle', function () {
+                var panel = document.getElementById('institucional-bloqueo-leccion-panel');
+                if (panel && window.Alpine && !panel._x_dataStack) {
+                    Alpine.initTree(panel);
                 }
             });
-            window.bloqueoLeccionHtmx = true;
-        }
-
-        if (document.getElementById('institucional-bloqueo-leccion-panel')) {
-            window.inicializarBloqueoLeccion(document.getElementById('institucional-bloqueo-leccion-panel'));
+            window.bloqueoLeccionAlpineListo = true;
         }
     </script>
 </div>
