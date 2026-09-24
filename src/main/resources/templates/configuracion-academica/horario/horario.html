@@ -7,7 +7,10 @@
         <div class="card-header">
             <div>
                 <h3 class="card-title">Horario general</h3>
-                <p class="academic-help">Selecciona un período y nivel; luego presiona una lección para asignarla.</p>
+                <p class="academic-help" th:if="${tipoBloqueoId == null}">Selecciona un período y nivel; luego presiona una lección para asignarla.</p>
+                <p class="academic-help" th:unless="${tipoBloqueoId == null}">
+                    Modo bloqueo activo: haz clic en las lecciones vacías para bloquearlas o liberarlas.
+                </p>
             </div>
             <span class="badge badge-primary" th:text="|${totalLecciones} lecciones asignadas|">0 lecciones asignadas</span>
         </div>
@@ -49,6 +52,22 @@
                             th:text="${nivel.nombreCompleto}">Sétimo - A</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label class="form-label">Modo</label>
+                <select class="form-input" name="tipoBloqueoId"
+                        hx-get="/configuracion-academica/horario"
+                        hx-trigger="change"
+                        hx-target="#horario-panel"
+                        hx-swap="outerHTML"
+                        hx-indicator="#horario-loading"
+                        hx-include="closest form">
+                    <option value="" th:selected="${tipoBloqueoId == null}">Horario normal</option>
+                    <option th:each="tipo : ${tiposMateria}"
+                            th:value="${tipo.id}"
+                            th:selected="${tipo.id == tipoBloqueoId}"
+                            th:text="|Bloquear: ${tipo.nombre}|">Bloquear: Deportiva</option>
+                </select>
+            </div>
         </form>
 
         <div th:if="${periodosActivos.empty or nivelesActivos.empty}" class="academic-empty academic-empty-block">
@@ -68,16 +87,52 @@
                         <small th:text="|${#temporals.format(franjas.get(numero).inicio, 'HH:mm')} – ${#temporals.format(franjas.get(numero).fin, 'HH:mm')}|">07:00 – 07:40</small>
                     </div>
                     <th:block th:each="dia : ${dias}"
-                              th:with="items=${horario.get(numero + '-' + dia)}">
+                              th:with="items=${horario.get(numero + '-' + dia)}, bloqueoTipo=${bloqueosSeccion.get(numero + '-' + dia)}, vacio=${items == null or items.empty}">
 
-                        <!-- Slot vacío -->
-                        <button th:if="${items == null or items.empty}"
+                        <!-- Slot vacío, horario normal, sin bloqueo -->
+                        <button th:if="${vacio and bloqueoTipo == null and tipoBloqueoId == null}"
                                 type="button" class="schedule-slot schedule-slot-empty"
                                 th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}|"
                                 hx-target="#modal-container"
                                 onclick="abrirModalAcademico()">
                             <span>+ Asignar</span>
                         </button>
+
+                        <!-- Slot vacío, horario normal, bloqueado: sigue siendo asignable pero solo con materias del tipo bloqueado -->
+                        <button th:if="${vacio and bloqueoTipo != null and tipoBloqueoId == null}"
+                                type="button" class="schedule-slot schedule-slot-locked"
+                                th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}|"
+                                hx-target="#modal-container"
+                                onclick="abrirModalAcademico()"
+                                th:title="|Solo materias de tipo ${bloqueoTipo.nombre}|">
+                            <span>🔒 Asignar</span>
+                            <small th:text="${bloqueoTipo.nombre}">Tipo</small>
+                        </button>
+
+                        <!-- Slot vacío, modo bloqueo activo, sin bloquear todavía: clic para bloquear -->
+                        <button th:if="${vacio and bloqueoTipo == null and tipoBloqueoId != null}"
+                                type="button" class="schedule-slot schedule-slot-blocking"
+                                th:attr="hx-post=@{/configuracion-academica/horario/bloqueo(periodoId=${periodoSeleccionado}, nivelId=${nivelSeleccionado}, dia=${dia}, numeroLeccion=${numero}, tipoMateriaId=${tipoBloqueoId}, tipoBloqueoId=${tipoBloqueoId})}"
+                                hx-target="#horario-panel"
+                                hx-swap="outerHTML"
+                                title="Clic para bloquear esta lección">
+                            <span>+ Bloquear</span>
+                        </button>
+
+                        <!-- Slot vacío, modo bloqueo activo, ya bloqueado para este mismo tipo: clic para liberar -->
+                        <button th:if="${vacio and bloqueoTipo != null and tipoBloqueoId != null and bloqueoTipo.id == tipoBloqueoId}"
+                                type="button" class="schedule-slot schedule-slot-blocked"
+                                th:attr="hx-post=@{/configuracion-academica/horario/bloqueo(periodoId=${periodoSeleccionado}, nivelId=${nivelSeleccionado}, dia=${dia}, numeroLeccion=${numero}, tipoMateriaId=${tipoBloqueoId}, tipoBloqueoId=${tipoBloqueoId})}"
+                                hx-target="#horario-panel"
+                                hx-swap="outerHTML"
+                                title="Clic para liberar">
+                            <span>🔒 Bloqueada</span>
+                        </button>
+
+                        <!-- Slot vacío, modo bloqueo activo, bloqueado para OTRO tipo: no interactivo -->
+                        <div th:if="${vacio and bloqueoTipo != null and tipoBloqueoId != null and bloqueoTipo.id != tipoBloqueoId}"
+                             class="schedule-slot schedule-slot-foreign"
+                             th:text="|Bloqueada: ${bloqueoTipo.nombre}|">Bloqueada</div>
 
                         <!-- Slot con 1 a 3 materias -->
                         <div th:if="${items != null and !items.empty}"
@@ -86,7 +141,7 @@
                             <div th:each="item : ${items}"
                                  class="schedule-slot-item"
                                  th:style="|--subject-color:${item.materia.color}|"
-                                 th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}&amp;id=${item.id}|"
+                                 th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}&amp;id=${item.id}${tipoBloqueoId != null ? '&amp;tipoBloqueoId=' + tipoBloqueoId : ''}|"
                                  hx-target="#modal-container"
                                  onclick="abrirModalAcademico()">
                                 <strong th:text="${item.materia.nombre}">Matemáticas</strong>
@@ -94,7 +149,7 @@
                                 <span th:text="${item.aula.nombre}">Aula</span>
                                 <small th:text="|${#temporals.format(franjas.get(numero).inicio, 'HH:mm')} - ${#temporals.format(franjas.get(numero).fin, 'HH:mm')}|">07:00 - 07:40</small>
                                 <button type="button" class="schedule-remove" title="Eliminar asignación"
-                                        th:attr="data-delete-url=|/configuracion-academica/horario/${item.id}?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}|,
+                                        th:attr="data-delete-url=|/configuracion-academica/horario/${item.id}?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}${tipoBloqueoId != null ? '&amp;tipoBloqueoId=' + tipoBloqueoId : ''}|,
                                                  data-delete-message=|¿Deseas eliminar la lección de ${item.materia.nombre} del horario?|"
                                         data-delete-title="Eliminar lección"
                                         data-delete-target="#horario-panel"
@@ -105,7 +160,7 @@
                             <!-- Botón agregar materia (solo si hay menos de 3) -->
                             <button th:if="${items.size() < 3}"
                                     type="button" class="schedule-slot-add"
-                                    th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}|"
+                                    th:attr="hx-get=|/configuracion-academica/horario/form?periodoId=${periodoSeleccionado}&amp;nivelId=${nivelSeleccionado}&amp;dia=${dia}&amp;numeroLeccion=${numero}${tipoBloqueoId != null ? '&amp;tipoBloqueoId=' + tipoBloqueoId : ''}|"
                                     hx-target="#modal-container"
                                     onclick="abrirModalAcademico()"
                                     title="Agregar otra materia">+</button>

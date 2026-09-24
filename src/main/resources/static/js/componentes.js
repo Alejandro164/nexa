@@ -927,6 +927,7 @@ function inicializarSelectoresAcademicos(root) {
         var trigger = document.createElement('button');
         trigger.type = 'button';
         trigger.className = 'academic-select-trigger';
+        trigger.disabled = native.disabled;
         trigger.setAttribute('aria-haspopup', 'listbox');
         trigger.setAttribute('aria-expanded', 'false');
 

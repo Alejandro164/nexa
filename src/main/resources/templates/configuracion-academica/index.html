@@ -386,7 +386,7 @@
             }
             .schedule-filters {
                 display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns: repeat(3, minmax(0, 1fr));
                 gap: 1rem;
                 padding: 1.25rem 1.5rem;
                 background: var(--input-bg);
@@ -397,7 +397,6 @@
             }
             .schedule-scroll {
                 overflow-x: auto;
-                padding: 1.5rem;
             }
             .schedule-grid {
                 min-width: 920px;
@@ -509,6 +508,55 @@
             .schedule-slot-empty:hover {
                 background: rgba(45, 90, 135, 0.05);
                 color: var(--primary);
+            }
+            .schedule-slot-locked {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0.15rem;
+                color: #c2410c;
+                background: #fff7ed;
+            }
+            .schedule-slot-locked:hover {
+                background: #ffedd5;
+            }
+            .schedule-slot-locked small {
+                font-size: 0.65rem;
+                font-weight: 600;
+            }
+            .schedule-slot-blocking {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--text-light);
+                border: 1px dashed #94a3b8;
+            }
+            .schedule-slot-blocking:hover {
+                background: #ffedd5;
+                color: #c2410c;
+                border-color: #c2410c;
+            }
+            .schedule-slot-blocked {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #c2410c;
+                background: #ffedd5;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+            .schedule-slot-blocked:hover {
+                background: #fed7aa;
+            }
+            .schedule-slot-foreign {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #94a3b8;
+                background: #f1f5f9;
+                font-size: 0.68rem;
+                cursor: not-allowed;
             }
             .schedule-slot-filled {
                 --subject-color: #2d5a87;
