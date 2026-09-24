@@ -12,22 +12,27 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "notas_examen", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_nota_examen_estudiante", columnNames = { "examen_id", "estudiante_id" })
+@Table(name = "resultados_componente", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_resultado_componente_estudiante_periodo", columnNames = {
+                "componente_id", "estudiante_id", "periodo_id" })
 })
-public class NotaExamen {
+public class ResultadoComponente {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "examen_id", nullable = false)
-    private Examen examen;
+    @JoinColumn(name = "componente_id", nullable = false)
+    private Componente componente;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "estudiante_id", nullable = false)
     private Usuario estudiante;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "periodo_id", nullable = false)
+    private PeriodoAcademico periodo;
 
     @Column(nullable = false)
     private Integer calificacion;
@@ -46,12 +51,12 @@ public class NotaExamen {
         this.id = id;
     }
 
-    public Examen getExamen() {
-        return examen;
+    public Componente getComponente() {
+        return componente;
     }
 
-    public void setExamen(Examen examen) {
-        this.examen = examen;
+    public void setComponente(Componente componente) {
+        this.componente = componente;
     }
 
     public Usuario getEstudiante() {
@@ -60,6 +65,14 @@ public class NotaExamen {
 
     public void setEstudiante(Usuario estudiante) {
         this.estudiante = estudiante;
+    }
+
+    public PeriodoAcademico getPeriodo() {
+        return periodo;
+    }
+
+    public void setPeriodo(PeriodoAcademico periodo) {
+        this.periodo = periodo;
     }
 
     public Integer getCalificacion() {

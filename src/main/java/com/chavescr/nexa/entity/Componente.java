@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,8 +15,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "tareas_definicion")
-public class TareaDefinicion {
+@Table(name = "componentes")
+public class Componente {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,6 +25,15 @@ public class TareaDefinicion {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "institucion_id", nullable = false)
     private Institucion institucion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ClaveComponente clave;
+
+    /** Solo proyectos y exámenes pertenecen a un período. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "periodo_id")
+    private PeriodoAcademico periodo;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "nivel_id", nullable = false)
@@ -38,15 +49,19 @@ public class TareaDefinicion {
     @Column(length = 1000)
     private String descripcion;
 
-    @Column(nullable = false)
-    private LocalDate fechaEntrega;
+    @Column
+    private LocalDate fecha;
 
-    /** Null = ponderado: el sistema reparte el porcentaje restante entre estas tareas. */
+    /** Null = ponderado: el sistema reparte el porcentaje restante entre los rubros de la misma clave. */
     @Column
     private Integer porcentaje;
 
     @Column(name = "puntos_totales")
     private Integer puntosTotales;
+
+    /** Id en la tabla anterior, usado solo para copiar calificaciones ya guardadas. */
+    @Column(name = "origen_id")
+    private Long origenId;
 
     public Long getId() {
         return id;
@@ -62,6 +77,22 @@ public class TareaDefinicion {
 
     public void setInstitucion(Institucion institucion) {
         this.institucion = institucion;
+    }
+
+    public ClaveComponente getClave() {
+        return clave;
+    }
+
+    public void setClave(ClaveComponente clave) {
+        this.clave = clave;
+    }
+
+    public PeriodoAcademico getPeriodo() {
+        return periodo;
+    }
+
+    public void setPeriodo(PeriodoAcademico periodo) {
+        this.periodo = periodo;
     }
 
     public NivelAcademico getNivel() {
@@ -96,20 +127,12 @@ public class TareaDefinicion {
         this.descripcion = descripcion;
     }
 
-    public LocalDate getFechaEntrega() {
-        return fechaEntrega;
-    }
-
-    public void setFechaEntrega(LocalDate fechaEntrega) {
-        this.fechaEntrega = fechaEntrega;
-    }
-
     public LocalDate getFecha() {
-        return fechaEntrega;
+        return fecha;
     }
 
     public void setFecha(LocalDate fecha) {
-        this.fechaEntrega = fecha;
+        this.fecha = fecha;
     }
 
     public Integer getPorcentaje() {
@@ -126,6 +149,14 @@ public class TareaDefinicion {
 
     public void setPuntosTotales(Integer puntosTotales) {
         this.puntosTotales = puntosTotales;
+    }
+
+    public Long getOrigenId() {
+        return origenId;
+    }
+
+    public void setOrigenId(Long origenId) {
+        this.origenId = origenId;
     }
 
     public boolean isPonderado() {

@@ -2,14 +2,14 @@ package com.chavescr.nexa.dto;
 
 import com.chavescr.nexa.entity.Usuario;
 
-public class FilaTareaCalificacion {
+public class FilaNota {
 
     private final Usuario estudiante;
     private final Integer puntosObtenidos;
     private final Integer calificacion;
     private final String observacion;
 
-    public FilaTareaCalificacion(Usuario estudiante, Integer puntosObtenidos, Integer calificacion, String observacion) {
+    public FilaNota(Usuario estudiante, Integer puntosObtenidos, Integer calificacion, String observacion) {
         this.estudiante = estudiante;
         this.puntosObtenidos = puntosObtenidos;
         this.calificacion = calificacion;

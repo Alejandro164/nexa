@@ -10,24 +10,17 @@ import org.springframework.transaction.annotation.Transactional;
 import com.chavescr.nexa.dto.FilaPromedio;
 import com.chavescr.nexa.entity.AsistenciaEstudiante;
 import com.chavescr.nexa.entity.DistribucionPorcentual;
-import com.chavescr.nexa.entity.EvaluacionCotidiana;
-import com.chavescr.nexa.entity.Examen;
+import com.chavescr.nexa.entity.ClaveComponente;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
-import com.chavescr.nexa.entity.NotaExamen;
 import com.chavescr.nexa.entity.PeriodoAcademico;
-import com.chavescr.nexa.entity.ProyectoCalificacion;
-import com.chavescr.nexa.entity.TareaCalificacion;
+import com.chavescr.nexa.entity.ResultadoComponente;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
-import com.chavescr.nexa.repository.EvaluacionCotidianaRepository;
-import com.chavescr.nexa.repository.ExamenRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
-import com.chavescr.nexa.repository.NotaExamenRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
-import com.chavescr.nexa.repository.ProyectoCalificacionRepository;
-import com.chavescr.nexa.repository.TareaCalificacionRepository;
+import com.chavescr.nexa.repository.ResultadoComponenteRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
 @Service
@@ -38,41 +31,23 @@ public class PromedioService {
     private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
     private final PeriodoAcademicoRepository periodoRepository;
-    private final TareaCalificacionRepository tareaRepository;
-    private final ProyectoCalificacionRepository proyectoRepository;
-    private final ExamenRepository examenRepository;
-    private final NotaExamenRepository notaExamenRepository;
-    private final EvaluacionCotidianaRepository evaluacionRepository;
+    private final ResultadoComponenteRepository resultadoRepository;
     private final AsistenciaEstudianteRepository asistenciaRepository;
     private final DistribucionPorcentualService distribucionService;
-    private final IndicadorCotidianoService indicadorCotidianoService;
-    private final TareaDefinicionService tareaDefinicionService;
-    private final ProyectoEstudiantilService proyectoEstudiantilService;
-    private final ExamenService examenService;
+    private final ComponenteService componenteService;
 
     public PromedioService(UsuarioRepository usuarioRepository, NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository, PeriodoAcademicoRepository periodoRepository,
-            TareaCalificacionRepository tareaRepository, ProyectoCalificacionRepository proyectoRepository,
-            ExamenRepository examenRepository, NotaExamenRepository notaExamenRepository,
-            EvaluacionCotidianaRepository evaluacionRepository,
-            AsistenciaEstudianteRepository asistenciaRepository, DistribucionPorcentualService distribucionService,
-            IndicadorCotidianoService indicadorCotidianoService, TareaDefinicionService tareaDefinicionService,
-            ProyectoEstudiantilService proyectoEstudiantilService, ExamenService examenService) {
+            ResultadoComponenteRepository resultadoRepository, AsistenciaEstudianteRepository asistenciaRepository,
+            DistribucionPorcentualService distribucionService, ComponenteService componenteService) {
         this.usuarioRepository = usuarioRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
         this.periodoRepository = periodoRepository;
-        this.tareaRepository = tareaRepository;
-        this.proyectoRepository = proyectoRepository;
-        this.examenRepository = examenRepository;
-        this.notaExamenRepository = notaExamenRepository;
-        this.evaluacionRepository = evaluacionRepository;
+        this.resultadoRepository = resultadoRepository;
         this.asistenciaRepository = asistenciaRepository;
         this.distribucionService = distribucionService;
-        this.indicadorCotidianoService = indicadorCotidianoService;
-        this.tareaDefinicionService = tareaDefinicionService;
-        this.proyectoEstudiantilService = proyectoEstudiantilService;
-        this.examenService = examenService;
+        this.componenteService = componenteService;
     }
 
     public List<NivelAcademico> listarNivelesActivos(Long institucionId) {
@@ -98,71 +73,36 @@ public class PromedioService {
 
         List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
 
-        Map<Long, List<TareaCalificacion>> tareasPorEstudiante = tareaRepository
-                .findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoId(institucionId, nivelId, materiaId, periodoId)
-                .stream().collect(Collectors.groupingBy(t -> t.getEstudiante().getId()));
-
-        Map<Long, List<ProyectoCalificacion>> proyectosPorEstudiante = proyectoRepository
-                .findByProyectoDefinicion_PeriodoIdAndProyectoDefinicion_MateriaId(periodoId, materiaId)
-                .stream().collect(Collectors.groupingBy(p -> p.getEstudiante().getId()));
-
-        Map<Long, Examen> examenesPorId = examenRepository
-                .findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(institucionId, nivelId, materiaId, periodoId)
-                .stream().collect(Collectors.toMap(Examen::getId, e -> e));
-        Map<Long, List<NotaExamen>> notasPorEstudiante = notaExamenRepository
-                .findByExamen_PeriodoIdAndExamen_MateriaId(periodoId, materiaId)
-                .stream().collect(Collectors.groupingBy(n -> n.getEstudiante().getId()));
-
-        Map<Long, List<EvaluacionCotidiana>> evaluacionesPorEstudiante = evaluacionRepository
-                .findByInstitucionIdAndNivelIdAndMateriaIdAndPeriodoId(institucionId, nivelId, materiaId, periodoId)
-                .stream().collect(Collectors.groupingBy(ev -> ev.getEstudiante().getId()));
+        Map<Long, List<ResultadoComponente>> resultadosPorEstudiante = resultadoRepository
+                .findByComponente_Institucion_IdAndComponente_Nivel_IdAndComponente_Materia_IdAndPeriodo_Id(
+                        institucionId, nivelId, materiaId, periodoId)
+                .stream().collect(Collectors.groupingBy(r -> r.getEstudiante().getId()));
 
         DistribucionPorcentual distribucion = distribucionService.obtenerDistribucion(institucionId, periodoId, materiaId);
-        Map<Long, Double> pesosCotidiano = indicadorCotidianoService.calcularPesosEfectivos(
-                indicadorCotidianoService.listarIndicadores(institucionId, nivelId, materiaId));
-        Map<Long, Double> pesosTareas = tareaDefinicionService.calcularPesosEfectivos(
-                tareaDefinicionService.listarTareas(institucionId, nivelId, materiaId));
-        Map<Long, Double> pesosProyectos = proyectoEstudiantilService.calcularPesosEfectivos(
-                proyectoEstudiantilService.listarProyectos(institucionId, nivelId, materiaId, periodoId));
-        Map<Long, Double> pesosExamenes = examenService.calcularPesosEfectivos(
-                examenService.listarExamenes(institucionId, nivelId, materiaId, periodoId));
+        Map<Long, Double> pesosCotidiano = componenteService.calcularPesosEfectivos(
+                componenteService.listar(institucionId, ClaveComponente.COTIDIANO, nivelId, materiaId, null));
+        Map<Long, Double> pesosTareas = componenteService.calcularPesosEfectivos(
+                componenteService.listar(institucionId, ClaveComponente.TAREA, nivelId, materiaId, null));
+        Map<Long, Double> pesosProyectos = componenteService.calcularPesosEfectivos(
+                componenteService.listar(institucionId, ClaveComponente.PROYECTO, nivelId, materiaId, periodoId));
+        Map<Long, Double> pesosExamenes = componenteService.calcularPesosEfectivos(
+                componenteService.listar(institucionId, ClaveComponente.EXAMEN, nivelId, materiaId, periodoId));
 
         return estudiantes.stream()
                 .map(est -> calcularFila(est, periodo, materiaId, institucionId,
-                        tareasPorEstudiante.getOrDefault(est.getId(), List.of()),
-                        proyectosPorEstudiante.getOrDefault(est.getId(), List.of()),
-                        notasPorEstudiante.getOrDefault(est.getId(), List.of()), examenesPorId,
-                        evaluacionesPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, pesosCotidiano,
+                        resultadosPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, pesosCotidiano,
                         pesosTareas, pesosProyectos, pesosExamenes))
                 .toList();
     }
 
     private FilaPromedio calcularFila(Usuario estudiante, PeriodoAcademico periodo, Long materiaId,
-            Long institucionId, List<TareaCalificacion> tareas, List<ProyectoCalificacion> proyectos,
-            List<NotaExamen> notas, Map<Long, Examen> examenesPorId,
-            List<EvaluacionCotidiana> evaluaciones, DistribucionPorcentual distribucion,
+            Long institucionId, List<ResultadoComponente> resultados, DistribucionPorcentual distribucion,
             Map<Long, Double> pesosCotidiano, Map<Long, Double> pesosTareas, Map<Long, Double> pesosProyectos,
             Map<Long, Double> pesosExamenes) {
-        Integer cotidiano = promedioPonderado(evaluaciones.stream()
-                .map(ev -> new double[] { ev.getCalificacion(),
-                        pesosCotidiano.getOrDefault(ev.getIndicador().getId(), 0.0) })
-                .toList());
-
-        Integer tareasScore = promedioPonderado(tareas.stream()
-                .map(t -> new double[] { t.getCalificacion(),
-                        pesosTareas.getOrDefault(t.getTareaDefinicion().getId(), 0.0) })
-                .toList());
-
-        Integer proyectosScore = promedioPonderado(proyectos.stream()
-                .map(p -> new double[] { p.getCalificacion(),
-                        pesosProyectos.getOrDefault(p.getProyectoDefinicion().getId(), 0.0) })
-                .toList());
-
-        Integer examenesScore = promedioPonderado(notas.stream()
-                .filter(n -> examenesPorId.containsKey(n.getExamen().getId()))
-                .map(n -> new double[] { n.getCalificacion(),
-                        pesosExamenes.getOrDefault(n.getExamen().getId(), 0.0) })
-                .toList());
+        Integer cotidiano = promedioDe(resultados, ClaveComponente.COTIDIANO, pesosCotidiano);
+        Integer tareasScore = promedioDe(resultados, ClaveComponente.TAREA, pesosTareas);
+        Integer proyectosScore = promedioDe(resultados, ClaveComponente.PROYECTO, pesosProyectos);
+        Integer examenesScore = promedioDe(resultados, ClaveComponente.EXAMEN, pesosExamenes);
 
         Integer asistenciaScore = calcularAsistencia(institucionId, estudiante.getId(), materiaId, periodo);
 
@@ -186,6 +126,13 @@ public class PromedioService {
                         || r.getEstado() == AsistenciaEstudiante.EstadoAsistencia.TARDIA)
                 .count();
         return (int) Math.round(presentes * 100.0 / registros.size());
+    }
+
+    private Integer promedioDe(List<ResultadoComponente> resultados, ClaveComponente clave, Map<Long, Double> pesos) {
+        return promedioPonderado(resultados.stream()
+                .filter(r -> r.getComponente().getClave() == clave)
+                .map(r -> new double[] { r.getCalificacion(), pesos.getOrDefault(r.getComponente().getId(), 0.0) })
+                .toList());
     }
 
     /** Promedio ponderado (0-100) de una lista de [calificacion, peso]; null si la lista está vacía. */
