@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.WhatsAppConfiguracion;
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.WhatsAppConfiguracionService;
 import com.chavescr.nexa.service.WhatsAppMensajeService;
 
@@ -35,14 +35,14 @@ public class WhatsAppConfiguracionController {
             @RequestParam(required = false) String accessToken,
             @RequestParam(defaultValue = "false") boolean activo,
             Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            WhatsAppConfiguracion config = configuracionService.guardar(institucionId, phoneNumberId,
+            WhatsAppConfiguracion config = configuracionService.guardar(direccionId, phoneNumberId,
                     businessAccountId, numeroMostrar, accessToken, activo);
             model.addAttribute("whatsappConfig", config);
             notificarGuardado(response, "Configuración de WhatsApp guardada correctamente");
         } catch (IllegalArgumentException e) {
-            model.addAttribute("whatsappConfig", configuracionService.obtener(institucionId));
+            model.addAttribute("whatsappConfig", configuracionService.obtener(direccionId));
             notificarError(response, e.getMessage());
         }
         return "configuracion/whatsapp/whatsapp :: content";
@@ -50,42 +50,42 @@ public class WhatsAppConfiguracionController {
 
     @PostMapping("/probar")
     public String probarConexion(Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            var info = mensajeService.probarConexion(institucionId);
+            var info = mensajeService.probarConexion(direccionId);
             String detalle = info.numeroVerificado() != null ? " (" + info.numeroVerificado() + ")" : "";
             notificarGuardado(response, "Conexión verificada correctamente con WhatsApp" + detalle);
         } catch (RuntimeException e) {
             notificarError(response, e.getMessage());
         }
-        model.addAttribute("whatsappConfig", configuracionService.obtener(institucionId));
+        model.addAttribute("whatsappConfig", configuracionService.obtener(direccionId));
         return "configuracion/whatsapp/whatsapp :: content";
     }
 
     @PostMapping("/prueba-mensaje")
     public String enviarPrueba(@RequestParam String telefonoPrueba, Model model, HttpSession session,
             HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            mensajeService.enviarMensajePrueba(institucionId, telefonoPrueba);
+            mensajeService.enviarMensajePrueba(direccionId, telefonoPrueba);
             notificarGuardado(response, "Mensaje de prueba enviado a " + telefonoPrueba);
         } catch (RuntimeException e) {
             notificarError(response, e.getMessage());
         }
-        model.addAttribute("whatsappConfig", configuracionService.obtener(institucionId));
+        model.addAttribute("whatsappConfig", configuracionService.obtener(direccionId));
         return "configuracion/whatsapp/whatsapp :: content";
     }
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long direccionId(HttpSession session) {
+        return (Long) session.getAttribute("SESSION_DIRECCION_ID");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) {
-            throw new InstitucionNoSeleccionadaException();
+    private Long requerirDireccion(HttpSession session) {
+        Long direccionId = direccionId(session);
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
         }
-        return institucionId;
+        return direccionId;
     }
 
     private void notificarGuardado(HttpServletResponse response, String mensaje) {

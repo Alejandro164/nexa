@@ -27,17 +27,17 @@ public class DatabaseIndexInitializer {
                 "CREATE INDEX IF NOT EXISTS idx_usuarios_usuario ON usuarios (usuario)",
                 "CREATE INDEX IF NOT EXISTS idx_usuarios_cedula  ON usuarios (cedula)",
                 "CREATE INDEX IF NOT EXISTS idx_usuarios_nombre  ON usuarios (nombre)",
-                "CREATE INDEX IF NOT EXISTS idx_instituciones_nombre ON instituciones (nombre)",
-                "CREATE INDEX IF NOT EXISTS idx_instituciones_codigo ON instituciones (codigo)",
+                "CREATE INDEX IF NOT EXISTS idx_direcciones_nombre ON direcciones (nombre)",
+                "CREATE INDEX IF NOT EXISTS idx_direcciones_codigo ON direcciones (codigo)",
                 "CREATE INDEX IF NOT EXISTS idx_user_roles_uid   ON usuario_roles (usuario_id)",
                 "CREATE INDEX IF NOT EXISTS idx_user_roles_rid   ON usuario_roles (rol_id)",
-                "CREATE INDEX IF NOT EXISTS idx_user_inst_uid    ON usuario_instituciones (usuario_id)",
-                "CREATE INDEX IF NOT EXISTS idx_user_inst_iid    ON usuario_instituciones (institucion_id)",
-                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_fecha ON bitacora_evento (institucion_id, fecha DESC)",
-                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_modulo ON bitacora_evento (institucion_id, modulo, fecha DESC)",
-                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo ON incidentes_conducta (institucion_id, periodo_id)",
-                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo_tipo ON incidentes_conducta (institucion_id, periodo_id, tipo)",
-                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_estudiante_periodo ON incidentes_conducta (institucion_id, periodo_id, estudiante_id)"
+                "CREATE INDEX IF NOT EXISTS idx_user_inst_uid    ON usuario_direcciones (usuario_id)",
+                "CREATE INDEX IF NOT EXISTS idx_user_inst_iid    ON usuario_direcciones (direccion_id)",
+                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_fecha ON bitacora_evento (direccion_id, fecha DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_modulo ON bitacora_evento (direccion_id, modulo, fecha DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo ON incidentes_conducta (direccion_id, periodo_id)",
+                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo_tipo ON incidentes_conducta (direccion_id, periodo_id, tipo)",
+                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_estudiante_periodo ON incidentes_conducta (direccion_id, periodo_id, estudiante_id)"
         };
 
         for (String sql : statements) {
@@ -112,9 +112,9 @@ public class DatabaseIndexInitializer {
         try {
             String periodo = conPeriodo ? "periodo_id" : "NULL";
             jdbcTemplate.execute(
-                    "INSERT INTO componentes (institucion_id, clave, periodo_id, nivel_id, materia_id, titulo, "
+                    "INSERT INTO componentes (direccion_id, clave, periodo_id, nivel_id, materia_id, titulo, "
                             + "descripcion, fecha, porcentaje, puntos_totales, origen_id) "
-                            + "SELECT institucion_id, '" + clave + "', " + periodo + ", nivel_id, materia_id, titulo, "
+                            + "SELECT direccion_id, '" + clave + "', " + periodo + ", nivel_id, materia_id, titulo, "
                             + "descripcion, " + columnaFecha + ", porcentaje, puntos_totales, id FROM " + tabla + " origen "
                             + "WHERE NOT EXISTS (SELECT 1 FROM componentes c WHERE c.clave = '" + clave
                             + "' AND c.origen_id = origen.id)");

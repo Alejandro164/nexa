@@ -11,18 +11,18 @@ import com.chavescr.nexa.entity.DocenteGuia;
 public interface DocenteGuiaRepository extends JpaRepository<DocenteGuia, Long> {
 
     @EntityGraph(attributePaths = "nivel")
-    List<DocenteGuia> findByInstitucionIdAndDocenteIdOrderByNivel_GradoAscNivel_SeccionAsc(
-            Long institucionId, Long docenteId);
+    List<DocenteGuia> findByDireccionIdAndDocenteIdOrderByNivel_GradoAscNivel_SeccionAsc(
+            Long direccionId, Long docenteId);
 
     @EntityGraph(attributePaths = { "docente", "nivel" })
-    List<DocenteGuia> findByInstitucionIdOrderByNivel_GradoAscNivel_SeccionAsc(Long institucionId);
+    List<DocenteGuia> findByDireccionIdOrderByNivel_GradoAscNivel_SeccionAsc(Long direccionId);
 
     @EntityGraph(attributePaths = "docente")
-    Optional<DocenteGuia> findByInstitucionIdAndNivelId(Long institucionId, Long nivelId);
+    Optional<DocenteGuia> findByDireccionIdAndNivelId(Long direccionId, Long nivelId);
 
-    void deleteByInstitucionIdAndDocenteId(Long institucionId, Long docenteId);
+    void deleteByDireccionIdAndDocenteId(Long direccionId, Long docenteId);
 
     void deleteByDocenteId(Long docenteId);
 
-    void deleteByInstitucionIdAndNivelId(Long institucionId, Long nivelId);
+    void deleteByDireccionIdAndNivelId(Long direccionId, Long nivelId);
 }

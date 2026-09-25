@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.DiaLaboral;
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.BloqueoLeccionService;
-import com.chavescr.nexa.service.ConfiguracionInstitucionService;
+import com.chavescr.nexa.service.ConfiguracionDireccionService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,16 +26,16 @@ import jakarta.servlet.http.HttpSession;
 public class ConfiguracionInstitucionalController {
 
     @Autowired
-    private ConfiguracionInstitucionService service;
+    private ConfiguracionDireccionService service;
 
     @Autowired
     private BloqueoLeccionService bloqueoLeccionService;
 
     @GetMapping
     public String index(Model model, HttpServletRequest request, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        cargarJornada(model, institucionId);
-        cargarBloqueo(model, institucionId);
+        Long direccionId = requerirDireccion(session);
+        cargarJornada(model, direccionId);
+        cargarBloqueo(model, direccionId);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "configuracion-institucional/index :: htmx-content";
         }
@@ -44,7 +44,7 @@ public class ConfiguracionInstitucionalController {
 
     @GetMapping("/jornada")
     public String jornada(Model model, HttpSession session) {
-        cargarJornada(model, requerirInstitucion(session));
+        cargarJornada(model, requerirDireccion(session));
         return "configuracion-institucional/jornada/jornada :: content";
     }
 
@@ -55,14 +55,14 @@ public class ConfiguracionInstitucionalController {
             @RequestParam(required = false) String bloquesJornada,
             @RequestParam(name = "dias", required = false) List<String> dias,
             Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            service.guardar(institucionId, inicioJornada, minutosLeccion, bloquesJornada, dias);
-            cargarJornada(model, institucionId);
+            service.guardar(direccionId, inicioJornada, minutosLeccion, bloquesJornada, dias);
+            cargarJornada(model, direccionId);
             response.setHeader("HX-Trigger",
                     "{\"institucionalGuardado\":{\"mensaje\":\"Jornada lectiva actualizada\"}}");
         } catch (IllegalArgumentException e) {
-            cargarJornada(model, institucionId);
+            cargarJornada(model, direccionId);
             notificarError(response, e.getMessage());
         }
         return "configuracion-institucional/jornada/jornada :: content";
@@ -70,47 +70,47 @@ public class ConfiguracionInstitucionalController {
 
     @GetMapping("/componentes")
     public String componentes(HttpSession session) {
-        requerirInstitucion(session);
+        requerirDireccion(session);
         return "configuracion-institucional/componentes/componentes :: content";
     }
 
     @GetMapping("/bloqueo-leccion")
     public String bloqueoLeccion(Model model, HttpSession session) {
-        cargarBloqueo(model, requerirInstitucion(session));
+        cargarBloqueo(model, requerirDireccion(session));
         return "configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content";
     }
 
     @PostMapping("/bloqueo-leccion")
     public String guardarBloqueo(@RequestParam String reglas,
             Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            bloqueoLeccionService.guardar(institucionId, reglas);
-            cargarBloqueo(model, institucionId);
+            bloqueoLeccionService.guardar(direccionId, reglas);
+            cargarBloqueo(model, direccionId);
             response.setHeader("HX-Trigger",
                     "{\"institucionalGuardado\":{\"mensaje\":\"Bloqueos de lección actualizados\"}}");
         } catch (IllegalArgumentException e) {
-            cargarBloqueo(model, institucionId);
+            cargarBloqueo(model, direccionId);
             notificarError(response, e.getMessage());
         }
         return "configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content";
     }
 
-    private void cargarJornada(Model model, Long institucionId) {
-        model.addAttribute("configJornada", service.obtener(institucionId));
+    private void cargarJornada(Model model, Long direccionId) {
+        model.addAttribute("configJornada", service.obtener(direccionId));
         model.addAttribute("diasCatalogo", DiaLaboral.CATALOGO);
     }
 
-    private void cargarBloqueo(Model model, Long institucionId) {
-        model.addAttribute("bloqueoEstadoJson", bloqueoLeccionService.estadoJson(institucionId));
+    private void cargarBloqueo(Model model, Long direccionId) {
+        model.addAttribute("bloqueoEstadoJson", bloqueoLeccionService.estadoJson(direccionId));
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId == null) {
-            throw new InstitucionNoSeleccionadaException();
+    private Long requerirDireccion(HttpSession session) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
         }
-        return institucionId;
+        return direccionId;
     }
 
     private void notificarError(HttpServletResponse response, String mensaje) {

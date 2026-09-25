@@ -35,7 +35,7 @@ public enum ModuloSistema {
     CONFIGURACION_INSTITUCIONAL("/configuracion-institucional", "Configuración Institucional"),
     USUARIOS("/usuarios", "Usuarios"),
     SEGURIDAD("/seguridad", "Seguridad"),
-    INSTITUCIONES("/instituciones", "Instituciones");
+    DIRECCIONES("/direcciones", "Direcciones");
 
     private final String ruta;
     private final String etiqueta;

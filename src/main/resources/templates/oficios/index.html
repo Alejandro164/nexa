@@ -9,13 +9,13 @@
 <body>
 
     <h2 layout:fragment="page-title">📋 Gestión de Oficios</h2>
-    <p layout:fragment="page-subtitle">Registro y control de oficios emitidos por la institución</p>
+    <p layout:fragment="page-subtitle">Registro y control de oficios emitidos por la dirección</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">📋 Gestión de Oficios</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Registro y control de oficios emitidos por la institución</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Registro y control de oficios emitidos por la dirección</p>
     <main layout:fragment="content"
           x-data="{
               openModal(id) {

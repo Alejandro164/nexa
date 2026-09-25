@@ -13,8 +13,8 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "niveles_academicos", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_nivel_institucion_grado_seccion",
-                columnNames = {"institucion_id", "grado", "seccion"})
+        @UniqueConstraint(name = "uk_nivel_direccion_grado_seccion",
+                columnNames = {"direccion_id", "grado", "seccion"})
 })
 public class NivelAcademico {
 
@@ -23,8 +23,8 @@ public class NivelAcademico {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @Column(nullable = false)
     private Integer grado;
@@ -43,12 +43,12 @@ public class NivelAcademico {
         this.id = id;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 
     public Integer getGrado() {

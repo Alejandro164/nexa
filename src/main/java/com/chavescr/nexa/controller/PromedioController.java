@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import java.util.List;
 
@@ -40,10 +40,10 @@ public class PromedioController {
     public String promedio(@RequestParam(required = false) Long nivelId,
             @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
             HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
-        var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
-        var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
+        var niveles = alcanceDocenteService.nivelesVisibles(direccionId, docenteId);
+        var materias = alcanceDocenteService.materiasVisibles(direccionId, docenteId);
         if (nivelId == null && !niveles.isEmpty()) {
             nivelId = niveles.get(0).getId();
         }
@@ -51,16 +51,16 @@ public class PromedioController {
             materiaId = materias.get(0).getId();
         }
         List<FilaPromedio> filas = nivelId != null && materiaId != null
-                ? service.calcularPromedio(institucionId, nivelId, materiaId)
+                ? service.calcularPromedio(direccionId, nivelId, materiaId)
                 : List.of();
         List<Double> promedios = filas.stream()
                 .map(FilaPromedio::getPromedioFinal)
                 .filter(p -> p != null)
                 .toList();
 
-        PeriodoAcademico periodoActual = service.periodoActual(institucionId);
+        PeriodoAcademico periodoActual = service.periodoActual(direccionId);
         boolean notasEnviadas = docenteId != null && periodoActual != null && nivelId != null && materiaId != null
-                && envioNotasDocenteService.estaEnviado(institucionId, periodoActual.getId(), docenteId, materiaId, nivelId);
+                && envioNotasDocenteService.estaEnviado(direccionId, periodoActual.getId(), docenteId, materiaId, nivelId);
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
@@ -79,16 +79,16 @@ public class PromedioController {
     @PostMapping("/enviar")
     public String enviarNotas(@RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
         if (docenteId == null) {
             throw new IllegalArgumentException("Solo un docente puede enviar sus notas");
         }
-        PeriodoAcademico periodoActual = service.periodoActual(institucionId);
+        PeriodoAcademico periodoActual = service.periodoActual(direccionId);
         if (periodoActual == null) {
             throw new IllegalArgumentException("No hay un período activo");
         }
-        envioNotasDocenteService.enviar(institucionId, periodoActual.getId(), docenteId, materiaId, nivelId);
+        envioNotasDocenteService.enviar(direccionId, periodoActual.getId(), docenteId, materiaId, nivelId);
         notificarGuardado(response, "Notas enviadas correctamente");
         return promedio(nivelId, materiaId, model, session, request);
     }
@@ -96,14 +96,14 @@ public class PromedioController {
     @PostMapping("/enviar/deshacer")
     public String deshacerEnvioNotas(@RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
         if (docenteId == null) {
             throw new IllegalArgumentException("Solo un docente puede deshacer su envío");
         }
-        PeriodoAcademico periodoActual = service.periodoActual(institucionId);
+        PeriodoAcademico periodoActual = service.periodoActual(direccionId);
         if (periodoActual != null) {
-            envioNotasDocenteService.deshacer(institucionId, periodoActual.getId(), docenteId, materiaId, nivelId);
+            envioNotasDocenteService.deshacer(direccionId, periodoActual.getId(), docenteId, materiaId, nivelId);
         }
         notificarGuardado(response, "Envío de notas deshecho");
         return promedio(nivelId, materiaId, model, session, request);
@@ -113,10 +113,10 @@ public class PromedioController {
         response.setHeader("HX-Trigger", "{\"academicoGuardado\":{\"mensaje\":\"" + mensaje + "\"}}");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long requerirDireccion(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_DIRECCION_ID");
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

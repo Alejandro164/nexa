@@ -2,7 +2,7 @@
 
 ## 1. Visión General
 
-**Nexa** es una plataforma de gestión educativa multi-institucion, construida como una SPA (Single Page Application) renderizada en servidor con Thymeleaf + HTMX. El frontend es reactivo sin necesidad de un framework JavaScript pesado; toda la navegación entre páginas ocurre mediante HTMX, que reemplaza solo el área de contenido principal sin recargar la página completa.
+**Nexa** es una plataforma de gestión educativa multi-direccion, construida como una SPA (Single Page Application) renderizada en servidor con Thymeleaf + HTMX. El frontend es reactivo sin necesidad de un framework JavaScript pesado; toda la navegación entre páginas ocurre mediante HTMX, que reemplaza solo el área de contenido principal sin recargar la página completa.
 
 ### Stack tecnológico
 
@@ -124,15 +124,15 @@ com.chavescr.nexa/
 
 | Entity | Table | Purpose |
 |---|---|---|
-| Usuario | `usuarios` | Usuarios del sistema. Implementa `UserDetails`. M2M con `roles` e `instituciones`. Login por email/usuario/cédula. |
+| Usuario | `usuarios` | Usuarios del sistema. Implementa `UserDetails`. M2M con `roles` e `direcciones`. Login por email/usuario/cédula. |
 | Rol | `roles` | Roles de seguridad: `ROLE_ADMIN`, `ROLE_EDITOR`, `ROLE_USER`. |
-| Institucion | `instituciones` | Centros educativos. M2M con `Usuario`. |
+| Direccion | `direcciones` | Instituciones educativos. M2M con `Usuario`. |
 | Visita | `visitas` | Registro de visitantes. Ciclo de vida: PENDIENTE → AUTORIZADA/DENEGADA → FINALIZADA. |
 | RegistroAsistencia | `registros_asistencia` | Asistencia de personal. Tipos: ENTRADA, SALIDA. |
 | NubeNodo | `nube_nodos` | Sistema de archivos auto-referenciado. Tipos: CARPETA, ARCHIVO. |
-| PeriodoAcademico | `periodos_academicos` | Períodos lectivos. UK: (institucion, codigo). |
-| NivelAcademico | `niveles_academicos` | Niveles/grados/secciones. UK: (institucion, grado, seccion). |
-| Materia | `materias` | Materias/asignaturas. UK: (institucion, codigo). |
+| PeriodoAcademico | `periodos_academicos` | Períodos lectivos. UK: (direccion, codigo). |
+| NivelAcademico | `niveles_academicos` | Niveles/grados/secciones. UK: (direccion, grado, seccion). |
+| Materia | `materias` | Materias/asignaturas. UK: (direccion, codigo). |
 | HorarioLeccion | `horario_lecciones` | Grid de horario. UK: (periodo, nivel, dia, numeroLeccion). |
 
 ### 3.6 Excepciones
@@ -184,8 +184,8 @@ templates/
 │   └── login.html          # Login (standalone, sin decorador)
 ├── inicio/                 # Dashboard
 │   ├── inicio.html
-│   ├── lista-instituciones.html
-│   └── instituciones-modal.html
+│   ├── lista-direcciones.html
+│   └── direcciones-modal.html
 ├── {modulo}/                # Una carpeta por módulo/controlador
 │   ├── index.html           # Shell: decorador + tabs + CSS global del módulo
 │   ├── formulario.html      # Modal crear/editar (cuando aplica)
@@ -199,7 +199,7 @@ templates/
 │       └── formulario.html  # Modal del sub-módulo
 └── fragments/               # Fragmentos reusables
     ├── tabla-usuarios.html
-    └── tabla-centros.html
+    └── tabla-instituciones.html
 ```
 
 **Reglas de organización:**
@@ -500,7 +500,7 @@ Es un sub-menú que aparece dentro de un fragmento cargado por un tab primario. 
 
 ### 5.2 Autorización
 
-- `ROLE_ADMIN`: acceso total, incluyendo gestión de instituciones y usuarios.
+- `ROLE_ADMIN`: acceso total, incluyendo gestión de direcciones y usuarios.
 - `ROLE_EDITOR`: gestión académica y operativa.
 - `ROLE_USER`: acceso básico.
 - La sección "Administración" del sidebar solo visible con `ROLE_ADMIN`.
@@ -565,7 +565,7 @@ PENDIENTE → AUTORIZADA → (registra ingreso) → (registra salida) → FINALI
 
 ## 8. Configuración Académica
 
-Módulo CRUD completo para la estructura académica de cada institución:
+Módulo CRUD completo para la estructura académica de cada dirección:
 
 | Sub-módulo | Entidad | Operaciones |
 |---|---|---|
@@ -574,7 +574,7 @@ Módulo CRUD completo para la estructura académica de cada institución:
 | Materias | `Materia` | CRUD + toggle activo. Campo `color` para identificación visual |
 | Horario | `HorarioLeccion` | Grid semanal (L-V) × 8 lecciones. Asigna materia + docente a cada celda |
 
-Todas las operaciones requieren `SESSION_INSTITUCION_ID` de la sesión. Cada entidad valida pertenencia a la institución antes de operar.
+Todas las operaciones requieren `SESSION_DIRECCION_ID` de la sesión. Cada entidad valida pertenencia a la dirección antes de operar.
 
 ---
 
@@ -612,8 +612,8 @@ SESSION_<OBJETO>_<PROPIEDAD>
 
 Ejemplos:
 ```java
-session.setAttribute("SESSION_INSTITUCION_ID", id);
-session.setAttribute("SESSION_INSTITUCION_NOMBRE", nombre);
+session.setAttribute("SESSION_DIRECCION_ID", id);
+session.setAttribute("SESSION_DIRECCION_NOMBRE", nombre);
 session.setAttribute("SESSION_USUARIO_ID", usuarioId);
 session.getAttribute("SESSION_USUARIO_ROL");
 ```

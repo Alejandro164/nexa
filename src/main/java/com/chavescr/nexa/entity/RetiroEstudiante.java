@@ -53,8 +53,8 @@ public class RetiroEstudiante {
     private String retiradoPorIdentificacion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "institucion_id")
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id")
+    private Direccion direccion;
 
     public enum EstadoRetiro {
         PENDIENTE, AUTORIZADO, DENEGADO, FINALIZADO
@@ -151,11 +151,11 @@ public class RetiroEstudiante {
         this.retiradoPorIdentificacion = retiradoPorIdentificacion;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 }

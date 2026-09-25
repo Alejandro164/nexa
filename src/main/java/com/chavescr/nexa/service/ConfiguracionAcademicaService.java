@@ -15,9 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.BloqueoLeccion;
-import com.chavescr.nexa.entity.ConfiguracionInstitucion;
+import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
@@ -26,7 +26,7 @@ import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AulaRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
@@ -38,7 +38,7 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 @Transactional
 public class ConfiguracionAcademicaService {
 
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final PeriodoAcademicoRepository periodoRepository;
     private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
@@ -53,9 +53,9 @@ public class ConfiguracionAcademicaService {
     private final BloqueoLeccionService bloqueoLeccionService;
     private final SeccionBloqueoService seccionBloqueoService;
     private final EnvioNotasDocenteService envioNotasDocenteService;
-    private final ConfiguracionInstitucionService configuracionInstitucionService;
+    private final ConfiguracionDireccionService configuracionDireccionService;
 
-    public ConfiguracionAcademicaService(InstitucionRepository institucionRepository,
+    public ConfiguracionAcademicaService(DireccionRepository direccionRepository,
             PeriodoAcademicoRepository periodoRepository,
             NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository,
@@ -70,8 +70,8 @@ public class ConfiguracionAcademicaService {
             BloqueoLeccionService bloqueoLeccionService,
             SeccionBloqueoService seccionBloqueoService,
             EnvioNotasDocenteService envioNotasDocenteService,
-            ConfiguracionInstitucionService configuracionInstitucionService) {
-        this.institucionRepository = institucionRepository;
+            ConfiguracionDireccionService configuracionDireccionService) {
+        this.direccionRepository = direccionRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
@@ -87,39 +87,39 @@ public class ConfiguracionAcademicaService {
         this.seccionBloqueoService = seccionBloqueoService;
         this.envioNotasDocenteService = envioNotasDocenteService;
 
-        this.configuracionInstitucionService = configuracionInstitucionService;
+        this.configuracionDireccionService = configuracionDireccionService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public ConfiguracionInstitucion obtenerConfiguracion(Long institucionId) {
-        return configuracionInstitucionService.obtener(institucionId);
+    public ConfiguracionDireccion obtenerConfiguracion(Long direccionId) {
+        return configuracionDireccionService.obtener(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public List<PeriodoAcademico> listarPeriodos(Long institucionId) {
-        return periodoRepository.findByInstitucionIdOrderByFechaInicioDesc(institucionId);
+    public List<PeriodoAcademico> listarPeriodos(Long direccionId) {
+        return periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public List<PeriodoAcademico> listarPeriodosActivos(Long institucionId) {
-        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId);
+    public List<PeriodoAcademico> listarPeriodosActivos(Long direccionId) {
+        return periodoRepository.findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public PeriodoAcademico obtenerPeriodo(Long institucionId, Long id) {
-        return periodoRepository.findByIdAndInstitucionId(id, institucionId)
+    public PeriodoAcademico obtenerPeriodo(Long direccionId, Long id) {
+        return periodoRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
     }
 
-    public PeriodoAcademico guardarPeriodo(Long institucionId, PeriodoAcademico datos) {
+    public PeriodoAcademico guardarPeriodo(Long direccionId, PeriodoAcademico datos) {
         if (datos.getFechaFin().isBefore(datos.getFechaInicio())) {
             throw new IllegalArgumentException("La fecha final no puede ser anterior a la fecha inicial");
         }
         if (datos.getId() == null) {
-            periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId)
+            periodoRepository.findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(direccionId)
                     .stream().findFirst()
                     .ifPresent(actual -> {
-                        var pendientes = envioNotasDocenteService.listarPendientes(institucionId, actual.getId());
+                        var pendientes = envioNotasDocenteService.listarPendientes(direccionId, actual.getId());
                         if (!pendientes.isEmpty()) {
                             String nombres = pendientes.stream()
                                     .map(EnvioNotasDocenteService.DocentePendiente::nombre)
@@ -132,8 +132,8 @@ public class ConfiguracionAcademicaService {
         }
         PeriodoAcademico periodo = datos.getId() == null
                 ? new PeriodoAcademico()
-                : obtenerPeriodo(institucionId, datos.getId());
-        periodo.setInstitucion(obtenerInstitucion(institucionId));
+                : obtenerPeriodo(direccionId, datos.getId());
+        periodo.setDireccion(obtenerDireccion(direccionId));
         periodo.setCodigo(datos.getCodigo().trim().toUpperCase());
         periodo.setDescripcion(datos.getDescripcion().trim());
         periodo.setFechaInicio(datos.getFechaInicio());
@@ -142,72 +142,72 @@ public class ConfiguracionAcademicaService {
         return periodoRepository.save(periodo);
     }
 
-    public void eliminarPeriodo(Long institucionId, Long id) {
-        PeriodoAcademico periodo = obtenerPeriodo(institucionId, id);
-        horarioRepository.deleteByInstitucionIdAndPeriodoId(institucionId, id);
-        docenteBloqueoService.eliminarPorPeriodo(institucionId, id);
-        seccionBloqueoService.eliminarPorPeriodo(institucionId, id);
-        envioNotasDocenteService.eliminarPorPeriodo(institucionId, id);
+    public void eliminarPeriodo(Long direccionId, Long id) {
+        PeriodoAcademico periodo = obtenerPeriodo(direccionId, id);
+        horarioRepository.deleteByDireccionIdAndPeriodoId(direccionId, id);
+        docenteBloqueoService.eliminarPorPeriodo(direccionId, id);
+        seccionBloqueoService.eliminarPorPeriodo(direccionId, id);
+        envioNotasDocenteService.eliminarPorPeriodo(direccionId, id);
         periodoRepository.delete(periodo);
     }
 
     @Transactional(readOnly = true)
-    public List<NivelAcademico> listarNiveles(Long institucionId) {
-        return nivelRepository.findByInstitucionIdOrderByGradoAscSeccionAsc(institucionId);
+    public List<NivelAcademico> listarNiveles(Long direccionId) {
+        return nivelRepository.findByDireccionIdOrderByGradoAscSeccionAsc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public List<NivelAcademico> listarNivelesActivos(Long institucionId) {
-        return nivelRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId);
+    public List<NivelAcademico> listarNivelesActivos(Long direccionId) {
+        return nivelRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public NivelAcademico obtenerNivel(Long institucionId, Long id) {
-        return nivelRepository.findByIdAndInstitucionId(id, institucionId)
+    public NivelAcademico obtenerNivel(Long direccionId, Long id) {
+        return nivelRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Nivel no encontrado"));
     }
 
-    public NivelAcademico guardarNivel(Long institucionId, NivelAcademico datos) {
+    public NivelAcademico guardarNivel(Long direccionId, NivelAcademico datos) {
         NivelAcademico nivel = datos.getId() == null
                 ? new NivelAcademico()
-                : obtenerNivel(institucionId, datos.getId());
-        nivel.setInstitucion(obtenerInstitucion(institucionId));
+                : obtenerNivel(direccionId, datos.getId());
+        nivel.setDireccion(obtenerDireccion(direccionId));
         nivel.setGrado(datos.getGrado());
         nivel.setSeccion(datos.getSeccion().trim().toUpperCase());
         nivel.setActivo(Boolean.TRUE.equals(datos.getActivo()));
         return nivelRepository.save(nivel);
     }
 
-    public void eliminarNivel(Long institucionId, Long id) {
-        NivelAcademico nivel = obtenerNivel(institucionId, id);
-        horarioRepository.deleteByInstitucionIdAndNivelId(institucionId, id);
-        docenteGuiaService.eliminarPorNivel(institucionId, id);
-        seccionBloqueoService.eliminarPorNivel(institucionId, id);
+    public void eliminarNivel(Long direccionId, Long id) {
+        NivelAcademico nivel = obtenerNivel(direccionId, id);
+        horarioRepository.deleteByDireccionIdAndNivelId(direccionId, id);
+        docenteGuiaService.eliminarPorNivel(direccionId, id);
+        seccionBloqueoService.eliminarPorNivel(direccionId, id);
         nivelRepository.delete(nivel);
     }
 
     @Transactional(readOnly = true)
-    public List<Materia> listarMaterias(Long institucionId) {
-        return materiaRepository.findByInstitucionIdOrderByNombreAsc(institucionId);
+    public List<Materia> listarMaterias(Long direccionId) {
+        return materiaRepository.findByDireccionIdOrderByNombreAsc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public List<Materia> listarMateriasActivas(Long institucionId) {
-        return materiaRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
+    public List<Materia> listarMateriasActivas(Long direccionId) {
+        return materiaRepository.findByDireccionIdAndActivoTrueOrderByNombreAsc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public List<Materia> listarMateriasParaHorario(Long institucionId, Long nivelId, String dia,
+    public List<Materia> listarMateriasParaHorario(Long direccionId, Long nivelId, String dia,
             Integer numeroLeccion, Long materiaActualId) {
-        NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
-        return bloqueoLeccionService.filtrarMaterias(institucionId, nivel.getGrado(), dia, numeroLeccion,
-                listarMateriasActivas(institucionId), materiaActualId);
+        NivelAcademico nivel = obtenerNivel(direccionId, nivelId);
+        return bloqueoLeccionService.filtrarMaterias(direccionId, nivel.getGrado(), dia, numeroLeccion,
+                listarMateriasActivas(direccionId), materiaActualId);
     }
 
     @Transactional(readOnly = true)
-    public BloqueoLeccion bloqueoDeCelda(Long institucionId, Long nivelId, String dia, Integer numeroLeccion) {
-        NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
-        return bloqueoLeccionService.vigente(institucionId, nivel.getGrado(), dia, numeroLeccion);
+    public BloqueoLeccion bloqueoDeCelda(Long direccionId, Long nivelId, String dia, Integer numeroLeccion) {
+        NivelAcademico nivel = obtenerNivel(direccionId, nivelId);
+        return bloqueoLeccionService.vigente(direccionId, nivel.getGrado(), dia, numeroLeccion);
     }
 
     @Transactional(readOnly = true)
@@ -216,15 +216,15 @@ public class ConfiguracionAcademicaService {
     }
 
     @Transactional(readOnly = true)
-    public Materia obtenerMateria(Long institucionId, Long id) {
-        return materiaRepository.findByIdAndInstitucionId(id, institucionId)
+    public Materia obtenerMateria(Long direccionId, Long id) {
+        return materiaRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
     }
 
-    public Materia guardarMateria(Long institucionId, Materia datos) {
-        Materia materia = datos.getId() == null ? new Materia() : obtenerMateria(institucionId, datos.getId());
+    public Materia guardarMateria(Long direccionId, Materia datos) {
+        Materia materia = datos.getId() == null ? new Materia() : obtenerMateria(direccionId, datos.getId());
         TipoMateria tipoMateria = resolverTipoMateria(datos);
-        materia.setInstitucion(obtenerInstitucion(institucionId));
+        materia.setDireccion(obtenerDireccion(direccionId));
         materia.setNombre(datos.getNombre().trim());
         materia.setTipoMateria(tipoMateria);
         materia.setTipo(tipoMateria.getNombre());
@@ -243,21 +243,21 @@ public class ConfiguracionAcademicaService {
                 .orElseThrow(() -> new IllegalArgumentException("Tipo de materia no encontrado"));
     }
 
-    public void eliminarMateria(Long institucionId, Long id) {
-        Materia materia = obtenerMateria(institucionId, id);
-        horarioRepository.deleteByInstitucionIdAndMateriaId(institucionId, id);
-        docenteMateriaService.eliminarPorMateria(institucionId, id);
+    public void eliminarMateria(Long direccionId, Long id) {
+        Materia materia = obtenerMateria(direccionId, id);
+        horarioRepository.deleteByDireccionIdAndMateriaId(direccionId, id);
+        docenteMateriaService.eliminarPorMateria(direccionId, id);
         materiaRepository.delete(materia);
     }
 
     @Transactional(readOnly = true)
-    public List<Aula> listarAulas(Long institucionId) {
-        return aulaRepository.findByInstitucionIdOrderByNombreAsc(institucionId);
+    public List<Aula> listarAulas(Long direccionId) {
+        return aulaRepository.findByDireccionIdOrderByNombreAsc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public List<Aula> listarAulasActivas(Long institucionId) {
-        return aulaRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
+    public List<Aula> listarAulasActivas(Long direccionId) {
+        return aulaRepository.findByDireccionIdAndActivoTrueOrderByNombreAsc(direccionId);
     }
 
     @Transactional(readOnly = true)
@@ -266,18 +266,18 @@ public class ConfiguracionAcademicaService {
     }
 
     @Transactional(readOnly = true)
-    public Aula obtenerAula(Long institucionId, Long id) {
-        return aulaRepository.findByIdAndInstitucionId(id, institucionId)
+    public Aula obtenerAula(Long direccionId, Long id) {
+        return aulaRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Aula no encontrada"));
     }
 
-    public Aula guardarAula(Long institucionId, Aula datos) {
+    public Aula guardarAula(Long direccionId, Aula datos) {
         if (datos.getCapacidad() == null || datos.getCapacidad() <= 0) {
             throw new IllegalArgumentException("La capacidad debe ser mayor a cero");
         }
-        Aula aula = datos.getId() == null ? new Aula() : obtenerAula(institucionId, datos.getId());
+        Aula aula = datos.getId() == null ? new Aula() : obtenerAula(direccionId, datos.getId());
         TipoAula tipoAula = resolverTipoAula(datos);
-        aula.setInstitucion(obtenerInstitucion(institucionId));
+        aula.setDireccion(obtenerDireccion(direccionId));
         aula.setNombre(datos.getNombre().trim());
         aula.setCapacidad(datos.getCapacidad());
         aula.setTipoAula(tipoAula);
@@ -298,15 +298,15 @@ public class ConfiguracionAcademicaService {
                 .orElseThrow(() -> new IllegalArgumentException("Tipo de aula no encontrado"));
     }
 
-    public void eliminarAula(Long institucionId, Long id) {
-        Aula aula = obtenerAula(institucionId, id);
-        horarioRepository.deleteByInstitucionIdAndAulaId(institucionId, id);
+    public void eliminarAula(Long direccionId, Long id) {
+        Aula aula = obtenerAula(direccionId, id);
+        horarioRepository.deleteByDireccionIdAndAulaId(direccionId, id);
         aulaRepository.delete(aula);
     }
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarDocentes(Long institucionId) {
-        return usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, "ROLE_DOCENTE");
+    public List<Usuario> listarDocentes(Long direccionId) {
+        return usuarioRepository.findActivosByDireccionIdAndRol(direccionId, "ROLE_DOCENTE");
     }
 
     /**
@@ -314,41 +314,41 @@ public class ConfiguracionAcademicaService {
      * docente ya no está asignado, se incluye para no romper el formulario.
      */
     @Transactional(readOnly = true)
-    public List<Usuario> listarDocentesPorMateria(Long institucionId, Long materiaId, Long docenteSeleccionadoId) {
+    public List<Usuario> listarDocentesPorMateria(Long direccionId, Long materiaId, Long docenteSeleccionadoId) {
         if (materiaId == null) {
             return List.of();
         }
         List<Usuario> docentes = new ArrayList<>(
-                docenteMateriaService.listarDocentesPorMateria(institucionId, materiaId));
+                docenteMateriaService.listarDocentesPorMateria(direccionId, materiaId));
         if (docenteSeleccionadoId != null
                 && docentes.stream().noneMatch(docente -> docente.getId().equals(docenteSeleccionadoId))) {
-            usuarioRepository.findActivoByIdAndInstitucionId(docenteSeleccionadoId, institucionId)
+            usuarioRepository.findActivoByIdAndDireccionId(docenteSeleccionadoId, direccionId)
                     .ifPresent(docente -> docentes.add(0, docente));
         }
         return docentes;
     }
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarDocentesDisponibles(Long institucionId, Long materiaId, Long docenteSeleccionadoId,
+    public List<Usuario> listarDocentesDisponibles(Long direccionId, Long materiaId, Long docenteSeleccionadoId,
             Long periodoId, String dia, Integer numeroLeccion, Long leccionId) {
-        List<Usuario> docentes = listarDocentesPorMateria(institucionId, materiaId, docenteSeleccionadoId);
+        List<Usuario> docentes = listarDocentesPorMateria(direccionId, materiaId, docenteSeleccionadoId);
         if (periodoId == null || dia == null || numeroLeccion == null) {
             return docentes;
         }
         Set<Long> noDisponibles = new HashSet<>(horarioRepository.findDocenteIdsEnBloque(
-                institucionId, periodoId, dia, numeroLeccion, leccionId));
-        noDisponibles.addAll(docenteBloqueoService.docenteIds(institucionId, periodoId, dia, numeroLeccion));
+                direccionId, periodoId, dia, numeroLeccion, leccionId));
+        noDisponibles.addAll(docenteBloqueoService.docenteIds(direccionId, periodoId, dia, numeroLeccion));
         return docentes.stream()
                 .filter(d -> Objects.equals(d.getId(), docenteSeleccionadoId) || !noDisponibles.contains(d.getId()))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public Map<String, List<HorarioLeccion>> obtenerHorario(Long institucionId, Long periodoId, Long nivelId) {
+    public Map<String, List<HorarioLeccion>> obtenerHorario(Long direccionId, Long periodoId, Long nivelId) {
         Map<String, List<HorarioLeccion>> horario = new LinkedHashMap<>();
         if (periodoId == null || nivelId == null) return horario;
-        horarioRepository.findByInstitucionIdAndPeriodoIdAndNivelIdOrderByNumeroLeccionAsc(
-                institucionId, periodoId, nivelId)
+        horarioRepository.findByDireccionIdAndPeriodoIdAndNivelIdOrderByNumeroLeccionAsc(
+                direccionId, periodoId, nivelId)
                 .forEach(l -> horario
                         .computeIfAbsent(clave(l.getDia(), l.getNumeroLeccion()), k -> new ArrayList<>())
                         .add(l));
@@ -357,11 +357,11 @@ public class ConfiguracionAcademicaService {
 
     /** Igual que {@link #obtenerHorario}, pero acotado al horario de un docente en particular (para Disponibilidad). */
     @Transactional(readOnly = true)
-    public Map<String, List<HorarioLeccion>> obtenerHorarioPorDocente(Long institucionId, Long periodoId, Long docenteId) {
+    public Map<String, List<HorarioLeccion>> obtenerHorarioPorDocente(Long direccionId, Long periodoId, Long docenteId) {
         Map<String, List<HorarioLeccion>> horario = new LinkedHashMap<>();
         if (periodoId == null || docenteId == null) return horario;
-        horarioRepository.findByInstitucionIdAndPeriodoIdAndDocenteIdOrderByDiaAscNumeroLeccionAsc(
-                institucionId, periodoId, docenteId)
+        horarioRepository.findByDireccionIdAndPeriodoIdAndDocenteIdOrderByDiaAscNumeroLeccionAsc(
+                direccionId, periodoId, docenteId)
                 .forEach(l -> horario
                         .computeIfAbsent(clave(l.getDia(), l.getNumeroLeccion()), k -> new ArrayList<>())
                         .add(l));
@@ -370,12 +370,12 @@ public class ConfiguracionAcademicaService {
 
     /** Lecciones semanales por docente en un período (para el directorio). */
     @Transactional(readOnly = true)
-    public Map<Long, Long> contarLeccionesPorDocente(Long institucionId, Long periodoId) {
+    public Map<Long, Long> contarLeccionesPorDocente(Long direccionId, Long periodoId) {
         Map<Long, Long> conteo = new LinkedHashMap<>();
         if (periodoId == null) {
             return conteo;
         }
-        for (Object[] fila : horarioRepository.countLeccionesGroupedByDocente(institucionId, periodoId)) {
+        for (Object[] fila : horarioRepository.countLeccionesGroupedByDocente(direccionId, periodoId)) {
             Long docenteId = (Long) fila[0];
             long total = ((Number) fila[1]).longValue();
             conteo.put(docenteId, total);
@@ -384,48 +384,48 @@ public class ConfiguracionAcademicaService {
     }
 
     @Transactional(readOnly = true)
-    public HorarioLeccion obtenerLeccionPorId(Long institucionId, Long id) {
-        return horarioRepository.findByIdAndInstitucionId(id, institucionId)
+    public HorarioLeccion obtenerLeccionPorId(Long direccionId, Long id) {
+        return horarioRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Lección no encontrada"));
     }
 
-    public HorarioLeccion guardarLeccion(Long institucionId, Long id, Long periodoId, Long nivelId,
+    public HorarioLeccion guardarLeccion(Long direccionId, Long id, Long periodoId, Long nivelId,
             Long materiaId, Long docenteId, Long aulaId, String dia, Integer numeroLeccion) {
-        ConfiguracionInstitucion config = obtenerConfiguracion(institucionId);
+        ConfiguracionDireccion config = obtenerConfiguracion(direccionId);
         if (!config.getDias().contains(dia) || !config.getLecciones().contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
         }
-        Materia materia = obtenerMateria(institucionId, materiaId);
-        seccionBloqueoService.tipoBloqueado(institucionId, periodoId, nivelId, dia, numeroLeccion)
+        Materia materia = obtenerMateria(direccionId, materiaId);
+        seccionBloqueoService.tipoBloqueado(direccionId, periodoId, nivelId, dia, numeroLeccion)
                 .filter(tipo -> materia.getTipoMateria() == null
                         || !materia.getTipoMateria().getId().equals(tipo.getId()))
                 .ifPresent(tipo -> {
                     throw new IllegalArgumentException(
                             "Esta lección está bloqueada para materias de tipo " + tipo.getNombre());
                 });
-        validarDocenteDeMateria(institucionId, materiaId, docenteId, id);
+        validarDocenteDeMateria(direccionId, materiaId, docenteId, id);
 
         boolean docenteOcupado = horarioRepository
-                .findByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
-                        institucionId, periodoId, docenteId, dia, numeroLeccion)
+                .findByDireccionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
+                        direccionId, periodoId, docenteId, dia, numeroLeccion)
                 .stream()
                 .anyMatch(e -> !e.getId().equals(id));
         if (docenteOcupado) {
             throw new IllegalArgumentException("El docente ya tiene otra lección asignada en este horario");
         }
-        if (docenteBloqueoService.estaBloqueado(institucionId, periodoId, docenteId, dia, numeroLeccion)) {
+        if (docenteBloqueoService.estaBloqueado(direccionId, periodoId, docenteId, dia, numeroLeccion)) {
             throw new IllegalArgumentException("El docente no está disponible en esta lección");
         }
-        NivelAcademico nivel = obtenerNivel(institucionId, nivelId);
-        bloqueoLeccionService.validarAsignacion(institucionId, nivel.getGrado(), dia, numeroLeccion, materia);
+        NivelAcademico nivel = obtenerNivel(direccionId, nivelId);
+        bloqueoLeccionService.validarAsignacion(direccionId, nivel.getGrado(), dia, numeroLeccion, materia);
 
         HorarioLeccion leccion;
         if (id != null) {
-            leccion = obtenerLeccionPorId(institucionId, id);
+            leccion = obtenerLeccionPorId(direccionId, id);
         } else {
             List<HorarioLeccion> existentes = horarioRepository
-                    .findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccionOrderByIdAsc(
-                            institucionId, periodoId, nivelId, dia, numeroLeccion);
+                    .findByDireccionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccionOrderByIdAsc(
+                            direccionId, periodoId, nivelId, dia, numeroLeccion);
             if (existentes.size() >= 3) {
                 throw new IllegalArgumentException("No se pueden asignar más de 3 materias por lección");
             }
@@ -437,13 +437,13 @@ public class ConfiguracionAcademicaService {
             leccion = new HorarioLeccion();
         }
 
-        leccion.setInstitucion(obtenerInstitucion(institucionId));
-        leccion.setPeriodo(obtenerPeriodo(institucionId, periodoId));
+        leccion.setDireccion(obtenerDireccion(direccionId));
+        leccion.setPeriodo(obtenerPeriodo(direccionId, periodoId));
         leccion.setNivel(nivel);
         leccion.setMateria(materia);
-        leccion.setDocente(usuarioRepository.findActivoByIdAndInstitucionId(docenteId, institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Docente no válido para la institución")));
-        leccion.setAula(obtenerAula(institucionId, aulaId));
+        leccion.setDocente(usuarioRepository.findActivoByIdAndDireccionId(docenteId, direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Docente no válido para la dirección")));
+        leccion.setAula(obtenerAula(direccionId, aulaId));
         leccion.setDia(dia);
         leccion.setNumeroLeccion(numeroLeccion);
         var jornada = config.jornada();
@@ -452,23 +452,23 @@ public class ConfiguracionAcademicaService {
         return horarioRepository.save(leccion);
     }
 
-    public void eliminarLeccion(Long institucionId, Long id) {
-        horarioRepository.delete(horarioRepository.findByIdAndInstitucionId(id, institucionId)
+    public void eliminarLeccion(Long direccionId, Long id) {
+        horarioRepository.delete(horarioRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Lección no encontrada")));
     }
 
     @Transactional(readOnly = true)
-    public Map<String, TipoMateria> obtenerBloqueosSeccion(Long institucionId, Long periodoId, Long nivelId) {
-        return seccionBloqueoService.mapa(institucionId, periodoId, nivelId);
+    public Map<String, TipoMateria> obtenerBloqueosSeccion(Long direccionId, Long periodoId, Long nivelId) {
+        return seccionBloqueoService.mapa(direccionId, periodoId, nivelId);
     }
 
     /** Materias activas, acotadas al tipo bloqueado en ese slot (si lo hay). */
     @Transactional(readOnly = true)
-    public List<Materia> listarMateriasDisponibles(Long institucionId, Long nivelId, Long periodoId, String dia,
+    public List<Materia> listarMateriasDisponibles(Long direccionId, Long nivelId, Long periodoId, String dia,
             Integer numeroLeccion, Long materiaSeleccionadaId) {
-        List<Materia> materias = listarMateriasActivas(institucionId);
+        List<Materia> materias = listarMateriasActivas(direccionId);
         Optional<TipoMateria> tipoBloqueado = seccionBloqueoService.tipoBloqueado(
-                institucionId, periodoId, nivelId, dia, numeroLeccion);
+                direccionId, periodoId, nivelId, dia, numeroLeccion);
         if (tipoBloqueado.isEmpty()) {
             return materias;
         }
@@ -479,21 +479,21 @@ public class ConfiguracionAcademicaService {
                 .toList();
     }
 
-    public void alternarBloqueoSeccion(Long institucionId, Long periodoId, Long nivelId, String dia,
+    public void alternarBloqueoSeccion(Long direccionId, Long periodoId, Long nivelId, String dia,
             Integer numeroLeccion, Long tipoMateriaId) {
-        seccionBloqueoService.alternar(institucionId, periodoId, nivelId, dia, numeroLeccion, tipoMateriaId);
+        seccionBloqueoService.alternar(direccionId, periodoId, nivelId, dia, numeroLeccion, tipoMateriaId);
     }
 
     public static String clave(String dia, Integer numeroLeccion) {
         return numeroLeccion + "-" + dia;
     }
 
-    private void validarDocenteDeMateria(Long institucionId, Long materiaId, Long docenteId, Long leccionId) {
-        if (docenteMateriaService.estaAsignado(institucionId, docenteId, materiaId)) {
+    private void validarDocenteDeMateria(Long direccionId, Long materiaId, Long docenteId, Long leccionId) {
+        if (docenteMateriaService.estaAsignado(direccionId, docenteId, materiaId)) {
             return;
         }
         if (leccionId != null) {
-            HorarioLeccion actual = obtenerLeccionPorId(institucionId, leccionId);
+            HorarioLeccion actual = obtenerLeccionPorId(direccionId, leccionId);
             if (actual.getDocente().getId().equals(docenteId)
                     && actual.getMateria().getId().equals(materiaId)) {
                 return;
@@ -502,9 +502,9 @@ public class ConfiguracionAcademicaService {
         throw new IllegalArgumentException("El profesor no está asociado a esa materia");
     }
 
-    private Institucion obtenerInstitucion(Long institucionId) {
-        return institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+    private Direccion obtenerDireccion(Long direccionId) {
+        return direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
     }
 
     private String normalizarColor(String color) {

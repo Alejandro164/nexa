@@ -16,13 +16,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.RolRepository;
-import com.chavescr.nexa.service.InstitucionService;
+import com.chavescr.nexa.service.DireccionService;
 import com.chavescr.nexa.service.UsuarioService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-/** CRUD global de usuarios (todas las instituciones) — solo accesible para ROLE_ADMIN sin institución seleccionada. */
+/** CRUD global de usuarios (todas las direcciones) — solo accesible para ROLE_ADMIN sin dirección seleccionada. */
 @Controller
 @RequestMapping("/usuarios")
 public class UsuariosController {
@@ -34,7 +34,7 @@ public class UsuariosController {
     private RolRepository rolRepository;
 
     @Autowired
-    private InstitucionService institucionService;
+    private DireccionService direccionService;
 
     @GetMapping
     public String index(@RequestParam(required = false) String q, Model model, HttpServletRequest request) {
@@ -75,10 +75,10 @@ public class UsuariosController {
             @RequestParam(required = false) String password,
             @RequestParam(defaultValue = "false") boolean activo,
             @RequestParam(required = false) List<Long> rolIds,
-            @RequestParam(required = false) List<Long> institucionIds,
+            @RequestParam(required = false) List<Long> direccionIds,
             Model model, HttpServletResponse response) {
         try {
-            usuarioService.guardar(id, nombre, email, usuario, cedula, password, activo, rolIds, institucionIds);
+            usuarioService.guardar(id, nombre, email, usuario, cedula, password, activo, rolIds, direccionIds);
             cargarLista(model, null);
             return "usuarios/lista :: content";
         } catch (Exception e) {
@@ -117,12 +117,12 @@ public class UsuariosController {
     }
 
     private void cargarLista(Model model, String q) {
-        model.addAttribute("usuarios", usuarioService.listarTodosConInstituciones(q));
+        model.addAttribute("usuarios", usuarioService.listarTodosConDirecciones(q));
         model.addAttribute("q", q);
     }
 
     private void cargarOpciones(Model model) {
         model.addAttribute("roles", rolRepository.findAll());
-        model.addAttribute("instituciones", institucionService.obtenerTodasDTO());
+        model.addAttribute("direcciones", direccionService.obtenerTodasDTO());
     }
 }

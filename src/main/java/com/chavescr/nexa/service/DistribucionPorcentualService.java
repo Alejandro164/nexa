@@ -28,18 +28,18 @@ public class DistribucionPorcentualService {
     }
 
     @Transactional(readOnly = true)
-    public List<PeriodoAcademico> listarPeriodosActivos(Long institucionId) {
-        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId);
+    public List<PeriodoAcademico> listarPeriodosActivos(Long direccionId) {
+        return periodoRepository.findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public List<Materia> listarMateriasActivas(Long institucionId) {
-        return materiaRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
+    public List<Materia> listarMateriasActivas(Long direccionId) {
+        return materiaRepository.findByDireccionIdAndActivoTrueOrderByNombreAsc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public DistribucionPorcentual obtenerDistribucion(Long institucionId, Long periodoId, Long materiaId) {
-        return distribucionRepository.findByInstitucionIdAndPeriodoIdAndMateriaId(institucionId, periodoId, materiaId)
+    public DistribucionPorcentual obtenerDistribucion(Long direccionId, Long periodoId, Long materiaId) {
+        return distribucionRepository.findByDireccionIdAndPeriodoIdAndMateriaId(direccionId, periodoId, materiaId)
                 .orElseGet(() -> {
                     DistribucionPorcentual nueva = new DistribucionPorcentual();
                     nueva.setCotidiano(40);
@@ -51,22 +51,22 @@ public class DistribucionPorcentualService {
                 });
     }
 
-    public DistribucionPorcentual guardarDistribucion(Long institucionId, Long periodoId, Long materiaId,
+    public DistribucionPorcentual guardarDistribucion(Long direccionId, Long periodoId, Long materiaId,
             Integer cotidiano, Integer tareas, Integer proyectos, Integer examenes, Integer asistencia) {
         int total = safe(cotidiano) + safe(tareas) + safe(proyectos) + safe(examenes) + safe(asistencia);
         if (total != 100) {
             throw new IllegalArgumentException(
                     "La suma de los porcentajes debe ser exactamente 100% (actual: " + total + "%)");
         }
-        PeriodoAcademico periodo = periodoRepository.findByIdAndInstitucionId(periodoId, institucionId)
+        PeriodoAcademico periodo = periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
-        Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
+        Materia materia = materiaRepository.findByIdAndDireccionId(materiaId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
 
         DistribucionPorcentual distribucion = distribucionRepository
-                .findByInstitucionIdAndPeriodoIdAndMateriaId(institucionId, periodoId, materiaId)
+                .findByDireccionIdAndPeriodoIdAndMateriaId(direccionId, periodoId, materiaId)
                 .orElseGet(DistribucionPorcentual::new);
-        distribucion.setInstitucion(periodo.getInstitucion());
+        distribucion.setDireccion(periodo.getDireccion());
         distribucion.setPeriodo(periodo);
         distribucion.setMateria(materia);
         distribucion.setCotidiano(safe(cotidiano));

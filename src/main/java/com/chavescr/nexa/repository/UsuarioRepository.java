@@ -20,17 +20,17 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
        Optional<Usuario> findByUsuario(String usuario);
 
-       @Query("SELECT COUNT(u) FROM Usuario u JOIN u.instituciones i WHERE i.id = :institucionId")
-       long countByInstitucionId(@Param("institucionId") Long institucionId);
+       @Query("SELECT COUNT(u) FROM Usuario u JOIN u.direcciones i WHERE i.id = :direccionId")
+       long countByDireccionId(@Param("direccionId") Long direccionId);
 
        boolean existsByEmail(String email);
 
-       /** Para el CRUD global de Usuarios (admin sin institución seleccionada): todos, con instituciones cargadas. */
-       @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.instituciones ORDER BY u.nombre")
-       List<Usuario> findAllWithInstituciones();
+       /** Para el CRUD global de Usuarios (admin sin dirección seleccionada): todos, con direcciones cargadas. */
+       @Query("SELECT DISTINCT u FROM Usuario u LEFT JOIN FETCH u.direcciones ORDER BY u.nombre")
+       List<Usuario> findAllWithDirecciones();
 
-       @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.instituciones WHERE u.id = :id")
-       Optional<Usuario> findByIdWithInstituciones(@Param("id") Long id);
+       @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.direcciones WHERE u.id = :id")
+       Optional<Usuario> findByIdWithDirecciones(@Param("id") Long id);
 
        /**
         * Busca un usuario por email, nombre de usuario o cédula.
@@ -47,53 +47,53 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
                      "LOWER(u.email)  LIKE %:filtro%")
        List<Usuario> findByNombreOrEmail(@Param("filtro") String filtro);
 
-       @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.instituciones WHERE u.email = :email")
-       Optional<Usuario> findByEmailWithInstituciones(@Param("email") String email);
+       @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.direcciones WHERE u.email = :email")
+       Optional<Usuario> findByEmailWithDirecciones(@Param("email") String email);
 
        /**
-        * Igual que {@link #findByIdentifier}, pero con las instituciones cargadas.
+        * Igual que {@link #findByIdentifier}, pero con las direcciones cargadas.
         * Usado para resolver al usuario autenticado, cuyo "name" en el SecurityContext
         * es el identificador de login (puede ser email, usuario o cédula), no siempre el email.
         */
-       @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.instituciones WHERE " +
+       @Query("SELECT u FROM Usuario u LEFT JOIN FETCH u.direcciones WHERE " +
                      "LOWER(u.email)   = LOWER(:identifier) OR " +
                      "LOWER(u.usuario) = LOWER(:identifier) OR " +
                      "u.cedula         = :identifier")
-       Optional<Usuario> findByIdentifierWithInstituciones(@Param("identifier") String identifier);
+       Optional<Usuario> findByIdentifierWithDirecciones(@Param("identifier") String identifier);
 
-       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i " +
-                     "WHERE i.id = :institucionId AND u.activo = true ORDER BY u.nombre")
-       List<Usuario> findActivosByInstitucionId(@Param("institucionId") Long institucionId);
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i " +
+                     "WHERE i.id = :direccionId AND u.activo = true ORDER BY u.nombre")
+       List<Usuario> findActivosByDireccionId(@Param("direccionId") Long direccionId);
 
-       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r " +
-                     "WHERE i.id = :institucionId AND u.activo = true AND r.nombre = :rolNombre ORDER BY u.nombre")
-       List<Usuario> findActivosByInstitucionIdAndRol(@Param("institucionId") Long institucionId,
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i JOIN u.roles r " +
+                     "WHERE i.id = :direccionId AND u.activo = true AND r.nombre = :rolNombre ORDER BY u.nombre")
+       List<Usuario> findActivosByDireccionIdAndRol(@Param("direccionId") Long direccionId,
                      @Param("rolNombre") String rolNombre);
 
-       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r " +
-                     "WHERE i.id = :institucionId AND u.activo = true AND r.nombre IN :rolNombres ORDER BY u.nombre")
-       List<Usuario> findActivosByInstitucionIdAndRolIn(@Param("institucionId") Long institucionId,
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i JOIN u.roles r " +
+                     "WHERE i.id = :direccionId AND u.activo = true AND r.nombre IN :rolNombres ORDER BY u.nombre")
+       List<Usuario> findActivosByDireccionIdAndRolIn(@Param("direccionId") Long direccionId,
                      @Param("rolNombres") List<String> rolNombres);
 
-       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i " +
-                     "WHERE i.id = :institucionId ORDER BY u.nombre")
-       List<Usuario> findAllByInstitucionId(@Param("institucionId") Long institucionId);
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i " +
+                     "WHERE i.id = :direccionId ORDER BY u.nombre")
+       List<Usuario> findAllByDireccionId(@Param("direccionId") Long direccionId);
 
-       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r " +
-                     "WHERE i.id = :institucionId AND r.nombre = :rolNombre ORDER BY u.nombre")
-       List<Usuario> findAllByInstitucionIdAndRol(@Param("institucionId") Long institucionId,
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i JOIN u.roles r " +
+                     "WHERE i.id = :direccionId AND r.nombre = :rolNombre ORDER BY u.nombre")
+       List<Usuario> findAllByDireccionIdAndRol(@Param("direccionId") Long direccionId,
                      @Param("rolNombre") String rolNombre);
 
-       @Query("SELECT u FROM Usuario u JOIN u.instituciones i " +
-                     "WHERE u.id = :usuarioId AND i.id = :institucionId AND u.activo = true")
-       Optional<Usuario> findActivoByIdAndInstitucionId(@Param("usuarioId") Long usuarioId,
-                     @Param("institucionId") Long institucionId);
+       @Query("SELECT u FROM Usuario u JOIN u.direcciones i " +
+                     "WHERE u.id = :usuarioId AND i.id = :direccionId AND u.activo = true")
+       Optional<Usuario> findActivoByIdAndDireccionId(@Param("usuarioId") Long usuarioId,
+                     @Param("direccionId") Long direccionId);
 
-       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r LEFT JOIN FETCH u.nivelAcademico "
-                     + "WHERE u.id = :usuarioId AND i.id = :institucionId AND u.activo = true "
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i JOIN u.roles r LEFT JOIN FETCH u.nivelAcademico "
+                     + "WHERE u.id = :usuarioId AND i.id = :direccionId AND u.activo = true "
                      + "AND r.nombre = 'ROLE_ESTUDIANTE'")
        Optional<Usuario> findEstudianteActivoConNivel(@Param("usuarioId") Long usuarioId,
-                     @Param("institucionId") Long institucionId);
+                     @Param("direccionId") Long direccionId);
 
        @Query("SELECT DISTINCT e FROM Usuario p JOIN p.estudiantes e WHERE p.id = :padreId ORDER BY e.nombre")
        List<Usuario> findEstudiantesByPadreId(@Param("padreId") Long padreId);
@@ -108,29 +108,29 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
                      "WHERE p.id = :padreId AND e.id = :estudianteId")
        boolean existeVinculoPadreEstudiante(@Param("padreId") Long padreId, @Param("estudianteId") Long estudianteId);
 
-       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r " +
-                     "WHERE u.cedula = :cedula AND i.id = :institucionId AND r.nombre = 'ROLE_PADRE'")
-       Optional<Usuario> findPadreByCedulaAndInstitucionId(@Param("cedula") String cedula,
-                     @Param("institucionId") Long institucionId);
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i JOIN u.roles r " +
+                     "WHERE u.cedula = :cedula AND i.id = :direccionId AND r.nombre = 'ROLE_PADRE'")
+       Optional<Usuario> findPadreByCedulaAndDireccionId(@Param("cedula") String cedula,
+                     @Param("direccionId") Long direccionId);
 
        @Query("SELECT u FROM Usuario u WHERE u.nivelAcademico.id = :nivelId AND u.activo = true ORDER BY u.nombre")
        List<Usuario> findEstudiantesActivosByNivelId(@Param("nivelId") Long nivelId);
 
-       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r LEFT JOIN FETCH u.nivelAcademico n "
-                     + "WHERE i.id = :institucionId AND u.activo = true AND r.nombre = 'ROLE_ESTUDIANTE' "
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i JOIN u.roles r LEFT JOIN FETCH u.nivelAcademico n "
+                     + "WHERE i.id = :direccionId AND u.activo = true AND r.nombre = 'ROLE_ESTUDIANTE' "
                      + "AND (:nivelId IS NULL OR n.id = :nivelId) "
                      + "AND (:grado IS NULL OR n.grado = :grado) "
                      + "ORDER BY u.nombre")
-       List<Usuario> findEstudiantesActivosConNivel(@Param("institucionId") Long institucionId,
+       List<Usuario> findEstudiantesActivosConNivel(@Param("direccionId") Long direccionId,
                      @Param("grado") Integer grado, @Param("nivelId") Long nivelId);
 
-       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.instituciones i JOIN u.roles r LEFT JOIN FETCH u.nivelAcademico n "
-                     + "WHERE i.id = :institucionId AND u.activo = true AND r.nombre = 'ROLE_ESTUDIANTE' "
+       @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i JOIN u.roles r LEFT JOIN FETCH u.nivelAcademico n "
+                     + "WHERE i.id = :direccionId AND u.activo = true AND r.nombre = 'ROLE_ESTUDIANTE' "
                      + "AND n.id IN :nivelIds "
                      + "AND (:nivelId IS NULL OR n.id = :nivelId) "
                      + "AND (:grado IS NULL OR n.grado = :grado) "
                      + "ORDER BY u.nombre")
-       List<Usuario> findEstudiantesActivosConNivelEn(@Param("institucionId") Long institucionId,
+       List<Usuario> findEstudiantesActivosConNivelEn(@Param("direccionId") Long direccionId,
                      @Param("nivelIds") Collection<Long> nivelIds, @Param("grado") Integer grado,
                      @Param("nivelId") Long nivelId);
 

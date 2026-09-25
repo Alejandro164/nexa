@@ -59,7 +59,7 @@
                     <td>
                         <strong th:text="${ev.titulo}" style="color:#0f172a;">Título</strong>
                         <span th:if="${ev.destacadoFlag}" class="badge badge-info" style="margin-left:6px;">Destacado</span>
-                        <span th:if="${ev.propia}" class="badge badge-secondary" style="margin-left:6px;">Institución</span>
+                        <span th:if="${ev.propia}" class="badge badge-secondary" style="margin-left:6px;">Dirección</span>
                     </td>
                     <td><span class="badge badge-primary" th:text="${ev.nombreCategoria}">Categoría</span></td>
                     <td style="white-space:nowrap;"
@@ -108,7 +108,7 @@
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem;">
                         <span class="badge badge-primary" th:text="${evento.nombreCategoria}">Categoría</span>
                         <span class="badge badge-info" th:if="${evento.destacadoFlag}">Destacado</span>
-                        <span class="badge badge-secondary" th:if="${evento.propia}">Institución</span>
+                        <span class="badge badge-secondary" th:if="${evento.propia}">Dirección</span>
                         <span class="badge badge-secondary" th:each="sub : ${evento.subcategorias}"
                               th:if="${sub != null and !sub.isBlank()}" th:text="${sub}">Subcategoría</span>
                     </div>

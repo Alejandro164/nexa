@@ -7,10 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.RegimenDisciplinario;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.RegimenDisciplinarioRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -21,40 +21,40 @@ public class RegimenDisciplinarioService {
     private static final Logger log = LoggerFactory.getLogger(RegimenDisciplinarioService.class);
 
     private final RegimenDisciplinarioRepository repository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final UsuarioRepository usuarioRepository;
 
     public RegimenDisciplinarioService(RegimenDisciplinarioRepository repository,
-                                       InstitucionRepository institucionRepository,
+                                       DireccionRepository direccionRepository,
                                        UsuarioRepository usuarioRepository) {
         this.repository = repository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.usuarioRepository = usuarioRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<RegimenDisciplinario> listarTodos(Long institucionId) {
-        return repository.findByInstitucionIdOrderByFechaDesc(institucionId);
+    public List<RegimenDisciplinario> listarTodos(Long direccionId) {
+        return repository.findByDireccionIdOrderByFechaDesc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public List<RegimenDisciplinario> listarPorTipo(Long institucionId, RegimenDisciplinario.TipoRegimen tipo) {
-        return repository.findByInstitucionIdAndTipoOrderByFechaDesc(institucionId, tipo);
+    public List<RegimenDisciplinario> listarPorTipo(Long direccionId, RegimenDisciplinario.TipoRegimen tipo) {
+        return repository.findByDireccionIdAndTipoOrderByFechaDesc(direccionId, tipo);
     }
 
     @Transactional(readOnly = true)
-    public RegimenDisciplinario obtenerPorId(Long institucionId, Long id) {
-        return repository.findByIdAndInstitucionId(id, institucionId)
+    public RegimenDisciplinario obtenerPorId(Long direccionId, Long id) {
+        return repository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Registro no encontrado"));
     }
 
-    public RegimenDisciplinario guardar(Long institucionId, RegimenDisciplinario datos) {
+    public RegimenDisciplinario guardar(Long direccionId, RegimenDisciplinario datos) {
         if (datos.getMotivo() == null || datos.getMotivo().isBlank()) {
             throw new IllegalArgumentException("El motivo es obligatorio");
         }
         RegimenDisciplinario registro = datos.getId() == null
                 ? new RegimenDisciplinario()
-                : obtenerPorId(institucionId, datos.getId());
+                : obtenerPorId(direccionId, datos.getId());
         registro.setTipo(datos.getTipo());
         registro.setFuncionario(obtenerFuncionario(datos.getFuncionario().getId()));
         registro.setFecha(datos.getFecha());
@@ -63,20 +63,20 @@ public class RegimenDisciplinarioService {
         registro.setEstado(datos.getEstado());
         registro.setResolucion(datos.getResolucion() != null ? datos.getResolucion().trim() : null);
         registro.setFechaResolucion(datos.getFechaResolucion());
-        registro.setInstitucion(obtenerInstitucion(institucionId));
+        registro.setDireccion(obtenerDireccion(direccionId));
         RegimenDisciplinario guardado = repository.save(registro);
         log.info("Régimen guardado: id={}, tipo={}", guardado.getId(), guardado.getTipo());
         return guardado;
     }
 
-    public void eliminar(Long institucionId, Long id) {
-        RegimenDisciplinario registro = obtenerPorId(institucionId, id);
+    public void eliminar(Long direccionId, Long id) {
+        RegimenDisciplinario registro = obtenerPorId(direccionId, id);
         repository.delete(registro);
         log.info("Régimen eliminado: id={}", id);
     }
 
-    public void cambiarEstado(Long institucionId, Long id, RegimenDisciplinario.EstadoRegimen nuevoEstado) {
-        RegimenDisciplinario registro = obtenerPorId(institucionId, id);
+    public void cambiarEstado(Long direccionId, Long id, RegimenDisciplinario.EstadoRegimen nuevoEstado) {
+        RegimenDisciplinario registro = obtenerPorId(direccionId, id);
         registro.setEstado(nuevoEstado);
         if (nuevoEstado == RegimenDisciplinario.EstadoRegimen.RESUELTO && registro.getFechaResolucion() == null) {
             registro.setFechaResolucion(java.time.LocalDate.now());
@@ -85,8 +85,8 @@ public class RegimenDisciplinarioService {
     }
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarFuncionarios(Long institucionId) {
-        return usuarioRepository.findActivosByInstitucionId(institucionId);
+    public List<Usuario> listarFuncionarios(Long direccionId) {
+        return usuarioRepository.findActivosByDireccionId(direccionId);
     }
 
     private Usuario obtenerFuncionario(Long id) {
@@ -94,8 +94,8 @@ public class RegimenDisciplinarioService {
                 .orElseThrow(() -> new IllegalArgumentException("Funcionario no encontrado"));
     }
 
-    private Institucion obtenerInstitucion(Long institucionId) {
-        return institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+    private Direccion obtenerDireccion(Long direccionId) {
+        return direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
     }
 }

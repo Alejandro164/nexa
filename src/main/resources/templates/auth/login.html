@@ -515,7 +515,7 @@
             }
         }
 
-        /* ── Modal de selección de institución (inyectado tras un login por AJAX) ── */
+        /* ── Modal de selección de dirección (inyectado tras un login por AJAX) ── */
         .inst-modal-backdrop {
             position: fixed;
             inset: 0;
@@ -896,7 +896,7 @@
 
     </div>
 
-    <div id="institucion-modal-container"></div>
+    <div id="direccion-modal-container"></div>
 
     <script>
         var loginForm = document.getElementById('login-form');
@@ -922,8 +922,8 @@
                 .then(function (data) {
                     if (data.redirect) {
                         window.location.href = data.redirect;
-                    } else if (data.seleccionarInstitucion) {
-                        mostrarSelectorInstitucion();
+                    } else if (data.seleccionarDireccion) {
+                        mostrarSelectorDireccion();
                         restaurarBoton();
                     } else if (data.error) {
                         mostrarErrorLogin(data.error);
@@ -956,15 +956,15 @@
             loginForm.parentNode.insertBefore(div, loginForm);
         }
 
-        function mostrarSelectorInstitucion() {
-            fetch('/inicio/instituciones-modal?origen=login')
+        function mostrarSelectorDireccion() {
+            fetch('/inicio/direcciones-modal?origen=login')
                 .then(function (response) { return response.text(); })
                 .then(function (html) {
-                    document.getElementById('institucion-modal-container').innerHTML = html;
+                    document.getElementById('direccion-modal-container').innerHTML = html;
                 });
         }
 
-        function filtrarInstitucionesModal(input) {
+        function filtrarDireccionesModal(input) {
             var q = input.value.trim().toLowerCase();
             var card = input.closest('.inst-modal-card');
             var forms = card.querySelectorAll('.inst-modal-item-form');

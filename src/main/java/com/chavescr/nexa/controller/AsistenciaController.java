@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -56,7 +56,7 @@ public class AsistenciaController {
             @RequestParam(required = false) Integer numeroLeccion,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
             Model model, HttpSession session, HttpServletRequest request) {
-        cargarPanel(model, requerirInstitucion(session), nivelId, materiaId, numeroLeccion, fecha,
+        cargarPanel(model, requerirDireccion(session), nivelId, materiaId, numeroLeccion, fecha,
                 docenteIdSiAplica(request, session));
         return FRAGMENTO;
     }
@@ -71,16 +71,16 @@ public class AsistenciaController {
             @RequestParam(required = false) String observaciones,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         exigirDocenteODirectorOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long registradoPorId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         try {
-            service.registrarEstado(institucionId, estudianteId, nivelId, materiaId, numeroLeccion, fecha, estado,
+            service.registrarEstado(direccionId, estudianteId, nivelId, materiaId, numeroLeccion, fecha, estado,
                     observaciones, registradoPorId);
             notificarPromedioDesactualizado(response);
         } catch (DataIntegrityViolationException e) {
             // otra petición concurrente insertó el registro primero; reintentar una vez ya que existe
             try {
-                service.registrarEstado(institucionId, estudianteId, nivelId, materiaId, numeroLeccion, fecha, estado,
+                service.registrarEstado(direccionId, estudianteId, nivelId, materiaId, numeroLeccion, fecha, estado,
                         observaciones, registradoPorId);
                 notificarPromedioDesactualizado(response);
             } catch (IllegalArgumentException e2) {
@@ -89,7 +89,7 @@ public class AsistenciaController {
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
         }
-        cargarPanel(model, institucionId, nivelId, materiaId, numeroLeccion, fecha, docenteIdSiAplica(request, session));
+        cargarPanel(model, direccionId, nivelId, materiaId, numeroLeccion, fecha, docenteIdSiAplica(request, session));
         return FRAGMENTO;
     }
 
@@ -100,19 +100,19 @@ public class AsistenciaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         exigirDocenteODirectorOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
-        var periodo = service.obtenerUltimoPeriodoActivo(institucionId);
-        if (service.validarPeriodoParaAsistencia(institucionId, fecha, periodo) == null) {
+        var periodo = service.obtenerUltimoPeriodoActivo(direccionId);
+        if (service.validarPeriodoParaAsistencia(direccionId, fecha, periodo) == null) {
             String dia = DIA_ES.get(fecha.getDayOfWeek());
             var lecciones = alcanceDocenteService.leccionesVisiblesEnPeriodo(
-                    institucionId, periodo.getId(), nivelId, materiaId, dia, docenteId);
+                    direccionId, periodo.getId(), nivelId, materiaId, dia, docenteId);
             Integer leccionOrigen = leccionAnterior(lecciones, numeroLeccion);
             if (leccionOrigen == null) {
                 model.addAttribute("error", "No hay una lección anterior de la que copiar.");
             } else {
                 Long registradoPorId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-                int copiados = service.copiarDeLeccionAnterior(institucionId, nivelId, materiaId, fecha, leccionOrigen,
+                int copiados = service.copiarDeLeccionAnterior(direccionId, nivelId, materiaId, fecha, leccionOrigen,
                         numeroLeccion, registradoPorId);
                 if (copiados == 0) {
                     model.addAttribute("error", "No hay asistencia registrada en la lección anterior para copiar.");
@@ -121,7 +121,7 @@ public class AsistenciaController {
                 }
             }
         }
-        cargarPanel(model, institucionId, nivelId, materiaId, numeroLeccion, fecha, docenteId);
+        cargarPanel(model, direccionId, nivelId, materiaId, numeroLeccion, fecha, docenteId);
         return FRAGMENTO;
     }
 
@@ -129,14 +129,14 @@ public class AsistenciaController {
         response.setHeader("HX-Trigger", "promedioDesactualizado");
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long nivelId, Long materiaId, Integer numeroLeccion,
+    private void cargarPanel(Model model, Long direccionId, Long nivelId, Long materiaId, Integer numeroLeccion,
             LocalDate fecha, Long docenteId) {
         if (fecha == null) {
             fecha = LocalDate.now();
         }
 
-        var periodo = service.obtenerUltimoPeriodoActivo(institucionId);
-        String avisoPeriodo = service.validarPeriodoParaAsistencia(institucionId, fecha, periodo);
+        var periodo = service.obtenerUltimoPeriodoActivo(direccionId);
+        String avisoPeriodo = service.validarPeriodoParaAsistencia(direccionId, fecha, periodo);
 
         List<Materia> materias = List.of();
         List<NivelAcademico> secciones = List.of();
@@ -149,21 +149,21 @@ public class AsistenciaController {
             Long periodoId = periodo.getId();
             String dia = DIA_ES.get(fecha.getDayOfWeek());
 
-            materias = alcanceDocenteService.materiasVisiblesEnPeriodo(institucionId, periodoId, docenteId);
+            materias = alcanceDocenteService.materiasVisiblesEnPeriodo(direccionId, periodoId, docenteId);
             materiaId = elegirId(materiaId, materias, Materia::getId);
 
             secciones = alcanceDocenteService.nivelesVisiblesEnPeriodoPorMateria(
-                    institucionId, periodoId, materiaId, docenteId);
+                    direccionId, periodoId, materiaId, docenteId);
             nivelId = elegirId(nivelId, secciones, NivelAcademico::getId);
 
             lecciones = alcanceDocenteService.leccionesVisiblesEnPeriodo(
-                    institucionId, periodoId, nivelId, materiaId, dia, docenteId);
+                    direccionId, periodoId, nivelId, materiaId, dia, docenteId);
             if (numeroLeccion == null || !lecciones.contains(numeroLeccion)) {
                 numeroLeccion = lecciones.isEmpty() ? null : lecciones.get(0);
             }
             leccionAnterior = leccionAnterior(lecciones, numeroLeccion);
             filas = nivelId != null && materiaId != null && numeroLeccion != null
-                    ? service.listarFilas(institucionId, nivelId, fecha, materiaId, numeroLeccion)
+                    ? service.listarFilas(direccionId, nivelId, fecha, materiaId, numeroLeccion)
                     : List.of();
             mensajeVacio = mensajeTablaVacia(materias, secciones, lecciones, filas);
         }
@@ -215,10 +215,10 @@ public class AsistenciaController {
         return lecciones.contains(anterior) ? anterior : null;
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long requerirDireccion(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_DIRECCION_ID");
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

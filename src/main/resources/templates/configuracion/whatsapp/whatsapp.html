@@ -76,19 +76,19 @@
         }
     </style>
 
-    <div th:if="${sinInstitucionAdmin}" class="card" style="padding: 2.5rem; text-align: center;">
-        <p style="color: var(--text-secondary);">Selecciona una institución en la barra lateral para configurar la
+    <div th:if="${sinDireccionAdmin}" class="card" style="padding: 2.5rem; text-align: center;">
+        <p style="color: var(--text-secondary);">Selecciona una dirección en la barra lateral para configurar la
             conexión con WhatsApp.</p>
     </div>
 
-    <div th:unless="${sinInstitucionAdmin}">
+    <div th:unless="${sinDireccionAdmin}">
         <div class="card">
             <form hx-post="/configuracion/whatsapp" hx-target="#whatsapp-panel" hx-swap="outerHTML"
                   hx-indicator="#whatsapp-loading">
                 <div class="card-header">
                     <div>
                         <h3 class="card-title">WhatsApp Business (Meta Cloud API)</h3>
-                        <p class="whatsapp-help">Conecta el número de WhatsApp Business de la institución para poder
+                        <p class="whatsapp-help">Conecta el número de WhatsApp Business de la dirección para poder
                             enviar notificaciones a padres y personal.</p>
                     </div>
                     <span class="badge" th:classappend="${whatsappConfig.activo} ? 'badge-success' : 'badge-secondary'"

@@ -9,13 +9,13 @@
 <body>
 
     <h2 layout:fragment="page-title">🎓 Archivo de Graduados</h2>
-    <p layout:fragment="page-subtitle">Registro oficial de títulos, diplomas y expedientes históricos de la institución</p>
+    <p layout:fragment="page-subtitle">Registro oficial de títulos, diplomas y expedientes históricos de la dirección</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">🎓 Archivo de Graduados</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Registro oficial de títulos, diplomas y expedientes históricos de la institución</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Registro oficial de títulos, diplomas y expedientes históricos de la dirección</p>
     <main layout:fragment="content">
         <style>
             /* Archivo Graduados UI Styles */

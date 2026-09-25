@@ -22,10 +22,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.NubeNodo;
 import com.chavescr.nexa.entity.TipoNodo;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.NubeNodoAccesoRepository;
 import com.chavescr.nexa.repository.NubeNodoRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
@@ -41,18 +41,18 @@ public class NubeNodoService {
     private String rutaRecursos;
 
     private final NubeNodoRepository repository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final DocumentConversionService conversionService;
     private final UsuarioRepository usuarioRepository;
     private final NubeNodoAccesoRepository accesoRepository;
 
     public NubeNodoService(NubeNodoRepository repository,
-            InstitucionRepository institucionRepository,
+            DireccionRepository direccionRepository,
             DocumentConversionService conversionService,
             UsuarioRepository usuarioRepository,
             NubeNodoAccesoRepository accesoRepository) {
         this.repository = repository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.conversionService = conversionService;
         this.usuarioRepository = usuarioRepository;
         this.accesoRepository = accesoRepository;
@@ -125,7 +125,7 @@ public class NubeNodoService {
     }
 
     @Transactional
-    public NubeNodo crearCarpeta(String nombre, Long padreId, Long propietarioId, Long institucionId) {
+    public NubeNodo crearCarpeta(String nombre, Long padreId, Long propietarioId, Long direccionId) {
         NubeNodo carpeta = new NubeNodo();
         carpeta.setNombre(nombre);
         carpeta.setTipo(TipoNodo.CARPETA);
@@ -140,8 +140,8 @@ public class NubeNodoService {
             usuarioRepository.findById(propietarioId).ifPresent(carpeta::setPropietario);
         }
 
-        if (institucionId != null) {
-            institucionRepository.findById(institucionId).ifPresent(carpeta::setInstitucion);
+        if (direccionId != null) {
+            direccionRepository.findById(direccionId).ifPresent(carpeta::setDireccion);
         }
 
         return repository.save(carpeta);
@@ -172,17 +172,17 @@ public class NubeNodoService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public NubeNodo subirArchivo(MultipartFile archivo, Long padreId, Long institucionId, Long propietarioId)
+    public NubeNodo subirArchivo(MultipartFile archivo, Long padreId, Long direccionId, Long propietarioId)
             throws IOException {
         if (archivo == null || archivo.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío o es nulo");
         }
 
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
-        String codigoInstitucion = sanitizarNombreCarpeta(institucion.getCodigo());
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
+        String codigoDireccion = sanitizarNombreCarpeta(direccion.getCodigo());
 
-        Path directorioDestino = Paths.get(rutaRecursos, codigoInstitucion, "nube-nexa");
+        Path directorioDestino = Paths.get(rutaRecursos, codigoDireccion, "nube-nexa");
         if (!Files.exists(directorioDestino)) {
             Files.createDirectories(directorioDestino);
         }
@@ -198,7 +198,7 @@ public class NubeNodoService {
 
         Files.copy(archivo.getInputStream(), rutaDestino, StandardCopyOption.REPLACE_EXISTING);
 
-        String rutaRelativa = codigoInstitucion + "/nube-nexa/" + nombreArchivoUnico;
+        String rutaRelativa = codigoDireccion + "/nube-nexa/" + nombreArchivoUnico;
 
         NubeNodo nodoArchivo = new NubeNodo();
         nodoArchivo.setNombre(nombreOriginal);
@@ -206,7 +206,7 @@ public class NubeNodoService {
         nodoArchivo.setExtension(extension);
         nodoArchivo.setTamanoBytes(archivo.getSize());
         nodoArchivo.setUrlArchivo(rutaRelativa);
-        nodoArchivo.setInstitucion(institucion);
+        nodoArchivo.setDireccion(direccion);
 
         if (padreId != null) {
             NubeNodo padre = repository.findById(padreId)
@@ -223,7 +223,7 @@ public class NubeNodoService {
 
     private String sanitizarNombreCarpeta(String nombre) {
         if (nombre == null || nombre.isBlank()) {
-            return "institucion";
+            return "direccion";
         }
         return nombre.trim().replaceAll("[^a-zA-Z0-9_\\-]", "_");
     }

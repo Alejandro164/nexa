@@ -13,14 +13,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.DocenteBloqueoLeccionRepository;
 import com.chavescr.nexa.repository.DocenteGuiaRepository;
 import com.chavescr.nexa.repository.DocenteMateriaRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.RolRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
@@ -33,7 +33,7 @@ public class PersonalService {
 
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final NivelAcademicoRepository nivelAcademicoRepository;
     private final DocenteMateriaRepository docenteMateriaRepository;
     private final DocenteGuiaRepository docenteGuiaRepository;
@@ -42,7 +42,7 @@ public class PersonalService {
 
     public PersonalService(UsuarioRepository usuarioRepository,
                            RolRepository rolRepository,
-                           InstitucionRepository institucionRepository,
+                           DireccionRepository direccionRepository,
                            NivelAcademicoRepository nivelAcademicoRepository,
                            DocenteMateriaRepository docenteMateriaRepository,
                            DocenteGuiaRepository docenteGuiaRepository,
@@ -50,7 +50,7 @@ public class PersonalService {
                            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.nivelAcademicoRepository = nivelAcademicoRepository;
         this.docenteMateriaRepository = docenteMateriaRepository;
         this.docenteGuiaRepository = docenteGuiaRepository;
@@ -59,18 +59,18 @@ public class PersonalService {
     }
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarTodos(Long institucionId) {
-        return usuarioRepository.findAllByInstitucionId(institucionId);
+    public List<Usuario> listarTodos(Long direccionId) {
+        return usuarioRepository.findAllByDireccionId(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarPorRol(Long institucionId, String rolNombre) {
-        return usuarioRepository.findAllByInstitucionIdAndRol(institucionId, rolNombre);
+    public List<Usuario> listarPorRol(Long direccionId, String rolNombre) {
+        return usuarioRepository.findAllByDireccionIdAndRol(direccionId, rolNombre);
     }
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarPorRol(Long institucionId, String rolNombre, String filtro) {
-        List<Usuario> todos = usuarioRepository.findAllByInstitucionIdAndRol(institucionId, rolNombre);
+    public List<Usuario> listarPorRol(Long direccionId, String rolNombre, String filtro) {
+        List<Usuario> todos = usuarioRepository.findAllByDireccionIdAndRol(direccionId, rolNombre);
         if (filtro == null || filtro.isBlank()) {
             return todos;
         }
@@ -99,35 +99,35 @@ public class PersonalService {
     }
 
     @Transactional(readOnly = true)
-    public Usuario obtenerPorId(Long institucionId, Long id) {
+    public Usuario obtenerPorId(Long direccionId, Long id) {
         return usuarioRepository.findById(id)
-                .filter(u -> u.getInstituciones().stream().anyMatch(i -> i.getId().equals(institucionId)))
+                .filter(u -> u.getDirecciones().stream().anyMatch(i -> i.getId().equals(direccionId)))
                 .orElseThrow(() -> new IllegalArgumentException("Funcionario no encontrado"));
     }
 
-    public Usuario guardar(Long institucionId, Long id, String nombre, String email,
+    public Usuario guardar(Long direccionId, Long id, String nombre, String email,
                            String usuario, String cedula, String rawPassword,
                            boolean activo, List<Long> rolIds) {
-        return guardar(institucionId, id, nombre, email, usuario, cedula, rawPassword, activo, rolIds, null);
+        return guardar(direccionId, id, nombre, email, usuario, cedula, rawPassword, activo, rolIds, null);
     }
 
-    public Usuario guardar(Long institucionId, Long id, String nombre, String email,
+    public Usuario guardar(Long direccionId, Long id, String nombre, String email,
                            String usuario, String cedula, String rawPassword,
                            boolean activo, List<Long> rolIds, Long nivelId) {
-        if (institucionId == null) {
+        if (direccionId == null) {
             throw new IllegalArgumentException("Seleccione una dirección antes de registrar personas.");
         }
-        Institucion inst = institucionRepository.findById(institucionId)
+        Direccion inst = direccionRepository.findById(direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
 
         String cedulaNormalizada = cedula != null && !cedula.isBlank() ? cedula.trim() : null;
         String emailNormalizado = email.trim().toLowerCase();
         String usuarioNormalizado = usuario.trim().toLowerCase();
 
-        Usuario u = resolverPersona(institucionId, id, cedulaNormalizada, emailNormalizado, usuarioNormalizado);
+        Usuario u = resolverPersona(direccionId, id, cedulaNormalizada, emailNormalizado, usuarioNormalizado);
         boolean nuevo = u.getId() == null;
         if (!nuevo && id == null && u.getRoles().stream().anyMatch(r -> "ROLE_ESTUDIANTE".equals(r.getNombre()))
-                && u.getInstituciones().stream().anyMatch(otra -> !otra.getId().equals(institucionId))) {
+                && u.getDirecciones().stream().anyMatch(otra -> !otra.getId().equals(direccionId))) {
             throw new IllegalArgumentException("Este estudiante ya pertenece a otra dirección.");
         }
         if (!nuevo && id == null && u.getRoles().stream().noneMatch(r -> "ROLE_ESTUDIANTE".equals(r.getNombre()))
@@ -165,19 +165,19 @@ public class PersonalService {
         }
 
         if (esEstudiante(roles)) {
-            if (u.getInstituciones().stream().anyMatch(otra -> !otra.getId().equals(institucionId))) {
+            if (u.getDirecciones().stream().anyMatch(otra -> !otra.getId().equals(direccionId))) {
                 throw new IllegalArgumentException("Este estudiante ya pertenece a otra dirección.");
             }
-            u.setInstituciones(new java.util.HashSet<>(Set.of(inst)));
+            u.setDirecciones(new java.util.HashSet<>(Set.of(inst)));
         } else {
-            if (u.getInstituciones() == null) {
-                u.setInstituciones(new java.util.HashSet<>());
+            if (u.getDirecciones() == null) {
+                u.setDirecciones(new java.util.HashSet<>());
             }
-            u.getInstituciones().add(inst);
+            u.getDirecciones().add(inst);
         }
 
         if (nivelId != null) {
-            NivelAcademico nivel = nivelAcademicoRepository.findByIdAndInstitucionId(nivelId, institucionId)
+            NivelAcademico nivel = nivelAcademicoRepository.findByIdAndDireccionId(nivelId, direccionId)
                     .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
             u.setNivelAcademico(nivel);
         } else if (esEstudiante(roles)) {
@@ -189,8 +189,8 @@ public class PersonalService {
         return guardado;
     }
 
-    public void eliminar(Long institucionId, Long id) {
-        Usuario u = obtenerPorId(institucionId, id);
+    public void eliminar(Long direccionId, Long id) {
+        Usuario u = obtenerPorId(direccionId, id);
         docenteMateriaRepository.deleteByDocenteId(id);
         docenteGuiaRepository.deleteByDocenteId(id);
         docenteBloqueoLeccionRepository.deleteByDocenteId(id);
@@ -198,8 +198,8 @@ public class PersonalService {
         log.info("Personal eliminado: id={}", id);
     }
 
-    public void toggleActivo(Long institucionId, Long id) {
-        Usuario u = obtenerPorId(institucionId, id);
+    public void toggleActivo(Long direccionId, Long id) {
+        Usuario u = obtenerPorId(direccionId, id);
         u.setActivo(!u.getActivo());
         usuarioRepository.save(u);
     }
@@ -208,36 +208,36 @@ public class PersonalService {
     // La relación es dueña del lado padre.estudiantes (@JoinTable en esa dirección) — vincular y
     // desvincular siempre mutan y guardan al padre, nunca al estudiante directamente.
 
-    public Optional<Usuario> buscarPadrePorCedula(Long institucionId, String cedula) {
-        if (institucionId == null || cedula == null || cedula.isBlank()) {
+    public Optional<Usuario> buscarPadrePorCedula(Long direccionId, String cedula) {
+        if (direccionId == null || cedula == null || cedula.isBlank()) {
             return Optional.empty();
         }
         Optional<Usuario> padre = usuarioRepository.findByCedula(cedula.trim())
                 .filter(u -> u.getRoles().stream().anyMatch(r -> "ROLE_PADRE".equals(r.getNombre())));
         padre.ifPresent(existente -> {
-            boolean yaEsta = existente.getInstituciones().stream().anyMatch(i -> i.getId().equals(institucionId));
+            boolean yaEsta = existente.getDirecciones().stream().anyMatch(i -> i.getId().equals(direccionId));
             if (!yaEsta) {
-                Institucion inst = institucionRepository.findById(institucionId)
+                Direccion inst = direccionRepository.findById(direccionId)
                         .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
-                existente.getInstituciones().add(inst);
+                existente.getDirecciones().add(inst);
                 usuarioRepository.save(existente);
             }
         });
         return padre;
     }
 
-    public void vincularPadre(Long institucionId, Long estudianteId, Long padreId) {
-        Usuario estudiante = obtenerPorId(institucionId, estudianteId);
+    public void vincularPadre(Long direccionId, Long estudianteId, Long padreId) {
+        Usuario estudiante = obtenerPorId(direccionId, estudianteId);
         Usuario padre = usuarioRepository.findById(padreId)
                 .orElseThrow(() -> new IllegalArgumentException("Padre no encontrado"));
         if (padre.getRoles().stream().noneMatch(r -> "ROLE_PADRE".equals(r.getNombre()))) {
             throw new IllegalArgumentException("La persona indicada no es un padre.");
         }
-        boolean yaEsta = padre.getInstituciones().stream().anyMatch(i -> i.getId().equals(institucionId));
+        boolean yaEsta = padre.getDirecciones().stream().anyMatch(i -> i.getId().equals(direccionId));
         if (!yaEsta) {
-            Institucion inst = institucionRepository.findById(institucionId)
+            Direccion inst = direccionRepository.findById(direccionId)
                     .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
-            padre.getInstituciones().add(inst);
+            padre.getDirecciones().add(inst);
         }
         if (!usuarioRepository.existeVinculoPadreEstudiante(padre.getId(), estudiante.getId())) {
             padre.getEstudiantes().add(estudiante);
@@ -246,23 +246,23 @@ public class PersonalService {
         }
     }
 
-    public void desvincularPadre(Long institucionId, Long estudianteId, Long padreId) {
-        Usuario estudiante = obtenerPorId(institucionId, estudianteId);
-        Usuario padre = obtenerPorId(institucionId, padreId);
+    public void desvincularPadre(Long direccionId, Long estudianteId, Long padreId) {
+        Usuario estudiante = obtenerPorId(direccionId, estudianteId);
+        Usuario padre = obtenerPorId(direccionId, padreId);
         padre.getEstudiantes().remove(estudiante);
         usuarioRepository.save(padre);
         log.info("Vínculo padre-estudiante eliminado: padre={}, estudiante={}", padre.getId(), estudiante.getId());
     }
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarPadresDe(Long institucionId, Long estudianteId) {
-        obtenerPorId(institucionId, estudianteId);
+    public List<Usuario> listarPadresDe(Long direccionId, Long estudianteId) {
+        obtenerPorId(direccionId, estudianteId);
         return usuarioRepository.findPadresByEstudianteId(estudianteId);
     }
 
-    private Usuario resolverPersona(Long institucionId, Long id, String cedula, String email, String usuario) {
+    private Usuario resolverPersona(Long direccionId, Long id, String cedula, String email, String usuario) {
         if (id != null) {
-            return obtenerPorId(institucionId, id);
+            return obtenerPorId(direccionId, id);
         }
         Usuario porCedula = cedula == null ? null : usuarioRepository.findByCedula(cedula).orElse(null);
         Usuario porEmail = usuarioRepository.findByEmail(email).orElse(null);

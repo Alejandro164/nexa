@@ -12,11 +12,11 @@ import org.junit.jupiter.api.Test;
 
 import com.chavescr.nexa.entity.Jornada.BloqueJornada;
 
-class ConfiguracionInstitucionTest {
+class ConfiguracionDireccionTest {
 
     @Test
     void relojPredeterminadoSigueElPatronMepDeRecreosDistintos() {
-        ConfiguracionInstitucion config = ConfiguracionInstitucion.predeterminada(null);
+        ConfiguracionDireccion config = ConfiguracionDireccion.predeterminada(null);
 
         assertEquals(LocalTime.of(7, 0), config.horaInicioLeccion(1));
         assertEquals(LocalTime.of(7, 40), config.horaFinLeccion(1));
@@ -41,7 +41,7 @@ class ConfiguracionInstitucionTest {
 
     @Test
     void sinMinutosDeAlmuerzoElTercerRecesoOcupaEseHueco() {
-        ConfiguracionInstitucion config = ConfiguracionInstitucion.predeterminada(null);
+        ConfiguracionDireccion config = ConfiguracionDireccion.predeterminada(null);
         config.setMinutosAlmuerzo(0);
 
         assertFalse(config.hayAlmuerzoDespues(6));
@@ -53,7 +53,7 @@ class ConfiguracionInstitucionTest {
 
     @Test
     void recreoEnCeroNoInsertaPausaEnEseBloque() {
-        ConfiguracionInstitucion config = ConfiguracionInstitucion.predeterminada(null);
+        ConfiguracionDireccion config = ConfiguracionDireccion.predeterminada(null);
         config.setListaDuracionesRecreos(List.of(15, 0, 10));
 
         assertTrue(config.hayRecreoDespues(2));
@@ -65,7 +65,7 @@ class ConfiguracionInstitucionTest {
 
     @Test
     void bloquesDeTamanoDistintoSumanLeccionesYPausas() {
-        ConfiguracionInstitucion config = ConfiguracionInstitucion.predeterminada(null);
+        ConfiguracionDireccion config = ConfiguracionDireccion.predeterminada(null);
         config.aplicarBloques(List.of(
                 new BloqueJornada(3, "receso", 15),
                 new BloqueJornada(3, "almuerzo", 40),
@@ -89,7 +89,7 @@ class ConfiguracionInstitucionTest {
 
     @Test
     void elUltimoBloqueNuncaInsertaPausaAunqueVengaConReceso() {
-        ConfiguracionInstitucion config = ConfiguracionInstitucion.predeterminada(null);
+        ConfiguracionDireccion config = ConfiguracionDireccion.predeterminada(null);
         config.aplicarBloques(List.of(
                 new BloqueJornada(2, "receso", 15),
                 new BloqueJornada(2, "receso", 20)));
@@ -102,7 +102,7 @@ class ConfiguracionInstitucionTest {
 
     @Test
     void recesoEnCeroSeGuardaComoSinPausa() {
-        ConfiguracionInstitucion config = ConfiguracionInstitucion.predeterminada(null);
+        ConfiguracionDireccion config = ConfiguracionDireccion.predeterminada(null);
         config.aplicarBloques(List.of(
                 new BloqueJornada(2, "receso", 0),
                 new BloqueJornada(2, "ninguna", 0)));

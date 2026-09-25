@@ -7,64 +7,64 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.chavescr.nexa.entity.ConfiguracionInstitucion;
+import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.entity.HorarioLeccion;
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Jornada;
 import com.chavescr.nexa.entity.Jornada.BloqueJornada;
 import com.chavescr.nexa.entity.Jornada.TipoPausa;
-import com.chavescr.nexa.repository.ConfiguracionInstitucionRepository;
+import com.chavescr.nexa.repository.ConfiguracionDireccionRepository;
 import com.chavescr.nexa.repository.DocenteBloqueoLeccionRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 
 @Service
 @Transactional
-public class ConfiguracionInstitucionService {
+public class ConfiguracionDireccionService {
 
-    private final ConfiguracionInstitucionRepository configuracionRepository;
-    private final InstitucionRepository institucionRepository;
+    private final ConfiguracionDireccionRepository configuracionRepository;
+    private final DireccionRepository direccionRepository;
     private final HorarioLeccionRepository horarioRepository;
     private final DocenteBloqueoLeccionRepository bloqueoRepository;
 
-    public ConfiguracionInstitucionService(ConfiguracionInstitucionRepository configuracionRepository,
-            InstitucionRepository institucionRepository,
+    public ConfiguracionDireccionService(ConfiguracionDireccionRepository configuracionRepository,
+            DireccionRepository direccionRepository,
             HorarioLeccionRepository horarioRepository,
             DocenteBloqueoLeccionRepository bloqueoRepository) {
         this.configuracionRepository = configuracionRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.horarioRepository = horarioRepository;
         this.bloqueoRepository = bloqueoRepository;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public ConfiguracionInstitucion obtener(Long institucionId) {
-        return configuracionRepository.findByInstitucionId(institucionId)
-                .orElseGet(() -> ConfiguracionInstitucion.predeterminada(null));
+    public ConfiguracionDireccion obtener(Long direccionId) {
+        return configuracionRepository.findByDireccionId(direccionId)
+                .orElseGet(() -> ConfiguracionDireccion.predeterminada(null));
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ConfiguracionInstitucion obtenerOCrear(Long institucionId) {
-        return configuracionRepository.findByInstitucionId(institucionId)
-                .orElseGet(() -> persistirNueva(institucionId));
+    public ConfiguracionDireccion obtenerOCrear(Long direccionId) {
+        return configuracionRepository.findByDireccionId(direccionId)
+                .orElseGet(() -> persistirNueva(direccionId));
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public ConfiguracionInstitucion guardar(Long institucionId, LocalTime inicioJornada,
+    public ConfiguracionDireccion guardar(Long direccionId, LocalTime inicioJornada,
             Integer minutosLeccion, String bloquesJornada, List<String> dias) {
         List<BloqueJornada> bloques = Jornada.normalizarBloques(Jornada.parsearBloques(bloquesJornada, true));
         validar(inicioJornada, minutosLeccion, bloques, dias);
         int cantidadLecciones = bloques.stream().mapToInt(BloqueJornada::lecciones).sum();
-        validarReduccionContraHorario(institucionId, cantidadLecciones, dias);
+        validarReduccionContraHorario(direccionId, cantidadLecciones, dias);
 
-        ConfiguracionInstitucion config = obtenerOCrear(institucionId);
+        ConfiguracionDireccion config = obtenerOCrear(direccionId);
         config.setInicioJornada(inicioJornada);
         config.setMinutosLeccion(minutosLeccion);
         config.aplicarBloques(bloques);
         config.setDias(dias);
-        ConfiguracionInstitucion guardada = configuracionRepository.save(config);
-        normalizarHoras(institucionId, guardada);
+        ConfiguracionDireccion guardada = configuracionRepository.save(config);
+        normalizarHoras(direccionId, guardada);
         return guardada;
     }
 
@@ -112,17 +112,17 @@ public class ConfiguracionInstitucionService {
         }
     }
 
-    private void validarReduccionContraHorario(Long institucionId, Integer cantidadLecciones, List<String> dias) {
-        if (horarioRepository.existsByInstitucionIdAndNumeroLeccionGreaterThan(institucionId, cantidadLecciones)
-                || bloqueoRepository.existsByInstitucionIdAndNumeroLeccionGreaterThan(institucionId, cantidadLecciones)) {
+    private void validarReduccionContraHorario(Long direccionId, Integer cantidadLecciones, List<String> dias) {
+        if (horarioRepository.existsByDireccionIdAndNumeroLeccionGreaterThan(direccionId, cantidadLecciones)
+                || bloqueoRepository.existsByDireccionIdAndNumeroLeccionGreaterThan(direccionId, cantidadLecciones)) {
             throw new IllegalArgumentException(
                     "Hay lecciones o bloqueos después de la lección " + cantidadLecciones
                             + ". Elimínalos del horario antes de reducir la cantidad.");
         }
-        for (String dia : obtener(institucionId).getDias()) {
+        for (String dia : obtener(direccionId).getDias()) {
             if (!dias.contains(dia)
-                    && (horarioRepository.existsByInstitucionIdAndDia(institucionId, dia)
-                            || bloqueoRepository.existsByInstitucionIdAndDia(institucionId, dia))) {
+                    && (horarioRepository.existsByDireccionIdAndDia(direccionId, dia)
+                            || bloqueoRepository.existsByDireccionIdAndDia(direccionId, dia))) {
                 throw new IllegalArgumentException(
                         "Hay asignaciones o bloqueos el "
                                 + DiaLaboral.etiqueta(dia)
@@ -131,9 +131,9 @@ public class ConfiguracionInstitucionService {
         }
     }
 
-    private void normalizarHoras(Long institucionId, ConfiguracionInstitucion config) {
+    private void normalizarHoras(Long direccionId, ConfiguracionDireccion config) {
         Jornada jornada = config.jornada();
-        List<HorarioLeccion> lecciones = horarioRepository.findByInstitucionId(institucionId);
+        List<HorarioLeccion> lecciones = horarioRepository.findByDireccionId(direccionId);
         for (HorarioLeccion leccion : lecciones) {
             leccion.setHoraInicio(jornada.horaInicioLeccion(leccion.getNumeroLeccion()));
             leccion.setHoraFin(jornada.horaFinLeccion(leccion.getNumeroLeccion()));
@@ -141,17 +141,17 @@ public class ConfiguracionInstitucionService {
         horarioRepository.saveAll(lecciones);
     }
 
-    private ConfiguracionInstitucion persistirNueva(Long institucionId) {
+    private ConfiguracionDireccion persistirNueva(Long direccionId) {
         try {
             return configuracionRepository.save(
-                    ConfiguracionInstitucion.predeterminada(institucionDe(institucionId)));
+                    ConfiguracionDireccion.predeterminada(direccionDe(direccionId)));
         } catch (DataIntegrityViolationException e) {
-            return configuracionRepository.findByInstitucionId(institucionId).orElseThrow(() -> e);
+            return configuracionRepository.findByDireccionId(direccionId).orElseThrow(() -> e);
         }
     }
 
-    private Institucion institucionDe(Long institucionId) {
-        return institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+    private Direccion direccionDe(Long direccionId) {
+        return direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
     }
 }

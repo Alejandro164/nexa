@@ -20,8 +20,8 @@ import jakarta.persistence.UniqueConstraint;
  */
 @Entity
 @Table(name = "notas_conducta", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_nota_conducta_institucion_periodo_estudiante",
-                columnNames = {"institucion_id", "periodo_id", "estudiante_id"})
+        @UniqueConstraint(name = "uk_nota_conducta_direccion_periodo_estudiante",
+                columnNames = {"direccion_id", "periodo_id", "estudiante_id"})
 })
 public class NotaConducta {
 
@@ -30,8 +30,8 @@ public class NotaConducta {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "periodo_id", nullable = false)
@@ -61,12 +61,12 @@ public class NotaConducta {
         this.id = id;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 
     public PeriodoAcademico getPeriodo() {

@@ -10,17 +10,17 @@
 <body>
 
     <h2 layout:fragment="page-title">Dashboard</h2>
-    <p layout:fragment="page-subtitle">Resumen de tu institución</p>
+    <p layout:fragment="page-subtitle">Resumen de tu dirección</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Dashboard</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Resumen de tu institución</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Resumen de tu dirección</p>
     <main layout:fragment="content">
 
         <style>
-            .institucion-selector {
+            .direccion-selector {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -31,13 +31,13 @@
                 margin-bottom: 1.5rem;
             }
 
-            .institucion-selector-info {
+            .direccion-selector-info {
                 display: flex;
                 align-items: center;
                 gap: 1rem;
             }
 
-            .institucion-selector-icon {
+            .direccion-selector-icon {
                 width: 44px;
                 height: 44px;
                 border-radius: 12px;
@@ -49,12 +49,12 @@
                 flex-shrink: 0;
             }
 
-            .institucion-selector-icon svg {
+            .direccion-selector-icon svg {
                 width: 22px;
                 height: 22px;
             }
 
-            .institucion-selector-label {
+            .direccion-selector-label {
                 font-size: 0.75rem;
                 color: #94a3b8;
                 text-transform: uppercase;
@@ -62,13 +62,13 @@
                 font-weight: 600;
             }
 
-            .institucion-selector-name {
+            .direccion-selector-name {
                 font-size: 1rem;
                 font-weight: 600;
                 color: #1e293b;
             }
 
-            .institucion-selector-name.placeholder {
+            .direccion-selector-name.placeholder {
                 color: #94a3b8;
                 font-weight: 400;
             }
@@ -95,26 +95,26 @@
             }
         </style>
 
-        <!-- Selector de Institución -->
-        <div class="institucion-selector">
-            <div class="institucion-selector-info">
-                <div class="institucion-selector-icon">
+        <!-- Selector de Dirección -->
+        <div class="direccion-selector">
+            <div class="direccion-selector-info">
+                <div class="direccion-selector-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
                         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                     </svg>
                 </div>
                 <div>
-                    <div class="institucion-selector-label">Institución Actual</div>
-                    <div class="institucion-selector-name"
-                         th:text="${institucionActivaNombre != null ? institucionActivaNombre : 'Sin institución seleccionada'}"
-                         th:classappend="${institucionActivaNombre == null ? 'placeholder' : ''}">
-                        Sin institución seleccionada
+                    <div class="direccion-selector-label">Dirección Actual</div>
+                    <div class="direccion-selector-name"
+                         th:text="${direccionActivaNombre != null ? direccionActivaNombre : 'Sin dirección seleccionada'}"
+                         th:classappend="${direccionActivaNombre == null ? 'placeholder' : ''}">
+                        Sin dirección seleccionada
                     </div>
                 </div>
             </div>
             <button class="btn-switch-inst"
-                    hx-get="/inicio/instituciones-modal"
+                    hx-get="/inicio/direcciones-modal"
                     hx-target="#modal-container"
                     hx-swap="innerHTML"
                     @click="document.getElementById('modal-container').classList.add('show')">
@@ -124,7 +124,7 @@
                     <polyline points="7 23 3 19 7 15"></polyline>
                     <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                 </svg>
-                Cambiar Institución
+                Cambiar Dirección
             </button>
         </div>
 
@@ -342,8 +342,8 @@
             }
         </style>
 
-        <!-- Resumen global: solo para el admin sin institución seleccionada -->
-        <th:block th:if="${sinInstitucion}">
+        <!-- Resumen global: solo para el admin sin dirección seleccionada -->
+        <th:block th:if="${sinDireccion}">
 
         <div class="dash-stats">
             <div class="dash-stat-card">
@@ -370,9 +370,9 @@
                     </svg>
                 </div>
                 <div>
-                    <div class="dash-stat-value" th:text="${totalInstituciones}">0</div>
-                    <div class="dash-stat-label">Centros Educativos</div>
-                    <div class="dash-stat-detail" th:text="${institucionesActivas} + ' activos'">0 activos</div>
+                    <div class="dash-stat-value" th:text="${totalDirecciones}">0</div>
+                    <div class="dash-stat-label">Instituciones educativas</div>
+                    <div class="dash-stat-detail" th:text="${direccionesActivas} + ' activas'">0 activos</div>
                 </div>
             </div>
 
@@ -432,25 +432,25 @@
 
             <div class="dash-card">
                 <div class="dash-card-header">
-                    <h3>Centros Educativos</h3>
+                    <h3>Instituciones educativas</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                 </div>
                 <div class="dash-card-body dash-card-body-scroll">
-                    <th:block th:each="institucion : ${ultimasInstituciones}">
+                    <th:block th:each="direccion : ${ultimasDirecciones}">
                         <div class="dash-list-item">
                             <div class="dash-avatar alt" style="background:linear-gradient(135deg,#16a34a,#4ade80);">
-                                <span th:text="${#strings.substring(institucion.nombre, 0, 1)}">C</span>
+                                <span th:text="${#strings.substring(direccion.nombre, 0, 1)}">C</span>
                             </div>
                             <div style="flex:1;min-width:0;">
-                                <div class="dash-list-name" th:text="${institucion.nombre}">Nombre</div>
-                                <div class="dash-list-sub" th:text="${institucion.codigo}">código</div>
+                                <div class="dash-list-name" th:text="${direccion.nombre}">Nombre</div>
+                                <div class="dash-list-sub" th:text="${direccion.codigo}">código</div>
                             </div>
-                            <span class="badge badge-success" th:if="${institucion.activa}" style="font-size:0.7rem;">Activo</span>
-                            <span class="badge badge-danger" th:unless="${institucion.activa}" style="font-size:0.7rem;background:rgba(220,38,38,0.1);color:#dc2626;">Inactivo</span>
+                            <span class="badge badge-success" th:if="${direccion.activa}" style="font-size:0.7rem;">Activo</span>
+                            <span class="badge badge-danger" th:unless="${direccion.activa}" style="font-size:0.7rem;background:rgba(220,38,38,0.1);color:#dc2626;">Inactivo</span>
                         </div>
                     </th:block>
-                    <div th:if="${#lists.isEmpty(ultimasInstituciones)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
-                        No hay centros educativos registrados.
+                    <div th:if="${#lists.isEmpty(ultimasDirecciones)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
+                        No hay instituciones educativas registradas.
                     </div>
                 </div>
             </div>
@@ -470,12 +470,12 @@
                         </svg>
                         Gestionar Usuarios
                     </a>
-                    <a href="/instituciones" class="dash-action-btn"
-                       hx-get="/instituciones" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
+                    <a href="/direcciones" class="dash-action-btn"
+                       hx-get="/direcciones" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                         </svg>
-                        Gestionar Centros
+                        Gestionar Instituciones
                     </a>
                     <a href="/seguridad" class="dash-action-btn"
                        hx-get="/seguridad" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
@@ -498,8 +498,8 @@
 
         </th:block>
 
-        <!-- Panel scoped a la institución activa -->
-        <th:block th:unless="${sinInstitucion}">
+        <!-- Panel scoped a la dirección activa -->
+        <th:block th:unless="${sinDireccion}">
 
         <!-- Stats Cards -->
         <div class="dash-stats">
@@ -513,7 +513,7 @@
                 <div>
                     <div class="dash-stat-value" th:text="${totalEstudiantes}">0</div>
                     <div class="dash-stat-label">Estudiantes Activos</div>
-                    <div class="dash-stat-detail">Matriculados en esta institución</div>
+                    <div class="dash-stat-detail">Matriculados en esta dirección</div>
                 </div>
             </div>
 
@@ -529,7 +529,7 @@
                 <div>
                     <div class="dash-stat-value" th:text="${totalDocentes}">0</div>
                     <div class="dash-stat-label">Docentes Activos</div>
-                    <div class="dash-stat-detail">Con acceso a esta institución</div>
+                    <div class="dash-stat-detail">Con acceso a esta dirección</div>
                 </div>
             </div>
 

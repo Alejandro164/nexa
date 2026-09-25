@@ -32,9 +32,9 @@ public class ParticipacionService {
         this.tareaProyectoRepository = tareaProyectoRepository;
     }
 
-    public List<Map<String, Object>> listarParticipantes(Long institucionId, String filtro,
+    public List<Map<String, Object>> listarParticipantes(Long direccionId, String filtro,
                                                           String rol, String estado) {
-        List<Usuario> usuarios = usuarioRepository.findActivosByInstitucionId(institucionId);
+        List<Usuario> usuarios = usuarioRepository.findActivosByDireccionId(direccionId);
         if (filtro != null && !filtro.isBlank()) {
             String f = filtro.toLowerCase();
             usuarios = usuarios.stream()
@@ -66,7 +66,7 @@ public class ParticipacionService {
         return resultado;
     }
 
-    public Map<String, Object> obtenerDetalle(Long institucionId, Long usuarioId) {
+    public Map<String, Object> obtenerDetalle(Long direccionId, Long usuarioId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
         Map<String, Object> detalle = calcularStatsUsuario(usuario);

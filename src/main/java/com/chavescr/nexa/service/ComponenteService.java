@@ -46,40 +46,40 @@ public class ComponenteService {
     }
 
     @Transactional(readOnly = true)
-    public PeriodoAcademico obtenerPeriodoActivo(Long institucionId) {
-        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
+    public PeriodoAcademico obtenerPeriodoActivo(Long direccionId) {
+        return periodoRepository.findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(direccionId).stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No hay un período académico activo"));
     }
 
     @Transactional(readOnly = true)
-    public PeriodoAcademico obtenerPeriodoActivoOpcional(Long institucionId) {
-        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
+    public PeriodoAcademico obtenerPeriodoActivoOpcional(Long direccionId) {
+        return periodoRepository.findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(direccionId).stream()
                 .findFirst()
                 .orElse(null);
     }
 
     @Transactional(readOnly = true)
-    public List<Componente> listar(Long institucionId, ClaveComponente clave, Long nivelId, Long materiaId,
+    public List<Componente> listar(Long direccionId, ClaveComponente clave, Long nivelId, Long materiaId,
             Long periodoId) {
         if (exigePeriodo(clave)) {
             if (periodoId == null) {
                 return List.of();
             }
-            return componenteRepository.findByInstitucionIdAndClaveAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
-                    institucionId, clave, nivelId, materiaId, periodoId);
+            return componenteRepository.findByDireccionIdAndClaveAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
+                    direccionId, clave, nivelId, materiaId, periodoId);
         }
         if (clave == ClaveComponente.TAREA) {
-            return componenteRepository.findByInstitucionIdAndClaveAndNivelIdAndMateriaIdOrderByFechaAsc(
-                    institucionId, clave, nivelId, materiaId);
+            return componenteRepository.findByDireccionIdAndClaveAndNivelIdAndMateriaIdOrderByFechaAsc(
+                    direccionId, clave, nivelId, materiaId);
         }
-        return componenteRepository.findByInstitucionIdAndClaveAndNivelIdAndMateriaIdOrderByIdAsc(
-                institucionId, clave, nivelId, materiaId);
+        return componenteRepository.findByDireccionIdAndClaveAndNivelIdAndMateriaIdOrderByIdAsc(
+                direccionId, clave, nivelId, materiaId);
     }
 
     @Transactional(readOnly = true)
-    public Componente obtener(Long institucionId, Long id) {
-        return componenteRepository.findByIdAndInstitucionId(id, institucionId)
+    public Componente obtener(Long direccionId, Long id) {
+        return componenteRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Componente no encontrado"));
     }
 
@@ -89,13 +89,13 @@ public class ComponenteService {
     }
 
     @Transactional(readOnly = true)
-    public Map<Long, Long> contarEvaluados(Long institucionId, ClaveComponente clave, List<Long> ids, Long periodoId) {
+    public Map<Long, Long> contarEvaluados(Long direccionId, ClaveComponente clave, List<Long> ids, Long periodoId) {
         return resultadosDe(clave, ids, periodoId).stream()
                 .collect(Collectors.groupingBy(r -> r.getComponente().getId(), Collectors.counting()));
     }
 
     @Transactional(readOnly = true)
-    public Map<Long, Double> calcularPromedio(Long institucionId, ClaveComponente clave, List<Long> ids,
+    public Map<Long, Double> calcularPromedio(Long direccionId, ClaveComponente clave, List<Long> ids,
             Long periodoId) {
         return resultadosDe(clave, ids, periodoId).stream()
                 .collect(Collectors.groupingBy(r -> r.getComponente().getId(),
@@ -122,13 +122,13 @@ public class ComponenteService {
         return pesos;
     }
 
-    public Componente guardar(Long institucionId, ClaveComponente clave, Long nivelId, Long materiaId,
+    public Componente guardar(Long direccionId, ClaveComponente clave, Long nivelId, Long materiaId,
             Componente datos) {
-        NivelAcademico nivel = nivelRepository.findByIdAndInstitucionId(nivelId, institucionId)
+        NivelAcademico nivel = nivelRepository.findByIdAndDireccionId(nivelId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
-        Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
+        Materia materia = materiaRepository.findByIdAndDireccionId(materiaId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
-        PeriodoAcademico periodoActivo = obtenerPeriodoActivo(institucionId);
+        PeriodoAcademico periodoActivo = obtenerPeriodoActivo(direccionId);
         if (datos.getTitulo() == null || datos.getTitulo().isBlank()) {
             throw new IllegalArgumentException("Debes indicar el nombre");
         }
@@ -139,15 +139,15 @@ public class ComponenteService {
             throw new IllegalArgumentException("Debes indicar los puntos totales");
         }
 
-        List<Componente> existentes = listar(institucionId, clave, nivelId, materiaId,
+        List<Componente> existentes = listar(direccionId, clave, nivelId, materiaId,
                 exigePeriodo(clave) ? periodoActivo.getId() : null);
         validarPorcentaje(datos, existentes);
 
         Componente componente = datos.getId() != null
-                ? obtener(institucionId, datos.getId())
+                ? obtener(direccionId, datos.getId())
                 : new Componente();
         componente.setClave(clave);
-        componente.setInstitucion(nivel.getInstitucion());
+        componente.setDireccion(nivel.getDireccion());
         componente.setNivel(nivel);
         componente.setMateria(materia);
         if (exigePeriodo(clave) && componente.getPeriodo() == null) {
@@ -161,8 +161,8 @@ public class ComponenteService {
         return componenteRepository.save(componente);
     }
 
-    public void eliminar(Long institucionId, Long id) {
-        Componente componente = obtener(institucionId, id);
+    public void eliminar(Long direccionId, Long id) {
+        Componente componente = obtener(direccionId, id);
         if (tieneCalificaciones(componente)) {
             throw new IllegalArgumentException(
                     "No se puede eliminar: ya tiene calificaciones registradas");
@@ -171,17 +171,17 @@ public class ComponenteService {
     }
 
     @Transactional(readOnly = true)
-    public PeriodoAcademico periodoVisible(Long institucionId, Componente componente) {
+    public PeriodoAcademico periodoVisible(Long direccionId, Componente componente) {
         if (componente.getClave() == ClaveComponente.COTIDIANO || componente.getClave() == ClaveComponente.TAREA) {
-            return obtenerPeriodoActivo(institucionId);
+            return obtenerPeriodoActivo(direccionId);
         }
         return componente.getPeriodo();
     }
 
     @Transactional(readOnly = true)
-    public List<FilaNota> listarNotas(Long institucionId, Long componenteId) {
-        Componente componente = obtener(institucionId, componenteId);
-        Map<Long, NotaGuardada> notas = notasPorEstudiante(institucionId, componente);
+    public List<FilaNota> listarNotas(Long direccionId, Long componenteId) {
+        Componente componente = obtener(direccionId, componenteId);
+        Map<Long, NotaGuardada> notas = notasPorEstudiante(direccionId, componente);
         return usuarioRepository.findEstudiantesActivosByNivelId(componente.getNivel().getId()).stream()
                 .map(estudiante -> {
                     NotaGuardada nota = notas.get(estudiante.getId());
@@ -193,18 +193,18 @@ public class ComponenteService {
                 .toList();
     }
 
-    public FilaNota registrarNota(Long institucionId, Long componenteId, Long estudianteId, Integer calificacion,
+    public FilaNota registrarNota(Long direccionId, Long componenteId, Long estudianteId, Integer calificacion,
             Integer puntosObtenidos, String observacion) {
-        Componente componente = obtener(institucionId, componenteId);
-        Usuario estudiante = usuarioRepository.findActivoByIdAndInstitucionId(estudianteId, institucionId)
+        Componente componente = obtener(direccionId, componenteId);
+        Usuario estudiante = usuarioRepository.findActivoByIdAndDireccionId(estudianteId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
-        NotaGuardada actual = notasPorEstudiante(institucionId, componente).get(estudianteId);
+        NotaGuardada actual = notasPorEstudiante(direccionId, componente).get(estudianteId);
         NotaResuelta resuelta = resolverNota(componente,
                 actual != null ? actual.puntos() : null,
                 actual != null ? actual.calificacion() : null,
                 actual != null ? actual.observacion() : null,
                 puntosObtenidos, calificacion, observacion);
-        guardarNota(institucionId, componente, estudiante, resuelta);
+        guardarNota(direccionId, componente, estudiante, resuelta);
         return new FilaNota(estudiante, resuelta.puntos(), resuelta.calificacion(), resuelta.observacion());
     }
 
@@ -256,26 +256,26 @@ public class ComponenteService {
         return resultadoRepository.findByComponenteIdIn(ids);
     }
 
-    private PeriodoAcademico periodoDe(Long institucionId, Componente componente) {
+    private PeriodoAcademico periodoDe(Long direccionId, Componente componente) {
         if (componente.getPeriodo() != null) {
             return componente.getPeriodo();
         }
-        return obtenerPeriodoActivo(institucionId);
+        return obtenerPeriodoActivo(direccionId);
     }
 
     private boolean exigePeriodo(ClaveComponente clave) {
         return clave == ClaveComponente.PROYECTO || clave == ClaveComponente.EXAMEN;
     }
 
-    private Map<Long, NotaGuardada> notasPorEstudiante(Long institucionId, Componente componente) {
-        Long periodoId = periodoDe(institucionId, componente).getId();
+    private Map<Long, NotaGuardada> notasPorEstudiante(Long direccionId, Componente componente) {
+        Long periodoId = periodoDe(direccionId, componente).getId();
         return resultadoRepository.findByComponenteIdAndPeriodoId(componente.getId(), periodoId).stream()
                 .collect(Collectors.toMap(n -> n.getEstudiante().getId(),
                         n -> new NotaGuardada(n.getPuntosObtenidos(), n.getCalificacion(), n.getObservacion())));
     }
 
-    private void guardarNota(Long institucionId, Componente componente, Usuario estudiante, NotaResuelta nota) {
-        PeriodoAcademico periodo = periodoDe(institucionId, componente);
+    private void guardarNota(Long direccionId, Componente componente, Usuario estudiante, NotaResuelta nota) {
+        PeriodoAcademico periodo = periodoDe(direccionId, componente);
         ResultadoComponente registro = resultadoRepository
                 .findByComponenteIdAndEstudianteIdAndPeriodoId(componente.getId(), estudiante.getId(), periodo.getId())
                 .orElseGet(ResultadoComponente::new);

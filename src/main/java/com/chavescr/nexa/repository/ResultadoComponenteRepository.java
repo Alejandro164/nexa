@@ -20,6 +20,6 @@ public interface ResultadoComponenteRepository extends JpaRepository<ResultadoCo
 
     boolean existsByComponenteId(Long componenteId);
 
-    List<ResultadoComponente> findByComponente_Institucion_IdAndComponente_Nivel_IdAndComponente_Materia_IdAndPeriodo_Id(
-            Long institucionId, Long nivelId, Long materiaId, Long periodoId);
+    List<ResultadoComponente> findByComponente_Direccion_IdAndComponente_Nivel_IdAndComponente_Materia_IdAndPeriodo_Id(
+            Long direccionId, Long nivelId, Long materiaId, Long periodoId);
 }

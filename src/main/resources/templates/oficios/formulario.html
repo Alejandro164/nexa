@@ -29,63 +29,63 @@
                              nueva: false,
                              cancelarNueva() {
                                  this.nueva = false;
-                                 document.getElementById('nueva-institucion-nombre').value = '';
-                                 document.getElementById('nueva-institucion-cedula').value = '';
-                                 document.getElementById('nueva-institucion-email').value = '';
+                                 document.getElementById('nueva-direccion-nombre').value = '';
+                                 document.getElementById('nueva-direccion-cedula').value = '';
+                                 document.getElementById('nueva-direccion-email').value = '';
                                  document.getElementById('hacienda-indicador-oficio').textContent = '';
-                                 document.getElementById('error-nueva-institucion').innerHTML = '';
+                                 document.getElementById('error-nueva-direccion').innerHTML = '';
                              }
                          }">
-                        <label class="form-label">Institución destinataria *</label>
+                        <label class="form-label">Dirección destinataria *</label>
 
-                        <div id="wrap-destinatario-institucion" th:fragment="wrap-destinatario-institucion">
-                            <select class="form-input" id="destinatario-institucion" name="destinatarioInstitucionId" required>
-                                <option value="" disabled th:selected="${destinatarioIdSeleccionado == null}">Seleccione una institución...</option>
-                                <option th:each="i : ${institucionesDestinatario}" th:value="${i.id}" th:text="${i.nombre}"
-                                        th:selected="${destinatarioIdSeleccionado != null and destinatarioIdSeleccionado == i.id}">Institución</option>
+                        <div id="wrap-destinatario-direccion" th:fragment="wrap-destinatario-direccion">
+                            <select class="form-input" id="destinatario-direccion" name="destinatarioDireccionId" required>
+                                <option value="" disabled th:selected="${destinatarioIdSeleccionado == null}">Seleccione una dirección...</option>
+                                <option th:each="i : ${direccionesDestinatario}" th:value="${i.id}" th:text="${i.nombre}"
+                                        th:selected="${destinatarioIdSeleccionado != null and destinatarioIdSeleccionado == i.id}">Dirección</option>
                             </select>
                         </div>
 
                         <button type="button" @click="nueva ? cancelarNueva() : nueva = true"
                                 style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:0.85rem; font-weight:500; padding:0.4rem 0;">
-                            <span x-text="nueva ? '− Cancelar' : '+ Registrar nueva institución'"></span>
+                            <span x-text="nueva ? '− Cancelar' : '+ Registrar nueva dirección'"></span>
                         </button>
 
-                        <div id="panel-nueva-institucion-collapse"
+                        <div id="panel-nueva-direccion-collapse"
                              :style="'display:grid; grid-template-rows:' + (nueva ? '1fr' : '0fr') + '; transition:grid-template-rows 220ms ease; margin-top:0.25rem;'"
                              style="display:grid; grid-template-rows:0fr; transition:grid-template-rows 220ms ease; margin-top:0.25rem;">
                             <div style="overflow:hidden;">
-                                <div id="panel-nueva-institucion"
+                                <div id="panel-nueva-direccion"
                                      style="border:1px solid var(--border); border-radius:8px; padding:0.75rem;">
-                                    <div id="error-nueva-institucion">
-                                        <p th:fragment="error-nueva-institucion" th:if="${errorInstitucion}" class="form-alert-error" th:text="${errorInstitucion}"></p>
+                                    <div id="error-nueva-direccion">
+                                        <p th:fragment="error-nueva-direccion" th:if="${errorDireccion}" class="form-alert-error" th:text="${errorDireccion}"></p>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Cédula jurídica</label>
-                                        <input class="form-input" type="text" id="nueva-institucion-cedula"
-                                               name="nuevaInstitucionCedula" placeholder="Ej. 3-101-123456"
+                                        <input class="form-input" type="text" id="nueva-direccion-cedula"
+                                               name="nuevaDireccionCedula" placeholder="Ej. 3-101-123456"
                                                onblur="consultarNombreHaciendaOficio()">
                                         <p id="hacienda-indicador-oficio" style="margin:0.4rem 0 0; font-size:0.8rem; color:var(--text-secondary);"></p>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Nombre *</label>
-                                        <input class="form-input" type="text" id="nueva-institucion-nombre"
-                                               name="nuevaInstitucionNombre" placeholder="Nombre de la institución">
+                                        <input class="form-input" type="text" id="nueva-direccion-nombre"
+                                               name="nuevaDireccionNombre" placeholder="Nombre de la dirección">
                                     </div>
                                     <div class="form-group" style="margin-bottom:0;">
                                         <label class="form-label">Correo electrónico</label>
-                                        <input class="form-input" type="email" id="nueva-institucion-email"
-                                               name="nuevaInstitucionEmail" placeholder="correo@institucion.ed.cr">
+                                        <input class="form-input" type="email" id="nueva-direccion-email"
+                                               name="nuevaDireccionEmail" placeholder="correo@direccion.ed.cr">
                                         <p style="margin:0.4rem 0 0; font-size:0.8rem; color:var(--text-secondary);">
-                                            Necesario para poder emitir oficios a esta institución.
+                                            Necesario para poder emitir oficios a esta dirección.
                                         </p>
                                     </div>
                                     <button type="button" class="btn-secondary" style="margin-top:0.75rem;"
-                                            hx-post="/oficios/instituciones"
-                                            hx-include="#nueva-institucion-nombre,#nueva-institucion-cedula,#nueva-institucion-email"
-                                            hx-target="#wrap-destinatario-institucion" hx-swap="outerHTML"
-                                            hx-on:htmx:after-request="if(event.detail.successful &amp;&amp; event.detail.target.id==='wrap-destinatario-institucion'){ cancelarNueva() }">
-                                        Registrar institución
+                                            hx-post="/oficios/direcciones"
+                                            hx-include="#nueva-direccion-nombre,#nueva-direccion-cedula,#nueva-direccion-email"
+                                            hx-target="#wrap-destinatario-direccion" hx-swap="outerHTML"
+                                            hx-on:htmx:after-request="if(event.detail.successful &amp;&amp; event.detail.target.id==='wrap-destinatario-direccion'){ cancelarNueva() }">
+                                        Registrar dirección
                                     </button>
                                 </div>
                             </div>
@@ -119,8 +119,8 @@
         }
 
         window.consultarNombreHaciendaOficio = function () {
-            var cedulaInput = document.getElementById('nueva-institucion-cedula');
-            var nombreInput = document.getElementById('nueva-institucion-nombre');
+            var cedulaInput = document.getElementById('nueva-direccion-cedula');
+            var nombreInput = document.getElementById('nueva-direccion-nombre');
             var msg = document.getElementById('hacienda-indicador-oficio');
             if (!cedulaInput || !nombreInput || !msg) {
                 return;

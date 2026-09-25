@@ -8,10 +8,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.chavescr.nexa.entity.NivelAcademico;
 
 public interface NivelAcademicoRepository extends JpaRepository<NivelAcademico, Long> {
-    List<NivelAcademico> findByInstitucionIdOrderByGradoAscSeccionAsc(Long institucionId);
-    List<NivelAcademico> findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(Long institucionId);
-    boolean existsByInstitucionId(Long institucionId);
+    List<NivelAcademico> findByDireccionIdOrderByGradoAscSeccionAsc(Long direccionId);
+    List<NivelAcademico> findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(Long direccionId);
+    boolean existsByDireccionId(Long direccionId);
 
-    boolean existsByInstitucionIdAndActivoTrue(Long institucionId);
-    Optional<NivelAcademico> findByIdAndInstitucionId(Long id, Long institucionId);
+    boolean existsByDireccionIdAndActivoTrue(Long direccionId);
+    Optional<NivelAcademico> findByIdAndDireccionId(Long id, Long direccionId);
 }

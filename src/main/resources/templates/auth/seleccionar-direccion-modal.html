@@ -13,30 +13,30 @@
                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
                     </div>
-                    <h2>Selecciona tu institución</h2>
-                    <p>Tu cuenta tiene acceso a varias instituciones. Elige con cuál deseas trabajar.</p>
+                    <h2>Selecciona tu dirección</h2>
+                    <p>Tu cuenta tiene acceso a varias direcciones. Elige con cuál deseas trabajar.</p>
                 </div>
 
-                <div th:if="${instituciones == null or instituciones.empty}" class="inst-modal-empty">
-                    No tienes instituciones asignadas.
+                <div th:if="${direcciones == null or direcciones.empty}" class="inst-modal-empty">
+                    No tienes direcciones asignadas.
                 </div>
 
-                <div class="inst-modal-search-wrap" th:if="${instituciones != null and instituciones.size() > 1}">
+                <div class="inst-modal-search-wrap" th:if="${direcciones != null and direcciones.size() > 1}">
                     <svg class="inst-modal-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                          stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
-                    <input type="text" class="inst-modal-search-input" placeholder="Buscar institución por nombre o código..."
-                           oninput="filtrarInstitucionesModal(this)" autocomplete="off">
+                    <input type="text" class="inst-modal-search-input" placeholder="Buscar dirección por nombre o código..."
+                           oninput="filtrarDireccionesModal(this)" autocomplete="off">
                 </div>
 
-                <div class="inst-modal-list" th:if="${instituciones != null and not instituciones.empty}">
-                    <form th:each="inst : ${instituciones}" th:action="@{/inicio/cambiar-institucion}" method="post"
+                <div class="inst-modal-list" th:if="${direcciones != null and not direcciones.empty}">
+                    <form th:each="inst : ${direcciones}" th:action="@{/inicio/cambiar-direccion}" method="post"
                           class="inst-modal-item-form"
                           th:attr="data-search=${#strings.toLowerCase(inst.nombre)} + '|' + ${#strings.toLowerCase(inst.codigo != null ? inst.codigo : '')}">
-                        <input type="hidden" name="institucionId" th:value="${inst.id}" />
+                        <input type="hidden" name="direccionId" th:value="${inst.id}" />
                         <button type="submit" class="inst-modal-item">
                             <div class="inst-modal-item-icon">
                                 <span th:text="${#strings.substring(inst.nombre, 0, 1)}">I</span>
@@ -55,7 +55,7 @@
                 </div>
 
                 <p class="inst-modal-empty-search" id="inst-modal-empty-search" style="display:none;">
-                    No se encontraron instituciones con ese criterio.
+                    No se encontraron direcciones con ese criterio.
                 </p>
 
                 <div class="inst-modal-footer">

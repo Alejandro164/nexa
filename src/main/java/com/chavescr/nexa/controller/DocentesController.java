@@ -21,13 +21,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.dto.CargaLaboralDocenteDTO;
-import com.chavescr.nexa.entity.ConfiguracionInstitucion;
+import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.ConfiguracionAcademicaService;
@@ -69,11 +69,11 @@ public class DocentesController {
 
     @GetMapping
     public String docentes(Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId != null) {
-            cargarDirectorio(model, institucionId, null);
-            cargarDisponibilidad(model, institucionId, null, null);
-            cargarAsignaciones(model, institucionId, null, null);
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId != null) {
+            cargarDirectorio(model, direccionId, null);
+            cargarDisponibilidad(model, direccionId, null, null);
+            cargarAsignaciones(model, direccionId, null, null);
         }
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "docentes/index :: htmx-content";
@@ -88,7 +88,7 @@ public class DocentesController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String materiaId,
             Model model, HttpSession session) {
-        cargarDirectorio(model, institucionId(session), q, estado, parseId(materiaId));
+        cargarDirectorio(model, direccionId(session), q, estado, parseId(materiaId));
         return "docentes/directorio/directorio :: content";
     }
 
@@ -97,35 +97,35 @@ public class DocentesController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String materiaId,
             Model model, HttpSession session) {
-        cargarDirectorio(model, institucionId(session), q, estado, parseId(materiaId));
+        cargarDirectorio(model, direccionId(session), q, estado, parseId(materiaId));
         return "docentes/directorio/lista :: content";
     }
 
     @GetMapping("/directorio/ficha/{id}")
     public String directorioFicha(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        Usuario docente = personalService.obtenerPorId(institucionId, id);
+        Long direccionId = requerirDireccion(session);
+        Usuario docente = personalService.obtenerPorId(direccionId, id);
         model.addAttribute("docente", docente);
-        model.addAttribute("materiasAsignadas", docenteMateriaService.listarMaterias(institucionId, id));
-        model.addAttribute("materiasHorario", alcanceDocenteService.materiasVisibles(institucionId, id));
-        model.addAttribute("seccionesGuia", docenteGuiaService.listarSecciones(institucionId, id));
-        model.addAttribute("niveles", alcanceDocenteService.nivelesVisibles(institucionId, id));
+        model.addAttribute("materiasAsignadas", docenteMateriaService.listarMaterias(direccionId, id));
+        model.addAttribute("materiasHorario", alcanceDocenteService.materiasVisibles(direccionId, id));
+        model.addAttribute("seccionesGuia", docenteGuiaService.listarSecciones(direccionId, id));
+        model.addAttribute("niveles", alcanceDocenteService.nivelesVisibles(direccionId, id));
         return "docentes/directorio/ficha :: modal";
     }
 
     @GetMapping("/directorio/form")
     public String directorioFormCrear(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Usuario nuevo = new Usuario();
         nuevo.setRoles(java.util.Set.of(personalService.obtenerRolPorNombre(ROL_DOCENTE)));
-        cargarFormulario(model, institucionId, nuevo, List.of(), false, List.of());
+        cargarFormulario(model, direccionId, nuevo, List.of(), false, List.of());
         return "docentes/directorio/formulario :: form-content";
     }
 
     @GetMapping("/directorio/form/{id}")
     public String directorioFormEditar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        cargarFormulario(model, institucionId, personalService.obtenerPorId(institucionId, id), null, null, null);
+        Long direccionId = requerirDireccion(session);
+        cargarFormulario(model, direccionId, personalService.obtenerPorId(direccionId, id), null, null, null);
         return "docentes/directorio/formulario :: form-content";
     }
 
@@ -145,23 +145,23 @@ public class DocentesController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String materiaId,
             Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
             // El rol de una cuenta creada desde este módulo siempre es Docente — no lo elige el admin
             // (a diferencia de Personal, que sí permite cualquier combinación de roles).
             List<Long> rolIds = List.of(personalService.obtenerRolPorNombre(ROL_DOCENTE).getId());
             Usuario guardado = personalService.guardar(
-                    institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
-            docenteMateriaService.reemplazar(institucionId, guardado.getId(), materiaIds);
-            docenteGuiaService.reemplazar(institucionId, guardado.getId(), profesorGuia, nivelGuiaIds);
-            cargarDirectorio(model, institucionId, q, estado, parseId(materiaId));
+                    direccionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
+            docenteMateriaService.reemplazar(direccionId, guardado.getId(), materiaIds);
+            docenteGuiaService.reemplazar(direccionId, guardado.getId(), profesorGuia, nivelGuiaIds);
+            cargarDirectorio(model, direccionId, q, estado, parseId(materiaId));
             return "docentes/directorio/lista :: content";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#docentes-modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
-            Usuario formUsuario = id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id);
-            cargarFormulario(model, institucionId, formUsuario,
+            Usuario formUsuario = id == null ? new Usuario() : personalService.obtenerPorId(direccionId, id);
+            cargarFormulario(model, direccionId, formUsuario,
                     materiaIds == null ? List.of() : materiaIds,
                     profesorGuia,
                     nivelGuiaIds == null ? List.of() : nivelGuiaIds);
@@ -175,9 +175,9 @@ public class DocentesController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String materiaId,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.eliminar(institucionId, id);
-        cargarDirectorio(model, institucionId, q, estado, parseId(materiaId));
+        Long direccionId = requerirDireccion(session);
+        personalService.eliminar(direccionId, id);
+        cargarDirectorio(model, direccionId, q, estado, parseId(materiaId));
         return "docentes/directorio/lista :: content";
     }
 
@@ -187,9 +187,9 @@ public class DocentesController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String materiaId,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.toggleActivo(institucionId, id);
-        cargarDirectorio(model, institucionId, q, estado, parseId(materiaId));
+        Long direccionId = requerirDireccion(session);
+        personalService.toggleActivo(direccionId, id);
+        cargarDirectorio(model, direccionId, q, estado, parseId(materiaId));
         return "docentes/directorio/lista :: content";
     }
 
@@ -198,7 +198,7 @@ public class DocentesController {
     @GetMapping("/disponibilidad")
     public String disponibilidad(@RequestParam(required = false) Long docenteId,
             @RequestParam(required = false) Long periodoId, Model model, HttpSession session) {
-        cargarDisponibilidad(model, institucionId(session), docenteId, periodoId);
+        cargarDisponibilidad(model, direccionId(session), docenteId, periodoId);
         return "docentes/disponibilidad/disponibilidad :: disponibilidad-panel";
     }
 
@@ -208,28 +208,28 @@ public class DocentesController {
             @RequestParam String dia,
             @RequestParam Integer numeroLeccion,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        docenteBloqueoService.alternar(institucionId, docenteId, periodoId, dia, numeroLeccion);
-        cargarDisponibilidad(model, institucionId, docenteId, periodoId);
+        Long direccionId = requerirDireccion(session);
+        docenteBloqueoService.alternar(direccionId, docenteId, periodoId, dia, numeroLeccion);
+        cargarDisponibilidad(model, direccionId, docenteId, periodoId);
         return "docentes/disponibilidad/disponibilidad :: disponibilidad-panel";
     }
 
     @GetMapping("/disponibilidad/reporte")
     public String reporteDisponibilidad(@RequestParam Long docenteId,
             @RequestParam Long periodoId, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        Usuario docente = personalService.obtenerPorId(institucionId, docenteId);
+        Long direccionId = requerirDireccion(session);
+        Usuario docente = personalService.obtenerPorId(direccionId, docenteId);
         boolean esDocente = docente.getRoles().stream()
                 .anyMatch(rol -> ROL_DOCENTE.equals(rol.getNombre()));
         if (!esDocente) {
             throw new IllegalArgumentException("Docente no encontrado");
         }
-        PeriodoAcademico periodo = configuracionAcademicaService.obtenerPeriodo(institucionId, periodoId);
+        PeriodoAcademico periodo = configuracionAcademicaService.obtenerPeriodo(direccionId, periodoId);
         Map<String, List<HorarioLeccion>> horario = configuracionAcademicaService
-                .obtenerHorarioPorDocente(institucionId, periodoId, docenteId);
-        Set<String> bloqueos = docenteBloqueoService.claves(institucionId, periodoId, docenteId);
+                .obtenerHorarioPorDocente(direccionId, periodoId, docenteId);
+        Set<String> bloqueos = docenteBloqueoService.claves(direccionId, periodoId, docenteId);
 
-        var config = configuracionAcademicaService.obtenerConfiguracion(institucionId);
+        var config = configuracionAcademicaService.obtenerConfiguracion(direccionId);
         int totalBloques = config.getDias().size() * config.getLecciones().size();
         int bloquesOcupados = 0;
         int leccionesAsignadas = 0;
@@ -246,7 +246,7 @@ public class DocentesController {
                 })
                 .count();
 
-        model.addAttribute("institucionNombre", session.getAttribute("SESSION_INSTITUCION_NOMBRE"));
+        model.addAttribute("direccionNombre", session.getAttribute("SESSION_DIRECCION_NOMBRE"));
         model.addAttribute("docente", docente);
         model.addAttribute("periodo", periodo);
         model.addAttribute("dias", config.getDias());
@@ -267,16 +267,16 @@ public class DocentesController {
     @GetMapping("/asignaciones")
     public String asignaciones(@RequestParam(required = false) Long docenteId,
             @RequestParam(required = false) Long periodoId, Model model, HttpSession session) {
-        cargarAsignaciones(model, institucionId(session), periodoId, docenteId);
+        cargarAsignaciones(model, direccionId(session), periodoId, docenteId);
         return "docentes/asignaciones/asignaciones :: asignaciones-panel";
     }
 
     @GetMapping("/asignaciones/reporte")
     public String reporteAsignaciones(@RequestParam(required = false) Long docenteId,
             @RequestParam Long periodoId, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        PeriodoAcademico periodo = configuracionAcademicaService.obtenerPeriodo(institucionId, periodoId);
-        List<Usuario> docentes = personalService.listarPorRol(institucionId, ROL_DOCENTE);
+        Long direccionId = requerirDireccion(session);
+        PeriodoAcademico periodo = configuracionAcademicaService.obtenerPeriodo(direccionId, periodoId);
+        List<Usuario> docentes = personalService.listarPorRol(direccionId, ROL_DOCENTE);
         if (docenteId != null) {
             docentes = docentes.stream().filter(d -> docenteId.equals(d.getId())).toList();
             if (docentes.isEmpty()) {
@@ -287,7 +287,7 @@ public class DocentesController {
         int totalLecciones = 0;
         int docentesConCarga = 0;
         for (Usuario docente : docentes) {
-            CargaLaboralDocenteDTO fila = construirCargaLaboral(institucionId, periodoId, docente);
+            CargaLaboralDocenteDTO fila = construirCargaLaboral(direccionId, periodoId, docente);
             carga.add(fila);
             totalLecciones += fila.getTotalLecciones();
             if (fila.getTotalLecciones() > 0) {
@@ -296,7 +296,7 @@ public class DocentesController {
         }
         carga.sort(Comparator.comparing(c -> c.getDocente().getNombre()));
 
-        model.addAttribute("institucionNombre", session.getAttribute("SESSION_INSTITUCION_NOMBRE"));
+        model.addAttribute("direccionNombre", session.getAttribute("SESSION_DIRECCION_NOMBRE"));
         model.addAttribute("periodo", periodo);
         model.addAttribute("carga", carga);
         model.addAttribute("docenteFiltro", docenteId == null ? null : docentes.get(0));
@@ -309,17 +309,17 @@ public class DocentesController {
 
     // ─── CARGA DE DATOS (compartida entre la carga inicial de /docentes y cada pestaña) ──
 
-    private void cargarDirectorio(Model model, Long institucionId, String q) {
-        cargarDirectorio(model, institucionId, q, null, null);
+    private void cargarDirectorio(Model model, Long direccionId, String q) {
+        cargarDirectorio(model, direccionId, q, null, null);
     }
 
-    private void cargarDirectorio(Model model, Long institucionId, String q, String estado, Long materiaId) {
-        List<Usuario> docentes = institucionId == null ? List.of()
-                : personalService.listarPorRol(institucionId, ROL_DOCENTE, q);
-        Map<Long, List<Materia>> materiasPorDocente = institucionId == null ? Map.of()
-                : docenteMateriaService.mapearPorDocente(institucionId);
-        Map<Long, List<NivelAcademico>> guiasPorDocente = institucionId == null ? Map.of()
-                : docenteGuiaService.mapearPorDocente(institucionId);
+    private void cargarDirectorio(Model model, Long direccionId, String q, String estado, Long materiaId) {
+        List<Usuario> docentes = direccionId == null ? List.of()
+                : personalService.listarPorRol(direccionId, ROL_DOCENTE, q);
+        Map<Long, List<Materia>> materiasPorDocente = direccionId == null ? Map.of()
+                : docenteMateriaService.mapearPorDocente(direccionId);
+        Map<Long, List<NivelAcademico>> guiasPorDocente = direccionId == null ? Map.of()
+                : docenteGuiaService.mapearPorDocente(direccionId);
 
         if (estado == null) {
             estado = "activo";
@@ -337,18 +337,18 @@ public class DocentesController {
                     .toList();
         }
 
-        List<Materia> materiasFiltro = institucionId == null ? List.of()
-                : configuracionAcademicaService.listarMateriasActivas(institucionId);
+        List<Materia> materiasFiltro = direccionId == null ? List.of()
+                : configuracionAcademicaService.listarMateriasActivas(direccionId);
 
         Long periodoActivoId = null;
-        if (institucionId != null) {
-            List<PeriodoAcademico> periodos = configuracionAcademicaService.listarPeriodosActivos(institucionId);
+        if (direccionId != null) {
+            List<PeriodoAcademico> periodos = configuracionAcademicaService.listarPeriodosActivos(direccionId);
             if (!periodos.isEmpty()) {
                 periodoActivoId = periodos.get(0).getId();
             }
         }
-        Map<Long, Long> leccionesPorDocente = institucionId == null ? Map.of()
-                : configuracionAcademicaService.contarLeccionesPorDocente(institucionId, periodoActivoId);
+        Map<Long, Long> leccionesPorDocente = direccionId == null ? Map.of()
+                : configuracionAcademicaService.contarLeccionesPorDocente(direccionId, periodoActivoId);
 
         model.addAttribute("docentes", docentes);
         model.addAttribute("materiasPorDocente", materiasPorDocente);
@@ -371,23 +371,23 @@ public class DocentesController {
         }
     }
 
-    private void cargarFormulario(Model model, Long institucionId, Usuario usuario,
+    private void cargarFormulario(Model model, Long direccionId, Usuario usuario,
             List<Long> materiaIds, Boolean profesorGuia, List<Long> nivelGuiaIds) {
         model.addAttribute("usuario", usuario);
         model.addAttribute("materiasCatalogo",
-                docenteMateriaService.catalogoParaFormulario(institucionId, usuario.getId()));
+                docenteMateriaService.catalogoParaFormulario(direccionId, usuario.getId()));
         model.addAttribute("seccionesCatalogo",
-                docenteGuiaService.catalogoParaFormulario(institucionId, usuario.getId()));
+                docenteGuiaService.catalogoParaFormulario(direccionId, usuario.getId()));
         List<Long> materiasSeleccionadas = materiaIds != null
                 ? materiaIds
                 : (usuario.getId() == null
                         ? List.of()
-                        : docenteMateriaService.listarMateriaIds(institucionId, usuario.getId()));
+                        : docenteMateriaService.listarMateriaIds(direccionId, usuario.getId()));
         List<Long> nivelesSeleccionados = nivelGuiaIds != null
                 ? nivelGuiaIds
                 : (usuario.getId() == null
                         ? List.of()
-                        : docenteGuiaService.listarNivelIds(institucionId, usuario.getId()));
+                        : docenteGuiaService.listarNivelIds(direccionId, usuario.getId()));
         boolean esGuia = profesorGuia != null
                 ? profesorGuia
                 : !nivelesSeleccionados.isEmpty();
@@ -396,11 +396,11 @@ public class DocentesController {
         model.addAttribute("profesorGuia", esGuia);
     }
 
-    private void cargarDisponibilidad(Model model, Long institucionId, Long docenteId, Long periodoId) {
-        List<Usuario> docentes = institucionId == null ? List.of()
-                : personalService.listarPorRol(institucionId, ROL_DOCENTE);
-        List<PeriodoAcademico> periodos = institucionId == null ? List.of()
-                : configuracionAcademicaService.listarPeriodosActivos(institucionId);
+    private void cargarDisponibilidad(Model model, Long direccionId, Long docenteId, Long periodoId) {
+        List<Usuario> docentes = direccionId == null ? List.of()
+                : personalService.listarPorRol(direccionId, ROL_DOCENTE);
+        List<PeriodoAcademico> periodos = direccionId == null ? List.of()
+                : configuracionAcademicaService.listarPeriodosActivos(direccionId);
 
         if (docenteId == null && !docentes.isEmpty()) {
             docenteId = docentes.get(0).getId();
@@ -409,12 +409,12 @@ public class DocentesController {
             periodoId = periodos.get(0).getId();
         }
 
-        var config = institucionId == null ? ConfiguracionInstitucion.predeterminada(null)
-                : configuracionAcademicaService.obtenerConfiguracion(institucionId);
-        Map<String, List<HorarioLeccion>> horario = institucionId == null ? Map.of()
-                : configuracionAcademicaService.obtenerHorarioPorDocente(institucionId, periodoId, docenteId);
-        Set<String> bloqueos = institucionId == null ? Set.of()
-                : docenteBloqueoService.claves(institucionId, periodoId, docenteId);
+        var config = direccionId == null ? ConfiguracionDireccion.predeterminada(null)
+                : configuracionAcademicaService.obtenerConfiguracion(direccionId);
+        Map<String, List<HorarioLeccion>> horario = direccionId == null ? Map.of()
+                : configuracionAcademicaService.obtenerHorarioPorDocente(direccionId, periodoId, docenteId);
+        Set<String> bloqueos = direccionId == null ? Set.of()
+                : docenteBloqueoService.claves(direccionId, periodoId, docenteId);
 
         model.addAttribute("docentesDisponibilidad", docentes);
         model.addAttribute("periodosActivosDisponibilidad", periodos);
@@ -426,11 +426,11 @@ public class DocentesController {
         model.addAttribute("bloqueos", bloqueos);
     }
 
-    private void cargarAsignaciones(Model model, Long institucionId, Long periodoId, Long docenteId) {
-        List<PeriodoAcademico> periodos = institucionId == null ? List.of()
-                : configuracionAcademicaService.listarPeriodosActivos(institucionId);
-        List<Usuario> docentes = institucionId == null ? List.of()
-                : personalService.listarPorRol(institucionId, ROL_DOCENTE);
+    private void cargarAsignaciones(Model model, Long direccionId, Long periodoId, Long docenteId) {
+        List<PeriodoAcademico> periodos = direccionId == null ? List.of()
+                : configuracionAcademicaService.listarPeriodosActivos(direccionId);
+        List<Usuario> docentes = direccionId == null ? List.of()
+                : personalService.listarPorRol(direccionId, ROL_DOCENTE);
         if (periodoId == null && !periodos.isEmpty()) {
             periodoId = periodos.get(0).getId();
         }
@@ -442,7 +442,7 @@ public class DocentesController {
 
         List<CargaLaboralDocenteDTO> carga = new ArrayList<>();
         for (Usuario docente : docentesCarga) {
-            carga.add(construirCargaLaboral(institucionId, periodoId, docente));
+            carga.add(construirCargaLaboral(direccionId, periodoId, docente));
         }
         carga.sort(Comparator.comparing(c -> c.getDocente().getNombre()));
 
@@ -453,10 +453,10 @@ public class DocentesController {
         model.addAttribute("carga", carga);
     }
 
-    private CargaLaboralDocenteDTO construirCargaLaboral(Long institucionId, Long periodoId, Usuario docente) {
+    private CargaLaboralDocenteDTO construirCargaLaboral(Long direccionId, Long periodoId, Usuario docente) {
         List<HorarioLeccion> lecciones = periodoId == null ? List.of()
-                : horarioLeccionRepository.findByInstitucionIdAndPeriodoIdAndDocenteIdOrderByDiaAscNumeroLeccionAsc(
-                        institucionId, periodoId, docente.getId());
+                : horarioLeccionRepository.findByDireccionIdAndPeriodoIdAndDocenteIdOrderByDiaAscNumeroLeccionAsc(
+                        direccionId, periodoId, docente.getId());
 
         Map<String, Long> conteoPorAsignacion = new LinkedHashMap<>();
         for (HorarioLeccion leccion : lecciones) {
@@ -475,14 +475,14 @@ public class DocentesController {
 
     // ─── HELPERS ─────────────────────────────────────────────────
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long direccionId(HttpSession session) {
+        return (Long) session.getAttribute("SESSION_DIRECCION_ID");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = institucionId(session);
+    private Long requerirDireccion(HttpSession session) {
+        Long id = direccionId(session);
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

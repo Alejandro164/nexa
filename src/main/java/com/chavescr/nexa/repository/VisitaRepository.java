@@ -13,20 +13,20 @@ import com.chavescr.nexa.entity.Visita;
 @Repository
 public interface VisitaRepository extends JpaRepository<Visita, Long> {
 
-    List<Visita> findByInstitucionIdOrderByFechaRegistroDesc(Long institucionId);
+    List<Visita> findByDireccionIdOrderByFechaRegistroDesc(Long direccionId);
 
-    List<Visita> findByInstitucionIdAndFechaRegistroBetweenOrderByFechaRegistroDesc(
-            Long institucionId, LocalDateTime inicio, LocalDateTime fin);
+    List<Visita> findByDireccionIdAndFechaRegistroBetweenOrderByFechaRegistroDesc(
+            Long direccionId, LocalDateTime inicio, LocalDateTime fin);
 
-    List<Visita> findByIdentificacionAndInstitucionIdOrderByFechaRegistroDesc(
-            String identificacion, Long institucionId);
+    List<Visita> findByIdentificacionAndDireccionIdOrderByFechaRegistroDesc(
+            String identificacion, Long direccionId);
 
-    List<Visita> findByNombreVisitanteContainingIgnoreCaseAndInstitucionIdOrderByFechaRegistroDesc(
-            String nombreVisitante, Long institucionId);
+    List<Visita> findByNombreVisitanteContainingIgnoreCaseAndDireccionIdOrderByFechaRegistroDesc(
+            String nombreVisitante, Long direccionId);
 
-    @Query("SELECT v FROM Visita v WHERE v.institucion.id = :institucionId "
+    @Query("SELECT v FROM Visita v WHERE v.direccion.id = :direccionId "
             + "AND (LOWER(v.nombreVisitante) LIKE LOWER(CONCAT('%', :filtro, '%')) "
             + "OR v.identificacion = :filtro) "
             + "ORDER BY v.fechaRegistro DESC")
-    List<Visita> buscarPorFiltro(@Param("filtro") String filtro, @Param("institucionId") Long institucionId);
+    List<Visita> buscarPorFiltro(@Param("filtro") String filtro, @Param("direccionId") Long direccionId);
 }

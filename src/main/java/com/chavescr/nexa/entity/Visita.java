@@ -55,8 +55,8 @@ public class Visita {
     private String observaciones;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "institucion_id")
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id")
+    private Direccion direccion;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaRegistro;
@@ -168,12 +168,12 @@ public class Visita {
         this.observaciones = observaciones;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 
     public LocalDateTime getFechaRegistro() {

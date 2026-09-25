@@ -18,16 +18,16 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "configuraciones_institucion")
-public class ConfiguracionInstitucion {
+@Table(name = "configuraciones_direccion")
+public class ConfiguracionDireccion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false, unique = true)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false, unique = true)
+    private Direccion direccion;
 
     @Column(nullable = false)
     private Integer cantidadLecciones = Jornada.CANTIDAD_LECCIONES_PREDETERMINADA;
@@ -59,9 +59,9 @@ public class ConfiguracionInstitucion {
     @Column(name = "dias_laborales", nullable = false, length = 80)
     private String diasLaborales = DiaLaboral.serializar(DiaLaboral.PREDETERMINADOS);
 
-    public static ConfiguracionInstitucion predeterminada(Institucion institucion) {
-        ConfiguracionInstitucion config = new ConfiguracionInstitucion();
-        config.setInstitucion(institucion);
+    public static ConfiguracionDireccion predeterminada(Direccion direccion) {
+        ConfiguracionDireccion config = new ConfiguracionDireccion();
+        config.setDireccion(direccion);
         return config;
     }
 
@@ -153,12 +153,12 @@ public class ConfiguracionInstitucion {
         this.id = id;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 
     public Integer getCantidadLecciones() {

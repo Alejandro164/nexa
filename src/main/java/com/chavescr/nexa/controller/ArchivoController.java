@@ -56,8 +56,8 @@ public class ArchivoController {
     @GetMapping("/preview/{id}")
     public ResponseEntity<Resource> previewArchivo(@PathVariable Long id, HttpSession session,
             HttpServletRequest request) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId == null) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 

@@ -8,7 +8,7 @@ import com.chavescr.nexa.entity.Proyecto;
 
 public interface ProyectoRepository extends JpaRepository<Proyecto, Long> {
 
-    List<Proyecto> findByInstitucionIdOrderByFechaCreacionDesc(Long institucionId);
+    List<Proyecto> findByDireccionIdOrderByFechaCreacionDesc(Long direccionId);
 
-    java.util.Optional<Proyecto> findByIdAndInstitucionId(Long id, Long institucionId);
+    java.util.Optional<Proyecto> findByIdAndDireccionId(Long id, Long direccionId);
 }

@@ -127,7 +127,7 @@
     <article class="rpt-sheet">
         <header class="rpt-brand">
             <div>
-                <h1 th:text="${institucionNombre != null ? institucionNombre : 'Nexa'}">Institución</h1>
+                <h1 th:text="${direccionNombre != null ? direccionNombre : 'Nexa'}">Dirección</h1>
                 <p>Reporte de carga laboral y asignaciones</p>
             </div>
             <p th:text="|Generado ${#temporals.format(fechaGeneracion, 'dd/MM/yyyy HH:mm')}|">Generado</p>

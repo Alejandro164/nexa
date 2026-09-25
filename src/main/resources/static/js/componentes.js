@@ -485,14 +485,14 @@ function toggleTipoAsignacion(tipo) {
     }
 }
 
-// Selector Usuario/Institución del formulario de Oficios (misma idea que toggleTipoAsignacion,
+// Selector Usuario/Dirección del formulario de Oficios (misma idea que toggleTipoAsignacion,
 // sin depender de Alpine para el show/hide: los wrappers ya vienen con el estado inicial
 // correcto renderizado por el servidor, esto solo reacciona a los clics del usuario).
 function toggleTipoDestinatario(tipo) {
     var wrapU = document.getElementById('wrap-destinatario-usuario');
-    var wrapI = document.getElementById('wrap-destinatario-institucion');
+    var wrapI = document.getElementById('wrap-destinatario-direccion');
     var selU  = document.getElementById('destinatario-usuario');
-    var selI  = document.getElementById('destinatario-institucion');
+    var selI  = document.getElementById('destinatario-direccion');
     if (!wrapU || !wrapI) return;
 
     if (tipo === 'USUARIO') {

@@ -15,7 +15,7 @@
                     <th>Email</th>
                     <th>Cédula</th>
                     <th>Roles</th>
-                    <th>Instituciones</th>
+                    <th>Direcciones</th>
                     <th>Estado</th>
                     <th style="text-align:right;">Acciones</th>
                 </tr>
@@ -37,11 +37,11 @@
                         </div>
                     </td>
                     <td>
-                        <span th:if="${!u.instituciones.empty}"
-                              th:text="${#lists.size(u.instituciones)} + ${#lists.size(u.instituciones) == 1 ? ' institución' : ' instituciones'}"
-                              th:title="${#strings.listJoin(u.instituciones.![nombre], ', ')}"
-                              style="color:#64748b;font-size:0.85rem;">0 instituciones</span>
-                        <span th:if="${u.instituciones.empty}" style="color:#94a3b8;font-size:0.8rem;">Ninguna</span>
+                        <span th:if="${!u.direcciones.empty}"
+                              th:text="${#lists.size(u.direcciones)} + ${#lists.size(u.direcciones) == 1 ? ' dirección' : ' direcciones'}"
+                              th:title="${#strings.listJoin(u.direcciones.![nombre], ', ')}"
+                              style="color:#64748b;font-size:0.85rem;">0 direcciones</span>
+                        <span th:if="${u.direcciones.empty}" style="color:#94a3b8;font-size:0.8rem;">Ninguna</span>
                     </td>
                     <td>
                         <button class="badge-xs" style="border:none;cursor:pointer;"

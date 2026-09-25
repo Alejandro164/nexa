@@ -55,8 +55,8 @@ public class Solicitud {
     private LocalDateTime fechaResolucion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "institucion_id")
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id")
+    private Direccion direccion;
 
     public enum TipoSolicitud {
         CONSTANCIA_MATRICULA, CAMBIO_DIRECCION, CITA_DOCENTE, OTRO
@@ -157,11 +157,11 @@ public class Solicitud {
         this.fechaResolucion = fechaResolucion;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 }

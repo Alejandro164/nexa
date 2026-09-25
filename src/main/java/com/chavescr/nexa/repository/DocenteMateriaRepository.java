@@ -10,21 +10,21 @@ import com.chavescr.nexa.entity.DocenteMateria;
 public interface DocenteMateriaRepository extends JpaRepository<DocenteMateria, Long> {
 
     @EntityGraph(attributePaths = "materia")
-    List<DocenteMateria> findByInstitucionIdAndDocenteIdOrderByMateria_NombreAsc(
-            Long institucionId, Long docenteId);
+    List<DocenteMateria> findByDireccionIdAndDocenteIdOrderByMateria_NombreAsc(
+            Long direccionId, Long docenteId);
 
     @EntityGraph(attributePaths = { "docente", "materia" })
-    List<DocenteMateria> findByInstitucionIdOrderByMateria_NombreAsc(Long institucionId);
+    List<DocenteMateria> findByDireccionIdOrderByMateria_NombreAsc(Long direccionId);
 
     @EntityGraph(attributePaths = "docente")
-    List<DocenteMateria> findByInstitucionIdAndMateriaIdOrderByDocente_NombreAsc(
-            Long institucionId, Long materiaId);
+    List<DocenteMateria> findByDireccionIdAndMateriaIdOrderByDocente_NombreAsc(
+            Long direccionId, Long materiaId);
 
-    boolean existsByInstitucionIdAndDocenteIdAndMateriaId(Long institucionId, Long docenteId, Long materiaId);
+    boolean existsByDireccionIdAndDocenteIdAndMateriaId(Long direccionId, Long docenteId, Long materiaId);
 
-    void deleteByInstitucionIdAndDocenteId(Long institucionId, Long docenteId);
+    void deleteByDireccionIdAndDocenteId(Long direccionId, Long docenteId);
 
     void deleteByDocenteId(Long docenteId);
 
-    void deleteByInstitucionIdAndMateriaId(Long institucionId, Long materiaId);
+    void deleteByDireccionIdAndMateriaId(Long direccionId, Long materiaId);
 }

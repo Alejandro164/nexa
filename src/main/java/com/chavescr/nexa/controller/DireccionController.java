@@ -13,49 +13,49 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.chavescr.nexa.entity.Centro;
+import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.OfertaEducativa;
-import com.chavescr.nexa.service.CentroService;
+import com.chavescr.nexa.service.InstitucionService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
-@RequestMapping("/instituciones")
-public class InstitucionController {
+@RequestMapping("/direcciones")
+public class DireccionController {
 
     @Autowired
-    private CentroService centroService;
+    private InstitucionService institucionService;
 
     @GetMapping
     public String index(Model model, HttpServletRequest request) {
-        model.addAttribute("centros", centroService.listar());
+        model.addAttribute("instituciones", institucionService.listar());
         if ("true".equals(request.getHeader("HX-Request"))) {
-            return "instituciones/index :: htmx-content";
+            return "direcciones/index :: htmx-content";
         }
-        return "instituciones/index";
+        return "direcciones/index";
     }
 
     @GetMapping("/lista")
     public String lista(Model model) {
-        model.addAttribute("centros", centroService.listar());
-        return "instituciones/lista :: tabla-instituciones";
+        model.addAttribute("instituciones", institucionService.listar());
+        return "direcciones/lista :: tabla-direcciones";
     }
 
     @GetMapping("/form")
     public String showCreateForm(Model model) {
-        prepararFormulario(model, new Centro(), List.of());
-        return "instituciones/form :: form-content";
+        prepararFormulario(model, new Institucion(), List.of());
+        return "direcciones/form :: form-content";
     }
 
     @GetMapping("/form/{id}")
     public String showEditForm(@PathVariable("id") Long id, Model model) {
-        prepararFormulario(model, centroService.obtener(id), centroService.ofertas(id));
-        return "instituciones/form :: form-content";
+        prepararFormulario(model, institucionService.obtener(id), institucionService.ofertas(id));
+        return "direcciones/form :: form-content";
     }
 
     @PostMapping("/save")
-    public String save(@RequestParam(required = false) Long centroId,
+    public String save(@RequestParam(required = false) Long institucionId,
             @RequestParam(required = false) String cedula,
             @RequestParam(required = false) String nombre,
             @RequestParam(required = false) String direccion,
@@ -66,44 +66,44 @@ public class InstitucionController {
             @RequestParam Map<String, String> codigos,
             Model model, HttpServletResponse response) {
         try {
-            centroService.guardar(centroId, cedula, nombre, direccion, telefono, email, activa != null, ofertas, codigos);
-            model.addAttribute("centros", centroService.listar());
-            return "instituciones/lista :: tabla-instituciones";
+            institucionService.guardar(institucionId, cedula, nombre, direccion, telefono, email, activa != null, ofertas, codigos);
+            model.addAttribute("instituciones", institucionService.listar());
+            return "direcciones/lista :: tabla-direcciones";
         } catch (IllegalArgumentException e) {
             response.setHeader("HX-Retarget", "#modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
-            Centro centro = centroId == null ? new Centro() : centroService.obtener(centroId);
-            centro.setCedula(cedula);
-            centro.setNombre(nombre);
-            centro.setDireccion(direccion);
-            centro.setTelefono(telefono);
-            centro.setEmail(email);
-            centro.setActiva(activa != null);
+            Institucion institucion = institucionId == null ? new Institucion() : institucionService.obtener(institucionId);
+            institucion.setCedula(cedula);
+            institucion.setNombre(nombre);
+            institucion.setDireccion(direccion);
+            institucion.setTelefono(telefono);
+            institucion.setEmail(email);
+            institucion.setActiva(activa != null);
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("centro", centro);
+            model.addAttribute("institucion", institucion);
             model.addAttribute("ofertas", OfertaEducativa.values());
             model.addAttribute("codigos", codigos);
             model.addAttribute("elegidas", ofertas == null ? List.of() : ofertas);
-            return "instituciones/form :: form-content";
+            return "direcciones/form :: form-content";
         }
     }
 
     @DeleteMapping("/{id}")
     public String delete(@PathVariable("id") Long id, Model model) {
-        centroService.eliminar(id);
-        model.addAttribute("centros", centroService.listar());
-        return "instituciones/lista :: tabla-instituciones";
+        institucionService.eliminar(id);
+        model.addAttribute("instituciones", institucionService.listar());
+        return "direcciones/lista :: tabla-direcciones";
     }
 
-    private void prepararFormulario(Model model, Centro centro, List<com.chavescr.nexa.entity.Institucion> instituciones) {
-        model.addAttribute("centro", centro);
+    private void prepararFormulario(Model model, Institucion institucion, List<com.chavescr.nexa.entity.Direccion> direcciones) {
+        model.addAttribute("institucion", institucion);
         model.addAttribute("ofertas", OfertaEducativa.values());
-        model.addAttribute("elegidas", instituciones.stream()
+        model.addAttribute("elegidas", direcciones.stream()
                 .filter(inst -> inst.getOferta() != null)
                 .map(inst -> inst.getOferta().name())
                 .toList());
         java.util.HashMap<String, String> codigos = new java.util.HashMap<>();
-        for (var inst : instituciones) {
+        for (var inst : direcciones) {
             if (inst.getOferta() != null) {
                 codigos.put(inst.getOferta().name(), inst.getCodigo());
             }

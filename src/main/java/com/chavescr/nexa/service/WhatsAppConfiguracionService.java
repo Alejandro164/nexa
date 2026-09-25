@@ -5,12 +5,12 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.WhatsAppConfiguracion;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.WhatsAppConfiguracionRepository;
 
-/** Configuración por institución de la conexión con WhatsApp Business Cloud API (Meta). */
+/** Configuración por dirección de la conexión con WhatsApp Business Cloud API (Meta). */
 @Service
 @Transactional
 public class WhatsAppConfiguracionService {
@@ -20,35 +20,35 @@ public class WhatsAppConfiguracionService {
     }
 
     private final WhatsAppConfiguracionRepository configuracionRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final CifradoService cifradoService;
 
     public WhatsAppConfiguracionService(WhatsAppConfiguracionRepository configuracionRepository,
-            InstitucionRepository institucionRepository, CifradoService cifradoService) {
+            DireccionRepository direccionRepository, CifradoService cifradoService) {
         this.configuracionRepository = configuracionRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.cifradoService = cifradoService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public WhatsAppConfiguracion obtener(Long institucionId) {
-        return configuracionRepository.findByInstitucionId(institucionId)
+    public WhatsAppConfiguracion obtener(Long direccionId) {
+        return configuracionRepository.findByDireccionId(direccionId)
                 .orElseGet(() -> WhatsAppConfiguracion.predeterminada(null));
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public boolean estaActivo(Long institucionId) {
-        return Boolean.TRUE.equals(obtener(institucionId).getActivo());
+    public boolean estaActivo(Long direccionId) {
+        return Boolean.TRUE.equals(obtener(direccionId).getActivo());
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public WhatsAppConfiguracion guardar(Long institucionId, String phoneNumberId, String businessAccountId,
+    public WhatsAppConfiguracion guardar(Long direccionId, String phoneNumberId, String businessAccountId,
             String numeroMostrar, String nuevoAccessToken, boolean activo) {
         if (phoneNumberId == null || phoneNumberId.isBlank()) {
             throw new IllegalArgumentException("Indica el Phone Number ID de WhatsApp Business");
         }
-        WhatsAppConfiguracion config = configuracionRepository.findByInstitucionId(institucionId)
-                .orElseGet(() -> WhatsAppConfiguracion.predeterminada(institucionDe(institucionId)));
+        WhatsAppConfiguracion config = configuracionRepository.findByDireccionId(direccionId)
+                .orElseGet(() -> WhatsAppConfiguracion.predeterminada(direccionDe(direccionId)));
 
         config.setPhoneNumberId(phoneNumberId.trim());
         config.setBusinessAccountId(blankToNull(businessAccountId));
@@ -66,9 +66,9 @@ public class WhatsAppConfiguracionService {
 
     /** Credenciales descifradas para probar la conexión, sin exigir que el envío esté activado. */
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public CredencialesWhatsApp obtenerCredenciales(Long institucionId) {
-        WhatsAppConfiguracion config = configuracionRepository.findByInstitucionId(institucionId)
-                .orElseThrow(() -> new IllegalStateException("WhatsApp no está configurado para esta institución"));
+    public CredencialesWhatsApp obtenerCredenciales(Long direccionId) {
+        WhatsAppConfiguracion config = configuracionRepository.findByDireccionId(direccionId)
+                .orElseThrow(() -> new IllegalStateException("WhatsApp no está configurado para esta dirección"));
         if (config.getPhoneNumberId() == null || config.getPhoneNumberId().isBlank() || !config.tieneToken()) {
             throw new IllegalStateException("Falta completar la configuración de WhatsApp (Phone Number ID y token)");
         }
@@ -76,8 +76,8 @@ public class WhatsAppConfiguracionService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void registrarPruebaExitosa(Long institucionId, String numeroDetectado) {
-        configuracionRepository.findByInstitucionId(institucionId).ifPresent(config -> {
+    public void registrarPruebaExitosa(Long direccionId, String numeroDetectado) {
+        configuracionRepository.findByDireccionId(direccionId).ifPresent(config -> {
             config.setUltimaPruebaExitosa(LocalDateTime.now());
             if (numeroDetectado != null && !numeroDetectado.isBlank()) {
                 config.setNumeroMostrar(numeroDetectado);
@@ -90,8 +90,8 @@ public class WhatsAppConfiguracionService {
         return (valor == null || valor.isBlank()) ? null : valor.trim();
     }
 
-    private Institucion institucionDe(Long institucionId) {
-        return institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+    private Direccion direccionDe(Long direccionId) {
+        return direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
     }
 }

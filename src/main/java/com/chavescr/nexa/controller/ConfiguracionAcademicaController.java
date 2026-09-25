@@ -12,12 +12,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.BloqueoLeccion;
-import com.chavescr.nexa.entity.ConfiguracionInstitucion;
+import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.ConfiguracionAcademicaService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +35,9 @@ public class ConfiguracionAcademicaController {
 
     @GetMapping
     public String configuracionAcademica(Model model, HttpServletRequest request, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
 
-        cargarPagina(model, institucionId);
+        cargarPagina(model, direccionId);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "configuracion-academica/index :: htmx-content";
         }
@@ -52,31 +52,31 @@ public class ConfiguracionAcademicaController {
 
     @GetMapping("/periodos/form/{id}")
     public String editarPeriodo(@PathVariable Long id, Model model, HttpSession session) {
-        model.addAttribute("periodo", service.obtenerPeriodo(requerirInstitucion(session), id));
+        model.addAttribute("periodo", service.obtenerPeriodo(requerirDireccion(session), id));
         return "configuracion-academica/periodos/form :: form-content";
     }
 
     @PostMapping("/periodos")
     public String guardarPeriodo(@ModelAttribute PeriodoAcademico periodo, Model model,
             HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            service.guardarPeriodo(institucionId, periodo);
+            service.guardarPeriodo(direccionId, periodo);
         } catch (IllegalArgumentException e) {
-            model.addAttribute("periodos", service.listarPeriodos(institucionId));
+            model.addAttribute("periodos", service.listarPeriodos(direccionId));
             notificarError(response, e.getMessage());
             return "configuracion-academica/periodos/periodos :: content";
         }
-        model.addAttribute("periodos", service.listarPeriodos(institucionId));
+        model.addAttribute("periodos", service.listarPeriodos(direccionId));
         notificarGuardado(response, "Período guardado correctamente");
         return "configuracion-academica/periodos/periodos :: content";
     }
 
     @DeleteMapping("/periodos/{id}")
     public String eliminarPeriodo(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        service.eliminarPeriodo(institucionId, id);
-        model.addAttribute("periodos", service.listarPeriodos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        service.eliminarPeriodo(direccionId, id);
+        model.addAttribute("periodos", service.listarPeriodos(direccionId));
         return "configuracion-academica/periodos/periodos :: content";
     }
 
@@ -88,25 +88,25 @@ public class ConfiguracionAcademicaController {
 
     @GetMapping("/niveles/form/{id}")
     public String editarNivel(@PathVariable Long id, Model model, HttpSession session) {
-        model.addAttribute("nivel", service.obtenerNivel(requerirInstitucion(session), id));
+        model.addAttribute("nivel", service.obtenerNivel(requerirDireccion(session), id));
         return "configuracion-academica/niveles/form :: form-content";
     }
 
     @PostMapping("/niveles")
     public String guardarNivel(@ModelAttribute NivelAcademico nivel, Model model,
             HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
-        service.guardarNivel(institucionId, nivel);
-        model.addAttribute("niveles", service.listarNiveles(institucionId));
+        Long direccionId = requerirDireccion(session);
+        service.guardarNivel(direccionId, nivel);
+        model.addAttribute("niveles", service.listarNiveles(direccionId));
         notificarGuardado(response, "Nivel guardado correctamente");
         return "configuracion-academica/niveles/niveles :: content";
     }
 
     @DeleteMapping("/niveles/{id}")
     public String eliminarNivel(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        service.eliminarNivel(institucionId, id);
-        model.addAttribute("niveles", service.listarNiveles(institucionId));
+        Long direccionId = requerirDireccion(session);
+        service.eliminarNivel(direccionId, id);
+        model.addAttribute("niveles", service.listarNiveles(direccionId));
         return "configuracion-academica/niveles/niveles :: content";
     }
 
@@ -119,7 +119,7 @@ public class ConfiguracionAcademicaController {
 
     @GetMapping("/materias/form/{id}")
     public String editarMateria(@PathVariable Long id, Model model, HttpSession session) {
-        model.addAttribute("materia", service.obtenerMateria(requerirInstitucion(session), id));
+        model.addAttribute("materia", service.obtenerMateria(requerirDireccion(session), id));
         model.addAttribute("tiposMateria", service.listarTiposMateriaActivos());
         return "configuracion-academica/materias/form :: form-content";
     }
@@ -127,18 +127,18 @@ public class ConfiguracionAcademicaController {
     @PostMapping("/materias")
     public String guardarMateria(@ModelAttribute Materia materia, Model model,
             HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
-        service.guardarMateria(institucionId, materia);
-        model.addAttribute("materias", service.listarMaterias(institucionId));
+        Long direccionId = requerirDireccion(session);
+        service.guardarMateria(direccionId, materia);
+        model.addAttribute("materias", service.listarMaterias(direccionId));
         notificarGuardado(response, "Materia guardada correctamente");
         return "configuracion-academica/materias/materias :: content";
     }
 
     @DeleteMapping("/materias/{id}")
     public String eliminarMateria(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        service.eliminarMateria(institucionId, id);
-        model.addAttribute("materias", service.listarMaterias(institucionId));
+        Long direccionId = requerirDireccion(session);
+        service.eliminarMateria(direccionId, id);
+        model.addAttribute("materias", service.listarMaterias(direccionId));
         return "configuracion-academica/materias/materias :: content";
     }
 
@@ -151,7 +151,7 @@ public class ConfiguracionAcademicaController {
 
     @GetMapping("/aulas/form/{id}")
     public String editarAula(@PathVariable Long id, Model model, HttpSession session) {
-        model.addAttribute("aula", service.obtenerAula(requerirInstitucion(session), id));
+        model.addAttribute("aula", service.obtenerAula(requerirDireccion(session), id));
         model.addAttribute("tiposAula", service.listarTiposAulaActivos());
         return "configuracion-academica/aulas/form :: form-content";
     }
@@ -159,18 +159,18 @@ public class ConfiguracionAcademicaController {
     @PostMapping("/aulas")
     public String guardarAula(@ModelAttribute Aula aula, Model model,
             HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
-        service.guardarAula(institucionId, aula);
-        model.addAttribute("aulas", service.listarAulas(institucionId));
+        Long direccionId = requerirDireccion(session);
+        service.guardarAula(direccionId, aula);
+        model.addAttribute("aulas", service.listarAulas(direccionId));
         notificarGuardado(response, "Aula guardada correctamente");
         return "configuracion-academica/aulas/aulas :: content";
     }
 
     @DeleteMapping("/aulas/{id}")
     public String eliminarAula(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        service.eliminarAula(institucionId, id);
-        model.addAttribute("aulas", service.listarAulas(institucionId));
+        Long direccionId = requerirDireccion(session);
+        service.eliminarAula(direccionId, id);
+        model.addAttribute("aulas", service.listarAulas(direccionId));
         return "configuracion-academica/aulas/aulas :: content";
     }
 
@@ -178,7 +178,7 @@ public class ConfiguracionAcademicaController {
     public String horario(@RequestParam(required = false) Long periodoId,
             @RequestParam(required = false) Long nivelId,
             @RequestParam(required = false) Long tipoBloqueoId, Model model, HttpSession session) {
-        cargarHorario(model, requerirInstitucion(session), periodoId, nivelId, tipoBloqueoId);
+        cargarHorario(model, requerirDireccion(session), periodoId, nivelId, tipoBloqueoId);
         return "configuracion-academica/horario/horario :: content";
     }
 
@@ -190,16 +190,16 @@ public class ConfiguracionAcademicaController {
             @RequestParam(required = false) Long id,
             @RequestParam(required = false) Long tipoBloqueoId,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         HorarioLeccion leccion;
         if (id != null) {
-            leccion = service.obtenerLeccionPorId(institucionId, id);
+            leccion = service.obtenerLeccionPorId(direccionId, id);
         } else {
             leccion = new HorarioLeccion();
             leccion.setDia(dia);
             leccion.setNumeroLeccion(numeroLeccion);
         }
-        ConfiguracionInstitucion config = service.obtenerConfiguracion(institucionId);
+        ConfiguracionDireccion config = service.obtenerConfiguracion(direccionId);
         if (!config.getDias().contains(dia) || !config.getLecciones().contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
         }
@@ -211,7 +211,7 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("tipoBloqueoId", tipoBloqueoId);
         Long materiaId = leccion.getMateria() != null ? leccion.getMateria().getId() : null;
         Long docenteId = leccion.getDocente() != null ? leccion.getDocente().getId() : null;
-        BloqueoLeccion bloqueo = service.bloqueoDeCelda(institucionId, nivelId, dia, numeroLeccion);
+        BloqueoLeccion bloqueo = service.bloqueoDeCelda(direccionId, nivelId, dia, numeroLeccion);
         boolean leccionCerrada = bloqueo != null && bloqueo.estaCerrada();
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("docenteSeleccionadoId", docenteId);
@@ -221,12 +221,12 @@ public class ConfiguracionAcademicaController {
                 bloqueo != null && bloqueo.getTipoMateria() != null ? bloqueo.getTipoMateria().getNombre() : null);
         model.addAttribute("materias", leccionCerrada
                 ? java.util.List.of()
-                : service.listarMateriasParaHorario(institucionId, nivelId, dia, numeroLeccion, materiaId));
+                : service.listarMateriasParaHorario(direccionId, nivelId, dia, numeroLeccion, materiaId));
         model.addAttribute("docentes", service.listarDocentesDisponibles(
-                institucionId, materiaId, docenteId, periodoId, dia, numeroLeccion, id));
+                direccionId, materiaId, docenteId, periodoId, dia, numeroLeccion, id));
         model.addAttribute("docentesAsociadosVacios",
-                service.listarDocentesPorMateria(institucionId, materiaId, docenteId).isEmpty());
-        model.addAttribute("aulas", service.listarAulasActivas(institucionId));
+                service.listarDocentesPorMateria(direccionId, materiaId, docenteId).isEmpty());
+        model.addAttribute("aulas", service.listarAulasActivas(direccionId));
         return "configuracion-academica/horario/form :: form-content";
     }
 
@@ -237,13 +237,13 @@ public class ConfiguracionAcademicaController {
             @RequestParam Integer numeroLeccion,
             @RequestParam(required = false) Long id,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("docenteSeleccionadoId", null);
         model.addAttribute("docentesAsociadosVacios",
-                service.listarDocentesPorMateria(institucionId, materiaId, null).isEmpty());
+                service.listarDocentesPorMateria(direccionId, materiaId, null).isEmpty());
         model.addAttribute("docentes", service.listarDocentesDisponibles(
-                institucionId, materiaId, null, periodoId, dia, numeroLeccion, id));
+                direccionId, materiaId, null, periodoId, dia, numeroLeccion, id));
         return "configuracion-academica/horario/form :: docentes-select";
     }
 
@@ -258,16 +258,16 @@ public class ConfiguracionAcademicaController {
             @RequestParam Integer numeroLeccion,
             @RequestParam(required = false) Long tipoBloqueoId,
             Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            service.guardarLeccion(institucionId, id, periodoId, nivelId, materiaId, docenteId, aulaId,
+            service.guardarLeccion(direccionId, id, periodoId, nivelId, materiaId, docenteId, aulaId,
                     dia, numeroLeccion);
         } catch (IllegalArgumentException e) {
-            cargarHorario(model, institucionId, periodoId, nivelId, tipoBloqueoId);
+            cargarHorario(model, direccionId, periodoId, nivelId, tipoBloqueoId);
             notificarError(response, e.getMessage());
             return "configuracion-academica/horario/horario :: content";
         }
-        cargarHorario(model, institucionId, periodoId, nivelId, tipoBloqueoId);
+        cargarHorario(model, direccionId, periodoId, nivelId, tipoBloqueoId);
         notificarGuardado(response, "Lección asignada correctamente");
         return "configuracion-academica/horario/horario :: content";
     }
@@ -278,9 +278,9 @@ public class ConfiguracionAcademicaController {
             @RequestParam Long nivelId,
             @RequestParam(required = false) Long tipoBloqueoId,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        service.eliminarLeccion(institucionId, id);
-        cargarHorario(model, institucionId, periodoId, nivelId, tipoBloqueoId);
+        Long direccionId = requerirDireccion(session);
+        service.eliminarLeccion(direccionId, id);
+        cargarHorario(model, direccionId, periodoId, nivelId, tipoBloqueoId);
         return "configuracion-academica/horario/horario :: content";
     }
 
@@ -292,39 +292,39 @@ public class ConfiguracionAcademicaController {
             @RequestParam Long tipoMateriaId,
             @RequestParam(required = false) Long tipoBloqueoId,
             Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            service.alternarBloqueoSeccion(institucionId, periodoId, nivelId, dia, numeroLeccion, tipoMateriaId);
+            service.alternarBloqueoSeccion(direccionId, periodoId, nivelId, dia, numeroLeccion, tipoMateriaId);
         } catch (IllegalArgumentException e) {
-            cargarHorario(model, institucionId, periodoId, nivelId, tipoBloqueoId);
+            cargarHorario(model, direccionId, periodoId, nivelId, tipoBloqueoId);
             notificarError(response, e.getMessage());
             return "configuracion-academica/horario/horario :: content";
         }
-        cargarHorario(model, institucionId, periodoId, nivelId, tipoBloqueoId);
+        cargarHorario(model, direccionId, periodoId, nivelId, tipoBloqueoId);
         return "configuracion-academica/horario/horario :: content";
     }
 
-    private void cargarPagina(Model model, Long institucionId) {
-        model.addAttribute("periodos", service.listarPeriodos(institucionId));
-        model.addAttribute("niveles", service.listarNiveles(institucionId));
-        model.addAttribute("materias", service.listarMaterias(institucionId));
-        model.addAttribute("aulas", service.listarAulas(institucionId));
-        cargarHorario(model, institucionId, null, null, null);
+    private void cargarPagina(Model model, Long direccionId) {
+        model.addAttribute("periodos", service.listarPeriodos(direccionId));
+        model.addAttribute("niveles", service.listarNiveles(direccionId));
+        model.addAttribute("materias", service.listarMaterias(direccionId));
+        model.addAttribute("aulas", service.listarAulas(direccionId));
+        cargarHorario(model, direccionId, null, null, null);
 
     }
 
-    private void cargarHorario(Model model, Long institucionId, Long periodoId, Long nivelId, Long tipoBloqueoId) {
-        var periodos = service.listarPeriodosActivos(institucionId);
-        var niveles = service.listarNivelesActivos(institucionId);
+    private void cargarHorario(Model model, Long direccionId, Long periodoId, Long nivelId, Long tipoBloqueoId) {
+        var periodos = service.listarPeriodosActivos(direccionId);
+        var niveles = service.listarNivelesActivos(direccionId);
         if (periodoId == null && !periodos.isEmpty()) {
             periodoId = periodos.get(0).getId();
         }
         if (nivelId == null && !niveles.isEmpty()) {
             nivelId = niveles.get(0).getId();
         }
-        var horario = service.obtenerHorario(institucionId, periodoId, nivelId);
+        var horario = service.obtenerHorario(direccionId, periodoId, nivelId);
         int totalLecciones = horario.values().stream().mapToInt(java.util.List::size).sum();
-        var config = service.obtenerConfiguracion(institucionId);
+        var config = service.obtenerConfiguracion(direccionId);
         model.addAttribute("periodosActivos", periodos);
         model.addAttribute("nivelesActivos", niveles);
         model.addAttribute("periodoSeleccionado", periodoId);
@@ -338,19 +338,19 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("totalLecciones", totalLecciones);
         model.addAttribute("tiposMateria", service.listarTiposMateriaActivos());
         model.addAttribute("tipoBloqueoId", tipoBloqueoId);
-        model.addAttribute("bloqueosSeccion", service.obtenerBloqueosSeccion(institucionId, periodoId, nivelId));
+        model.addAttribute("bloqueosSeccion", service.obtenerBloqueosSeccion(direccionId, periodoId, nivelId));
     }
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long direccionId(HttpSession session) {
+        return (Long) session.getAttribute("SESSION_DIRECCION_ID");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long institucionId = institucionId(session);
-        if (institucionId == null) {
-            throw new InstitucionNoSeleccionadaException();
+    private Long requerirDireccion(HttpSession session) {
+        Long direccionId = direccionId(session);
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
         }
-        return institucionId;
+        return direccionId;
     }
 
     private void notificarGuardado(HttpServletResponse response, String mensaje) {

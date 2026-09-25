@@ -12,13 +12,13 @@ import jakarta.servlet.http.HttpServletResponse;
 public class GlobalExceptionHandler {
 
     /**
-     * La sesión perdió SESSION_INSTITUCION_ID (p. ej. expiró o el usuario nunca la eligió) a mitad
+     * La sesión perdió SESSION_DIRECCION_ID (p. ej. expiró o el usuario nunca la eligió) a mitad
      * de navegación. En vez de dejar que la excepción llegue a la página de error genérica, se
-     * redirige a "/", que ya sabe mostrar el selector de institución o auto-seleccionar la única
+     * redirige a "/", que ya sabe mostrar el selector de dirección o auto-seleccionar la única
      * disponible.
      */
-    @ExceptionHandler(InstitucionNoSeleccionadaException.class)
-    public void manejarInstitucionNoSeleccionada(HttpServletRequest request, HttpServletResponse response)
+    @ExceptionHandler(DireccionNoSeleccionadaException.class)
+    public void manejarDireccionNoSeleccionada(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         if ("true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
             response.setHeader("HX-Redirect", "/");

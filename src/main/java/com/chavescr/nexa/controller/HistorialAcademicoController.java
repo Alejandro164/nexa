@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import java.util.List;
 
@@ -33,10 +33,10 @@ public class HistorialAcademicoController {
     public String historial(@RequestParam(required = false) Long nivelId,
             @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
             HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
-        var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
-        var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
+        var niveles = alcanceDocenteService.nivelesVisibles(direccionId, docenteId);
+        var materias = alcanceDocenteService.materiasVisibles(direccionId, docenteId);
         if (nivelId == null && !niveles.isEmpty()) {
             nivelId = niveles.get(0).getId();
         }
@@ -44,7 +44,7 @@ public class HistorialAcademicoController {
             materiaId = materias.get(0).getId();
         }
         List<HistorialCambio> eventos = nivelId != null && materiaId != null
-                ? service.listar(institucionId, nivelId, materiaId)
+                ? service.listar(direccionId, nivelId, materiaId)
                 : List.of();
 
         model.addAttribute("niveles", niveles);
@@ -55,10 +55,10 @@ public class HistorialAcademicoController {
         return "gestion-academica/historial/historial :: content";
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long requerirDireccion(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_DIRECCION_ID");
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

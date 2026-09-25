@@ -16,10 +16,10 @@ public interface NubeNodoRepository extends JpaRepository<NubeNodo, Long> {
     // Find all nodes inside a specific parent folder (excluye los que están en la papelera)
     List<NubeNodo> findByPadreIdAndFechaEliminacionIsNullOrderByTipoAscNombreAsc(Long padreId);
 
-    // Carpeta raíz de la institución con este nombre (usado por módulos que integran su
+    // Carpeta raíz de la dirección con este nombre (usado por módulos que integran su
     // almacenamiento en Nube Nexa, ej. Oficios, para encontrar/crear su carpeta dedicada).
-    Optional<NubeNodo> findByNombreAndTipoAndInstitucionIdAndPadreIsNullAndFechaEliminacionIsNull(
-            String nombre, TipoNodo tipo, Long institucionId);
+    Optional<NubeNodo> findByNombreAndTipoAndDireccionIdAndPadreIsNullAndFechaEliminacionIsNull(
+            String nombre, TipoNodo tipo, Long direccionId);
 
     // Find all root nodes (where parent is null), excluye los que están en la papelera
     List<NubeNodo> findByPadreIsNullAndFechaEliminacionIsNullOrderByTipoAscNombreAsc();

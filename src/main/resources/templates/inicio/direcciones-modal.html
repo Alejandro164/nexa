@@ -8,7 +8,7 @@
              @click.self="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
             <div class="modal-dialog" style="max-width: 680px;">
                 <div class="modal-header">
-                    <h3 class="modal-title">Cambiar de Institución</h3>
+                    <h3 class="modal-title">Cambiar de Dirección</h3>
                     <button type="button" class="close-btn"
                             @click="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
                         &times;
@@ -16,10 +16,10 @@
                 </div>
 
                 <div class="modal-body" style="padding: 0;">
-                    <div th:if="${institucionActualId != null}" sec:authorize="hasAuthority('ROLE_ADMIN')"
+                    <div th:if="${direccionActualId != null}" sec:authorize="hasAuthority('ROLE_ADMIN')"
                          style="padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
-                        <form th:action="@{/inicio/salir-institucion}" method="post"
-                              hx-post="/inicio/salir-institucion"
+                        <form th:action="@{/inicio/salir-direccion}" method="post"
+                              hx-post="/inicio/salir-direccion"
                               hx-target="#modal-container"
                               hx-swap="innerHTML"
                               @submit="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
@@ -32,15 +32,15 @@
                                     <polyline points="16 17 21 12 16 7" />
                                     <line x1="21" y1="12" x2="9" y2="12" />
                                 </svg>
-                                Salir de institución seleccionada
+                                Salir de dirección seleccionada
                             </button>
                         </form>
                     </div>
                     <div style="padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--input-bg);">
                         <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 0.6rem;">
-                            Selecciona la institución con la que deseas trabajar
+                            Selecciona la dirección con la que deseas trabajar
                         </p>
-                        <div style="position: relative;" th:if="${instituciones != null and instituciones.size() > 1}">
+                        <div style="position: relative;" th:if="${direcciones != null and direcciones.size() > 1}">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                  style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none;">
@@ -48,25 +48,25 @@
                                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                             </svg>
                             <input type="text" class="form-input" style="padding-left: 36px;"
-                                   placeholder="Buscar institución por nombre o código..."
-                                   oninput="filtrarInstitucionesCuenta(this)" autocomplete="off">
+                                   placeholder="Buscar dirección por nombre o código..."
+                                   oninput="filtrarDireccionesCuenta(this)" autocomplete="off">
                         </div>
                     </div>
 
-                    <div th:if="${instituciones == null or instituciones.empty}" style="padding: 2rem 1.5rem; text-align: center; color: var(--text-secondary);">
-                        <p>No tienes instituciones asignadas.</p>
+                    <div th:if="${direcciones == null or direcciones.empty}" style="padding: 2rem 1.5rem; text-align: center; color: var(--text-secondary);">
+                        <p>No tienes direcciones asignadas.</p>
                     </div>
 
-                    <div th:if="${not #lists.isEmpty(instituciones)}" style="max-height: 360px; overflow-y: auto;">
-                        <th:block th:each="inst : ${instituciones}">
-                            <form th:action="@{/inicio/cambiar-institucion}" method="post"
-                                  hx-post="/inicio/cambiar-institucion"
+                    <div th:if="${not #lists.isEmpty(direcciones)}" style="max-height: 360px; overflow-y: auto;">
+                        <th:block th:each="inst : ${direcciones}">
+                            <form th:action="@{/inicio/cambiar-direccion}" method="post"
+                                  hx-post="/inicio/cambiar-direccion"
                                   hx-target="#modal-container"
                                   hx-swap="innerHTML"
-                                  class="institucion-cuenta-item-form"
+                                  class="direccion-cuenta-item-form"
                                   th:attr="data-search=${#strings.toLowerCase(inst.nombre)} + '|' + ${#strings.toLowerCase(inst.codigo != null ? inst.codigo : '')}"
                                   @submit="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
-                                <input type="hidden" name="institucionId" th:value="${inst.id}" />
+                                <input type="hidden" name="direccionId" th:value="${inst.id}" />
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                                 <button type="submit"
                                         style="display: flex; align-items: center; gap: 1rem; width: 100%; padding: 1rem 1.5rem; border: none; border-bottom: 1px solid var(--border); background: none; cursor: pointer; text-align: left; font-family: inherit; transition: background 0.15s;"
@@ -78,7 +78,7 @@
                                     <div style="flex: 1; min-width: 0;">
                                         <div style="display: flex; align-items: center; gap: 6px;">
                                             <span style="font-weight: 600; color: var(--text-primary); font-size: 0.9rem;" th:text="${inst.nombre}">Nombre</span>
-                                            <span th:if="${institucionActualId != null and institucionActualId == inst.id}"
+                                            <span th:if="${direccionActualId != null and direccionActualId == inst.id}"
                                                   class="badge badge-primary" style="font-size: 0.65rem; padding: 2px 8px;">ACTUAL</span>
                                         </div>
                                         <div style="font-size: 0.75rem; color: var(--text-secondary);" th:text="${inst.codigo}">Código</div>
@@ -90,9 +90,9 @@
                             </form>
                         </th:block>
                     </div>
-                    <p id="institucion-cuenta-empty-search"
+                    <p id="direccion-cuenta-empty-search"
                        style="display:none; text-align:center; padding: 1.5rem; color: var(--text-secondary); font-size: 0.85rem;">
-                        No se encontraron instituciones con ese criterio.
+                        No se encontraron direcciones con ese criterio.
                     </p>
                 </div>
             </div>

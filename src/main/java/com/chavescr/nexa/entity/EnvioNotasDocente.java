@@ -15,8 +15,8 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(name = "envios_notas_docente", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_envio_notas_institucion_periodo_docente_materia_nivel",
-                columnNames = { "institucion_id", "periodo_id", "docente_id", "materia_id", "nivel_id" })
+        @UniqueConstraint(name = "uk_envio_notas_direccion_periodo_docente_materia_nivel",
+                columnNames = { "direccion_id", "periodo_id", "docente_id", "materia_id", "nivel_id" })
 })
 public class EnvioNotasDocente {
 
@@ -25,8 +25,8 @@ public class EnvioNotasDocente {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "periodo_id", nullable = false)
@@ -49,8 +49,8 @@ public class EnvioNotasDocente {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Institucion getInstitucion() { return institucion; }
-    public void setInstitucion(Institucion institucion) { this.institucion = institucion; }
+    public Direccion getDireccion() { return direccion; }
+    public void setDireccion(Direccion direccion) { this.direccion = direccion; }
     public PeriodoAcademico getPeriodo() { return periodo; }
     public void setPeriodo(PeriodoAcademico periodo) { this.periodo = periodo; }
     public Usuario getDocente() { return docente; }

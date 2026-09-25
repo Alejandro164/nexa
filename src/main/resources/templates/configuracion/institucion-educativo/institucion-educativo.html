@@ -71,7 +71,7 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Datos del Centro Educativo</h3>
+            <h3 class="card-title">Datos del Institucion Educativo</h3>
             <span class="badge badge-primary">Pestaña Activa</span>
         </div>
         <div style="padding: 2rem;">
@@ -88,16 +88,16 @@
                 </div>
             </div>
 
-            <form id="form-centro-educativo" onsubmit="event.preventDefault();">
+            <form id="form-institucion-educativo" onsubmit="event.preventDefault();">
                 <div class="config-form-grid">
                     <div class="config-field-group">
-                        <label class="config-label">Nombre Oficial de la Institución</label>
-                        <input type="text" class="config-input-text" id="centro-nombre" value="Liceo Académico Nexa">
+                        <label class="config-label">Nombre Oficial de la Dirección</label>
+                        <input type="text" class="config-input-text" id="institucion-nombre" value="Liceo Académico Nexa">
                     </div>
                     
                     <div class="config-field-group">
                         <label class="config-label">Código del Ministerio de Educación</label>
-                        <input type="text" class="config-input-text" id="centro-codigo" value="MEP-8842-EF">
+                        <input type="text" class="config-input-text" id="institucion-codigo" value="MEP-8842-EF">
                     </div>
                     
                     <div class="config-field-group">
@@ -117,7 +117,7 @@
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 2rem;">
-                    <button type="submit" class="btn btn-primary" id="btn-save-centro">Guardar Cambios</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-institucion">Guardar Cambios</button>
                 </div>
             </form>
 
@@ -125,5 +125,5 @@
     </div>
 
     <!-- Import modular javascript for this page -->
-    <script th:src="@{/js/configuracion/centro-educativo/centro-educativo.js}" defer></script>
+    <script th:src="@{/js/configuracion/institucion-educativo/institucion-educativo.js}" defer></script>
 </div>

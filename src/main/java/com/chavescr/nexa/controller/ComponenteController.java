@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,8 +88,8 @@ public class ComponenteController {
     public String listar(@RequestParam(required = false) Long nivelId,
             @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
             HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, perfil(request), institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
+        Long direccionId = requerirDireccion(session);
+        cargarPanel(model, perfil(request), direccionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/componente/lista :: content";
     }
 
@@ -101,13 +101,13 @@ public class ComponenteController {
     })
     public String nuevo(@RequestParam Long nivelId, @RequestParam Long materiaId, Model model,
             HttpSession session, HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Perfil perfil = perfil(request);
         model.addAttribute("rubro", new Componente());
         model.addAttribute("vista", perfil.vista());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
-        cargarContextoPorcentaje(model, perfil, institucionId, nivelId, materiaId, null);
+        cargarContextoPorcentaje(model, perfil, direccionId, nivelId, materiaId, null);
         return "gestion-academica/componente/formulario :: form-content";
     }
 
@@ -119,13 +119,13 @@ public class ComponenteController {
     })
     public String editar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Perfil perfil = perfil(request);
-        model.addAttribute("rubro", service.obtener(institucionId, id));
+        model.addAttribute("rubro", service.obtener(direccionId, id));
         model.addAttribute("vista", perfil.vista());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
-        cargarContextoPorcentaje(model, perfil, institucionId, nivelId, materiaId, id);
+        cargarContextoPorcentaje(model, perfil, direccionId, nivelId, materiaId, id);
         return "gestion-academica/componente/formulario :: form-content";
     }
 
@@ -139,12 +139,12 @@ public class ComponenteController {
             @ModelAttribute Componente componente, Model model, HttpSession session,
             HttpServletRequest request, HttpServletResponse response,
             @AuthenticationPrincipal CustomUserDetails usuario) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Perfil perfil = perfil(request);
         boolean esNuevo = componente.getId() == null;
         try {
-            Componente guardado = service.guardar(institucionId, perfil.clave(), nivelId, materiaId, componente);
-            historialService.registrar(institucionId, nivelId, materiaId, perfil.modulo(), guardado.getId(),
+            Componente guardado = service.guardar(direccionId, perfil.clave(), nivelId, materiaId, componente);
+            historialService.registrar(direccionId, nivelId, materiaId, perfil.modulo(), guardado.getId(),
                     guardado.getTitulo(), esNuevo ? AccionHistorial.CREAR : AccionHistorial.EDITAR,
                     usuario != null ? usuario.getId() : null, usuario != null ? usuario.getNombre() : null);
             notificarGuardado(response, esNuevo ? perfil.mensajeCreado() : perfil.mensajeActualizado());
@@ -152,7 +152,7 @@ public class ComponenteController {
             model.addAttribute("error", e.getMessage());
             notificarError(response, e.getMessage());
         }
-        cargarPanel(model, perfil, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
+        cargarPanel(model, perfil, direccionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/componente/lista :: content";
     }
 
@@ -165,19 +165,19 @@ public class ComponenteController {
     public String eliminar(@PathVariable Long id, @RequestParam Long nivelId, @RequestParam Long materiaId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response,
             @AuthenticationPrincipal CustomUserDetails usuario) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Perfil perfil = perfil(request);
         try {
-            Componente componente = service.obtener(institucionId, id);
-            service.eliminar(institucionId, id);
-            historialService.registrar(institucionId, nivelId, materiaId, perfil.modulo(), componente.getId(),
+            Componente componente = service.obtener(direccionId, id);
+            service.eliminar(direccionId, id);
+            historialService.registrar(direccionId, nivelId, materiaId, perfil.modulo(), componente.getId(),
                     componente.getTitulo(), AccionHistorial.ELIMINAR,
                     usuario != null ? usuario.getId() : null, usuario != null ? usuario.getNombre() : null);
             notificarGuardado(response, perfil.mensajeEliminado());
         } catch (IllegalArgumentException e) {
             notificarError(response, e.getMessage());
         }
-        cargarPanel(model, perfil, institucionId, nivelId, materiaId, docenteIdSiAplica(request, session));
+        cargarPanel(model, perfil, direccionId, nivelId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/componente/lista :: content";
     }
 
@@ -191,8 +191,8 @@ public class ComponenteController {
             @RequestParam(required = false) Long indicadorId, @RequestParam(required = false) Long tareaId,
             @RequestParam(required = false) Long proyectoId, @RequestParam(required = false) Long examenId,
             Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
-        cargarModal(model, perfil(request), institucionId, nivelId, materiaId,
+        Long direccionId = requerirDireccion(session);
+        cargarModal(model, perfil(request), direccionId, nivelId, materiaId,
                 componenteId(perfil(request), indicadorId, tareaId, proyectoId, examenId));
         return "gestion-academica/componente/evaluacion :: modal-content";
     }
@@ -213,7 +213,7 @@ public class ComponenteController {
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response,
             @AuthenticationPrincipal CustomUserDetails usuario) {
         exigirDocenteODirectorOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Perfil perfil = perfil(request);
         Long componenteId = componenteId(perfil, indicadorId, tareaId, proyectoId, examenId);
 
@@ -230,7 +230,7 @@ public class ComponenteController {
                 try {
                     Integer cal = calStr != null && !calStr.isBlank() ? Integer.valueOf(calStr.trim()) : null;
                     Integer puntos = puntosStr != null && !puntosStr.isBlank() ? Integer.valueOf(puntosStr.trim()) : null;
-                    var fila = service.registrarNota(institucionId, componenteId, estudianteId.get(i), cal, puntos, obs);
+                    var fila = service.registrarNota(direccionId, componenteId, estudianteId.get(i), cal, puntos, obs);
                     calificados.add(fila.getEstudiante().getNombre() + ": " + fila.getCalificacion() + "%");
                 } catch (NumberFormatException e) {
                     errores.add("un valor inválido");
@@ -240,8 +240,8 @@ public class ComponenteController {
             }
         }
         if (!calificados.isEmpty()) {
-            String titulo = service.obtener(institucionId, componenteId).getTitulo();
-            historialService.registrar(institucionId, nivelId, materiaId, perfil.modulo(), componenteId, titulo,
+            String titulo = service.obtener(direccionId, componenteId).getTitulo();
+            historialService.registrar(direccionId, nivelId, materiaId, perfil.modulo(), componenteId, titulo,
                     AccionHistorial.CALIFICAR, usuario != null ? usuario.getId() : null,
                     usuario != null ? usuario.getNombre() : null, String.join(", ", calificados));
         }
@@ -256,20 +256,20 @@ public class ComponenteController {
                     "{\"academicoGuardado\":{\"mensaje\":\"Calificaciones guardadas correctamente\"},"
                             + "\"promedioDesactualizado\":\"\"," + evento + "}");
         }
-        cargarModal(model, perfil, institucionId, nivelId, materiaId, componenteId);
+        cargarModal(model, perfil, direccionId, nivelId, materiaId, componenteId);
         return "gestion-academica/componente/evaluacion :: modal-content";
     }
 
-    private void cargarModal(Model model, Perfil perfil, Long institucionId, Long nivelId, Long materiaId,
+    private void cargarModal(Model model, Perfil perfil, Long direccionId, Long nivelId, Long materiaId,
             Long componenteId) {
-        var rubro = service.obtener(institucionId, componenteId);
+        var rubro = service.obtener(direccionId, componenteId);
         model.addAttribute("rubro", rubro);
         model.addAttribute("guardarUrl", perfil.guardarUrl());
         model.addAttribute("idParam", perfil.evalParam());
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
-        model.addAttribute("periodoActivo", service.periodoVisible(institucionId, rubro));
-        model.addAttribute("filas", service.listarNotas(institucionId, componenteId));
+        model.addAttribute("periodoActivo", service.periodoVisible(direccionId, rubro));
+        model.addAttribute("filas", service.listarNotas(direccionId, componenteId));
     }
 
     private Long componenteId(Perfil perfil, Long indicadorId, Long tareaId, Long proyectoId, Long examenId) {
@@ -289,10 +289,10 @@ public class ComponenteController {
         return valores != null && indice < valores.size() ? valores.get(indice) : null;
     }
 
-    private void cargarPanel(Model model, Perfil perfil, Long institucionId, Long nivelId, Long materiaId,
+    private void cargarPanel(Model model, Perfil perfil, Long direccionId, Long nivelId, Long materiaId,
             Long docenteId) {
-        var niveles = alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
-        var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
+        var niveles = alcanceDocenteService.nivelesVisibles(direccionId, docenteId);
+        var materias = alcanceDocenteService.materiasVisibles(direccionId, docenteId);
         if (nivelId == null && !niveles.isEmpty()) {
             nivelId = niveles.get(0).getId();
         }
@@ -300,18 +300,18 @@ public class ComponenteController {
             materiaId = materias.get(0).getId();
         }
 
-        var periodoActivo = service.obtenerPeriodoActivoOpcional(institucionId);
+        var periodoActivo = service.obtenerPeriodoActivoOpcional(direccionId);
         Long periodoId = periodoActivo != null ? periodoActivo.getId() : null;
         List<Componente> componentes = nivelId != null && materiaId != null
-                ? service.listar(institucionId, perfil.clave(), nivelId, materiaId, periodoId)
+                ? service.listar(direccionId, perfil.clave(), nivelId, materiaId, periodoId)
                 : List.of();
         var pesosEfectivos = service.calcularPesosEfectivos(componentes);
         double total = pesosEfectivos.values().stream().mapToDouble(Double::doubleValue).sum();
 
         List<Long> ids = componentes.stream().map(Componente::getId).toList();
         int totalEstudiantesSeccion = nivelId != null ? service.contarEstudiantesActivos(nivelId) : 0;
-        var evaluados = service.contarEvaluados(institucionId, perfil.clave(), ids, periodoId);
-        var promedios = service.calcularPromedio(institucionId, perfil.clave(), ids, periodoId);
+        var evaluados = service.contarEvaluados(direccionId, perfil.clave(), ids, periodoId);
+        var promedios = service.calcularPromedio(direccionId, perfil.clave(), ids, periodoId);
 
         model.addAttribute("niveles", niveles);
         model.addAttribute("materias", materias);
@@ -329,10 +329,10 @@ public class ComponenteController {
                 .toList());
     }
 
-    private void cargarContextoPorcentaje(Model model, Perfil perfil, Long institucionId, Long nivelId,
+    private void cargarContextoPorcentaje(Model model, Perfil perfil, Long direccionId, Long nivelId,
             Long materiaId, Long componenteId) {
-        var periodoActivo = service.obtenerPeriodoActivoOpcional(institucionId);
-        List<Componente> componentes = service.listar(institucionId, perfil.clave(), nivelId, materiaId,
+        var periodoActivo = service.obtenerPeriodoActivoOpcional(direccionId);
+        List<Componente> componentes = service.listar(direccionId, perfil.clave(), nivelId, materiaId,
                 periodoActivo != null ? periodoActivo.getId() : null);
         int sumaFijosOtros = componentes.stream()
                 .filter(c -> componenteId == null || !c.getId().equals(componenteId))
@@ -374,10 +374,10 @@ public class ComponenteController {
         return texto.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long requerirDireccion(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_DIRECCION_ID");
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

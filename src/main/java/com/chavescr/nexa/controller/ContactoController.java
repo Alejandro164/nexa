@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.ContactoExterno;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.repository.UsuarioRepository;
 import com.chavescr.nexa.service.ContactoExternoService;
 import com.chavescr.nexa.service.PersonalService;
@@ -48,12 +48,12 @@ public class ContactoController {
 
     @GetMapping
     public String contacto(Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = institucionId(session);
-        if (institucionId != null) {
-            cargarEstudiantes(model, institucionId, null);
-            cargarPersonal(model, institucionId, null);
-            cargarPadres(model, institucionId, null);
-            cargarInstituciones(model, institucionId, null);
+        Long direccionId = direccionId(session);
+        if (direccionId != null) {
+            cargarEstudiantes(model, direccionId, null);
+            cargarPersonal(model, direccionId, null);
+            cargarPadres(model, direccionId, null);
+            cargarDirecciones(model, direccionId, null);
         }
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "contacto/index :: htmx-content";
@@ -65,7 +65,7 @@ public class ContactoController {
 
     @GetMapping("/estudiantes")
     public String estudiantes(@RequestParam(required = false) String q, Model model, HttpSession session) {
-        cargarEstudiantes(model, institucionId(session), q);
+        cargarEstudiantes(model, direccionId(session), q);
         return "contacto/estudiantes/estudiantes :: content";
     }
 
@@ -73,7 +73,7 @@ public class ContactoController {
 
     @GetMapping("/personal")
     public String personal(@RequestParam(required = false) String q, Model model, HttpSession session) {
-        cargarPersonal(model, institucionId(session), q);
+        cargarPersonal(model, direccionId(session), q);
         return "contacto/personal/personal :: content";
     }
 
@@ -81,40 +81,40 @@ public class ContactoController {
 
     @GetMapping("/padres")
     public String padres(@RequestParam(required = false) String q, Model model, HttpSession session) {
-        cargarPadres(model, institucionId(session), q);
+        cargarPadres(model, direccionId(session), q);
         return "contacto/padres/padres :: content";
     }
 
-    // ─── INSTITUCIONES (contactos externos) ─────────────────────
+    // ─── DIRECCIONES (contactos externos) ─────────────────────
 
-    @GetMapping("/instituciones")
-    public String instituciones(@RequestParam(required = false) String q, Model model, HttpSession session) {
-        cargarInstituciones(model, institucionId(session), q);
-        return "contacto/instituciones/instituciones :: content";
+    @GetMapping("/direcciones")
+    public String direcciones(@RequestParam(required = false) String q, Model model, HttpSession session) {
+        cargarDirecciones(model, direccionId(session), q);
+        return "contacto/direcciones/direcciones :: content";
     }
 
-    @GetMapping("/instituciones/lista")
-    public String institucionesLista(@RequestParam(required = false) String q, Model model, HttpSession session) {
-        cargarInstituciones(model, institucionId(session), q);
-        return "contacto/instituciones/lista :: content";
+    @GetMapping("/direcciones/lista")
+    public String direccionesLista(@RequestParam(required = false) String q, Model model, HttpSession session) {
+        cargarDirecciones(model, direccionId(session), q);
+        return "contacto/direcciones/lista :: content";
     }
 
-    @GetMapping("/instituciones/form")
-    public String institucionesFormCrear(Model model, HttpSession session) {
-        requerirInstitucion(session);
+    @GetMapping("/direcciones/form")
+    public String direccionesFormCrear(Model model, HttpSession session) {
+        requerirDireccion(session);
         model.addAttribute("contacto", new ContactoExterno());
-        return "contacto/instituciones/formulario :: form-content";
+        return "contacto/direcciones/formulario :: form-content";
     }
 
-    @GetMapping("/instituciones/form/{id}")
-    public String institucionesFormEditar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("contacto", contactoExternoService.obtenerPorId(institucionId, id));
-        return "contacto/instituciones/formulario :: form-content";
+    @GetMapping("/direcciones/form/{id}")
+    public String direccionesFormEditar(@PathVariable Long id, Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("contacto", contactoExternoService.obtenerPorId(direccionId, id));
+        return "contacto/direcciones/formulario :: form-content";
     }
 
-    @PostMapping("/instituciones")
-    public String institucionesGuardar(
+    @PostMapping("/direcciones")
+    public String direccionesGuardar(
             @RequestParam(required = false) Long id,
             @RequestParam String nombre,
             @RequestParam String tipo,
@@ -124,56 +124,56 @@ public class ContactoController {
             @RequestParam(required = false) String sitioWeb,
             @RequestParam(defaultValue = "true") boolean activo,
             Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            contactoExternoService.guardar(institucionId, id, nombre, tipo, direccion, telefono, email, sitioWeb, activo);
-            cargarInstituciones(model, institucionId, null);
-            return "contacto/instituciones/lista :: content";
+            contactoExternoService.guardar(direccionId, id, nombre, tipo, direccion, telefono, email, sitioWeb, activo);
+            cargarDirecciones(model, direccionId, null);
+            return "contacto/direcciones/lista :: content";
         } catch (Exception e) {
-            response.setHeader("HX-Retarget", "#contacto-instituciones-modal");
+            response.setHeader("HX-Retarget", "#contacto-direcciones-modal");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
             ContactoExterno contacto = new ContactoExterno();
             contacto.setId(id);
             contacto.setNombre(nombre);
             contacto.setTipo(tipo);
-            contacto.setDireccion(direccion);
+            contacto.setDireccionFisica(direccion);
             contacto.setTelefono(telefono);
             contacto.setEmail(email);
             contacto.setSitioWeb(sitioWeb);
             contacto.setActivo(activo);
             model.addAttribute("contacto", contacto);
-            return "contacto/instituciones/formulario :: form-content";
+            return "contacto/direcciones/formulario :: form-content";
         }
     }
 
-    @DeleteMapping("/instituciones/{id}")
-    public String institucionesEliminar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        contactoExternoService.eliminar(institucionId, id);
-        cargarInstituciones(model, institucionId, null);
-        return "contacto/instituciones/lista :: content";
+    @DeleteMapping("/direcciones/{id}")
+    public String direccionesEliminar(@PathVariable Long id, Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        contactoExternoService.eliminar(direccionId, id);
+        cargarDirecciones(model, direccionId, null);
+        return "contacto/direcciones/lista :: content";
     }
 
     // ─── CARGA DE DATOS ──────────────────────────────────────────
 
-    private void cargarEstudiantes(Model model, Long institucionId, String q) {
-        List<Usuario> estudiantes = institucionId == null ? List.of()
-                : personalService.listarPorRol(institucionId, ROL_ESTUDIANTE, q);
+    private void cargarEstudiantes(Model model, Long direccionId, String q) {
+        List<Usuario> estudiantes = direccionId == null ? List.of()
+                : personalService.listarPorRol(direccionId, ROL_ESTUDIANTE, q);
         model.addAttribute("estudiantes", estudiantes);
         model.addAttribute("qEstudiantes", q);
     }
 
-    private void cargarPersonal(Model model, Long institucionId, String q) {
-        List<Usuario> personal = institucionId == null ? List.of()
-                : filtrarPorTexto(usuarioService.obtenerPersonalActivoPorInstitucion(institucionId), q);
+    private void cargarPersonal(Model model, Long direccionId, String q) {
+        List<Usuario> personal = direccionId == null ? List.of()
+                : filtrarPorTexto(usuarioService.obtenerPersonalActivoPorDireccion(direccionId), q);
         model.addAttribute("personal", personal);
         model.addAttribute("qPersonal", q);
     }
 
-    private void cargarPadres(Model model, Long institucionId, String q) {
-        List<Usuario> padres = institucionId == null ? List.of()
-                : personalService.listarPorRol(institucionId, ROL_PADRE, q);
+    private void cargarPadres(Model model, Long direccionId, String q) {
+        List<Usuario> padres = direccionId == null ? List.of()
+                : personalService.listarPorRol(direccionId, ROL_PADRE, q);
         Map<Long, List<Usuario>> estudiantesPorPadre = new LinkedHashMap<>();
         for (Usuario padre : padres) {
             estudiantesPorPadre.put(padre.getId(), usuarioRepository.findEstudiantesByPadreId(padre.getId()));
@@ -183,11 +183,11 @@ public class ContactoController {
         model.addAttribute("qPadres", q);
     }
 
-    private void cargarInstituciones(Model model, Long institucionId, String q) {
-        List<ContactoExterno> instituciones = institucionId == null ? List.of()
-                : contactoExternoService.listar(institucionId, q);
-        model.addAttribute("instituciones", instituciones);
-        model.addAttribute("qInstituciones", q);
+    private void cargarDirecciones(Model model, Long direccionId, String q) {
+        List<ContactoExterno> direcciones = direccionId == null ? List.of()
+                : contactoExternoService.listar(direccionId, q);
+        model.addAttribute("direcciones", direcciones);
+        model.addAttribute("qDirecciones", q);
     }
 
     private List<Usuario> filtrarPorTexto(List<Usuario> usuarios, String filtro) {
@@ -209,14 +209,14 @@ public class ContactoController {
 
     // ─── HELPERS ─────────────────────────────────────────────────
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long direccionId(HttpSession session) {
+        return (Long) session.getAttribute("SESSION_DIRECCION_ID");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = institucionId(session);
+    private Long requerirDireccion(HttpSession session) {
+        Long id = direccionId(session);
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

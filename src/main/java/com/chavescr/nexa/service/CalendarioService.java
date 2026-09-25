@@ -39,14 +39,14 @@ public class CalendarioService {
         this.actividadInstitucionalService = actividadInstitucionalService;
     }
 
-    public List<SemanaCalendarioDTO> construirMes(Long institucionId, Long usuarioId, LocalDate referencia) {
+    public List<SemanaCalendarioDTO> construirMes(Long direccionId, Long usuarioId, LocalDate referencia) {
         LocalDate primerDiaMes = referencia.withDayOfMonth(1);
         LocalDate ultimoDiaMes = referencia.withDayOfMonth(referencia.lengthOfMonth());
         LocalDate inicioGrid = primerDiaMes.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         LocalDate finGrid = ultimoDiaMes.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
 
         Map<LocalDate, List<EventoCalendarioDTO>> eventosPorDia =
-                agruparEventos(institucionId, usuarioId, inicioGrid, finGrid);
+                agruparEventos(direccionId, usuarioId, inicioGrid, finGrid);
 
         List<SemanaCalendarioDTO> semanas = new ArrayList<>();
         List<DiaCalendarioDTO> diasSemana = new ArrayList<>();
@@ -59,7 +59,7 @@ public class CalendarioService {
             if (diasSemana.size() == 7) {
                 LocalDate finSemanaActual = inicioSemanaActual.plusDays(6);
                 semanas.add(new SemanaCalendarioDTO(diasSemana,
-                        calcularBandas(institucionId, inicioSemanaActual, finSemanaActual)));
+                        calcularBandas(direccionId, inicioSemanaActual, finSemanaActual)));
                 diasSemana = new ArrayList<>();
                 inicioSemanaActual = cursor.plusDays(1);
             }
@@ -92,29 +92,29 @@ public class CalendarioService {
         return semanas;
     }
 
-    public SemanaCalendarioDTO construirSemana(Long institucionId, Long usuarioId, LocalDate referencia) {
+    public SemanaCalendarioDTO construirSemana(Long direccionId, Long usuarioId, LocalDate referencia) {
         LocalDate inicioSemana = referencia.with(DayOfWeek.MONDAY);
         LocalDate finSemana = referencia.with(DayOfWeek.SUNDAY);
         Map<LocalDate, List<EventoCalendarioDTO>> eventosPorDia =
-                agruparEventos(institucionId, usuarioId, inicioSemana, finSemana);
+                agruparEventos(direccionId, usuarioId, inicioSemana, finSemana);
 
         List<DiaCalendarioDTO> dias = new ArrayList<>();
         for (LocalDate cursor = inicioSemana; !cursor.isAfter(finSemana); cursor = cursor.plusDays(1)) {
             dias.add(new DiaCalendarioDTO(cursor, false, cursor.equals(LocalDate.now()),
                     eventosPorDia.getOrDefault(cursor, List.of())));
         }
-        return new SemanaCalendarioDTO(dias, calcularBandas(institucionId, inicioSemana, finSemana));
+        return new SemanaCalendarioDTO(dias, calcularBandas(direccionId, inicioSemana, finSemana));
     }
 
-    public DiaCalendarioDTO construirDia(Long institucionId, Long usuarioId, LocalDate referencia) {
+    public DiaCalendarioDTO construirDia(Long direccionId, Long usuarioId, LocalDate referencia) {
         Map<LocalDate, List<EventoCalendarioDTO>> eventosPorDia =
-                agruparEventos(institucionId, usuarioId, referencia, referencia);
+                agruparEventos(direccionId, usuarioId, referencia, referencia);
         return new DiaCalendarioDTO(referencia, false, referencia.equals(LocalDate.now()),
                 eventosPorDia.getOrDefault(referencia, List.of()));
     }
 
-    public List<DiaCalendarioDTO> construirAgenda(Long institucionId, Long usuarioId, LocalDate referencia) {
-        return construirMes(institucionId, usuarioId, referencia).stream()
+    public List<DiaCalendarioDTO> construirAgenda(Long direccionId, Long usuarioId, LocalDate referencia) {
+        return construirMes(direccionId, usuarioId, referencia).stream()
                 .flatMap(semana -> semana.getDias().stream())
                 .filter(dia -> !dia.isOtroMes())
                 .filter(dia -> !dia.getEventos().isEmpty())
@@ -127,9 +127,9 @@ public class CalendarioService {
      * Se devuelven todas las filas; la vista solo muestra {@link SemanaCalendarioDTO#FILAS_VISIBLES_POR_DEFECTO}
      * de entrada y permite expandir el resto.
      */
-    private List<BandaEventoDTO> calcularBandas(Long institucionId, LocalDate inicioSemana, LocalDate finSemana) {
+    private List<BandaEventoDTO> calcularBandas(Long direccionId, LocalDate inicioSemana, LocalDate finSemana) {
         List<EventoMepDTO> multiDia = actividadInstitucionalService
-                .listarEventosEnRango(institucionId, inicioSemana, finSemana)
+                .listarEventosEnRango(direccionId, inicioSemana, finSemana)
                 .stream()
                 .filter(e -> e.getFechaFin().isAfter(e.getFechaInicio()))
                 .sorted(Comparator.comparing(EventoMepDTO::getFechaInicio))
@@ -163,11 +163,11 @@ public class CalendarioService {
         return bandas;
     }
 
-    private Map<LocalDate, List<EventoCalendarioDTO>> agruparEventos(Long institucionId, Long usuarioId,
+    private Map<LocalDate, List<EventoCalendarioDTO>> agruparEventos(Long direccionId, Long usuarioId,
             LocalDate desde, LocalDate hasta) {
         Map<LocalDate, List<EventoCalendarioDTO>> mapa = new LinkedHashMap<>();
 
-        for (TareaProyecto t : proyectoService.listarTareasInstitucion(institucionId)) {
+        for (TareaProyecto t : proyectoService.listarTareasDireccion(direccionId)) {
             LocalDate f = t.getFechaLimite();
             if (f != null && !f.isBefore(desde) && !f.isAfter(hasta)) {
                 mapa.computeIfAbsent(f, k -> new ArrayList<>())
@@ -175,7 +175,7 @@ public class CalendarioService {
             }
         }
 
-        for (Recordatorio r : recordatorioService.listarRecordatorios(institucionId, usuarioId)) {
+        for (Recordatorio r : recordatorioService.listarRecordatorios(direccionId, usuarioId)) {
             LocalDate f = r.getFechaLimite().toLocalDate();
             if (!f.isBefore(desde) && !f.isAfter(hasta)) {
                 mapa.computeIfAbsent(f, k -> new ArrayList<>())
@@ -184,7 +184,7 @@ public class CalendarioService {
             }
         }
 
-        for (EventoMepDTO ev : actividadInstitucionalService.listarEventosEnRango(institucionId, desde, hasta)) {
+        for (EventoMepDTO ev : actividadInstitucionalService.listarEventosEnRango(direccionId, desde, hasta)) {
             // Se ancla al día de inicio (o al primer día visible si ya estaba en curso). Los eventos
             // de varios días también se muestran como banda en la grilla (ver calcularBandas); aquí
             // se guardan igual para que las vistas de lista (Día/Agenda) los sigan mostrando completos.

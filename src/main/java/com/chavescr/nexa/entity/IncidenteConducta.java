@@ -24,10 +24,10 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "incidentes_conducta", indexes = {
-        @Index(name = "idx_incidente_conducta_inst_periodo", columnList = "institucion_id, periodo_id"),
-        @Index(name = "idx_incidente_conducta_inst_periodo_tipo", columnList = "institucion_id, periodo_id, tipo"),
+        @Index(name = "idx_incidente_conducta_inst_periodo", columnList = "direccion_id, periodo_id"),
+        @Index(name = "idx_incidente_conducta_inst_periodo_tipo", columnList = "direccion_id, periodo_id, tipo"),
         @Index(name = "idx_incidente_conducta_estudiante_periodo",
-                columnList = "institucion_id, periodo_id, estudiante_id")
+                columnList = "direccion_id, periodo_id, estudiante_id")
 })
 public class IncidenteConducta {
 
@@ -36,8 +36,8 @@ public class IncidenteConducta {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "periodo_id", nullable = false)
@@ -112,12 +112,12 @@ public class IncidenteConducta {
         this.id = id;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 
     public PeriodoAcademico getPeriodo() {

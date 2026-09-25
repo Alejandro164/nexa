@@ -150,27 +150,27 @@
                                          : [...this.selected, id];
                                  },
                                  label() {
-                                     if (!this.selected.length) return 'Seleccionar instituciones...';
+                                     if (!this.selected.length) return 'Seleccionar direcciones...';
                                      const n = this.selected.map(id => this.names[id]).filter(Boolean);
                                      return n.length === 1 ? n[0] : n[0] + ' + ' + (n.length - 1) + ' más';
                                  }
                              }"
                              x-init="init()"
-                             th:data-preselected="${#strings.listJoin(usuario.instituciones.![id], ',')}"
+                             th:data-preselected="${#strings.listJoin(usuario.direcciones.![id], ',')}"
                              @click.window="if (open && !$el.contains($event.target) && (!$refs.panel || !$refs.panel.contains($event.target))) open = false"
                              @keydown.escape.window="open = false">
 
-                            <label class="form-label">Instituciones</label>
+                            <label class="form-label">Direcciones</label>
 
                             <template x-for="id in selected" :key="id">
-                                <input type="hidden" name="institucionIds" :value="id">
+                                <input type="hidden" name="direccionIds" :value="id">
                             </template>
 
                             <button type="button" class="multiselect-trigger"
                                     x-ref="trigger"
                                     @click="open ? open = false : openDropdown()"
                                     :aria-expanded="open.toString()">
-                                <span x-text="label()">Seleccionar instituciones...</span>
+                                <span x-text="label()">Seleccionar direcciones...</span>
                                 <svg class="multiselect-arrow" :class="{'rotated': open}"
                                      xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                      viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -183,7 +183,7 @@
                                 <div class="multiselect-panel" x-ref="panel"
                                      :class="{'ms-open': open}"
                                      @click="const o = $event.target.closest('[data-inst-id]'); if (o) toggle(+o.dataset.instId)">
-                                    <div th:each="inst : ${instituciones}"
+                                    <div th:each="inst : ${direcciones}"
                                          class="multiselect-option"
                                          th:attr="data-inst-id=${inst.id},data-inst-name=${inst.nombre}"
                                          :class="{'ms-selected': selected.includes(+$el.dataset.instId)}">
@@ -193,7 +193,7 @@
                                              stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="20 6 9 17 4 12"></polyline>
                                         </svg>
-                                        <span th:text="${inst.nombre}">Institución</span>
+                                        <span th:text="${inst.nombre}">Dirección</span>
                                     </div>
                                 </div>
                             </template>

@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.chavescr.nexa.entity.DocenteBloqueoLeccion;
 import com.chavescr.nexa.repository.DocenteBloqueoLeccionRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -22,68 +22,68 @@ public class DocenteBloqueoService {
     private final HorarioLeccionRepository horarioRepository;
     private final UsuarioRepository usuarioRepository;
     private final PeriodoAcademicoRepository periodoRepository;
-    private final InstitucionRepository institucionRepository;
-    private final ConfiguracionInstitucionService configuracionInstitucionService;
+    private final DireccionRepository direccionRepository;
+    private final ConfiguracionDireccionService configuracionDireccionService;
 
     public DocenteBloqueoService(DocenteBloqueoLeccionRepository bloqueoRepository,
             HorarioLeccionRepository horarioRepository,
             UsuarioRepository usuarioRepository,
             PeriodoAcademicoRepository periodoRepository,
-            InstitucionRepository institucionRepository,
-            ConfiguracionInstitucionService configuracionInstitucionService) {
+            DireccionRepository direccionRepository,
+            ConfiguracionDireccionService configuracionDireccionService) {
         this.bloqueoRepository = bloqueoRepository;
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
         this.periodoRepository = periodoRepository;
-        this.institucionRepository = institucionRepository;
-        this.configuracionInstitucionService = configuracionInstitucionService;
+        this.direccionRepository = direccionRepository;
+        this.configuracionDireccionService = configuracionDireccionService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public Set<String> claves(Long institucionId, Long periodoId, Long docenteId) {
+    public Set<String> claves(Long direccionId, Long periodoId, Long docenteId) {
         if (periodoId == null || docenteId == null) {
             return Set.of();
         }
-        return bloqueoRepository.findByInstitucionIdAndPeriodoIdAndDocenteId(institucionId, periodoId, docenteId)
+        return bloqueoRepository.findByDireccionIdAndPeriodoIdAndDocenteId(direccionId, periodoId, docenteId)
                 .stream()
                 .map(b -> ConfiguracionAcademicaService.clave(b.getDia(), b.getNumeroLeccion()))
                 .collect(Collectors.toSet());
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public Set<Long> docenteIds(Long institucionId, Long periodoId, String dia, Integer numeroLeccion) {
+    public Set<Long> docenteIds(Long direccionId, Long periodoId, String dia, Integer numeroLeccion) {
         return new HashSet<>(bloqueoRepository.findDocenteIdsBloqueados(
-                institucionId, periodoId, dia, numeroLeccion));
+                direccionId, periodoId, dia, numeroLeccion));
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public boolean estaBloqueado(Long institucionId, Long periodoId, Long docenteId, String dia, Integer numeroLeccion) {
-        return bloqueoRepository.existsByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
-                institucionId, periodoId, docenteId, dia, numeroLeccion);
+    public boolean estaBloqueado(Long direccionId, Long periodoId, Long docenteId, String dia, Integer numeroLeccion) {
+        return bloqueoRepository.existsByDireccionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
+                direccionId, periodoId, docenteId, dia, numeroLeccion);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void alternar(Long institucionId, Long docenteId, Long periodoId, String dia, Integer numeroLeccion) {
-        var config = configuracionInstitucionService.obtener(institucionId);
+    public void alternar(Long direccionId, Long docenteId, Long periodoId, String dia, Integer numeroLeccion) {
+        var config = configuracionDireccionService.obtener(direccionId);
         if (!config.getDias().contains(dia) || !config.getLecciones().contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
         }
         if (!horarioRepository
-                .findByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
-                        institucionId, periodoId, docenteId, dia, numeroLeccion)
+                .findByDireccionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
+                        direccionId, periodoId, docenteId, dia, numeroLeccion)
                 .isEmpty()) {
             throw new IllegalArgumentException("No se puede bloquear una lección ya asignada");
         }
         bloqueoRepository
-                .findByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
-                        institucionId, periodoId, docenteId, dia, numeroLeccion)
+                .findByDireccionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
+                        direccionId, periodoId, docenteId, dia, numeroLeccion)
                 .ifPresentOrElse(bloqueoRepository::delete, () -> {
                     DocenteBloqueoLeccion bloqueo = new DocenteBloqueoLeccion();
-                    bloqueo.setInstitucion(institucionRepository.findById(institucionId)
-                            .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada")));
-                    bloqueo.setDocente(usuarioRepository.findActivoByIdAndInstitucionId(docenteId, institucionId)
+                    bloqueo.setDireccion(direccionRepository.findById(direccionId)
+                            .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada")));
+                    bloqueo.setDocente(usuarioRepository.findActivoByIdAndDireccionId(docenteId, direccionId)
                             .orElseThrow(() -> new IllegalArgumentException("Docente no válido")));
-                    bloqueo.setPeriodo(periodoRepository.findByIdAndInstitucionId(periodoId, institucionId)
+                    bloqueo.setPeriodo(periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
                             .orElseThrow(() -> new IllegalArgumentException("Período no encontrado")));
                     bloqueo.setDia(dia);
                     bloqueo.setNumeroLeccion(numeroLeccion);
@@ -97,7 +97,7 @@ public class DocenteBloqueoService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void eliminarPorPeriodo(Long institucionId, Long periodoId) {
-        bloqueoRepository.deleteByInstitucionIdAndPeriodoId(institucionId, periodoId);
+    public void eliminarPorPeriodo(Long direccionId, Long periodoId) {
+        bloqueoRepository.deleteByDireccionIdAndPeriodoId(direccionId, periodoId);
     }
 }

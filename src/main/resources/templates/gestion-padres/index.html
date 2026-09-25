@@ -9,13 +9,13 @@
 <body>
 
     <h2 layout:fragment="page-title">Módulo de Padres</h2>
-    <p layout:fragment="page-subtitle">Gestiona los padres de familia registrados en la institución</p>
+    <p layout:fragment="page-subtitle">Gestiona los padres de familia registrados en la dirección</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Módulo de Padres</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestiona los padres de familia registrados en la institución</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestiona los padres de familia registrados en la dirección</p>
     <main layout:fragment="content">
         <div id="padres-content" hx-get="/padres/registrados" hx-trigger="load" hx-swap="innerHTML"></div>
 

@@ -8,7 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 /**
  * Separado de {@link SecurityConfig} para evitar un ciclo: servicios como UsuarioService
  * necesitan PasswordEncoder, y SecurityConfig depende (transitivamente, vía LoginSuccessHandler
- * y SesionInstitucionService) de esos mismos servicios.
+ * y SesionDireccionService) de esos mismos servicios.
  */
 @Configuration
 public class PasswordEncoderConfig {

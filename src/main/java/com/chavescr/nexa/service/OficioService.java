@@ -15,13 +15,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.NubeNodo;
 import com.chavescr.nexa.entity.NubeNodoAcceso;
 import com.chavescr.nexa.entity.Oficio;
 import com.chavescr.nexa.entity.TipoNodo;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.NubeNodoAccesoRepository;
 import com.chavescr.nexa.repository.NubeNodoRepository;
 import com.chavescr.nexa.repository.OficioRepository;
@@ -38,21 +38,21 @@ public class OficioService {
     private static final List<String> ROLES_CON_ACCESO_CARPETA = List.of("ROLE_ADMIN", "ROLE_DIRECTOR");
 
     private final OficioRepository oficioRepository;
-    private final InstitucionRepository institucionRepository;
-    private final InstitucionService institucionService;
+    private final DireccionRepository direccionRepository;
+    private final DireccionService direccionService;
     private final UsuarioRepository usuarioRepository;
     private final NubeNodoService nubeNodoService;
     private final NubeNodoRepository nubeNodoRepository;
     private final NubeNodoAccesoRepository nubeNodoAccesoRepository;
     private final EmailService emailService;
 
-    public OficioService(OficioRepository oficioRepository, InstitucionRepository institucionRepository,
-            InstitucionService institucionService, UsuarioRepository usuarioRepository,
+    public OficioService(OficioRepository oficioRepository, DireccionRepository direccionRepository,
+            DireccionService direccionService, UsuarioRepository usuarioRepository,
             NubeNodoService nubeNodoService, NubeNodoRepository nubeNodoRepository,
             NubeNodoAccesoRepository nubeNodoAccesoRepository, EmailService emailService) {
         this.oficioRepository = oficioRepository;
-        this.institucionRepository = institucionRepository;
-        this.institucionService = institucionService;
+        this.direccionRepository = direccionRepository;
+        this.direccionService = direccionService;
         this.usuarioRepository = usuarioRepository;
         this.nubeNodoService = nubeNodoService;
         this.nubeNodoRepository = nubeNodoRepository;
@@ -61,8 +61,8 @@ public class OficioService {
     }
 
     @Transactional(readOnly = true)
-    public List<Oficio> listar(Long institucionId, String filtro) {
-        List<Oficio> todos = oficioRepository.findByInstitucionIdOrderByFechaDesc(institucionId);
+    public List<Oficio> listar(Long direccionId, String filtro) {
+        List<Oficio> todos = oficioRepository.findByDireccionIdOrderByFechaDesc(direccionId);
         if (filtro == null || filtro.isBlank()) {
             return todos;
         }
@@ -75,12 +75,12 @@ public class OficioService {
     }
 
     private String nombreDestinatario(Oficio oficio) {
-        return oficio.getDestinatarioInstitucion() != null ? oficio.getDestinatarioInstitucion().getNombre() : "";
+        return oficio.getDestinatarioDireccion() != null ? oficio.getDestinatarioDireccion().getNombre() : "";
     }
 
     @Transactional(readOnly = true)
-    public List<Institucion> listarInstitucionesActivas() {
-        return institucionRepository.findByActivaTrueOrderByNombreAsc();
+    public List<Direccion> listarDireccionesActivas() {
+        return direccionRepository.findByActivaTrueOrderByNombreAsc();
     }
 
     private String normalizar(String texto) {
@@ -90,25 +90,25 @@ public class OficioService {
     }
 
     @Transactional(readOnly = true)
-    public Oficio obtenerPorId(Long institucionId, Long id) {
-        return oficioRepository.findByIdAndInstitucionId(id, institucionId)
+    public Oficio obtenerPorId(Long direccionId, Long id) {
+        return oficioRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Oficio no encontrado"));
     }
 
-    public Oficio crear(Long institucionId, Long usuarioId, String asunto, Long destinatarioInstitucionId,
+    public Oficio crear(Long direccionId, Long usuarioId, String asunto, Long destinatarioDireccionId,
             String numeroCircular) {
         if (asunto == null || asunto.isBlank()) {
             throw new IllegalArgumentException("El asunto es obligatorio");
         }
 
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
 
         Oficio oficio = new Oficio();
-        oficio.setInstitucion(institucion);
-        oficio.setNumero(generarNumero(institucionId));
+        oficio.setDireccion(direccion);
+        oficio.setNumero(generarNumero(direccionId));
         oficio.setAsunto(asunto.trim());
-        oficio.setDestinatarioInstitucion(resolverInstitucionDestinataria(destinatarioInstitucionId));
+        oficio.setDestinatarioDireccion(resolverDireccionDestinataria(destinatarioDireccionId));
         oficio.setNumeroCircular(numeroCircular != null && !numeroCircular.isBlank() ? numeroCircular.trim() : null);
         oficio.setEstado("BORRADOR");
         oficio.setFecha(LocalDate.now());
@@ -122,15 +122,15 @@ public class OficioService {
     }
 
     /** Edita el asunto/destinatario/circular de un oficio existente. El número, estado y documento no cambian aquí. */
-    public Oficio actualizar(Long institucionId, Long id, String asunto, Long destinatarioInstitucionId,
+    public Oficio actualizar(Long direccionId, Long id, String asunto, Long destinatarioDireccionId,
             String numeroCircular) {
         if (asunto == null || asunto.isBlank()) {
             throw new IllegalArgumentException("El asunto es obligatorio");
         }
 
-        Oficio oficio = obtenerPorId(institucionId, id);
+        Oficio oficio = obtenerPorId(direccionId, id);
         oficio.setAsunto(asunto.trim());
-        oficio.setDestinatarioInstitucion(resolverInstitucionDestinataria(destinatarioInstitucionId));
+        oficio.setDestinatarioDireccion(resolverDireccionDestinataria(destinatarioDireccionId));
         oficio.setNumeroCircular(numeroCircular != null && !numeroCircular.isBlank() ? numeroCircular.trim() : null);
 
         Oficio guardado = oficioRepository.save(oficio);
@@ -138,36 +138,36 @@ public class OficioService {
         return guardado;
     }
 
-    private Institucion resolverInstitucionDestinataria(Long destinatarioInstitucionId) {
-        if (destinatarioInstitucionId == null) {
-            throw new IllegalArgumentException("La institución destinataria es obligatoria");
+    private Direccion resolverDireccionDestinataria(Long destinatarioDireccionId) {
+        if (destinatarioDireccionId == null) {
+            throw new IllegalArgumentException("La dirección destinataria es obligatoria");
         }
-        return institucionRepository.findById(destinatarioInstitucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución destinataria no encontrada"));
+        return direccionRepository.findById(destinatarioDireccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección destinataria no encontrada"));
     }
 
-    /** Registro rápido de una institución destinataria que aún no existe, desde el propio formulario de oficio. */
-    public Institucion registrarInstitucionDestinataria(String nombre, String cedula, String email) {
-        Institucion institucion = new Institucion();
-        institucion.setNombre(nombre);
-        institucion.setCedula(cedula);
-        institucion.setEmail(email != null && !email.isBlank() ? email.trim() : null);
-        return institucionService.save(institucion);
+    /** Registro rápido de una dirección destinataria que aún no existe, desde el propio formulario de oficio. */
+    public Direccion registrarDireccionDestinataria(String nombre, String cedula, String email) {
+        Direccion direccion = new Direccion();
+        direccion.setNombre(nombre);
+        direccion.setCedula(cedula);
+        direccion.setEmail(email != null && !email.isBlank() ? email.trim() : null);
+        return direccionService.save(direccion);
     }
 
-    private String generarNumero(Long institucionId) {
+    private String generarNumero(Long direccionId) {
         String prefijo = Year.now().getValue() + "-";
-        long consecutivo = oficioRepository.countByInstitucionIdAndNumeroStartingWith(institucionId, prefijo) + 1;
+        long consecutivo = oficioRepository.countByDireccionIdAndNumeroStartingWith(direccionId, prefijo) + 1;
         return prefijo + "%03d".formatted(consecutivo);
     }
 
-    public Oficio subirDocumento(Long institucionId, Long oficioId, Long usuarioId, MultipartFile archivo)
+    public Oficio subirDocumento(Long direccionId, Long oficioId, Long usuarioId, MultipartFile archivo)
             throws IOException {
         if (archivo == null || archivo.isEmpty()) {
             throw new IllegalArgumentException("El archivo está vacío o es nulo");
         }
 
-        Oficio oficio = obtenerPorId(institucionId, oficioId);
+        Oficio oficio = obtenerPorId(direccionId, oficioId);
 
         // Si ya había un documento adjunto (se está reemplazando), se elimina primero del todo
         // (archivo físico + registro + accesos), no solo se sobrescribe.
@@ -176,8 +176,8 @@ public class OficioService {
             oficio.setNubeNodo(null);
         }
 
-        NubeNodo carpeta = obtenerOCrearCarpetaOficios(institucionId, usuarioId);
-        NubeNodo nodo = nubeNodoService.subirArchivo(archivo, carpeta.getId(), institucionId, usuarioId);
+        NubeNodo carpeta = obtenerOCrearCarpetaOficios(direccionId, usuarioId);
+        NubeNodo nodo = nubeNodoService.subirArchivo(archivo, carpeta.getId(), direccionId, usuarioId);
 
         oficio.setNubeNodo(nodo);
         oficio.setEstado("PENDIENTE");
@@ -193,8 +193,8 @@ public class OficioService {
      * falla, la excepción se propaga antes de tocar el estado — el oficio se queda en PENDIENTE,
      * nada queda a medias.
      */
-    public Oficio emitir(Long institucionId, Long id) {
-        Oficio oficio = obtenerPorId(institucionId, id);
+    public Oficio emitir(Long direccionId, Long id) {
+        Oficio oficio = obtenerPorId(direccionId, id);
         if (oficio.getNubeNodo() == null) {
             throw new IllegalStateException("El oficio no tiene ningún documento adjunto para emitir");
         }
@@ -202,8 +202,8 @@ public class OficioService {
             throw new IllegalStateException("Solo se puede emitir un oficio en estado Pendiente");
         }
 
-        String destinatarioEmail = oficio.getDestinatarioInstitucion().getEmail();
-        String destinatarioNombre = oficio.getDestinatarioInstitucion().getNombre();
+        String destinatarioEmail = oficio.getDestinatarioDireccion().getEmail();
+        String destinatarioNombre = oficio.getDestinatarioDireccion().getNombre();
         if (destinatarioEmail == null || destinatarioEmail.isBlank()) {
             throw new IllegalStateException("El destinatario no tiene un correo electrónico configurado");
         }
@@ -219,7 +219,7 @@ public class OficioService {
 
         try {
             emailService.enviarOficioEmitido(destinatarioEmail, destinatarioNombre,
-                    oficio.getInstitucion().getNombre(), oficio.getNumero(), oficio.getAsunto(),
+                    oficio.getDireccion().getNombre(), oficio.getNumero(), oficio.getAsunto(),
                     pdf, documento.getNombre());
         } catch (MessagingException | java.io.UnsupportedEncodingException e) {
             throw new IllegalStateException("No se pudo enviar el correo: " + e.getMessage());
@@ -233,23 +233,23 @@ public class OficioService {
     }
 
     /**
-     * Carpeta raíz "Oficios" de la institución, en Nube Nexa: se crea la primera vez que hace falta.
+     * Carpeta raíz "Oficios" de la dirección, en Nube Nexa: se crea la primera vez que hace falta.
      * Como Oficios también lo gestionan los ROLE_DIRECTOR (no solo ROLE_ADMIN, el único rol con acceso
      * automático en Nube Nexa), se comparte explícitamente con todo el personal admin/director activo
      * cada vez que se usa — así un Director agregado después queda cubierto en la próxima subida.
      */
-    private NubeNodo obtenerOCrearCarpetaOficios(Long institucionId, Long usuarioId) {
+    private NubeNodo obtenerOCrearCarpetaOficios(Long direccionId, Long usuarioId) {
         NubeNodo carpeta = nubeNodoRepository
-                .findByNombreAndTipoAndInstitucionIdAndPadreIsNullAndFechaEliminacionIsNull(
-                        CARPETA_OFICIOS, TipoNodo.CARPETA, institucionId)
-                .orElseGet(() -> nubeNodoService.crearCarpeta(CARPETA_OFICIOS, null, usuarioId, institucionId));
+                .findByNombreAndTipoAndDireccionIdAndPadreIsNullAndFechaEliminacionIsNull(
+                        CARPETA_OFICIOS, TipoNodo.CARPETA, direccionId)
+                .orElseGet(() -> nubeNodoService.crearCarpeta(CARPETA_OFICIOS, null, usuarioId, direccionId));
 
-        sincronizarAccesoAdminDirector(carpeta, institucionId);
+        sincronizarAccesoAdminDirector(carpeta, direccionId);
         return carpeta;
     }
 
-    private void sincronizarAccesoAdminDirector(NubeNodo carpeta, Long institucionId) {
-        List<Usuario> personal = usuarioRepository.findActivosByInstitucionIdAndRolIn(institucionId,
+    private void sincronizarAccesoAdminDirector(NubeNodo carpeta, Long direccionId) {
+        List<Usuario> personal = usuarioRepository.findActivosByDireccionIdAndRolIn(direccionId,
                 ROLES_CON_ACCESO_CARPETA);
         for (Usuario usuario : personal) {
             if (!nubeNodoAccesoRepository.existsByNodoIdAndUsuarioId(carpeta.getId(), usuario.getId())) {
@@ -262,8 +262,8 @@ public class OficioService {
         }
     }
 
-    public void eliminar(Long institucionId, Long id) {
-        Oficio oficio = obtenerPorId(institucionId, id);
+    public void eliminar(Long direccionId, Long id) {
+        Oficio oficio = obtenerPorId(direccionId, id);
         if ("EMITIDO".equals(oficio.getEstado())) {
             throw new IllegalStateException("No se puede eliminar un oficio ya emitido");
         }

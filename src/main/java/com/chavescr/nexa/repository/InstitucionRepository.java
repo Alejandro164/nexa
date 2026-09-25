@@ -4,23 +4,14 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
 
 import com.chavescr.nexa.entity.Institucion;
 
-@Repository
 public interface InstitucionRepository extends JpaRepository<Institucion, Long> {
-
-    Optional<Institucion> findByCodigo(String codigo);
 
     Optional<Institucion> findByCedula(String cedula);
 
-    List<Institucion> findByActivaTrueOrderByNombreAsc();
-
-    List<Institucion> findByCentroId(Long centroId);
-
-    List<Institucion> findByCentroIsNull();
-
-    boolean existsByCentroIsNull();
-
+    @Query("SELECT DISTINCT c FROM Institucion c LEFT JOIN FETCH c.direcciones ORDER BY c.nombre")
+    List<Institucion> findAllConDirecciones();
 }

@@ -18,14 +18,14 @@ import com.chavescr.nexa.dto.PanelNotaConducta;
 import com.chavescr.nexa.dto.ResumenNotaConducta;
 import com.chavescr.nexa.entity.IncidenteConducta;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.NotaConducta;
 import com.chavescr.nexa.entity.Notificacion;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.IncidenteConductaRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.NotaConductaRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
@@ -46,7 +46,7 @@ public class NotaConductaService {
     private final NivelAcademicoRepository nivelRepository;
     private final IncidenteConductaRepository incidenteRepository;
     private final NotaConductaRepository notaRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final DocenteGuiaService docenteGuiaService;
     private final AlcanceDocenteService alcanceDocenteService;
     private final NotificacionService notificacionService;
@@ -56,7 +56,7 @@ public class NotaConductaService {
             NivelAcademicoRepository nivelRepository,
             IncidenteConductaRepository incidenteRepository,
             NotaConductaRepository notaRepository,
-            InstitucionRepository institucionRepository,
+            DireccionRepository direccionRepository,
             DocenteGuiaService docenteGuiaService,
             AlcanceDocenteService alcanceDocenteService,
             NotificacionService notificacionService) {
@@ -65,17 +65,17 @@ public class NotaConductaService {
         this.nivelRepository = nivelRepository;
         this.incidenteRepository = incidenteRepository;
         this.notaRepository = notaRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.docenteGuiaService = docenteGuiaService;
         this.alcanceDocenteService = alcanceDocenteService;
         this.notificacionService = notificacionService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public PanelNotaConducta cargarPanel(Long institucionId, Long periodoId, Integer grado, Long nivelId,
+    public PanelNotaConducta cargarPanel(Long direccionId, Long periodoId, Integer grado, Long nivelId,
             Long docenteId) {
-        List<PeriodoAcademico> periodos = periodoRepository.findByInstitucionIdOrderByFechaInicioDesc(institucionId);
-        List<NivelAcademico> nivelesVisibles = nivelesVisibles(institucionId, docenteId);
+        List<PeriodoAcademico> periodos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
+        List<NivelAcademico> nivelesVisibles = nivelesVisibles(direccionId, docenteId);
         List<Integer> grados = nivelesVisibles.stream()
                 .map(NivelAcademico::getGrado)
                 .filter(Objects::nonNull)
@@ -104,15 +104,15 @@ public class NotaConductaService {
             }
         }
 
-        List<Usuario> estudiantes = listarEstudiantes(institucionId, grado, nivelId, nivelesVisibles, docenteId != null);
+        List<Usuario> estudiantes = listarEstudiantes(direccionId, grado, nivelId, nivelesVisibles, docenteId != null);
         List<Long> estudianteIds = estudiantes.stream().map(Usuario::getId).toList();
 
         Map<Long, List<IncidenteConducta>> porEstudiante = agruparIncidentes(
-                institucionId, periodo.getId(), estudianteIds);
+                direccionId, periodo.getId(), estudianteIds);
 
         Set<Long> enviadas = estudianteIds.isEmpty()
                 ? Set.of()
-                : new HashSet<>(notaRepository.findEstudianteIdsEnviados(institucionId, periodo.getId(), estudianteIds));
+                : new HashSet<>(notaRepository.findEstudianteIdsEnviados(direccionId, periodo.getId(), estudianteIds));
 
         List<FilaNotaConducta> filas = new ArrayList<>(estudiantes.size());
         List<IncidenteConducta> incidentesFiltrados = new ArrayList<>();
@@ -135,18 +135,18 @@ public class NotaConductaService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public String enviar(Long institucionId, Long periodoId, Long estudianteId, Long docenteId) {
+    public String enviar(Long direccionId, Long periodoId, Long estudianteId, Long docenteId) {
         if (periodoId == null) {
             throw new IllegalArgumentException("Seleccione un período académico.");
         }
-        PeriodoAcademico periodo = periodoRepository.findByIdAndInstitucionId(periodoId, institucionId)
+        PeriodoAcademico periodo = periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
-        Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, institucionId)
+        Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
-        exigirAlcance(institucionId, docenteId, estudiante);
+        exigirAlcance(direccionId, docenteId, estudiante);
 
         List<IncidenteConducta> incidentes = incidenteRepository
-                .findByInstitucionIdAndPeriodoIdAndEstudianteId(institucionId, periodoId, estudianteId);
+                .findByDireccionIdAndPeriodoIdAndEstudianteId(direccionId, periodoId, estudianteId);
         FilaNotaConducta fila = construirFila(estudiante, periodo, incidentes, false);
 
         List<Usuario> padres = usuarioRepository.findPadresByEstudianteId(estudianteId);
@@ -155,20 +155,20 @@ public class NotaConductaService {
                     "No hay encargados vinculados a " + estudiante.getNombre() + ". Vincule un padre o madre primero.");
         }
 
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
         Map<Long, NotaConducta> existentes = new HashMap<>();
-        notaRepository.findByInstitucionIdAndPeriodoIdAndEstudianteId(institucionId, periodoId, estudianteId)
+        notaRepository.findByDireccionIdAndPeriodoIdAndEstudianteId(direccionId, periodoId, estudianteId)
                 .ifPresent(n -> existentes.put(estudianteId, n));
-        notaRepository.save(prepararEnvio(institucion, periodo, estudiante, fila, existentes));
+        notaRepository.save(prepararEnvio(direccion, periodo, estudiante, fila, existentes));
         notificacionService.crearTodas(padres, mensajePadres(estudiante, fila), "/portal-padres");
         return "Nota de " + estudiante.getNombre() + " enviada a " + padres.size()
                 + (padres.size() == 1 ? " encargado." : " encargados.");
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public String enviarTodas(Long institucionId, Long periodoId, Integer grado, Long nivelId, Long docenteId) {
-        PanelNotaConducta panel = cargarPanel(institucionId, periodoId, grado, nivelId, docenteId);
+    public String enviarTodas(Long direccionId, Long periodoId, Integer grado, Long nivelId, Long docenteId) {
+        PanelNotaConducta panel = cargarPanel(direccionId, periodoId, grado, nivelId, docenteId);
         if (panel.getAvisoPeriodo() != null) {
             throw new IllegalArgumentException(panel.getAvisoPeriodo());
         }
@@ -176,14 +176,14 @@ public class NotaConductaService {
             throw new IllegalArgumentException("No hay estudiantes para enviar en el filtro actual.");
         }
 
-        PeriodoAcademico periodo = periodoRepository.findByIdAndInstitucionId(panel.getPeriodoId(), institucionId)
+        PeriodoAcademico periodo = periodoRepository.findByIdAndDireccionId(panel.getPeriodoId(), direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
 
         List<Long> estudianteIds = panel.getFilas().stream().map(f -> f.getEstudiante().getId()).toList();
         Map<Long, List<Usuario>> padresPorEstudiante = agruparPadres(estudianteIds);
-        Map<Long, NotaConducta> existentes = notasExistentes(institucionId, periodo.getId(), estudianteIds);
+        Map<Long, NotaConducta> existentes = notasExistentes(direccionId, periodo.getId(), estudianteIds);
 
         List<NotaConducta> aGuardar = new ArrayList<>();
         List<Notificacion> notificaciones = new ArrayList<>();
@@ -195,7 +195,7 @@ public class NotaConductaService {
                 sinEncargado++;
                 continue;
             }
-            aGuardar.add(prepararEnvio(institucion, periodo, fila.getEstudiante(), fila, existentes));
+            aGuardar.add(prepararEnvio(direccion, periodo, fila.getEstudiante(), fila, existentes));
             String mensaje = mensajePadres(fila.getEstudiante(), fila);
             for (Usuario padre : padres) {
                 notificaciones.add(notificacionService.nueva(padre, mensaje, "/portal-padres"));
@@ -221,12 +221,12 @@ public class NotaConductaService {
         return mensaje;
     }
 
-    private NotaConducta prepararEnvio(Institucion institucion, PeriodoAcademico periodo, Usuario estudiante,
+    private NotaConducta prepararEnvio(Direccion direccion, PeriodoAcademico periodo, Usuario estudiante,
             FilaNotaConducta fila, Map<Long, NotaConducta> existentes) {
         NotaConducta nota = existentes.get(estudiante.getId());
         if (nota == null) {
             nota = new NotaConducta();
-            nota.setInstitucion(institucion);
+            nota.setDireccion(direccion);
             nota.setPeriodo(periodo);
             nota.setEstudiante(estudiante);
             existentes.put(estudiante.getId(), nota);
@@ -256,35 +256,35 @@ public class NotaConductaService {
         return porEstudiante;
     }
 
-    private Map<Long, List<IncidenteConducta>> agruparIncidentes(Long institucionId, Long periodoId,
+    private Map<Long, List<IncidenteConducta>> agruparIncidentes(Long direccionId, Long periodoId,
             List<Long> estudianteIds) {
         if (estudianteIds.isEmpty()) {
             return Map.of();
         }
         Map<Long, List<IncidenteConducta>> porEstudiante = new HashMap<>();
-        for (Object[] fila : incidenteRepository.findDeEstudiantes(institucionId, periodoId, estudianteIds)) {
+        for (Object[] fila : incidenteRepository.findDeEstudiantes(direccionId, periodoId, estudianteIds)) {
             porEstudiante.computeIfAbsent((Long) fila[0], id -> new ArrayList<>())
                     .add((IncidenteConducta) fila[1]);
         }
         return porEstudiante;
     }
 
-    private Map<Long, NotaConducta> notasExistentes(Long institucionId, Long periodoId, List<Long> estudianteIds) {
+    private Map<Long, NotaConducta> notasExistentes(Long direccionId, Long periodoId, List<Long> estudianteIds) {
         Map<Long, NotaConducta> existentes = new HashMap<>();
         if (estudianteIds.isEmpty()) {
             return existentes;
         }
-        for (Object[] fila : notaRepository.findDeEstudiantes(institucionId, periodoId, estudianteIds)) {
+        for (Object[] fila : notaRepository.findDeEstudiantes(direccionId, periodoId, estudianteIds)) {
             existentes.put((Long) fila[0], (NotaConducta) fila[1]);
         }
         return existentes;
     }
 
-    private void exigirAlcance(Long institucionId, Long docenteId, Usuario estudiante) {
+    private void exigirAlcance(Long direccionId, Long docenteId, Usuario estudiante) {
         if (docenteId == null) {
             return;
         }
-        List<NivelAcademico> niveles = nivelesVisibles(institucionId, docenteId);
+        List<NivelAcademico> niveles = nivelesVisibles(direccionId, docenteId);
         Long nivelEstudiante = estudiante.getNivelAcademico() != null ? estudiante.getNivelAcademico().getId() : null;
         boolean visible = nivelEstudiante != null
                 && niveles.stream().anyMatch(n -> n.getId().equals(nivelEstudiante));
@@ -342,7 +342,7 @@ public class NotaConductaService {
         if (nota >= 90) {
             return "Excelente comportamiento. Mantiene una actitud positiva en clase.";
         }
-        return "Cumple las normas de convivencia del centro educativo.";
+        return "Cumple las normas de convivencia de la institución educativa.";
     }
 
     static String categoriaCss(int nota) {
@@ -375,27 +375,27 @@ public class NotaConductaService {
         return incidentes.stream().filter(i -> i.getTipo() == tipo).count();
     }
 
-    private List<Usuario> listarEstudiantes(Long institucionId, Integer grado, Long nivelId,
+    private List<Usuario> listarEstudiantes(Long direccionId, Integer grado, Long nivelId,
             List<NivelAcademico> nivelesVisibles, boolean limitarANiveles) {
         if (!limitarANiveles) {
-            return usuarioRepository.findEstudiantesActivosConNivel(institucionId, grado, nivelId);
+            return usuarioRepository.findEstudiantesActivosConNivel(direccionId, grado, nivelId);
         }
         List<Long> nivelIds = nivelesVisibles.stream().map(NivelAcademico::getId).toList();
         if (nivelIds.isEmpty()) {
             return List.of();
         }
-        return usuarioRepository.findEstudiantesActivosConNivelEn(institucionId, nivelIds, grado, nivelId);
+        return usuarioRepository.findEstudiantesActivosConNivelEn(direccionId, nivelIds, grado, nivelId);
     }
 
-    private List<NivelAcademico> nivelesVisibles(Long institucionId, Long docenteId) {
+    private List<NivelAcademico> nivelesVisibles(Long direccionId, Long docenteId) {
         if (docenteId == null) {
-            return nivelRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId);
+            return nivelRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId);
         }
-        List<NivelAcademico> guias = docenteGuiaService.listarSecciones(institucionId, docenteId);
+        List<NivelAcademico> guias = docenteGuiaService.listarSecciones(direccionId, docenteId);
         if (!guias.isEmpty()) {
             return guias;
         }
-        return alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
+        return alcanceDocenteService.nivelesVisibles(direccionId, docenteId);
     }
 
     private List<NivelAcademico> seccionesDeGrado(List<NivelAcademico> niveles, Integer grado) {

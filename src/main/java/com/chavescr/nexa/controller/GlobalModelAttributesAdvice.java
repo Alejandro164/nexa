@@ -24,10 +24,10 @@ public class GlobalModelAttributesAdvice {
         return usuario == null ? 0 : notificacionService.contarNoLeidas(usuario.getId());
     }
 
-    @ModelAttribute("sinInstitucionAdmin")
-    public boolean sinInstitucionAdmin(@AuthenticationPrincipal CustomUserDetails usuario, HttpSession session) {
+    @ModelAttribute("sinDireccionAdmin")
+    public boolean sinDireccionAdmin(@AuthenticationPrincipal CustomUserDetails usuario, HttpSession session) {
         return usuario != null
                 && usuario.getRoles().contains("ROLE_ADMIN")
-                && session.getAttribute("SESSION_INSTITUCION_ID") == null;
+                && session.getAttribute("SESSION_DIRECCION_ID") == null;
     }
 }

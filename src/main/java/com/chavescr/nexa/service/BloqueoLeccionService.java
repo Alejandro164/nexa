@@ -10,14 +10,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.BloqueoLeccion;
-import com.chavescr.nexa.entity.ConfiguracionInstitucion;
+import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.DiaLaboral;
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.repository.BloqueoLeccionRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.TipoMateriaRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,43 +34,43 @@ public class BloqueoLeccionService {
     private static final TypeReference<List<Regla>> TIPO_REGLAS = new TypeReference<>() { };
 
     private final BloqueoLeccionRepository bloqueoRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final TipoMateriaRepository tipoMateriaRepository;
     private final NivelAcademicoRepository nivelRepository;
-    private final ConfiguracionInstitucionService configuracionInstitucionService;
+    private final ConfiguracionDireccionService configuracionDireccionService;
 
     public BloqueoLeccionService(BloqueoLeccionRepository bloqueoRepository,
-            InstitucionRepository institucionRepository,
+            DireccionRepository direccionRepository,
             TipoMateriaRepository tipoMateriaRepository,
             NivelAcademicoRepository nivelRepository,
-            ConfiguracionInstitucionService configuracionInstitucionService) {
+            ConfiguracionDireccionService configuracionDireccionService) {
         this.bloqueoRepository = bloqueoRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.tipoMateriaRepository = tipoMateriaRepository;
         this.nivelRepository = nivelRepository;
-        this.configuracionInstitucionService = configuracionInstitucionService;
+        this.configuracionDireccionService = configuracionDireccionService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public String estadoJson(Long institucionId) {
+    public String estadoJson(Long direccionId) {
         try {
-            return MAPPER.writeValueAsString(estado(institucionId));
+            return MAPPER.writeValueAsString(estado(direccionId));
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("No se pudo preparar el bloqueo de lección", e);
         }
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public BloqueoLeccion vigente(Long institucionId, int grado, String dia, int numeroLeccion) {
+    public BloqueoLeccion vigente(Long direccionId, int grado, String dia, int numeroLeccion) {
         return BloqueoLeccion.vigente(
-                bloqueoRepository.findByInstitucionIdOrderByIdAsc(institucionId),
+                bloqueoRepository.findByDireccionIdOrderByIdAsc(direccionId),
                 grado, dia, numeroLeccion);
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public List<Materia> filtrarMaterias(Long institucionId, int grado, String dia, int numeroLeccion,
+    public List<Materia> filtrarMaterias(Long direccionId, int grado, String dia, int numeroLeccion,
             List<Materia> materias, Long materiaActualId) {
-        BloqueoLeccion regla = vigente(institucionId, grado, dia, numeroLeccion);
+        BloqueoLeccion regla = vigente(direccionId, grado, dia, numeroLeccion);
         if (regla == null) {
             return materias;
         }
@@ -83,8 +83,8 @@ public class BloqueoLeccionService {
                 .toList();
     }
 
-    public void validarAsignacion(Long institucionId, int grado, String dia, int numeroLeccion, Materia materia) {
-        BloqueoLeccion regla = vigente(institucionId, grado, dia, numeroLeccion);
+    public void validarAsignacion(Long direccionId, int grado, String dia, int numeroLeccion, Materia materia) {
+        BloqueoLeccion regla = vigente(direccionId, grado, dia, numeroLeccion);
         if (regla == null) {
             return;
         }
@@ -98,26 +98,26 @@ public class BloqueoLeccionService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void guardar(Long institucionId, String reglasJson) {
+    public void guardar(Long direccionId, String reglasJson) {
         List<Regla> reglas = parsear(reglasJson);
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
         List<BloqueoLeccion> entidades = new ArrayList<>();
         for (Regla regla : reglas) {
-            entidades.add(aEntidad(institucion, regla));
+            entidades.add(aEntidad(direccion, regla));
         }
         BloqueoLeccion.exigirSinSolapes(entidades);
-        bloqueoRepository.deleteByInstitucionId(institucionId);
+        bloqueoRepository.deleteByDireccionId(direccionId);
         bloqueoRepository.flush();
         bloqueoRepository.saveAll(entidades);
         bloqueoRepository.flush();
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public String reglasJson(Long institucionId) {
+    public String reglasJson(Long direccionId) {
         try {
             return MAPPER.writeValueAsString(bloqueoRepository
-                    .findByInstitucionIdOrderByIdAsc(institucionId)
+                    .findByDireccionIdOrderByIdAsc(direccionId)
                     .stream()
                     .map(this::aVista)
                     .toList());
@@ -126,8 +126,8 @@ public class BloqueoLeccionService {
         }
     }
 
-    private Map<String, Object> estado(Long institucionId) {
-        ConfiguracionInstitucion config = configuracionInstitucionService.obtener(institucionId);
+    private Map<String, Object> estado(Long direccionId) {
+        ConfiguracionDireccion config = configuracionDireccionService.obtener(direccionId);
         Map<String, Object> estado = new LinkedHashMap<>();
         estado.put("numeros", config.getLecciones());
         estado.put("dias", config.getDias().stream()
@@ -136,16 +136,16 @@ public class BloqueoLeccionService {
         estado.put("tipos", tipoMateriaRepository.findByActivoTrueOrderByOrdenAscNombreAsc().stream()
                 .map(tipo -> Map.of("codigo", tipo.getCodigo(), "nombre", tipo.getNombre()))
                 .toList());
-        estado.put("grados", gradosDeLaInstitucion(institucionId));
-        estado.put("reglas", bloqueoRepository.findByInstitucionIdOrderByIdAsc(institucionId).stream()
+        estado.put("grados", gradosDeLaDireccion(direccionId));
+        estado.put("reglas", bloqueoRepository.findByDireccionIdOrderByIdAsc(direccionId).stream()
                 .map(this::aVista)
                 .toList());
         return estado;
     }
 
-    private List<Integer> gradosDeLaInstitucion(Long institucionId) {
+    private List<Integer> gradosDeLaDireccion(Long direccionId) {
         return nivelRepository
-                .findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId)
+                .findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId)
                 .stream()
                 .map(NivelAcademico::getGrado)
                 .distinct()
@@ -164,7 +164,7 @@ public class BloqueoLeccionService {
         return vista;
     }
 
-    private BloqueoLeccion aEntidad(Institucion institucion, Regla regla) {
+    private BloqueoLeccion aEntidad(Direccion direccion, Regla regla) {
         if (regla.lecciones() == null || regla.lecciones().isEmpty()
                 || regla.dias() == null || regla.dias().isEmpty()
                 || regla.grados() == null || regla.grados().isEmpty()) {
@@ -176,7 +176,7 @@ public class BloqueoLeccionService {
             }
         }
         BloqueoLeccion entidad = new BloqueoLeccion();
-        entidad.setInstitucion(institucion);
+        entidad.setDireccion(direccion);
         entidad.setListaLecciones(regla.lecciones());
         entidad.setListaDias(regla.dias());
         entidad.setListaGrados(regla.grados());

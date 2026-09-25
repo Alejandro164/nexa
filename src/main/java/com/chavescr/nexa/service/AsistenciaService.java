@@ -52,14 +52,14 @@ public class AsistenciaService {
     }
 
     @Transactional(readOnly = true)
-    public PeriodoAcademico obtenerUltimoPeriodoActivo(Long institucionId) {
-        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId).stream()
+    public PeriodoAcademico obtenerUltimoPeriodoActivo(Long direccionId) {
+        return periodoRepository.findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(direccionId).stream()
                 .findFirst()
                 .orElse(null);
     }
 
     @Transactional(readOnly = true)
-    public String validarPeriodoParaAsistencia(Long institucionId, LocalDate fecha, PeriodoAcademico periodo) {
+    public String validarPeriodoParaAsistencia(Long direccionId, LocalDate fecha, PeriodoAcademico periodo) {
         if (periodo == null) {
             return "No hay un período académico activo. Actívalo en Configuración académica antes de pasar lista.";
         }
@@ -68,22 +68,22 @@ public class AsistenciaService {
                     + " (" + periodo.getFechaInicio().format(FECHA_PERIODO)
                     + " – " + periodo.getFechaFin().format(FECHA_PERIODO) + ").";
         }
-        if (!nivelAcademicoRepository.existsByInstitucionIdAndActivoTrue(institucionId)) {
+        if (!nivelAcademicoRepository.existsByDireccionIdAndActivoTrue(direccionId)) {
             return "El período activo no tiene secciones registradas. Créalas en Configuración académica.";
         }
-        if (!horarioLeccionRepository.existsByInstitucionIdAndPeriodoId(institucionId, periodo.getId())) {
+        if (!horarioLeccionRepository.existsByDireccionIdAndPeriodoId(direccionId, periodo.getId())) {
             return "El período activo no tiene lecciones registradas en el horario. Configúralas en Configuración académica.";
         }
         return null;
     }
 
     @Transactional(readOnly = true)
-    public List<FilaAsistencia> listarFilas(Long institucionId, Long nivelId, LocalDate fecha, Long materiaId,
+    public List<FilaAsistencia> listarFilas(Long direccionId, Long nivelId, LocalDate fecha, Long materiaId,
             Integer numeroLeccion) {
         List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
         Map<Long, AsistenciaEstudiante> registros = asistenciaRepository
-                .findByInstitucionIdAndNivelAcademicoIdAndFechaAndMateriaIdAndNumeroLeccion(
-                        institucionId, nivelId, fecha, materiaId, numeroLeccion)
+                .findByDireccionIdAndNivelAcademicoIdAndFechaAndMateriaIdAndNumeroLeccion(
+                        direccionId, nivelId, fecha, materiaId, numeroLeccion)
                 .stream()
                 .collect(Collectors.toMap(a -> a.getEstudiante().getId(), a -> a));
         return estudiantes.stream()
@@ -91,21 +91,21 @@ public class AsistenciaService {
                 .toList();
     }
 
-    public FilaAsistencia registrarEstado(Long institucionId, Long estudianteId, Long nivelId, Long materiaId,
+    public FilaAsistencia registrarEstado(Long direccionId, Long estudianteId, Long nivelId, Long materiaId,
             Integer numeroLeccion, LocalDate fecha, String estado, String observaciones, Long registradoPorId) {
-        exigirPeriodoListoParaAsistencia(institucionId, fecha);
-        NivelAcademico nivel = nivelAcademicoRepository.findByIdAndInstitucionId(nivelId, institucionId)
+        exigirPeriodoListoParaAsistencia(direccionId, fecha);
+        NivelAcademico nivel = nivelAcademicoRepository.findByIdAndDireccionId(nivelId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
-        Materia materia = materiaRepository.findByIdAndInstitucionId(materiaId, institucionId)
+        Materia materia = materiaRepository.findByIdAndDireccionId(materiaId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
-        Usuario estudiante = usuarioRepository.findActivoByIdAndInstitucionId(estudianteId, institucionId)
+        Usuario estudiante = usuarioRepository.findActivoByIdAndDireccionId(estudianteId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
 
         AsistenciaEstudiante registro = asistenciaRepository
-                .findByInstitucionIdAndEstudianteIdAndFechaAndMateriaIdAndNumeroLeccion(
-                        institucionId, estudianteId, fecha, materiaId, numeroLeccion)
+                .findByDireccionIdAndEstudianteIdAndFechaAndMateriaIdAndNumeroLeccion(
+                        direccionId, estudianteId, fecha, materiaId, numeroLeccion)
                 .orElseGet(AsistenciaEstudiante::new);
-        registro.setInstitucion(nivel.getInstitucion());
+        registro.setDireccion(nivel.getDireccion());
         registro.setNivelAcademico(nivel);
         registro.setEstudiante(estudiante);
         registro.setMateria(materia);
@@ -140,28 +140,28 @@ public class AsistenciaService {
      * {@code leccionDestino}, para la misma sección/materia/fecha. Estudiantes sin registro en el
      * origen se dejan intactos. Devuelve cuántos registros se copiaron.
      */
-    public int copiarDeLeccionAnterior(Long institucionId, Long nivelId, Long materiaId, LocalDate fecha,
+    public int copiarDeLeccionAnterior(Long direccionId, Long nivelId, Long materiaId, LocalDate fecha,
             Integer leccionOrigen, Integer leccionDestino, Long registradoPorId) {
-        exigirPeriodoListoParaAsistencia(institucionId, fecha);
+        exigirPeriodoListoParaAsistencia(direccionId, fecha);
         List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
         int copiados = 0;
         for (Usuario estudiante : estudiantes) {
             AsistenciaEstudiante origen = asistenciaRepository
-                    .findByInstitucionIdAndEstudianteIdAndFechaAndMateriaIdAndNumeroLeccion(
-                            institucionId, estudiante.getId(), fecha, materiaId, leccionOrigen)
+                    .findByDireccionIdAndEstudianteIdAndFechaAndMateriaIdAndNumeroLeccion(
+                            direccionId, estudiante.getId(), fecha, materiaId, leccionOrigen)
                     .orElse(null);
             if (origen == null || origen.getEstado() == null) {
                 continue;
             }
-            registrarEstado(institucionId, estudiante.getId(), nivelId, materiaId, leccionDestino, fecha,
+            registrarEstado(direccionId, estudiante.getId(), nivelId, materiaId, leccionDestino, fecha,
                     origen.getEstado().name(), origen.getObservaciones(), registradoPorId);
             copiados++;
         }
         return copiados;
     }
 
-    private void exigirPeriodoListoParaAsistencia(Long institucionId, LocalDate fecha) {
-        String aviso = validarPeriodoParaAsistencia(institucionId, fecha, obtenerUltimoPeriodoActivo(institucionId));
+    private void exigirPeriodoListoParaAsistencia(Long direccionId, LocalDate fecha) {
+        String aviso = validarPeriodoParaAsistencia(direccionId, fecha, obtenerUltimoPeriodoActivo(direccionId));
         if (aviso != null) {
             throw new IllegalArgumentException(aviso);
         }

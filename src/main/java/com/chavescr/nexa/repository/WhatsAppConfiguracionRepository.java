@@ -10,5 +10,5 @@ import com.chavescr.nexa.entity.WhatsAppConfiguracion;
 @Repository
 public interface WhatsAppConfiguracionRepository extends JpaRepository<WhatsAppConfiguracion, Long> {
 
-    Optional<WhatsAppConfiguracion> findByInstitucionId(Long institucionId);
+    Optional<WhatsAppConfiguracion> findByDireccionId(Long direccionId);
 }

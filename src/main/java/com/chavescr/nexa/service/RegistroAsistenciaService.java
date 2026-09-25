@@ -10,10 +10,10 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.RegistroAsistencia;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.RegistroAsistenciaRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -27,26 +27,26 @@ public class RegistroAsistenciaService {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private InstitucionRepository institucionRepository;
+    private DireccionRepository direccionRepository;
 
-    public List<RegistroAsistencia> obtenerRegistrosDelDia(Long institucionId) {
+    public List<RegistroAsistencia> obtenerRegistrosDelDia(Long direccionId) {
         LocalDateTime inicio = LocalDate.now().atStartOfDay();
         LocalDateTime fin = LocalDate.now().atTime(LocalTime.MAX);
-        return registroAsistenciaRepository.findByInstitucionIdAndFechaHoraBetweenOrderByFechaHoraDesc(
-                institucionId, inicio, fin);
+        return registroAsistenciaRepository.findByDireccionIdAndFechaHoraBetweenOrderByFechaHoraDesc(
+                direccionId, inicio, fin);
     }
 
     private static final List<String> ROLES_STAFF = List.of("ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_DOCENTE");
 
     public RegistroAsistencia registrar(Long usuarioId, RegistroAsistencia.TipoRegistro tipo,
-            String observaciones, Long institucionId) {
+            String observaciones, Long direccionId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new RuntimeException("Institución no encontrada"));
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new RuntimeException("Dirección no encontrada"));
 
         List<RegistroAsistencia> anteriores = registroAsistenciaRepository
-                .findByUsuarioIdAndInstitucionIdOrderByFechaHoraDesc(usuarioId, institucionId);
+                .findByUsuarioIdAndDireccionIdOrderByFechaHoraDesc(usuarioId, direccionId);
         if (!anteriores.isEmpty() && anteriores.get(0).getTipo() == tipo) {
             String mensaje = tipo == RegistroAsistencia.TipoRegistro.ENTRADA
                     ? "Ya hay una entrada registrada sin salida — registrá la salida primero."
@@ -56,19 +56,19 @@ public class RegistroAsistenciaService {
 
         RegistroAsistencia registro = new RegistroAsistencia();
         registro.setUsuario(usuario);
-        registro.setInstitucion(institucion);
+        registro.setDireccion(direccion);
         registro.setTipo(tipo);
         registro.setObservaciones(observaciones);
         return registroAsistenciaRepository.save(registro);
     }
 
-    public Map<String, Long> obtenerConteoPersonalPresente(Long institucionId) {
+    public Map<String, Long> obtenerConteoPersonalPresente(Long direccionId) {
         LocalDateTime inicio = LocalDate.now().atStartOfDay();
         LocalDateTime fin = LocalDate.now().atTime(LocalTime.MAX);
         List<RegistroAsistencia> registrosDelDia = registroAsistenciaRepository
-                .findByInstitucionIdAndFechaHoraBetweenOrderByFechaHoraDesc(institucionId, inicio, fin);
+                .findByDireccionIdAndFechaHoraBetweenOrderByFechaHoraDesc(direccionId, inicio, fin);
         List<RegistroAsistencia> registrosStaff = registroAsistenciaRepository
-                .findByInstitucionIdAndFechaHoraBetweenAndRolesOrderByFechaHoraDesc(institucionId, inicio, fin,
+                .findByDireccionIdAndFechaHoraBetweenAndRolesOrderByFechaHoraDesc(direccionId, inicio, fin,
                         ROLES_STAFF);
 
         Map<Long, RegistroAsistencia.TipoRegistro> ultimoPorUsuario = new HashMap<>();

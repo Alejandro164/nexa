@@ -4,43 +4,43 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.chavescr.nexa.dto.InstitucionDTO;
+import com.chavescr.nexa.dto.DireccionDTO;
 
 import jakarta.servlet.http.HttpSession;
 
 /**
- * Resuelve SESSION_INSTITUCION_ID para una sesión: si el usuario solo tiene una institución la
+ * Resuelve SESSION_DIRECCION_ID para una sesión: si el usuario solo tiene una dirección la
  * auto-selecciona, si tiene varias intenta recordar la última que eligió, y solo si nada de eso
  * aplica pide una selección explícita. La usan tanto el login (para decidir si hay que mostrar el
  * selector) como MainController (para la carga normal de "/").
  */
 @Service
-public class SesionInstitucionService {
+public class SesionDireccionService {
 
-    public enum Estado { RESUELTA, SIN_INSTITUCIONES, REQUIERE_SELECCION }
+    public enum Estado { RESUELTA, SIN_DIRECCIONES, REQUIERE_SELECCION }
 
-    public record Resultado(Estado estado, List<InstitucionDTO> disponibles) {
+    public record Resultado(Estado estado, List<DireccionDTO> disponibles) {
         public static Resultado resuelta() {
             return new Resultado(Estado.RESUELTA, List.of());
         }
     }
 
     private final UsuarioService usuarioService;
-    private final InstitucionService institucionService;
+    private final DireccionService direccionService;
 
-    public SesionInstitucionService(UsuarioService usuarioService, InstitucionService institucionService) {
+    public SesionDireccionService(UsuarioService usuarioService, DireccionService direccionService) {
         this.usuarioService = usuarioService;
-        this.institucionService = institucionService;
+        this.direccionService = direccionService;
     }
 
     public Resultado resolver(HttpSession session, boolean esAdmin) {
-        if (session.getAttribute("SESSION_INSTITUCION_ID") != null) {
+        if (session.getAttribute("SESSION_DIRECCION_ID") != null) {
             return Resultado.resuelta();
         }
 
-        List<InstitucionDTO> disponibles = esAdmin
-                ? institucionService.obtenerTodasDTO()
-                : usuarioService.obtenerInstitucionesDelUsuarioActual();
+        List<DireccionDTO> disponibles = esAdmin
+                ? direccionService.obtenerTodasDTO()
+                : usuarioService.obtenerDireccionesDelUsuarioActual();
 
         if (disponibles.size() == 1) {
             seleccionar(disponibles.get(0), session);
@@ -50,17 +50,17 @@ public class SesionInstitucionService {
             return Resultado.resuelta();
         }
         if (esAdmin) {
-            // ROLE_ADMIN puede operar sin institución seleccionada (ve solo Inicio + Administración).
+            // ROLE_ADMIN puede operar sin dirección seleccionada (ve solo Inicio + Administración).
             return Resultado.resuelta();
         }
         if (disponibles.isEmpty()) {
-            return new Resultado(Estado.SIN_INSTITUCIONES, disponibles);
+            return new Resultado(Estado.SIN_DIRECCIONES, disponibles);
         }
         return new Resultado(Estado.REQUIERE_SELECCION, disponibles);
     }
 
-    private boolean seleccionarRecordada(List<InstitucionDTO> disponibles, HttpSession session) {
-        Long ultimaId = usuarioService.obtenerUltimaInstitucionIdDelUsuarioActual();
+    private boolean seleccionarRecordada(List<DireccionDTO> disponibles, HttpSession session) {
+        Long ultimaId = usuarioService.obtenerUltimaDireccionIdDelUsuarioActual();
         if (ultimaId == null) {
             return false;
         }
@@ -74,8 +74,8 @@ public class SesionInstitucionService {
                 .orElse(false);
     }
 
-    private void seleccionar(InstitucionDTO inst, HttpSession session) {
-        session.setAttribute("SESSION_INSTITUCION_ID", inst.getId());
-        session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
+    private void seleccionar(DireccionDTO inst, HttpSession session) {
+        session.setAttribute("SESSION_DIRECCION_ID", inst.getId());
+        session.setAttribute("SESSION_DIRECCION_NOMBRE", inst.getNombre());
     }
 }

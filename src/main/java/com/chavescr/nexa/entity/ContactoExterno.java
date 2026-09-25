@@ -10,7 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-/** Contacto externo administrado por cada institución (hospital cercano, bomberos, MEP regional, etc.). */
+/** Contacto externo administrado por cada dirección (hospital cercano, bomberos, MEP regional, etc.). */
 @Entity
 @Table(name = "contactos_externos")
 public class ContactoExterno {
@@ -20,8 +20,8 @@ public class ContactoExterno {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @Column(nullable = false, length = 150)
     private String nombre;
@@ -29,8 +29,8 @@ public class ContactoExterno {
     @Column(nullable = false, length = 30)
     private String tipo;
 
-    @Column(length = 200)
-    private String direccion;
+    @Column(name = "direccion", length = 200)
+    private String direccionFisica;
 
     @Column(length = 30)
     private String telefono;
@@ -52,12 +52,12 @@ public class ContactoExterno {
         this.id = id;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 
     public String getNombre() {
@@ -76,12 +76,12 @@ public class ContactoExterno {
         this.tipo = tipo;
     }
 
-    public String getDireccion() {
-        return direccion;
+    public String getDireccionFisica() {
+        return direccionFisica;
     }
 
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
+    public void setDireccionFisica(String direccionFisica) {
+        this.direccionFisica = direccionFisica;
     }
 
     public String getTelefono() {

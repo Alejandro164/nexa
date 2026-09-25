@@ -7,10 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Solicitud;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.SolicitudRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -24,22 +24,22 @@ public class SolicitudService {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private InstitucionRepository institucionRepository;
+    private DireccionRepository direccionRepository;
 
     public List<Solicitud> listarPorPadre(Long padreId) {
         return solicitudRepository.findByPadreIdOrderByFechaSolicitudDesc(padreId);
     }
 
-    public List<Solicitud> listarPorInstitucion(Long institucionId) {
-        return solicitudRepository.findByInstitucionIdOrderByFechaSolicitudDesc(institucionId);
+    public List<Solicitud> listarPorDireccion(Long direccionId) {
+        return solicitudRepository.findByDireccionIdOrderByFechaSolicitudDesc(direccionId);
     }
 
     public Solicitud crearSolicitud(Long padreId, Solicitud.TipoSolicitud tipo, Long estudianteId,
-            Long docenteId, String detalle, Long institucionId) {
+            Long docenteId, String detalle, Long direccionId) {
         Usuario padre = usuarioRepository.findById(padreId)
                 .orElseThrow(() -> new IllegalArgumentException("Padre no encontrado"));
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
 
         boolean requiereEstudiante = tipo == Solicitud.TipoSolicitud.CONSTANCIA_MATRICULA
                 || tipo == Solicitud.TipoSolicitud.CITA_DOCENTE;
@@ -51,7 +51,7 @@ public class SolicitudService {
         solicitud.setPadre(padre);
         solicitud.setTipo(tipo);
         solicitud.setDetalle(detalle);
-        solicitud.setInstitucion(institucion);
+        solicitud.setDireccion(direccion);
 
         if (estudianteId != null) {
             boolean esHijo = usuarioRepository.findEstudiantesByPadreId(padreId).stream()

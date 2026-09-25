@@ -84,7 +84,7 @@ public class PerfilController {
     private void cargarModelo(Model model, HttpSession session) {
         Usuario usuario = usuarioService.obtenerUsuarioActual();
         model.addAttribute("usuario", usuario);
-        model.addAttribute("institucionActualId", session.getAttribute("SESSION_INSTITUCION_ID"));
-        model.addAttribute("institucionActualNombre", session.getAttribute("SESSION_INSTITUCION_NOMBRE"));
+        model.addAttribute("direccionActualId", session.getAttribute("SESSION_DIRECCION_ID"));
+        model.addAttribute("direccionActualNombre", session.getAttribute("SESSION_DIRECCION_NOMBRE"));
     }
 }

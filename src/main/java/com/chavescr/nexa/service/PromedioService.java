@@ -50,22 +50,22 @@ public class PromedioService {
         this.componenteService = componenteService;
     }
 
-    public List<NivelAcademico> listarNivelesActivos(Long institucionId) {
-        return nivelRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId);
+    public List<NivelAcademico> listarNivelesActivos(Long direccionId) {
+        return nivelRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId);
     }
 
-    public List<Materia> listarMateriasActivas(Long institucionId) {
-        return materiaRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
+    public List<Materia> listarMateriasActivas(Long direccionId) {
+        return materiaRepository.findByDireccionIdAndActivoTrueOrderByNombreAsc(direccionId);
     }
 
-    /** El período activo más reciente de la institución (o null si no hay ninguno). */
-    public PeriodoAcademico periodoActual(Long institucionId) {
-        return periodoRepository.findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(institucionId)
+    /** El período activo más reciente de la dirección (o null si no hay ninguno). */
+    public PeriodoAcademico periodoActual(Long direccionId) {
+        return periodoRepository.findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(direccionId)
                 .stream().findFirst().orElse(null);
     }
 
-    public List<FilaPromedio> calcularPromedio(Long institucionId, Long nivelId, Long materiaId) {
-        PeriodoAcademico periodo = periodoActual(institucionId);
+    public List<FilaPromedio> calcularPromedio(Long direccionId, Long nivelId, Long materiaId) {
+        PeriodoAcademico periodo = periodoActual(direccionId);
         if (periodo == null) {
             return List.of();
         }
@@ -74,29 +74,29 @@ public class PromedioService {
         List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
 
         Map<Long, List<ResultadoComponente>> resultadosPorEstudiante = resultadoRepository
-                .findByComponente_Institucion_IdAndComponente_Nivel_IdAndComponente_Materia_IdAndPeriodo_Id(
-                        institucionId, nivelId, materiaId, periodoId)
+                .findByComponente_Direccion_IdAndComponente_Nivel_IdAndComponente_Materia_IdAndPeriodo_Id(
+                        direccionId, nivelId, materiaId, periodoId)
                 .stream().collect(Collectors.groupingBy(r -> r.getEstudiante().getId()));
 
-        DistribucionPorcentual distribucion = distribucionService.obtenerDistribucion(institucionId, periodoId, materiaId);
+        DistribucionPorcentual distribucion = distribucionService.obtenerDistribucion(direccionId, periodoId, materiaId);
         Map<Long, Double> pesosCotidiano = componenteService.calcularPesosEfectivos(
-                componenteService.listar(institucionId, ClaveComponente.COTIDIANO, nivelId, materiaId, null));
+                componenteService.listar(direccionId, ClaveComponente.COTIDIANO, nivelId, materiaId, null));
         Map<Long, Double> pesosTareas = componenteService.calcularPesosEfectivos(
-                componenteService.listar(institucionId, ClaveComponente.TAREA, nivelId, materiaId, null));
+                componenteService.listar(direccionId, ClaveComponente.TAREA, nivelId, materiaId, null));
         Map<Long, Double> pesosProyectos = componenteService.calcularPesosEfectivos(
-                componenteService.listar(institucionId, ClaveComponente.PROYECTO, nivelId, materiaId, periodoId));
+                componenteService.listar(direccionId, ClaveComponente.PROYECTO, nivelId, materiaId, periodoId));
         Map<Long, Double> pesosExamenes = componenteService.calcularPesosEfectivos(
-                componenteService.listar(institucionId, ClaveComponente.EXAMEN, nivelId, materiaId, periodoId));
+                componenteService.listar(direccionId, ClaveComponente.EXAMEN, nivelId, materiaId, periodoId));
 
         return estudiantes.stream()
-                .map(est -> calcularFila(est, periodo, materiaId, institucionId,
+                .map(est -> calcularFila(est, periodo, materiaId, direccionId,
                         resultadosPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, pesosCotidiano,
                         pesosTareas, pesosProyectos, pesosExamenes))
                 .toList();
     }
 
     private FilaPromedio calcularFila(Usuario estudiante, PeriodoAcademico periodo, Long materiaId,
-            Long institucionId, List<ResultadoComponente> resultados, DistribucionPorcentual distribucion,
+            Long direccionId, List<ResultadoComponente> resultados, DistribucionPorcentual distribucion,
             Map<Long, Double> pesosCotidiano, Map<Long, Double> pesosTareas, Map<Long, Double> pesosProyectos,
             Map<Long, Double> pesosExamenes) {
         Integer cotidiano = promedioDe(resultados, ClaveComponente.COTIDIANO, pesosCotidiano);
@@ -104,7 +104,7 @@ public class PromedioService {
         Integer proyectosScore = promedioDe(resultados, ClaveComponente.PROYECTO, pesosProyectos);
         Integer examenesScore = promedioDe(resultados, ClaveComponente.EXAMEN, pesosExamenes);
 
-        Integer asistenciaScore = calcularAsistencia(institucionId, estudiante.getId(), materiaId, periodo);
+        Integer asistenciaScore = calcularAsistencia(direccionId, estudiante.getId(), materiaId, periodo);
 
         Double promedioFinal = promedioFinal(distribucion, cotidiano, tareasScore, proyectosScore,
                 examenesScore, asistenciaScore);
@@ -113,10 +113,10 @@ public class PromedioService {
                 asistenciaScore, promedioFinal);
     }
 
-    private Integer calcularAsistencia(Long institucionId, Long estudianteId, Long materiaId,
+    private Integer calcularAsistencia(Long direccionId, Long estudianteId, Long materiaId,
             PeriodoAcademico periodo) {
         List<AsistenciaEstudiante> registros = asistenciaRepository
-                .findByInstitucionIdAndEstudianteIdAndMateriaIdAndFechaBetween(institucionId, estudianteId,
+                .findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(direccionId, estudianteId,
                         materiaId, periodo.getFechaInicio(), periodo.getFechaFin());
         if (registros.isEmpty()) {
             return null;

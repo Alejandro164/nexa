@@ -44,8 +44,8 @@ public class WhatsAppMensajeService {
     }
 
     /** Valida las credenciales guardadas contra la Graph API, sin enviar ningún mensaje. */
-    public InfoConexion probarConexion(Long institucionId) {
-        CredencialesWhatsApp creds = configuracionService.obtenerCredenciales(institucionId);
+    public InfoConexion probarConexion(Long direccionId) {
+        CredencialesWhatsApp creds = configuracionService.obtenerCredenciales(direccionId);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(GRAPH_BASE_URL + creds.phoneNumberId()
                         + "?fields=verified_name,display_phone_number"))
@@ -57,17 +57,17 @@ public class WhatsAppMensajeService {
         JsonNode cuerpo = ejecutar(request);
         String numero = textoDe(cuerpo, "display_phone_number");
         String nombre = textoDe(cuerpo, "verified_name");
-        configuracionService.registrarPruebaExitosa(institucionId, numero);
-        log.info("Conexión de WhatsApp verificada: institucionId={}, numero={}", institucionId, numero);
+        configuracionService.registrarPruebaExitosa(direccionId, numero);
+        log.info("Conexión de WhatsApp verificada: direccionId={}, numero={}", direccionId, numero);
         return new InfoConexion(numero, nombre);
     }
 
     /** Envía la plantilla de ejemplo "hello_world" a un número, para comprobar el envío de extremo a extremo. */
-    public void enviarMensajePrueba(Long institucionId, String telefonoDestino) {
-        CredencialesWhatsApp creds = configuracionService.obtenerCredenciales(institucionId);
+    public void enviarMensajePrueba(Long direccionId, String telefonoDestino) {
+        CredencialesWhatsApp creds = configuracionService.obtenerCredenciales(direccionId);
         enviarPlantilla(creds, telefonoDestino, PLANTILLA_PRUEBA, IDIOMA_PLANTILLA_PRUEBA);
-        configuracionService.registrarPruebaExitosa(institucionId, null);
-        log.info("Mensaje de prueba de WhatsApp enviado: institucionId={}, destino={}", institucionId,
+        configuracionService.registrarPruebaExitosa(direccionId, null);
+        log.info("Mensaje de prueba de WhatsApp enviado: direccionId={}, destino={}", direccionId,
                 telefonoDestino);
     }
 
@@ -75,12 +75,12 @@ public class WhatsAppMensajeService {
      * Envía una plantilla ya aprobada en Meta Business Manager. Pensado para que otras funcionalidades
      * (ausencias, notas, etc.) lo reutilicen una vez definan sus propias plantillas.
      */
-    public void enviarNotificacionPlantilla(Long institucionId, String telefonoDestino, String nombrePlantilla,
+    public void enviarNotificacionPlantilla(Long direccionId, String telefonoDestino, String nombrePlantilla,
             String codigoIdioma) {
-        if (!configuracionService.estaActivo(institucionId)) {
-            throw new IllegalStateException("El envío de notificaciones por WhatsApp está desactivado para esta institución");
+        if (!configuracionService.estaActivo(direccionId)) {
+            throw new IllegalStateException("El envío de notificaciones por WhatsApp está desactivado para esta dirección");
         }
-        CredencialesWhatsApp creds = configuracionService.obtenerCredenciales(institucionId);
+        CredencialesWhatsApp creds = configuracionService.obtenerCredenciales(direccionId);
         enviarPlantilla(creds, telefonoDestino, nombrePlantilla, codigoIdioma);
     }
 

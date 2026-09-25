@@ -10,16 +10,16 @@ import com.chavescr.nexa.entity.Componente;
 
 public interface ComponenteRepository extends JpaRepository<Componente, Long> {
 
-    List<Componente> findByInstitucionIdAndClaveAndNivelIdAndMateriaIdOrderByIdAsc(
-            Long institucionId, ClaveComponente clave, Long nivelId, Long materiaId);
+    List<Componente> findByDireccionIdAndClaveAndNivelIdAndMateriaIdOrderByIdAsc(
+            Long direccionId, ClaveComponente clave, Long nivelId, Long materiaId);
 
-    List<Componente> findByInstitucionIdAndClaveAndNivelIdAndMateriaIdOrderByFechaAsc(
-            Long institucionId, ClaveComponente clave, Long nivelId, Long materiaId);
+    List<Componente> findByDireccionIdAndClaveAndNivelIdAndMateriaIdOrderByFechaAsc(
+            Long direccionId, ClaveComponente clave, Long nivelId, Long materiaId);
 
-    List<Componente> findByInstitucionIdAndClaveAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
-            Long institucionId, ClaveComponente clave, Long nivelId, Long materiaId, Long periodoId);
+    List<Componente> findByDireccionIdAndClaveAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
+            Long direccionId, ClaveComponente clave, Long nivelId, Long materiaId, Long periodoId);
 
-    Optional<Componente> findByIdAndInstitucionId(Long id, Long institucionId);
+    Optional<Componente> findByIdAndDireccionId(Long id, Long direccionId);
 
     Optional<Componente> findByClaveAndOrigenId(ClaveComponente clave, Long origenId);
 }

@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.ContactoExterno;
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.repository.ContactoExternoRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 
 @Service
 @Transactional
@@ -20,17 +20,17 @@ public class ContactoExternoService {
     private static final Logger log = LoggerFactory.getLogger(ContactoExternoService.class);
 
     private final ContactoExternoRepository contactoExternoRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
 
     public ContactoExternoService(ContactoExternoRepository contactoExternoRepository,
-            InstitucionRepository institucionRepository) {
+            DireccionRepository direccionRepository) {
         this.contactoExternoRepository = contactoExternoRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<ContactoExterno> listar(Long institucionId, String filtro) {
-        List<ContactoExterno> todos = contactoExternoRepository.findByInstitucionIdAndActivoTrueOrderByNombreAsc(institucionId);
+    public List<ContactoExterno> listar(Long direccionId, String filtro) {
+        List<ContactoExterno> todos = contactoExternoRepository.findByDireccionIdAndActivoTrueOrderByNombreAsc(direccionId);
         if (filtro == null || filtro.isBlank()) {
             return todos;
         }
@@ -47,12 +47,12 @@ public class ContactoExternoService {
     }
 
     @Transactional(readOnly = true)
-    public ContactoExterno obtenerPorId(Long institucionId, Long id) {
-        return contactoExternoRepository.findByIdAndInstitucionId(id, institucionId)
+    public ContactoExterno obtenerPorId(Long direccionId, Long id) {
+        return contactoExternoRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Contacto no encontrado"));
     }
 
-    public ContactoExterno guardar(Long institucionId, Long id, String nombre, String tipo, String direccion,
+    public ContactoExterno guardar(Long direccionId, Long id, String nombre, String tipo, String direccion,
             String telefono, String email, String sitioWeb, boolean activo) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre es obligatorio");
@@ -61,15 +61,15 @@ public class ContactoExternoService {
             throw new IllegalArgumentException("El tipo es obligatorio");
         }
 
-        ContactoExterno contacto = id == null ? new ContactoExterno() : obtenerPorId(institucionId, id);
+        ContactoExterno contacto = id == null ? new ContactoExterno() : obtenerPorId(direccionId, id);
         if (contacto.getId() == null) {
-            Institucion institucion = institucionRepository.findById(institucionId)
-                    .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
-            contacto.setInstitucion(institucion);
+            Direccion duena = direccionRepository.findById(direccionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
+            contacto.setDireccion(duena);
         }
         contacto.setNombre(nombre.trim());
         contacto.setTipo(tipo.trim());
-        contacto.setDireccion(direccion != null && !direccion.isBlank() ? direccion.trim() : null);
+        contacto.setDireccionFisica(direccion != null && !direccion.isBlank() ? direccion.trim() : null);
         contacto.setTelefono(telefono != null && !telefono.isBlank() ? telefono.trim() : null);
         contacto.setEmail(email != null && !email.isBlank() ? email.trim() : null);
         contacto.setSitioWeb(sitioWeb != null && !sitioWeb.isBlank() ? sitioWeb.trim() : null);
@@ -80,8 +80,8 @@ public class ContactoExternoService {
         return guardado;
     }
 
-    public void eliminar(Long institucionId, Long id) {
-        ContactoExterno contacto = obtenerPorId(institucionId, id);
+    public void eliminar(Long direccionId, Long id) {
+        ContactoExterno contacto = obtenerPorId(direccionId, id);
         contactoExternoRepository.delete(contacto);
         log.info("Contacto externo eliminado: id={}", id);
     }

@@ -1,18 +1,14 @@
 package com.chavescr.nexa.entity;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -29,9 +25,6 @@ public class Institucion {
     @Column(nullable = false, length = 300)
     private String nombre;
 
-    @Column(unique = true, length = 50)
-    private String codigo;
-
     @Column(length = 200)
     private String direccion;
 
@@ -44,24 +37,8 @@ public class Institucion {
     @Column(nullable = false)
     private Boolean activa = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "centro_id")
-    private Centro centro;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private OfertaEducativa oferta;
-
-    @ManyToMany(mappedBy = "instituciones")
-    private Set<Usuario> usuarios = new java.util.HashSet<>();
-
-    public Institucion() {
-    }
-
-    public Institucion(String nombre, String codigo) {
-        this.nombre = nombre;
-        this.codigo = codigo;
-    }
+    @OneToMany(mappedBy = "institucion")
+    private Set<Direccion> direcciones = new LinkedHashSet<>();
 
     public Long getId() {
         return id;
@@ -85,14 +62,6 @@ public class Institucion {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
-    }
-
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public void setCodigo(String codigo) {
-        this.codigo = codigo;
     }
 
     public String getDireccion() {
@@ -127,27 +96,11 @@ public class Institucion {
         this.activa = activa;
     }
 
-    public Centro getCentro() {
-        return centro;
+    public Set<Direccion> getDirecciones() {
+        return direcciones;
     }
 
-    public void setCentro(Centro centro) {
-        this.centro = centro;
-    }
-
-    public OfertaEducativa getOferta() {
-        return oferta;
-    }
-
-    public void setOferta(OfertaEducativa oferta) {
-        this.oferta = oferta;
-    }
-
-    public String getPresentacion() {
-        String base = centro != null && centro.getNombre() != null ? centro.getNombre() : nombre;
-        if (oferta == null) {
-            return base;
-        }
-        return base + " · " + oferta.getEtiqueta();
+    public void setDirecciones(Set<Direccion> direcciones) {
+        this.direcciones = direcciones;
     }
 }

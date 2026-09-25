@@ -2,9 +2,9 @@ package com.chavescr.nexa.dto;
 
 import java.io.Serializable;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 
-public class InstitucionDTO implements Serializable {
+public class DireccionDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -13,14 +13,14 @@ public class InstitucionDTO implements Serializable {
     private String codigo;
     private boolean activa;
 
-    public InstitucionDTO() {
+    public DireccionDTO() {
     }
 
-    public InstitucionDTO(Institucion institucion) {
-        this.id = institucion.getId();
-        this.nombre = institucion.getPresentacion();
-        this.codigo = institucion.getCodigo();
-        this.activa = institucion.getActiva() != null ? institucion.getActiva() : false;
+    public DireccionDTO(Direccion direccion) {
+        this.id = direccion.getId();
+        this.nombre = direccion.getPresentacion();
+        this.codigo = direccion.getCodigo();
+        this.activa = direccion.getActiva() != null ? direccion.getActiva() : false;
     }
 
     public Long getId() {

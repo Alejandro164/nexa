@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.chavescr.nexa.entity.ContactoExterno;
 
 public interface ContactoExternoRepository extends JpaRepository<ContactoExterno, Long> {
-    List<ContactoExterno> findByInstitucionIdAndActivoTrueOrderByNombreAsc(Long institucionId);
+    List<ContactoExterno> findByDireccionIdAndActivoTrueOrderByNombreAsc(Long direccionId);
 
-    Optional<ContactoExterno> findByIdAndInstitucionId(Long id, Long institucionId);
+    Optional<ContactoExterno> findByIdAndDireccionId(Long id, Long direccionId);
 }

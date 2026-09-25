@@ -9,9 +9,9 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Visita;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.VisitaRepository;
 
 @Service
@@ -21,39 +21,39 @@ public class VisitaService {
     private VisitaRepository visitaRepository;
 
     @Autowired
-    private InstitucionRepository institucionRepository;
+    private DireccionRepository direccionRepository;
 
     @Autowired
     private NotificacionService notificacionService;
 
-    public List<Visita> obtenerVisitasDelDia(Long institucionId) {
+    public List<Visita> obtenerVisitasDelDia(Long direccionId) {
         LocalDateTime inicio = LocalDate.now().atStartOfDay();
         LocalDateTime fin = LocalDate.now().atTime(LocalTime.MAX);
-        return visitaRepository.findByInstitucionIdAndFechaRegistroBetweenOrderByFechaRegistroDesc(
-                institucionId, inicio, fin);
+        return visitaRepository.findByDireccionIdAndFechaRegistroBetweenOrderByFechaRegistroDesc(
+                direccionId, inicio, fin);
     }
 
-    public List<Visita> obtenerVisitasPorRango(Long institucionId, LocalDate desde, LocalDate hasta) {
+    public List<Visita> obtenerVisitasPorRango(Long direccionId, LocalDate desde, LocalDate hasta) {
         LocalDateTime inicio = desde.atStartOfDay();
         LocalDateTime fin = hasta.atTime(LocalTime.MAX);
-        return visitaRepository.findByInstitucionIdAndFechaRegistroBetweenOrderByFechaRegistroDesc(
-                institucionId, inicio, fin);
+        return visitaRepository.findByDireccionIdAndFechaRegistroBetweenOrderByFechaRegistroDesc(
+                direccionId, inicio, fin);
     }
 
-    public List<Visita> buscarPorFiltro(String filtro, Long institucionId) {
-        return visitaRepository.buscarPorFiltro(filtro, institucionId);
+    public List<Visita> buscarPorFiltro(String filtro, Long direccionId) {
+        return visitaRepository.buscarPorFiltro(filtro, direccionId);
     }
 
     /** Visita más reciente de un visitante ya registrado antes (no necesariamente padre), para autocompletar. */
-    public Optional<Visita> buscarVisitanteRecurrente(String identificacion, Long institucionId) {
-        return visitaRepository.findByIdentificacionAndInstitucionIdOrderByFechaRegistroDesc(identificacion, institucionId)
+    public Optional<Visita> buscarVisitanteRecurrente(String identificacion, Long direccionId) {
+        return visitaRepository.findByIdentificacionAndDireccionIdOrderByFechaRegistroDesc(identificacion, direccionId)
                 .stream().findFirst();
     }
 
-    public Visita registrarVisita(Visita visita, Long institucionId) {
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new RuntimeException("Institución no encontrada"));
-        visita.setInstitucion(institucion);
+    public Visita registrarVisita(Visita visita, Long direccionId) {
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new RuntimeException("Dirección no encontrada"));
+        visita.setDireccion(direccion);
         return visitaRepository.save(visita);
     }
 
