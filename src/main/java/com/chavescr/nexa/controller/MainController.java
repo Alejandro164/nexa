@@ -109,7 +109,7 @@ public class MainController {
         if (request.isUserInRole("ROLE_ADMIN")) {
             institucionService.findById(institucionId).ifPresent(inst -> {
                 session.setAttribute("SESSION_INSTITUCION_ID", institucionId);
-                session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getNombre());
+                session.setAttribute("SESSION_INSTITUCION_NOMBRE", inst.getPresentacion());
                 usuarioService.actualizarUltimaInstitucion(usuarioId, inst);
             });
         } else {

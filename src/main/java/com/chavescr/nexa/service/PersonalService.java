@@ -1,7 +1,9 @@
 package com.chavescr.nexa.service;
 
 import java.text.Normalizer;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -112,20 +114,38 @@ public class PersonalService {
     public Usuario guardar(Long institucionId, Long id, String nombre, String email,
                            String usuario, String cedula, String rawPassword,
                            boolean activo, List<Long> rolIds, Long nivelId) {
-        Usuario u;
-        if (id == null) {
-            if (rawPassword == null || rawPassword.isBlank()) {
-                throw new IllegalArgumentException("La contraseña es obligatoria al crear un funcionario");
-            }
-            u = new Usuario();
-        } else {
-            u = obtenerPorId(institucionId, id);
+        if (institucionId == null) {
+            throw new IllegalArgumentException("Seleccione una dirección antes de registrar personas.");
+        }
+        Institucion inst = institucionRepository.findById(institucionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
+
+        String cedulaNormalizada = cedula != null && !cedula.isBlank() ? cedula.trim() : null;
+        String emailNormalizado = email.trim().toLowerCase();
+        String usuarioNormalizado = usuario.trim().toLowerCase();
+
+        Usuario u = resolverPersona(institucionId, id, cedulaNormalizada, emailNormalizado, usuarioNormalizado);
+        boolean nuevo = u.getId() == null;
+        if (!nuevo && id == null && u.getRoles().stream().anyMatch(r -> "ROLE_ESTUDIANTE".equals(r.getNombre()))
+                && u.getInstituciones().stream().anyMatch(otra -> !otra.getId().equals(institucionId))) {
+            throw new IllegalArgumentException("Este estudiante ya pertenece a otra dirección.");
+        }
+        if (!nuevo && id == null && u.getRoles().stream().noneMatch(r -> "ROLE_ESTUDIANTE".equals(r.getNombre()))
+                && rolIds != null && rolIds.stream().anyMatch(rid -> {
+                    Rol rol = rolRepository.findById(rid).orElse(null);
+                    return rol != null && "ROLE_ESTUDIANTE".equals(rol.getNombre());
+                })) {
+            throw new IllegalArgumentException("Ya existe una persona con esa cédula. No se crea otro estudiante.");
+        }
+
+        if (nuevo && (rawPassword == null || rawPassword.isBlank())) {
+            throw new IllegalArgumentException("La contraseña es obligatoria al crear una persona");
         }
 
         u.setNombre(nombre.trim());
-        u.setEmail(email.trim().toLowerCase());
-        u.setUsuario(usuario.trim().toLowerCase());
-        u.setCedula(cedula != null && !cedula.isBlank() ? cedula.trim() : null);
+        u.setEmail(emailNormalizado);
+        u.setUsuario(usuarioNormalizado);
+        u.setCedula(cedulaNormalizada);
         u.setActivo(activo);
 
         if (rawPassword != null && !rawPassword.isBlank()) {
@@ -137,17 +157,30 @@ public class PersonalService {
                       .map(rid -> rolRepository.findById(rid)
                               .orElseThrow(() -> new IllegalArgumentException("Rol no encontrado: " + rid)))
                       .collect(Collectors.toSet());
-        u.setRoles(roles);
+        if (id == null && !nuevo) {
+            u.getRoles().addAll(roles);
+            roles = u.getRoles();
+        } else {
+            u.setRoles(roles);
+        }
 
-        Institucion inst = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
-        u.getInstituciones().add(inst);
+        if (esEstudiante(roles)) {
+            if (u.getInstituciones().stream().anyMatch(otra -> !otra.getId().equals(institucionId))) {
+                throw new IllegalArgumentException("Este estudiante ya pertenece a otra dirección.");
+            }
+            u.setInstituciones(new java.util.HashSet<>(Set.of(inst)));
+        } else {
+            if (u.getInstituciones() == null) {
+                u.setInstituciones(new java.util.HashSet<>());
+            }
+            u.getInstituciones().add(inst);
+        }
 
         if (nivelId != null) {
             NivelAcademico nivel = nivelAcademicoRepository.findByIdAndInstitucionId(nivelId, institucionId)
                     .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada"));
             u.setNivelAcademico(nivel);
-        } else {
+        } else if (esEstudiante(roles)) {
             u.setNivelAcademico(null);
         }
 
@@ -175,9 +208,37 @@ public class PersonalService {
     // La relación es dueña del lado padre.estudiantes (@JoinTable en esa dirección) — vincular y
     // desvincular siempre mutan y guardan al padre, nunca al estudiante directamente.
 
+    public Optional<Usuario> buscarPadrePorCedula(Long institucionId, String cedula) {
+        if (institucionId == null || cedula == null || cedula.isBlank()) {
+            return Optional.empty();
+        }
+        Optional<Usuario> padre = usuarioRepository.findByCedula(cedula.trim())
+                .filter(u -> u.getRoles().stream().anyMatch(r -> "ROLE_PADRE".equals(r.getNombre())));
+        padre.ifPresent(existente -> {
+            boolean yaEsta = existente.getInstituciones().stream().anyMatch(i -> i.getId().equals(institucionId));
+            if (!yaEsta) {
+                Institucion inst = institucionRepository.findById(institucionId)
+                        .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
+                existente.getInstituciones().add(inst);
+                usuarioRepository.save(existente);
+            }
+        });
+        return padre;
+    }
+
     public void vincularPadre(Long institucionId, Long estudianteId, Long padreId) {
         Usuario estudiante = obtenerPorId(institucionId, estudianteId);
-        Usuario padre = obtenerPorId(institucionId, padreId);
+        Usuario padre = usuarioRepository.findById(padreId)
+                .orElseThrow(() -> new IllegalArgumentException("Padre no encontrado"));
+        if (padre.getRoles().stream().noneMatch(r -> "ROLE_PADRE".equals(r.getNombre()))) {
+            throw new IllegalArgumentException("La persona indicada no es un padre.");
+        }
+        boolean yaEsta = padre.getInstituciones().stream().anyMatch(i -> i.getId().equals(institucionId));
+        if (!yaEsta) {
+            Institucion inst = institucionRepository.findById(institucionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
+            padre.getInstituciones().add(inst);
+        }
         if (!usuarioRepository.existeVinculoPadreEstudiante(padre.getId(), estudiante.getId())) {
             padre.getEstudiantes().add(estudiante);
             usuarioRepository.save(padre);
@@ -197,5 +258,38 @@ public class PersonalService {
     public List<Usuario> listarPadresDe(Long institucionId, Long estudianteId) {
         obtenerPorId(institucionId, estudianteId);
         return usuarioRepository.findPadresByEstudianteId(estudianteId);
+    }
+
+    private Usuario resolverPersona(Long institucionId, Long id, String cedula, String email, String usuario) {
+        if (id != null) {
+            return obtenerPorId(institucionId, id);
+        }
+        Usuario porCedula = cedula == null ? null : usuarioRepository.findByCedula(cedula).orElse(null);
+        Usuario porEmail = usuarioRepository.findByEmail(email).orElse(null);
+        Usuario porUsuario = usuarioRepository.findByUsuario(usuario).orElse(null);
+        Usuario existente = primero(porCedula, porEmail, porUsuario);
+        if (existente == null) {
+            return new Usuario();
+        }
+        if (porCedula != null && porEmail != null && !porCedula.getId().equals(porEmail.getId())) {
+            throw new IllegalArgumentException("La cédula y el correo pertenecen a personas distintas.");
+        }
+        if (porUsuario != null && !porUsuario.getId().equals(existente.getId())) {
+            throw new IllegalArgumentException("Ese usuario ya pertenece a otra persona.");
+        }
+        return existente;
+    }
+
+    private static Usuario primero(Usuario... candidatos) {
+        for (Usuario candidato : candidatos) {
+            if (candidato != null) {
+                return candidato;
+            }
+        }
+        return null;
+    }
+
+    private static boolean esEstudiante(Set<Rol> roles) {
+        return roles.stream().anyMatch(r -> "ROLE_ESTUDIANTE".equals(r.getNombre()));
     }
 }

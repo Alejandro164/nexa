@@ -7,52 +7,72 @@
             <div class="modal-dialog">
                 <div class="modal-header">
                     <h3 class="modal-title"
-                        th:text="${institucion.id == null ? 'Nueva Institución' : 'Editar Institución'}">Institución
-                    </h3>
+                        th:text="${centro.id == null ? 'Nuevo centro' : 'Editar centro'}">Centro</h3>
                     <button type="button" class="close-btn"
                         @click="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">&times;</button>
                 </div>
 
                 <div class="modal-body">
+                    <p th:if="${error != null}"
+                        style="margin:0 0 1rem; padding:0.75rem 1rem; border-radius:8px; background:#fef2f2; color:#b91c1c; font-size:0.85rem;"
+                        th:text="${error}"></p>
                     <form th:action="@{/instituciones/save}" method="post" hx-post="/instituciones/save"
                         hx-target="#instituciones-list"
-                        @submit="document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300)">
+                        hx-swap="innerHTML"
+                        hx-on::after-request="if (event.detail.successful &amp;&amp; !event.detail.xhr.getResponseHeader('HX-Retarget')) { document.getElementById('modal-container').classList.remove('show'); setTimeout(() => document.getElementById('modal-container').innerHTML = '', 300); }">
 
-                        <input type="hidden" name="id" th:value="${institucion.id}" />
+                        <input type="hidden" name="centroId" th:value="${centro.id}" />
 
                         <div class="form-group" style="margin-bottom: 1.25rem;">
                             <label class="form-label"
-                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Cédula</label>
+                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Cédula jurídica</label>
                             <input type="text" name="cedula" id="institucion-cedula" class="form-input"
-                                th:value="${institucion.cedula}" maxlength="20"
-                                placeholder="3-101-123456 o 1-2345-6789"
+                                th:value="${centro.cedula}" maxlength="20"
+                                placeholder="3-101-123456"
                                 onblur="consultarNombreHacienda()"
                                 style="padding-left:14px;" />
                             <p id="hacienda-indicador"
                                 style="margin:0.4rem 0 0; font-size:0.8rem; color:var(--text-secondary);"></p>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label class="form-label"
-                                    style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Nombre</label>
-                                <input type="text" name="nombre" id="institucion-nombre" class="form-input"
-                                    th:value="${institucion.nombre}" required placeholder="Ej. CTP de San José"
-                                    style="padding-left:14px;" />
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label class="form-label"
-                                    style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Código
-                                    Presupuestario</label>
-                                <input type="text" name="codigo" class="form-input" th:value="${institucion.codigo}"
-                                    required placeholder="Ej. 4022" style="padding-left:14px;" />
+                        <div class="form-group" style="margin-bottom: 1.25rem;">
+                            <label class="form-label"
+                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Nombre</label>
+                            <input type="text" name="nombre" id="institucion-nombre" class="form-input"
+                                th:value="${centro.nombre}" required placeholder="Ej. Centro Educativo San José"
+                                style="padding-left:14px;" />
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.25rem;">
+                            <label class="form-label"
+                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Direcciones</label>
+                            <p style="margin:0 0 0.75rem; font-size:0.8rem; color:var(--text-secondary);">
+                                Marque las que tiene el centro. Cada una lleva su código presupuestario y queda aislada:
+                                estudiantes, docentes y secciones no se copian a las demás.
+                            </p>
+                            <div th:each="oferta : ${ofertas}"
+                                style="display:grid; grid-template-columns: 180px 1fr; gap:0.75rem; align-items:center; margin-bottom:0.75rem;">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="custom-checkbox" name="ofertas"
+                                        th:value="${oferta.name()}"
+                                        th:checked="${elegidas != null and elegidas.contains(oferta.name())}" />
+                                    <span class="custom-checkbox-control">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    </span>
+                                    <span th:text="${oferta.etiqueta}">Preescolar</span>
+                                </label>
+                                <input type="text" class="form-input" th:name="${oferta.name()}"
+                                    th:value="${codigos != null ? codigos.get(oferta.name()) : ''}"
+                                    placeholder="Código presupuestario" style="padding-left:14px;" />
                             </div>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 1.25rem;">
                             <label class="form-label"
-                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Dirección</label>
-                            <input type="text" name="direccion" class="form-input" th:value="${institucion.direccion}"
+                                style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Dirección física</label>
+                            <input type="text" name="direccion" class="form-input" th:value="${centro.direccion}"
                                 placeholder="Dirección física" style="padding-left:14px;" />
                         </div>
 
@@ -60,29 +80,27 @@
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label class="form-label"
                                     style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Teléfono</label>
-                                <input type="text" name="telefono" class="form-input" th:value="${institucion.telefono}"
+                                <input type="text" name="telefono" class="form-input" th:value="${centro.telefono}"
                                     placeholder="Ej. 2222-2222" style="padding-left:14px;" />
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label class="form-label"
-                                    style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Correo
-                                    Electrónico</label>
-                                <input type="email" name="email" class="form-input" th:value="${institucion.email}"
-                                    placeholder="correo@institucion.ed.cr" style="padding-left:14px;" />
+                                    style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Correo</label>
+                                <input type="email" name="email" class="form-input" th:value="${centro.email}"
+                                    placeholder="correo@centro.ed.cr" style="padding-left:14px;" />
                             </div>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 1.25rem;">
-                            <input type="hidden" name="_activa" value="on" />
                             <label class="checkbox-label">
                                 <input type="checkbox" class="custom-checkbox" name="activa" value="true"
-                                    th:checked="${institucion.id == null ? true : institucion.activa}" />
+                                    th:checked="${centro.id == null or centro.activa}" />
                                 <span class="custom-checkbox-control">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
                                 </span>
-                                <span>Institución Activa</span>
+                                <span>Centro activo</span>
                             </label>
                         </div>
 
@@ -93,7 +111,7 @@
                                 Cancelar
                             </button>
                             <button type="submit" class="btn btn-primary">
-                                Guardar Institución
+                                Guardar centro
                             </button>
                         </div>
                     </form>
@@ -151,7 +169,9 @@
                         msg.textContent = 'Hacienda no devolvió un nombre para esa cédula.';
                         return;
                     }
-                    nombreInput.value = data.nombre.trim();
+                    if (!nombreInput.value.trim()) {
+                        nombreInput.value = data.nombre.trim();
+                    }
                     msg.style.color = '#15803d';
                     msg.textContent = 'Nombre obtenido de Hacienda.';
                 }).catch(function (error) {

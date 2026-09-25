@@ -154,7 +154,7 @@ public class EstudiantesController {
         Map<String, Object> resultado = new HashMap<>();
         Long institucionId = institucionId(session);
         Optional<Usuario> padreOpt = institucionId == null ? Optional.empty()
-                : usuarioRepository.findPadreByCedulaAndInstitucionId(cedula.trim(), institucionId);
+                : personalService.buscarPadrePorCedula(institucionId, cedula.trim());
         if (padreOpt.isPresent()) {
             Usuario padre = padreOpt.get();
             resultado.put("encontrado", true);

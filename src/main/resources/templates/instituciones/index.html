@@ -9,14 +9,14 @@
 
 <body>
 
-    <h2 layout:fragment="page-title">Instituciones</h2>
-    <p layout:fragment="page-subtitle">Gestión central de instituciones educativas</p>
+    <h2 layout:fragment="page-title">Centros</h2>
+    <p layout:fragment="page-subtitle">Cada centro puede tener Preescolar, Primaria y Secundaria</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
-    <h2 id="topbar-page-title" hx-swap-oob="true">Instituciones</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestión central de instituciones educativas</p>
+    <h2 id="topbar-page-title" hx-swap-oob="true">Centros</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Cada centro puede tener Preescolar, Primaria y Secundaria</p>
     <main layout:fragment="content">
 
         <div id="instituciones-list" th:insert="~{instituciones/lista :: tabla-instituciones}"></div>

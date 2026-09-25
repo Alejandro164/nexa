@@ -18,7 +18,7 @@ public class InstitucionDTO implements Serializable {
 
     public InstitucionDTO(Institucion institucion) {
         this.id = institucion.getId();
-        this.nombre = institucion.getNombre();
+        this.nombre = institucion.getPresentacion();
         this.codigo = institucion.getCodigo();
         this.activa = institucion.getActiva() != null ? institucion.getActiva() : false;
     }

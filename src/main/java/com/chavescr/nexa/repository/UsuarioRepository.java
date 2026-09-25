@@ -16,6 +16,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
        Optional<Usuario> findByEmail(String email);
 
+       Optional<Usuario> findByCedula(String cedula);
+
+       Optional<Usuario> findByUsuario(String usuario);
+
+       @Query("SELECT COUNT(u) FROM Usuario u JOIN u.instituciones i WHERE i.id = :institucionId")
+       long countByInstitucionId(@Param("institucionId") Long institucionId);
+
        boolean existsByEmail(String email);
 
        /** Para el CRUD global de Usuarios (admin sin institución seleccionada): todos, con instituciones cargadas. */

@@ -4,48 +4,52 @@
     <div th:fragment="tabla-instituciones">
         <div class="module-card">
             <div class="module-card-header">
-                <h3 class="module-card-title" th:text="'Instituciones (' + ${instituciones != null ? #lists.size(instituciones) : 0} + ')'">Instituciones (0)</h3>
+                <h3 class="module-card-title" th:text="'Centros (' + ${centros != null ? #lists.size(centros) : 0} + ')'">Centros (0)</h3>
                 <button class="btn-primary"
                         hx-get="/instituciones/form" hx-target="#modal-container" hx-swap="innerHTML"
                         @click="document.getElementById('modal-container').classList.add('show')"
-                        style="font-size:0.85rem;padding:8px 16px;">+ Nueva Institución</button>
+                        style="font-size:0.85rem;padding:8px 16px;">+ Nuevo centro</button>
             </div>
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Código</th>
                         <th>Nombre</th>
+                        <th>Direcciones</th>
                         <th>Ubicación</th>
                         <th>Estado</th>
                         <th style="text-align:right;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:if="${instituciones == null or instituciones.empty}">
-                        <td colspan="5" class="table-empty">No hay instituciones registradas.</td>
+                    <tr th:if="${centros == null or centros.empty}">
+                        <td colspan="5" class="table-empty">No hay centros registrados.</td>
                     </tr>
-                    <tr th:each="inst : ${instituciones}">
-                        <td><strong th:text="${inst.codigo}" style="color:#0f172a;">001</strong></td>
+                    <tr th:each="centro : ${centros}">
                         <td>
-                            <div style="font-weight:600;color:#0f172a;" th:text="${inst.nombre}">Institución</div>
+                            <div style="font-weight:600;color:#0f172a;" th:text="${centro.nombre}">Centro</div>
                             <div style="font-size:0.8rem;color:#94a3b8;"
-                                th:text="${inst.cedula != null ? inst.cedula : inst.email}">email@ejemplo.com</div>
+                                th:text="${centro.cedula != null ? centro.cedula : centro.email}">cédula</div>
                         </td>
-                        <td th:text="${inst.direccion}" style="color:#64748b;">Dirección</td>
                         <td>
-                            <span class="badge-xs" th:classappend="${inst.activa ? 'badge-activo' : 'badge-inactivo'}"
-                                  th:text="${inst.activa ? 'Activa' : 'Inactiva'}">Estado</span>
+                            <span th:each="inst : ${centro.instituciones}" class="badge-xs badge-activo"
+                                  style="margin-right:4px;"
+                                  th:text="${inst.oferta != null ? inst.oferta.etiqueta : 'Sin clasificar'}">Primaria</span>
+                        </td>
+                        <td th:text="${centro.direccion}" style="color:#64748b;">Dirección</td>
+                        <td>
+                            <span class="badge-xs" th:classappend="${centro.activa ? 'badge-activo' : 'badge-inactivo'}"
+                                  th:text="${centro.activa ? 'Activo' : 'Inactivo'}">Estado</span>
                         </td>
                         <td>
                             <div class="table-actions">
                                 <button class="btn-xs btn-ghost"
-                                        th:attr="hx-get=@{/instituciones/form/{id}(id=${inst.id})}"
+                                        th:attr="hx-get=@{/instituciones/form/{id}(id=${centro.id})}"
                                         hx-target="#modal-container" hx-swap="innerHTML"
                                         @click="document.getElementById('modal-container').classList.add('show')"
                                         title="Editar">✏️</button>
                                 <button class="btn-xs btn-danger-ghost"
                                         onclick="abrirConfirmacionAcademica(this)"
-                                        th:attr="data-delete-url=@{/instituciones/{id}(id=${inst.id})},data-delete-target='#instituciones-list',data-delete-title='Eliminar institución',data-delete-message='¿Deseas eliminar permanentemente la institución ' + ${inst.nombre} + '? Esta acción no se puede deshacer.'"
+                                        th:attr="data-delete-url=@{/instituciones/{id}(id=${centro.id})},data-delete-target='#instituciones-list',data-delete-title='Eliminar centro',data-delete-message='¿Deseas eliminar permanentemente el centro ' + ${centro.nombre} + '? Solo se puede si sus direcciones no tienen personas ni secciones.'"
                                         title="Eliminar">🗑️</button>
                             </div>
                         </td>

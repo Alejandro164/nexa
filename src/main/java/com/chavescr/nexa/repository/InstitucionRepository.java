@@ -17,4 +17,10 @@ public interface InstitucionRepository extends JpaRepository<Institucion, Long> 
 
     List<Institucion> findByActivaTrueOrderByNombreAsc();
 
+    List<Institucion> findByCentroId(Long centroId);
+
+    List<Institucion> findByCentroIsNull();
+
+    boolean existsByCentroIsNull();
+
 }

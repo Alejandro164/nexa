@@ -216,6 +216,10 @@ public class UsuarioService {
                         .map(iid -> institucionRepository.findById(iid)
                                 .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada: " + iid)))
                         .collect(Collectors.toSet());
+        boolean estudiante = roles.stream().anyMatch(r -> "ROLE_ESTUDIANTE".equals(r.getNombre()));
+        if (estudiante && instituciones.size() != 1) {
+            throw new IllegalArgumentException("Un estudiante pertenece a una sola dirección.");
+        }
         u.setInstituciones(instituciones);
 
         Usuario guardado = usuarioRepository.save(u);
