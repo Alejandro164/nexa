@@ -8,10 +8,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.RecordatorioRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -23,28 +23,28 @@ public class RecordatorioService {
 
     private final RecordatorioRepository recordatorioRepository;
     private final UsuarioRepository usuarioRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
 
     public RecordatorioService(RecordatorioRepository recordatorioRepository,
             UsuarioRepository usuarioRepository,
-            InstitucionRepository institucionRepository) {
+            DireccionRepository direccionRepository) {
         this.recordatorioRepository = recordatorioRepository;
         this.usuarioRepository = usuarioRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<Recordatorio> listarRecordatorios(Long institucionId, Long usuarioId) {
-        return recordatorioRepository.findByUsuarioIdAndInstitucionIdOrderByFechaLimiteAsc(usuarioId, institucionId);
+    public List<Recordatorio> listarRecordatorios(Long direccionId, Long usuarioId) {
+        return recordatorioRepository.findByUsuarioIdAndDireccionIdOrderByFechaLimiteAsc(usuarioId, direccionId);
     }
 
     @Transactional(readOnly = true)
-    public Recordatorio obtenerRecordatorio(Long institucionId, Long usuarioId, Long id) {
-        return recordatorioRepository.findByIdAndUsuarioIdAndInstitucionId(id, usuarioId, institucionId)
+    public Recordatorio obtenerRecordatorio(Long direccionId, Long usuarioId, Long id) {
+        return recordatorioRepository.findByIdAndUsuarioIdAndDireccionId(id, usuarioId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Recordatorio no encontrado"));
     }
 
-    public Recordatorio guardarRecordatorio(Long institucionId, Long usuarioId, Long id,
+    public Recordatorio guardarRecordatorio(Long direccionId, Long usuarioId, Long id,
             String titulo, String descripcion, LocalDateTime fechaLimite,
             Recordatorio.EstadoRecordatorio estado) {
         if (titulo == null || titulo.isBlank()) {
@@ -55,10 +55,10 @@ public class RecordatorioService {
         }
         Recordatorio recordatorio = id == null
                 ? new Recordatorio()
-                : obtenerRecordatorio(institucionId, usuarioId, id);
+                : obtenerRecordatorio(direccionId, usuarioId, id);
         if (recordatorio.getId() == null) {
             recordatorio.setUsuario(obtenerUsuario(usuarioId));
-            recordatorio.setInstitucion(obtenerInstitucion(institucionId));
+            recordatorio.setDireccion(obtenerDireccion(direccionId));
         }
         recordatorio.setTitulo(titulo.trim());
         recordatorio.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion.trim() : null);
@@ -69,15 +69,15 @@ public class RecordatorioService {
         return guardado;
     }
 
-    public void eliminarRecordatorio(Long institucionId, Long usuarioId, Long id) {
-        Recordatorio recordatorio = obtenerRecordatorio(institucionId, usuarioId, id);
+    public void eliminarRecordatorio(Long direccionId, Long usuarioId, Long id) {
+        Recordatorio recordatorio = obtenerRecordatorio(direccionId, usuarioId, id);
         recordatorioRepository.delete(recordatorio);
         log.info("Recordatorio eliminado: id={}", id);
     }
 
-    public void cambiarEstadoRecordatorio(Long institucionId, Long usuarioId, Long id,
+    public void cambiarEstadoRecordatorio(Long direccionId, Long usuarioId, Long id,
             Recordatorio.EstadoRecordatorio nuevoEstado) {
-        Recordatorio recordatorio = obtenerRecordatorio(institucionId, usuarioId, id);
+        Recordatorio recordatorio = obtenerRecordatorio(direccionId, usuarioId, id);
         recordatorio.setEstado(nuevoEstado);
         recordatorioRepository.save(recordatorio);
     }
@@ -87,8 +87,8 @@ public class RecordatorioService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
     }
 
-    private Institucion obtenerInstitucion(Long institucionId) {
-        return institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+    private Direccion obtenerDireccion(Long direccionId) {
+        return direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
     }
 }

@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import java.util.List;
 import java.util.Set;
@@ -35,15 +35,15 @@ public class PadresController {
 
     @GetMapping("/registrados")
     public String registrados(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("padres", personalService.listarPorRol(institucionId, ROL_PADRE));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("padres", personalService.listarPorRol(direccionId, ROL_PADRE));
         return "gestion-padres/registrados/directorio :: content";
     }
 
     @GetMapping("/registrados/lista")
     public String registradosLista(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("padres", personalService.listarPorRol(institucionId, ROL_PADRE));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("padres", personalService.listarPorRol(direccionId, ROL_PADRE));
         return "gestion-padres/registrados/lista :: content";
     }
 
@@ -57,8 +57,8 @@ public class PadresController {
 
     @GetMapping("/registrados/form/{id}")
     public String registradosFormEditar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("usuario", personalService.obtenerPorId(institucionId, id));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("usuario", personalService.obtenerPorId(direccionId, id));
         return "gestion-padres/registrados/formulario :: form-content";
     }
 
@@ -72,49 +72,49 @@ public class PadresController {
             @RequestParam(required = false) String password,
             @RequestParam(defaultValue = "false") boolean activo,
             Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
             // El rol de una cuenta creada desde este módulo siempre es Padre — no lo elige el admin
             // (a diferencia de Personal, que sí permite cualquier combinación de roles).
             List<Long> rolIds = List.of(personalService.obtenerRolPorNombre(ROL_PADRE).getId());
-            personalService.guardar(institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
-            model.addAttribute("padres", personalService.listarPorRol(institucionId, ROL_PADRE));
+            personalService.guardar(direccionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
+            model.addAttribute("padres", personalService.listarPorRol(direccionId, ROL_PADRE));
             return "gestion-padres/registrados/lista :: content";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#padres-modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id));
+            model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(direccionId, id));
             return "gestion-padres/registrados/formulario :: form-content";
         }
     }
 
     @DeleteMapping("/registrados/{id}")
     public String registradosEliminar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.eliminar(institucionId, id);
-        model.addAttribute("padres", personalService.listarPorRol(institucionId, ROL_PADRE));
+        Long direccionId = requerirDireccion(session);
+        personalService.eliminar(direccionId, id);
+        model.addAttribute("padres", personalService.listarPorRol(direccionId, ROL_PADRE));
         return "gestion-padres/registrados/lista :: content";
     }
 
     @PutMapping("/registrados/{id}/activo")
     public String registradosToggleActivo(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.toggleActivo(institucionId, id);
-        model.addAttribute("padres", personalService.listarPorRol(institucionId, ROL_PADRE));
+        Long direccionId = requerirDireccion(session);
+        personalService.toggleActivo(direccionId, id);
+        model.addAttribute("padres", personalService.listarPorRol(direccionId, ROL_PADRE));
         return "gestion-padres/registrados/lista :: content";
     }
 
     // ─── HELPERS ───────────────────────────────────────────────
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long direccionId(HttpSession session) {
+        return (Long) session.getAttribute("SESSION_DIRECCION_ID");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = institucionId(session);
+    private Long requerirDireccion(HttpSession session) {
+        Long id = direccionId(session);
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

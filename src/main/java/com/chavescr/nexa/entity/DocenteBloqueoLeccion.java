@@ -14,7 +14,7 @@ import jakarta.persistence.UniqueConstraint;
 @Entity
 @Table(name = "docente_bloqueo_lecciones", uniqueConstraints = {
         @UniqueConstraint(name = "uk_bloqueo_docente_periodo_dia_leccion",
-                columnNames = { "institucion_id", "docente_id", "periodo_id", "dia", "numero_leccion" })
+                columnNames = { "direccion_id", "docente_id", "periodo_id", "dia", "numero_leccion" })
 })
 public class DocenteBloqueoLeccion {
 
@@ -23,8 +23,8 @@ public class DocenteBloqueoLeccion {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "docente_id", nullable = false)
@@ -42,8 +42,8 @@ public class DocenteBloqueoLeccion {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Institucion getInstitucion() { return institucion; }
-    public void setInstitucion(Institucion institucion) { this.institucion = institucion; }
+    public Direccion getDireccion() { return direccion; }
+    public void setDireccion(Direccion direccion) { this.direccion = direccion; }
     public Usuario getDocente() { return docente; }
     public void setDocente(Usuario docente) { this.docente = docente; }
     public PeriodoAcademico getPeriodo() { return periodo; }

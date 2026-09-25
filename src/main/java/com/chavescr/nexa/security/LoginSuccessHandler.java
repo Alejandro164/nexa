@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import com.chavescr.nexa.entity.AccionAcceso;
 import com.chavescr.nexa.entity.ResultadoAcceso;
 import com.chavescr.nexa.service.RegistroAccesoService;
-import com.chavescr.nexa.service.SesionInstitucionService;
+import com.chavescr.nexa.service.SesionDireccionService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,18 +19,18 @@ import jakarta.servlet.http.HttpSession;
 
 /**
  * Si el login llega por AJAX (login.html), responde JSON en vez de redirigir, para que el
- * selector de institución (cuando aplica) se muestre como modal sobre la misma página de login
+ * selector de dirección (cuando aplica) se muestre como modal sobre la misma página de login
  * en lugar de navegar a otra página. Si no es AJAX (JS deshabilitado), cae al redirect normal.
  */
 @Component
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final SesionInstitucionService sesionInstitucionService;
+    private final SesionDireccionService sesionDireccionService;
     private final RegistroAccesoService registroAccesoService;
 
-    public LoginSuccessHandler(SesionInstitucionService sesionInstitucionService,
+    public LoginSuccessHandler(SesionDireccionService sesionDireccionService,
             RegistroAccesoService registroAccesoService) {
-        this.sesionInstitucionService = sesionInstitucionService;
+        this.sesionDireccionService = sesionDireccionService;
         this.registroAccesoService = registroAccesoService;
     }
 
@@ -49,7 +49,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         boolean esAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
-        var resultado = sesionInstitucionService.resolver(session, esAdmin);
+        var resultado = sesionDireccionService.resolver(session, esAdmin);
 
         if (!esAjax(request)) {
             response.sendRedirect(request.getContextPath() + "/");
@@ -60,9 +60,9 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         PrintWriter writer = response.getWriter();
         switch (resultado.estado()) {
             case RESUELTA -> writer.write("{\"redirect\":\"/inicio\"}");
-            case SIN_INSTITUCIONES -> writer.write(
-                    "{\"error\":\"No tienes instituciones asociadas. Contacta a soporte.\"}");
-            case REQUIERE_SELECCION -> writer.write("{\"seleccionarInstitucion\":true}");
+            case SIN_DIRECCIONES -> writer.write(
+                    "{\"error\":\"No tienes direcciones asociadas. Contacta a soporte.\"}");
+            case REQUIERE_SELECCION -> writer.write("{\"seleccionarDireccion\":true}");
         }
         writer.flush();
     }

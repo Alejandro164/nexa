@@ -23,10 +23,10 @@ public class ConfiguracionController {
 
     @GetMapping
     public String configuracion(Model model, HttpServletRequest request, HttpSession session) {
-        model.addAttribute("activeTab", "centro-educativo");
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        model.addAttribute("whatsappConfig", institucionId != null
-                ? whatsAppConfiguracionService.obtener(institucionId)
+        model.addAttribute("activeTab", "institucion-educativo");
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        model.addAttribute("whatsappConfig", direccionId != null
+                ? whatsAppConfiguracionService.obtener(direccionId)
                 : WhatsAppConfiguracion.predeterminada(null));
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "configuracion/index :: htmx-content";

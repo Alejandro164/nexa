@@ -48,8 +48,8 @@ docker compose up    # Dev env: app on :8082, DB on :5433, debug on :5005
 ## Database & Entities
 
 - All entities are in `com.chavescr.nexa.entity.*`. One entity per table.
-- Multi-tenancy is per-institution. Institutions are stored in `SESSION_INSTITUCION_ID` (HttpSession).
-- Session key convention: `SESSION_<OBJECT>_<PROPERTY>` (e.g., `SESSION_INSTITUCION_ID`). Model attributes do NOT use this prefix.
+- Multi-tenancy is per-institution. Institutions are stored in `SESSION_DIRECCION_ID` (HttpSession).
+- Session key convention: `SESSION_<OBJECT>_<PROPERTY>` (e.g., `SESSION_DIRECCION_ID`). Model attributes do NOT use this prefix.
 - `DataInitializer` (`@Profile("dev")`) seeds 3 roles, 3 institutions, 5 users on startup (idempotent). Useful for dev but could interfere with tests.
 
 ## ruta.recursos (file storage)

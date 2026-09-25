@@ -19,8 +19,8 @@ public interface TareaProyectoRepository extends JpaRepository<TareaProyecto, Lo
 
     void deleteByMiembroId(Long miembroId);
 
-    @Query("SELECT t FROM TareaProyecto t JOIN t.proyecto p WHERE p.institucion.id = :institucionId ORDER BY t.fechaLimite ASC")
-    List<TareaProyecto> findByInstitucionIdOrderByFechaLimiteAsc(@Param("institucionId") Long institucionId);
+    @Query("SELECT t FROM TareaProyecto t JOIN t.proyecto p WHERE p.direccion.id = :direccionId ORDER BY t.fechaLimite ASC")
+    List<TareaProyecto> findByDireccionIdOrderByFechaLimiteAsc(@Param("direccionId") Long direccionId);
 
-    Optional<TareaProyecto> findByIdAndProyecto_Institucion_Id(Long id, Long institucionId);
+    Optional<TareaProyecto> findByIdAndProyecto_Direccion_Id(Long id, Long direccionId);
 }

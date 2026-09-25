@@ -1,5 +1,6 @@
 package com.chavescr.nexa.entity;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import jakarta.persistence.Column;
@@ -7,7 +8,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -24,9 +25,6 @@ public class Institucion {
     @Column(nullable = false, length = 300)
     private String nombre;
 
-    @Column(unique = true, length = 50)
-    private String codigo;
-
     @Column(length = 200)
     private String direccion;
 
@@ -39,16 +37,8 @@ public class Institucion {
     @Column(nullable = false)
     private Boolean activa = true;
 
-    @ManyToMany(mappedBy = "instituciones")
-    private Set<Usuario> usuarios = new java.util.HashSet<>();
-
-    public Institucion() {
-    }
-
-    public Institucion(String nombre, String codigo) {
-        this.nombre = nombre;
-        this.codigo = codigo;
-    }
+    @OneToMany(mappedBy = "institucion")
+    private Set<Direccion> direcciones = new LinkedHashSet<>();
 
     public Long getId() {
         return id;
@@ -72,14 +62,6 @@ public class Institucion {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
-    }
-
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public void setCodigo(String codigo) {
-        this.codigo = codigo;
     }
 
     public String getDireccion() {
@@ -112,5 +94,13 @@ public class Institucion {
 
     public void setActiva(Boolean activa) {
         this.activa = activa;
+    }
+
+    public Set<Direccion> getDirecciones() {
+        return direcciones;
+    }
+
+    public void setDirecciones(Set<Direccion> direcciones) {
+        this.direcciones = direcciones;
     }
 }

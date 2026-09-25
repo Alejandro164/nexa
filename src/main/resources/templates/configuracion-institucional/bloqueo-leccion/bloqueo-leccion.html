@@ -375,7 +375,7 @@
                     <div class="bloqueo-section-head">
                         <div>
                             <h4>Grados</h4>
-                            <p>No tiene que aplicar a toda la institución. Los sétimos pueden quedar libres y los décimos no.</p>
+                            <p>No tiene que aplicar a toda la dirección. Los sétimos pueden quedar libres y los décimos no.</p>
                         </div>
                         <div class="bloqueo-links">
                             <button type="button" @click="marcarGrados('todos')">Todos</button>
@@ -383,7 +383,7 @@
                         </div>
                     </div>
                     <div class="bloqueo-empty" x-show="grados.length === 0">
-                        Esta institución todavía no tiene niveles activos. Créalos en Configuración académica para poder bloquear lecciones.
+                        Esta dirección todavía no tiene niveles activos. Créalos en Configuración académica para poder bloquear lecciones.
                     </div>
                     <div class="bloqueo-chips" role="group" aria-label="Grados académicos" x-show="grados.length > 0">
                         <template x-for="grado in grados" :key="grado">

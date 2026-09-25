@@ -1,11 +1,22 @@
 package com.chavescr.nexa.controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+import com.chavescr.nexa.service.TipoComponenteService;
+
+import jakarta.servlet.http.HttpSession;
+
 @Controller
 public class MenuController {
+
+    private final TipoComponenteService tipoComponenteService;
+
+    public MenuController(TipoComponenteService tipoComponenteService) {
+        this.tipoComponenteService = tipoComponenteService;
+    }
 
     @GetMapping("/estudiantes")
     public String estudiantes(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
@@ -13,7 +24,12 @@ public class MenuController {
     }
 
     @GetMapping("/gestion-academica")
-    public String gestionAcademica(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+    public String gestionAcademica(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            Model model, HttpSession session) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        model.addAttribute("tiposComponente", direccionId == null
+                ? java.util.List.of()
+                : tipoComponenteService.listarActivos(direccionId));
         return htmxRequest ? "gestion-academica/index :: htmx-content" : "gestion-academica/index";
     }
 

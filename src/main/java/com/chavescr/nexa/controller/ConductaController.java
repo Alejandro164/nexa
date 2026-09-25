@@ -2,7 +2,7 @@ package com.chavescr.nexa.controller;
 
 import java.time.LocalDate;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -51,7 +51,7 @@ public class ConductaController {
             @RequestParam(required = false) String grado,
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
-        cargarNotas(model, requerirInstitucion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
+        cargarNotas(model, requerirDireccion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
                 docenteIdSiAplica(request, session));
         return FRAGMENTO_NOTAS;
     }
@@ -62,20 +62,20 @@ public class ConductaController {
             @RequestParam(required = false) String grado,
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
         Long periodo = parseId(periodoId);
         Integer gradoNum = parseEntero(grado);
         Long seccion = parseId(nivelId);
         try {
             String mensaje = parseId(estudianteId) == null
-                    ? notaConductaService.enviarTodas(institucionId, periodo, gradoNum, seccion, docenteId)
-                    : notaConductaService.enviar(institucionId, periodo, parseId(estudianteId), docenteId);
+                    ? notaConductaService.enviarTodas(direccionId, periodo, gradoNum, seccion, docenteId)
+                    : notaConductaService.enviar(direccionId, periodo, parseId(estudianteId), docenteId);
             notificar(response, mensaje, false);
         } catch (IllegalArgumentException e) {
             notificar(response, e.getMessage(), true);
         }
-        cargarNotas(model, institucionId, periodo, gradoNum, seccion, docenteId);
+        cargarNotas(model, direccionId, periodo, gradoNum, seccion, docenteId);
         return FRAGMENTO_NOTAS;
     }
 
@@ -84,7 +84,7 @@ public class ConductaController {
             @RequestParam(required = false) String grado,
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
-        cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, requerirInstitucion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
+        cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, requerirDireccion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
                 docenteIdSiAplica(request, session));
         return FRAGMENTO_LLAMADAS;
     }
@@ -94,14 +94,14 @@ public class ConductaController {
             @RequestParam(required = false) String grado,
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
         Long periodo = parseId(periodoId);
         Integer gradoNum = parseEntero(grado);
         Long seccion = parseId(nivelId);
-        cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, institucionId, periodo, gradoNum, seccion, docenteId);
+        cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, direccionId, periodo, gradoNum, seccion, docenteId);
         model.addAttribute("estudiantes",
-                incidenteConductaService.listarEstudiantes(institucionId, gradoNum, seccion, docenteId));
+                incidenteConductaService.listarEstudiantes(direccionId, gradoNum, seccion, docenteId));
         model.addAttribute("fecha", LocalDate.now());
         return FRAGMENTO_FORM_LLAMADA;
     }
@@ -115,13 +115,13 @@ public class ConductaController {
             @RequestParam(required = false) String motivo,
             @RequestParam(required = false) String descripcion,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
         Long periodo = parseId(periodoId);
         Integer gradoNum = parseEntero(grado);
         Long seccion = parseId(nivelId);
         try {
-            String mensaje = incidenteConductaService.crear(TipoIncidente.LLAMADA_ATENCION, institucionId, periodo,
+            String mensaje = incidenteConductaService.crear(TipoIncidente.LLAMADA_ATENCION, direccionId, periodo,
                     parseId(estudianteId), parseFecha(fecha), motivo, descripcion, null,
                     (Long) session.getAttribute("SESSION_USUARIO_ID"), docenteId);
             notificar(response, mensaje, false);
@@ -130,7 +130,7 @@ public class ConductaController {
             notificar(response, e.getMessage(), true);
             return FRAGMENTO_FORM_LLAMADA;
         }
-        cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, institucionId, periodo, gradoNum, seccion, docenteId);
+        cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, direccionId, periodo, gradoNum, seccion, docenteId);
         return FRAGMENTO_LLAMADAS;
     }
 
@@ -140,19 +140,19 @@ public class ConductaController {
             @RequestParam(required = false) String grado,
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
         Long periodo = parseId(periodoId);
         Integer gradoNum = parseEntero(grado);
         Long seccion = parseId(nivelId);
         try {
-            String mensaje = incidenteConductaService.resolver(TipoIncidente.LLAMADA_ATENCION, institucionId,
+            String mensaje = incidenteConductaService.resolver(TipoIncidente.LLAMADA_ATENCION, direccionId,
                     parseId(incidenteId), docenteId);
             notificar(response, mensaje, false);
         } catch (IllegalArgumentException e) {
             notificar(response, e.getMessage(), true);
         }
-        cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, institucionId, periodo, gradoNum, seccion, docenteId);
+        cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, direccionId, periodo, gradoNum, seccion, docenteId);
         return FRAGMENTO_LLAMADAS;
     }
 
@@ -161,7 +161,7 @@ public class ConductaController {
             @RequestParam(required = false) String grado,
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
-        cargarIncidentes(model, TipoIncidente.BOLETA, requerirInstitucion(session), parseId(periodoId),
+        cargarIncidentes(model, TipoIncidente.BOLETA, requerirDireccion(session), parseId(periodoId),
                 parseEntero(grado), parseId(nivelId), docenteIdSiAplica(request, session));
         return FRAGMENTO_BOLETAS;
     }
@@ -171,14 +171,14 @@ public class ConductaController {
             @RequestParam(required = false) String grado,
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
         Long periodo = parseId(periodoId);
         Integer gradoNum = parseEntero(grado);
         Long seccion = parseId(nivelId);
-        cargarIncidentes(model, TipoIncidente.BOLETA, institucionId, periodo, gradoNum, seccion, docenteId);
+        cargarIncidentes(model, TipoIncidente.BOLETA, direccionId, periodo, gradoNum, seccion, docenteId);
         model.addAttribute("estudiantes",
-                incidenteConductaService.listarEstudiantes(institucionId, gradoNum, seccion, docenteId));
+                incidenteConductaService.listarEstudiantes(direccionId, gradoNum, seccion, docenteId));
         model.addAttribute("fecha", LocalDate.now());
         return FRAGMENTO_FORM_BOLETA;
     }
@@ -193,13 +193,13 @@ public class ConductaController {
             @RequestParam(required = false) String descripcion,
             @RequestParam(required = false) String puntos,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
         Long periodo = parseId(periodoId);
         Integer gradoNum = parseEntero(grado);
         Long seccion = parseId(nivelId);
         try {
-            String mensaje = incidenteConductaService.crear(TipoIncidente.BOLETA, institucionId, periodo,
+            String mensaje = incidenteConductaService.crear(TipoIncidente.BOLETA, direccionId, periodo,
                     parseId(estudianteId), parseFecha(fecha), motivo, descripcion, parseEntero(puntos),
                     (Long) session.getAttribute("SESSION_USUARIO_ID"), docenteId);
             notificar(response, mensaje, false);
@@ -208,7 +208,7 @@ public class ConductaController {
             notificar(response, e.getMessage(), true);
             return FRAGMENTO_FORM_BOLETA;
         }
-        cargarIncidentes(model, TipoIncidente.BOLETA, institucionId, periodo, gradoNum, seccion, docenteId);
+        cargarIncidentes(model, TipoIncidente.BOLETA, direccionId, periodo, gradoNum, seccion, docenteId);
         return FRAGMENTO_BOLETAS;
     }
 
@@ -218,25 +218,25 @@ public class ConductaController {
             @RequestParam(required = false) String grado,
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
         Long periodo = parseId(periodoId);
         Integer gradoNum = parseEntero(grado);
         Long seccion = parseId(nivelId);
         try {
-            String mensaje = incidenteConductaService.resolver(TipoIncidente.BOLETA, institucionId,
+            String mensaje = incidenteConductaService.resolver(TipoIncidente.BOLETA, direccionId,
                     parseId(incidenteId), docenteId);
             notificar(response, mensaje, false);
         } catch (IllegalArgumentException e) {
             notificar(response, e.getMessage(), true);
         }
-        cargarIncidentes(model, TipoIncidente.BOLETA, institucionId, periodo, gradoNum, seccion, docenteId);
+        cargarIncidentes(model, TipoIncidente.BOLETA, direccionId, periodo, gradoNum, seccion, docenteId);
         return FRAGMENTO_BOLETAS;
     }
 
-    private void cargarNotas(Model model, Long institucionId, Long periodoId, Integer grado, Long nivelId,
+    private void cargarNotas(Model model, Long direccionId, Long periodoId, Integer grado, Long nivelId,
             Long docenteId) {
-        PanelNotaConducta panel = notaConductaService.cargarPanel(institucionId, periodoId, grado, nivelId, docenteId);
+        PanelNotaConducta panel = notaConductaService.cargarPanel(direccionId, periodoId, grado, nivelId, docenteId);
         model.addAttribute("periodos", panel.getPeriodos());
         model.addAttribute("grados", panel.getGrados());
         model.addAttribute("secciones", panel.getSecciones());
@@ -248,9 +248,9 @@ public class ConductaController {
         model.addAttribute("avisoPeriodo", panel.getAvisoPeriodo());
     }
 
-    private void cargarIncidentes(Model model, TipoIncidente tipo, Long institucionId, Long periodoId, Integer grado,
+    private void cargarIncidentes(Model model, TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,
             Long nivelId, Long docenteId) {
-        PanelIncidenteConducta panel = incidenteConductaService.cargarPanel(tipo, institucionId, periodoId, grado,
+        PanelIncidenteConducta panel = incidenteConductaService.cargarPanel(tipo, direccionId, periodoId, grado,
                 nivelId, docenteId);
         model.addAttribute("periodos", panel.getPeriodos());
         model.addAttribute("grados", panel.getGrados());
@@ -271,10 +271,10 @@ public class ConductaController {
         return texto.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long requerirDireccion(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_DIRECCION_ID");
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

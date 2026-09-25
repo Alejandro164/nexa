@@ -11,8 +11,8 @@ import com.chavescr.nexa.entity.RetiroEstudiante;
 @Repository
 public interface RetiroEstudianteRepository extends JpaRepository<RetiroEstudiante, Long> {
 
-    List<RetiroEstudiante> findByInstitucionIdAndFechaHoraSolicitudBetweenOrderByFechaHoraSolicitudDesc(
-            Long institucionId, LocalDateTime inicio, LocalDateTime fin);
+    List<RetiroEstudiante> findByDireccionIdAndFechaHoraSolicitudBetweenOrderByFechaHoraSolicitudDesc(
+            Long direccionId, LocalDateTime inicio, LocalDateTime fin);
 
     List<RetiroEstudiante> findByPadreIdOrderByFechaHoraSolicitudDesc(Long padreId);
 }

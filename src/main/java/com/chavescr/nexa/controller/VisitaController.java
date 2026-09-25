@@ -67,24 +67,24 @@ public class VisitaController {
 
     @GetMapping
     public String index(Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId != null) {
-            List<Visita> visitasDelDia = visitaService.obtenerVisitasDelDia(institucionId);
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId != null) {
+            List<Visita> visitasDelDia = visitaService.obtenerVisitasDelDia(direccionId);
             model.addAttribute("visitas", visitasDelDia);
             agregarStats(model, visitasDelDia);
 
-            model.addAttribute("personas", personalService.listarPorRol(institucionId, rolParaTipo("DOCENTE")));
+            model.addAttribute("personas", personalService.listarPorRol(direccionId, rolParaTipo("DOCENTE")));
 
-            List<RegistroAsistencia> asistenciasDelDia = registroAsistenciaService.obtenerRegistrosDelDia(institucionId);
+            List<RegistroAsistencia> asistenciasDelDia = registroAsistenciaService.obtenerRegistrosDelDia(direccionId);
             model.addAttribute("asistencias", asistenciasDelDia);
-            Map<String, Long> conteo = registroAsistenciaService.obtenerConteoPersonalPresente(institucionId);
+            Map<String, Long> conteo = registroAsistenciaService.obtenerConteoPersonalPresente(direccionId);
             model.addAttribute("asistenciaPresentes", conteo.get("presentes"));
             model.addAttribute("asistenciaTotalRegistros", conteo.get("totalRegistros"));
 
-            List<Usuario> usuarios = usuarioService.obtenerPersonalActivoPorInstitucion(institucionId);
+            List<Usuario> usuarios = usuarioService.obtenerPersonalActivoPorDireccion(direccionId);
             model.addAttribute("usuarios", usuarios);
 
-            List<RetiroEstudiante> retirosDelDia = retiroEstudianteService.obtenerRetirosDelDia(institucionId);
+            List<RetiroEstudiante> retirosDelDia = retiroEstudianteService.obtenerRetirosDelDia(direccionId);
             model.addAttribute("retiros", retirosDelDia);
             agregarStatsRetiros(model, retirosDelDia);
         }
@@ -113,7 +113,7 @@ public class VisitaController {
     private void exigirPersonalAutorizado(HttpServletRequest request) {
         if (!esPersonalAutorizado(request)) {
             throw new org.springframework.security.access.AccessDeniedException(
-                    "Solo el personal de la institución puede autorizar retiros de estudiantes");
+                    "Solo el personal de la dirección puede autorizar retiros de estudiantes");
         }
     }
 
@@ -133,10 +133,10 @@ public class VisitaController {
     @ResponseBody
     public Map<String, Object> buscarPadre(@RequestParam String cedula, HttpSession session) {
         Map<String, Object> resultado = new HashMap<>();
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        Optional<Usuario> padreOpt = institucionId == null
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        Optional<Usuario> padreOpt = direccionId == null
                 ? Optional.empty()
-                : usuarioRepository.findPadreByCedulaAndInstitucionId(cedula.trim(), institucionId);
+                : usuarioRepository.findPadreByCedulaAndDireccionId(cedula.trim(), direccionId);
         if (padreOpt.isPresent()) {
             Usuario padre = padreOpt.get();
             resultado.put("encontrado", true);
@@ -152,10 +152,10 @@ public class VisitaController {
     @ResponseBody
     public Map<String, Object> buscarVisitante(@RequestParam String identificacion, HttpSession session) {
         Map<String, Object> resultado = new HashMap<>();
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        Optional<Visita> visitaOpt = institucionId == null
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        Optional<Visita> visitaOpt = direccionId == null
                 ? Optional.empty()
-                : visitaService.buscarVisitanteRecurrente(identificacion.trim(), institucionId);
+                : visitaService.buscarVisitanteRecurrente(identificacion.trim(), direccionId);
         if (visitaOpt.isPresent()) {
             resultado.put("encontrado", true);
             resultado.put("nombre", visitaOpt.get().getNombreVisitante());
@@ -181,9 +181,9 @@ public class VisitaController {
 
     @GetMapping("/personas")
     public String personas(@RequestParam String tipoDestinatario, Model model, HttpSession session) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId != null) {
-            model.addAttribute("personas", personalService.listarPorRol(institucionId, rolParaTipo(tipoDestinatario)));
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId != null) {
+            model.addAttribute("personas", personalService.listarPorRol(direccionId, rolParaTipo(tipoDestinatario)));
         }
         return "control-acceso/registrar/registrar :: campo-persona";
     }
@@ -198,9 +198,9 @@ public class VisitaController {
 
     @GetMapping("/buscar")
     public String buscar(@RequestParam String filtro, Model model, HttpSession session) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId != null && filtro != null && !filtro.isBlank()) {
-            List<Visita> resultados = visitaService.buscarPorFiltro(filtro, institucionId);
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId != null && filtro != null && !filtro.isBlank()) {
+            List<Visita> resultados = visitaService.buscarPorFiltro(filtro, direccionId);
             model.addAttribute("resultados", resultados);
             model.addAttribute("filtro", filtro);
         }
@@ -212,13 +212,13 @@ public class VisitaController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             Model model, HttpSession session) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
         LocalDate desdeReal = desde != null ? desde : LocalDate.now().minusDays(7);
         LocalDate hastaReal = hasta != null ? hasta : LocalDate.now();
         model.addAttribute("desde", desdeReal);
         model.addAttribute("hasta", hastaReal);
-        if (institucionId != null) {
-            List<Visita> visitas = visitaService.obtenerVisitasPorRango(institucionId, desdeReal, hastaReal);
+        if (direccionId != null) {
+            List<Visita> visitas = visitaService.obtenerVisitasPorRango(direccionId, desdeReal, hastaReal);
             model.addAttribute("visitas", visitas);
             agregarStats(model, visitas);
         }
@@ -230,11 +230,11 @@ public class VisitaController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             HttpSession session) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
         LocalDate desdeReal = desde != null ? desde : LocalDate.now().minusDays(7);
         LocalDate hastaReal = hasta != null ? hasta : LocalDate.now();
-        List<Visita> visitas = institucionId == null ? List.of()
-                : visitaService.obtenerVisitasPorRango(institucionId, desdeReal, hastaReal);
+        List<Visita> visitas = direccionId == null ? List.of()
+                : visitaService.obtenerVisitasPorRango(direccionId, desdeReal, hastaReal);
 
         StringBuilder csv = new StringBuilder();
         csv.append("Visitante,Identificacion,Persona Visitada,Tipo,Motivo,Cita Previa,Estado,Fecha Registro,Hora Ingreso,Hora Salida\n");
@@ -256,9 +256,9 @@ public class VisitaController {
 
     @GetMapping("/asistencia/exportar")
     public ResponseEntity<byte[]> exportarAsistencia(HttpSession session) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        List<RegistroAsistencia> registros = institucionId == null ? List.of()
-                : registroAsistenciaService.obtenerRegistrosDelDia(institucionId);
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        List<RegistroAsistencia> registros = direccionId == null ? List.of()
+                : registroAsistenciaService.obtenerRegistrosDelDia(direccionId);
 
         StringBuilder csv = new StringBuilder();
         csv.append("Funcionario,Correo,Tipo,Hora,Observaciones\n");
@@ -275,9 +275,9 @@ public class VisitaController {
 
     @GetMapping("/retiros/exportar")
     public ResponseEntity<byte[]> exportarRetiros(HttpSession session) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        List<RetiroEstudiante> retiros = institucionId == null ? List.of()
-                : retiroEstudianteService.obtenerRetirosDelDia(institucionId);
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        List<RetiroEstudiante> retiros = direccionId == null ? List.of()
+                : retiroEstudianteService.obtenerRetirosDelDia(direccionId);
 
         StringBuilder csv = new StringBuilder();
         csv.append("Estudiante,Padre,Motivo,Estado,Solicitado,Salida,Retirado por,Identificacion de quien retira\n");
@@ -322,9 +322,9 @@ public class VisitaController {
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId == null) {
-            redirectAttributes.addFlashAttribute("errorMsg", "No hay institución activa.");
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            redirectAttributes.addFlashAttribute("errorMsg", "No hay dirección activa.");
             return "redirect:/control-de-acceso";
         }
 
@@ -343,7 +343,7 @@ public class VisitaController {
         visita.setTieneCita(tieneCita);
         visita.setObservaciones(observaciones);
 
-        visitaService.registrarVisita(visita, institucionId);
+        visitaService.registrarVisita(visita, direccionId);
         redirectAttributes.addFlashAttribute("successMsg", "Visita registrada exitosamente.");
         return "redirect:/control-de-acceso";
     }
@@ -385,15 +385,15 @@ public class VisitaController {
 
     @GetMapping("/asistencia/refresh")
     public String refreshAsistencia(Model model, HttpSession session) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId != null) {
-            List<RegistroAsistencia> asistenciasDelDia = registroAsistenciaService.obtenerRegistrosDelDia(institucionId);
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId != null) {
+            List<RegistroAsistencia> asistenciasDelDia = registroAsistenciaService.obtenerRegistrosDelDia(direccionId);
             model.addAttribute("asistencias", asistenciasDelDia);
-            Map<String, Long> conteo = registroAsistenciaService.obtenerConteoPersonalPresente(institucionId);
+            Map<String, Long> conteo = registroAsistenciaService.obtenerConteoPersonalPresente(direccionId);
             model.addAttribute("asistenciaPresentes", conteo.get("presentes"));
             model.addAttribute("asistenciaTotalRegistros", conteo.get("totalRegistros"));
 
-            List<Usuario> usuarios = usuarioService.obtenerPersonalActivoPorInstitucion(institucionId);
+            List<Usuario> usuarios = usuarioService.obtenerPersonalActivoPorDireccion(direccionId);
             model.addAttribute("usuarios", usuarios);
         }
         return "control-acceso/asistencia/asistencia :: tabla-asistencia";
@@ -406,15 +406,15 @@ public class VisitaController {
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId == null) {
-            redirectAttributes.addFlashAttribute("errorMsg", "No hay institución activa.");
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            redirectAttributes.addFlashAttribute("errorMsg", "No hay dirección activa.");
             return "redirect:/control-de-acceso";
         }
 
         RegistroAsistencia.TipoRegistro tipoRegistro = RegistroAsistencia.TipoRegistro.valueOf(tipo);
         try {
-            registroAsistenciaService.registrar(usuarioId, tipoRegistro, observaciones, institucionId);
+            registroAsistenciaService.registrar(usuarioId, tipoRegistro, observaciones, direccionId);
             redirectAttributes.addFlashAttribute("successMsg",
                     tipoRegistro == RegistroAsistencia.TipoRegistro.ENTRADA
                             ? "Entrada registrada exitosamente."
@@ -429,9 +429,9 @@ public class VisitaController {
 
     @GetMapping("/retiros/refresh")
     public String refreshRetiros(Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId != null) {
-            List<RetiroEstudiante> retirosDelDia = retiroEstudianteService.obtenerRetirosDelDia(institucionId);
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId != null) {
+            List<RetiroEstudiante> retirosDelDia = retiroEstudianteService.obtenerRetirosDelDia(direccionId);
             model.addAttribute("retiros", retirosDelDia);
             agregarStatsRetiros(model, retirosDelDia);
         }

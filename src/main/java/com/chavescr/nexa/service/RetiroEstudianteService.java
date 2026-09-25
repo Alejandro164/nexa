@@ -9,10 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.RetiroEstudiante;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.RetiroEstudianteRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -26,16 +26,16 @@ public class RetiroEstudianteService {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private InstitucionRepository institucionRepository;
+    private DireccionRepository direccionRepository;
 
     @Autowired
     private NotificacionService notificacionService;
 
-    public List<RetiroEstudiante> obtenerRetirosDelDia(Long institucionId) {
+    public List<RetiroEstudiante> obtenerRetirosDelDia(Long direccionId) {
         LocalDateTime inicio = LocalDate.now().atStartOfDay();
         LocalDateTime fin = LocalDate.now().atTime(LocalTime.MAX);
-        return retiroEstudianteRepository.findByInstitucionIdAndFechaHoraSolicitudBetweenOrderByFechaHoraSolicitudDesc(
-                institucionId, inicio, fin);
+        return retiroEstudianteRepository.findByDireccionIdAndFechaHoraSolicitudBetweenOrderByFechaHoraSolicitudDesc(
+                direccionId, inicio, fin);
     }
 
     public List<RetiroEstudiante> obtenerRetirosDelPadre(Long padreId) {
@@ -46,7 +46,7 @@ public class RetiroEstudianteService {
      * Un padre solo puede solicitar el retiro de un estudiante que
      * realmente tenga asignado (relación real padres_estudiantes).
      */
-    public RetiroEstudiante solicitarRetiro(Long padreId, Long estudianteId, String motivo, Long institucionId) {
+    public RetiroEstudiante solicitarRetiro(Long padreId, Long estudianteId, String motivo, Long direccionId) {
         Usuario padre = usuarioRepository.findById(padreId)
                 .orElseThrow(() -> new IllegalArgumentException("Padre no encontrado"));
         boolean esHijo = usuarioRepository.findEstudiantesByPadreId(padreId).stream()
@@ -56,14 +56,14 @@ public class RetiroEstudianteService {
         }
         Usuario estudiante = usuarioRepository.findById(estudianteId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
 
         RetiroEstudiante retiro = new RetiroEstudiante();
         retiro.setPadre(padre);
         retiro.setEstudiante(estudiante);
         retiro.setMotivo(motivo);
-        retiro.setInstitucion(institucion);
+        retiro.setDireccion(direccion);
         return retiroEstudianteRepository.save(retiro);
     }
 

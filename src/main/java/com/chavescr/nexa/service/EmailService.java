@@ -31,18 +31,18 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    public void enviarOficioEmitido(String destinatarioEmail, String destinatarioNombre, String institucionNombre,
+    public void enviarOficioEmitido(String destinatarioEmail, String destinatarioNombre, String direccionNombre,
             String numeroOficio, String asuntoOficio, byte[] pdf, String nombreArchivoPdf)
             throws MessagingException, java.io.UnsupportedEncodingException {
         MimeMessage mensaje = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
 
-        helper.setFrom(remitenteEmail, remitenteNombre + " (" + institucionNombre + ")");
+        helper.setFrom(remitenteEmail, remitenteNombre + " (" + direccionNombre + ")");
         helper.setTo(destinatarioEmail);
         helper.setSubject("Oficio " + numeroOficio + " — " + asuntoOficio);
         helper.setText(
                 "Estimado(a) " + destinatarioNombre + ",\n\n" +
-                "Se le remite el oficio " + numeroOficio + " emitido por " + institucionNombre + ".\n\n" +
+                "Se le remite el oficio " + numeroOficio + " emitido por " + direccionNombre + ".\n\n" +
                 "Asunto: " + asuntoOficio + "\n\n" +
                 "Encontrará el documento adjunto a este correo.\n\n" +
                 "Este es un mensaje automático, por favor no responda a esta dirección.",

@@ -89,17 +89,17 @@
         }
         window.cargarBitacoraPanel = cargarBitacoraPanel;
 
-        function filtrarInstitucionesCuenta(input) {
+        function filtrarDireccionesCuenta(input) {
             var q = input.value.trim().toLowerCase();
             var dialog = input.closest('.modal-dialog');
-            var forms = dialog.querySelectorAll('.institucion-cuenta-item-form');
+            var forms = dialog.querySelectorAll('.direccion-cuenta-item-form');
             var visibles = 0;
             forms.forEach(function (form) {
                 var coincide = !q || form.getAttribute('data-search').indexOf(q) !== -1;
                 form.style.display = coincide ? '' : 'none';
                 if (coincide) visibles++;
             });
-            var vacio = dialog.querySelector('#institucion-cuenta-empty-search');
+            var vacio = dialog.querySelector('#direccion-cuenta-empty-search');
             if (vacio) {
                 vacio.style.display = visibles === 0 ? 'block' : 'none';
             }

@@ -252,7 +252,7 @@
                     <!-- Grupo de Botones -->
                     <div class="btn-group">
                         <button class="btn btn-secondary btn-demo-sm">Izquierda</button>
-                        <button class="btn btn-secondary btn-demo-sm">Centro</button>
+                        <button class="btn btn-secondary btn-demo-sm">Institucion</button>
                         <button class="btn btn-secondary btn-demo-sm">Derecha</button>
                     </div>
 
@@ -281,7 +281,7 @@
                     <pre><code id="code-btn-groups-text">&lt;!-- Grupo de botones --&gt;
 &lt;div class="btn-group"&gt;
     &lt;button class="btn btn-secondary"&gt;Izquierda&lt;/button&gt;
-    &lt;button class="btn btn-secondary"&gt;Centro&lt;/button&gt;
+    &lt;button class="btn btn-secondary"&gt;Institucion&lt;/button&gt;
     &lt;button class="btn btn-secondary"&gt;Derecha&lt;/button&gt;
 &lt;/div&gt;
 
@@ -656,7 +656,7 @@
                         <label class="form-label">Dominio del Portal</label>
                         <div class="input-group">
                             <span class="input-group-addon">https://</span>
-                            <input type="text" class="input-demo" placeholder="nombre-centro">
+                            <input type="text" class="input-demo" placeholder="nombre-institucion">
                             <span class="input-group-addon">.estudiafacil.com</span>
                         </div>
                     </div>
@@ -824,7 +824,7 @@
                 <!-- KPI 1 -->
                 <div class="kpi-card">
                     <div class="kpi-card-header">
-                        <span class="kpi-card-title">Centros Educativos</span>
+                        <span class="kpi-card-title">Instituciones Educativos</span>
                         <div class="kpi-card-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -932,8 +932,8 @@
                     <table class="comp-table">
                         <thead>
                             <tr>
-                                <th>Institución</th>
-                                <th>Código Centro</th>
+                                <th>Dirección</th>
+                                <th>Código Institucion</th>
                                 <th>Usuarios Registrados</th>
                                 <th>Estado</th>
                                 <th style="text-align: right;">Acciones</th>
@@ -1117,7 +1117,7 @@
                 <nav style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 500;">
                     <a href="#" style="color: var(--primary); text-decoration: none;">Inicio</a>
                     <span style="color: var(--text-light);">/</span>
-                    <a href="#" style="color: var(--primary); text-decoration: none;">Centros Educativos</a>
+                    <a href="#" style="color: var(--primary); text-decoration: none;">Instituciones Educativos</a>
                     <span style="color: var(--text-light);">/</span>
                     <span style="color: var(--text-muted);">Liceo de Costa Rica</span>
                 </nav>
@@ -1125,7 +1125,7 @@
                 <div id="code-breadcrumbs-container" class="code-container" style="display: none;">
                     <pre><code id="code-breadcrumbs-text">&lt;nav class="breadcrumbs"&gt;
     &lt;a href="#"&gt;Inicio&lt;/a&gt; &lt;span&gt;/&lt;/span&gt;
-    &lt;a href="#"&gt;Centros&lt;/a&gt; &lt;span&gt;/&lt;/span&gt;
+    &lt;a href="#"&gt;Instituciones&lt;/a&gt; &lt;span&gt;/&lt;/span&gt;
     &lt;span class="active"&gt;Liceo&lt;/span&gt;
 &lt;/nav&gt;</code></pre>
                 </div>
@@ -1192,7 +1192,7 @@
                 <div class="tab-demo-container">
                     <div class="tab-demo-bar">
                         <button class="tab-demo-btn active">Usuarios</button>
-                        <button class="tab-demo-btn">Centros Educativos</button>
+                        <button class="tab-demo-btn">Instituciones Educativos</button>
                         <button class="tab-demo-btn">Reportes de Matrícula</button>
                     </div>
                     <div class="tab-demo-content" style="padding-top: 1rem;">
@@ -1200,7 +1200,7 @@
                             Permite buscar, filtrar y asignar roles a los administradores.</p>
                     </div>
                     <div class="tab-demo-content" style="padding-top: 1rem; display: none;">
-                        <p style="font-size:0.9rem; color:var(--text-muted);">Listado de Centros Educativos
+                        <p style="font-size:0.9rem; color:var(--text-muted);">Listado de Instituciones Educativos
                             autorizados por el MEP para la plataforma de Nexa.</p>
                     </div>
                     <div class="tab-demo-content" style="padding-top: 1rem; display: none;">
@@ -1288,7 +1288,7 @@
                             <line x1="12" y1="8" x2="12" y2="12" />
                             <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
-                        <span>Error 500: No se ha podido establecer comunicación con la base de datos de centros
+                        <span>Error 500: No se ha podido establecer comunicación con la base de datos de instituciones
                             del MEP.</span>
                     </div>
                 </div>
@@ -1456,7 +1456,7 @@
                         <div class="timeline-content">
                             <div class="timeline-time">Ayer, 04:30 PM</div>
                             <div class="timeline-title">Alerta de inactividad de usuarios</div>
-                            <div class="timeline-desc">El centro "Instituto Tecnológico de Alajuela" ha estado
+                            <div class="timeline-desc">El institucion "Instituto Tecnológico de Alajuela" ha estado
                                 inactivo por más de 30 días. Se envió correo de auditoría automática a los
                                 directivos.</div>
                         </div>
@@ -1469,7 +1469,7 @@
                             <div class="timeline-time">22 de Mayo, 09:12 AM</div>
                             <div class="timeline-title">Error en base de datos de matrículas</div>
                             <div class="timeline-desc">Fallo de lectura de clave en tabla de cobros asociados.
-                                Matrícula rechazada temporalmente para la institución ID: 104.</div>
+                                Matrícula rechazada temporalmente para la dirección ID: 104.</div>
                         </div>
                     </div>
                 </div>

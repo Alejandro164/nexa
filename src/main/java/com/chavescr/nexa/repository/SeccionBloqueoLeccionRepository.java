@@ -9,13 +9,13 @@ import com.chavescr.nexa.entity.SeccionBloqueoLeccion;
 
 public interface SeccionBloqueoLeccionRepository extends JpaRepository<SeccionBloqueoLeccion, Long> {
 
-    List<SeccionBloqueoLeccion> findByInstitucionIdAndPeriodoIdAndNivelId(
-            Long institucionId, Long periodoId, Long nivelId);
+    List<SeccionBloqueoLeccion> findByDireccionIdAndPeriodoIdAndNivelId(
+            Long direccionId, Long periodoId, Long nivelId);
 
-    Optional<SeccionBloqueoLeccion> findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
-            Long institucionId, Long periodoId, Long nivelId, String dia, Integer numeroLeccion);
+    Optional<SeccionBloqueoLeccion> findByDireccionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
+            Long direccionId, Long periodoId, Long nivelId, String dia, Integer numeroLeccion);
 
-    void deleteByInstitucionIdAndNivelId(Long institucionId, Long nivelId);
+    void deleteByDireccionIdAndNivelId(Long direccionId, Long nivelId);
 
-    void deleteByInstitucionIdAndPeriodoId(Long institucionId, Long periodoId);
+    void deleteByDireccionIdAndPeriodoId(Long direccionId, Long periodoId);
 }

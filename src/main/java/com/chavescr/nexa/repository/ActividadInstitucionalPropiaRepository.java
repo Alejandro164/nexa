@@ -9,7 +9,7 @@ import com.chavescr.nexa.entity.ActividadInstitucionalPropia;
 
 public interface ActividadInstitucionalPropiaRepository extends JpaRepository<ActividadInstitucionalPropia, Long> {
 
-    List<ActividadInstitucionalPropia> findByInstitucionIdOrderByFechaInicioAsc(Long institucionId);
+    List<ActividadInstitucionalPropia> findByDireccionIdOrderByFechaInicioAsc(Long direccionId);
 
-    Optional<ActividadInstitucionalPropia> findByIdAndInstitucionId(Long id, Long institucionId);
+    Optional<ActividadInstitucionalPropia> findByIdAndDireccionId(Long id, Long direccionId);
 }

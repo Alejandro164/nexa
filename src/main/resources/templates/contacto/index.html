@@ -9,13 +9,13 @@
 <body>
 
     <h2 layout:fragment="page-title">Contacto</h2>
-    <p layout:fragment="page-subtitle">Directorio de contactos de estudiantes, personal, padres de familia e instituciones</p>
+    <p layout:fragment="page-subtitle">Directorio de contactos de estudiantes, personal, padres de familia e direcciones</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Contacto</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Directorio de contactos de estudiantes, personal, padres de familia e instituciones</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Directorio de contactos de estudiantes, personal, padres de familia e direcciones</p>
     <main layout:fragment="content">
         <style>
             .config-tabs-container {
@@ -150,9 +150,9 @@
                             @click="activeTab = 'padres'">
                         👨‍👩‍👧 Padres de Familia
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'instituciones' }"
-                            @click="activeTab = 'instituciones'">
-                        🏫 Instituciones
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'direcciones' }"
+                            @click="activeTab = 'direcciones'">
+                        🏫 Direcciones
                     </button>
                 </div>
             </div>
@@ -169,8 +169,8 @@
                 <div th:replace="~{contacto/padres/padres :: content}"></div>
             </div>
 
-            <div x-show="activeTab === 'instituciones'" class="tab-pane" x-cloak>
-                <div th:replace="~{contacto/instituciones/instituciones :: content}"></div>
+            <div x-show="activeTab === 'direcciones'" class="tab-pane" x-cloak>
+                <div th:replace="~{contacto/direcciones/direcciones :: content}"></div>
             </div>
 
         </div>

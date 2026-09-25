@@ -25,10 +25,10 @@ import org.springframework.web.client.RestClientException;
 
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.entity.ActividadInstitucionalPropia;
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.ActividadInstitucionalPropiaRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -67,7 +67,7 @@ public class ActividadInstitucionalService {
 
     private final RestClient restClient;
     private final ActividadInstitucionalPropiaRepository actividadPropiaRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final UsuarioRepository usuarioRepository;
 
     /**
@@ -78,9 +78,9 @@ public class ActividadInstitucionalService {
     private final Map<Integer, EntradaCacheMep> cacheEventosMep = new ConcurrentHashMap<>();
 
     public ActividadInstitucionalService(ActividadInstitucionalPropiaRepository actividadPropiaRepository,
-            InstitucionRepository institucionRepository, UsuarioRepository usuarioRepository) {
+            DireccionRepository direccionRepository, UsuarioRepository usuarioRepository) {
         this.actividadPropiaRepository = actividadPropiaRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.usuarioRepository = usuarioRepository;
 
         ObjectMapper mapper = new ObjectMapper()
@@ -121,9 +121,9 @@ public class ActividadInstitucionalService {
     }
 
     @Transactional(readOnly = true)
-    public List<EventoMepDTO> buscarEventos(Long institucionId, Integer mes, String categoria, String texto) {
+    public List<EventoMepDTO> buscarEventos(Long direccionId, Integer mes, String categoria, String texto) {
         List<EventoMepDTO> base = new ArrayList<>(listarEventosDelAnio(anioActual()));
-        base.addAll(listarPropias(institucionId));
+        base.addAll(listarPropias(direccionId));
 
         LocalDate inicioMes = mes != null ? YearMonth.of(anioActual(), mes).atDay(1) : null;
         LocalDate finMes = mes != null ? YearMonth.of(anioActual(), mes).atEndOfMonth() : null;
@@ -143,10 +143,10 @@ public class ActividadInstitucionalService {
     }
 
     @Transactional(readOnly = true)
-    public List<String> listarCategorias(Long institucionId) {
+    public List<String> listarCategorias(Long direccionId) {
         List<String> categorias = new ArrayList<>();
         listarEventosDelAnio(anioActual()).forEach(e -> categorias.add(e.getNombreCategoria()));
-        listarPropias(institucionId).forEach(e -> categorias.add(e.getNombreCategoria()));
+        listarPropias(direccionId).forEach(e -> categorias.add(e.getNombreCategoria()));
         return categorias.stream()
                 .filter(c -> c != null && !c.isBlank())
                 .distinct()
@@ -155,9 +155,9 @@ public class ActividadInstitucionalService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<EventoMepDTO> obtenerEvento(Long institucionId, String id) {
+    public Optional<EventoMepDTO> obtenerEvento(Long direccionId, String id) {
         if (EventoMepDTO.esIdPropia(id)) {
-            return actividadPropiaRepository.findByIdAndInstitucionId(EventoMepDTO.idNumericoPropia(id), institucionId)
+            return actividadPropiaRepository.findByIdAndDireccionId(EventoMepDTO.idNumericoPropia(id), direccionId)
                     .map(EventoMepDTO::deActividadPropia);
         }
         return listarEventosDelAnio(anioActual()).stream()
@@ -167,12 +167,12 @@ public class ActividadInstitucionalService {
 
     /** Eventos cuyo rango de fechas se solapa con [desde, hasta], sin importar el año. */
     @Transactional(readOnly = true)
-    public List<EventoMepDTO> listarEventosEnRango(Long institucionId, LocalDate desde, LocalDate hasta) {
+    public List<EventoMepDTO> listarEventosEnRango(Long direccionId, LocalDate desde, LocalDate hasta) {
         List<EventoMepDTO> eventos = new ArrayList<>();
         for (int anio = desde.getYear(); anio <= hasta.getYear(); anio++) {
             eventos.addAll(listarEventosDelAnio(anio));
         }
-        eventos.addAll(listarPropias(institucionId));
+        eventos.addAll(listarPropias(direccionId));
         return eventos.stream()
                 .filter(e -> e.getFechaInicio() != null && e.getFechaFin() != null)
                 .filter(e -> !e.getFechaFin().isBefore(desde) && !e.getFechaInicio().isAfter(hasta))
@@ -180,15 +180,15 @@ public class ActividadInstitucionalService {
                 .toList();
     }
 
-    private List<EventoMepDTO> listarPropias(Long institucionId) {
-        return actividadPropiaRepository.findByInstitucionIdOrderByFechaInicioAsc(institucionId).stream()
+    private List<EventoMepDTO> listarPropias(Long direccionId) {
+        return actividadPropiaRepository.findByDireccionIdOrderByFechaInicioAsc(direccionId).stream()
                 .map(EventoMepDTO::deActividadPropia)
                 .toList();
     }
 
     // ─── CRUD de actividades propias (creadas por Director/Admin) ───────
 
-    public ActividadInstitucionalPropia guardarActividadPropia(Long institucionId, Long usuarioId, Long id,
+    public ActividadInstitucionalPropia guardarActividadPropia(Long direccionId, Long usuarioId, Long id,
             String titulo, String descripcion, LocalDate fechaInicio, LocalDate fechaFin,
             String categoria, String enlace) {
         if (titulo == null || titulo.isBlank()) {
@@ -201,9 +201,9 @@ public class ActividadInstitucionalService {
 
         ActividadInstitucionalPropia actividad = id == null
                 ? new ActividadInstitucionalPropia()
-                : obtenerActividadPropiaEntidad(institucionId, id);
+                : obtenerActividadPropiaEntidad(direccionId, id);
         if (actividad.getId() == null) {
-            actividad.setInstitucion(obtenerInstitucion(institucionId));
+            actividad.setDireccion(obtenerDireccion(direccionId));
             actividad.setCreadoPor(obtenerUsuario(usuarioId));
         }
         actividad.setTitulo(titulo.trim());
@@ -217,14 +217,14 @@ public class ActividadInstitucionalService {
         return guardada;
     }
 
-    public void eliminarActividadPropia(Long institucionId, Long id) {
-        ActividadInstitucionalPropia actividad = obtenerActividadPropiaEntidad(institucionId, id);
+    public void eliminarActividadPropia(Long direccionId, Long id) {
+        ActividadInstitucionalPropia actividad = obtenerActividadPropiaEntidad(direccionId, id);
         actividadPropiaRepository.delete(actividad);
         log.info("Actividad institucional propia eliminada: id={}", id);
     }
 
-    public ActividadInstitucionalPropia obtenerActividadPropiaEntidad(Long institucionId, Long id) {
-        return actividadPropiaRepository.findByIdAndInstitucionId(id, institucionId)
+    public ActividadInstitucionalPropia obtenerActividadPropiaEntidad(Long direccionId, Long id) {
+        return actividadPropiaRepository.findByIdAndDireccionId(id, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Actividad institucional no encontrada"));
     }
 
@@ -233,9 +233,9 @@ public class ActividadInstitucionalService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
     }
 
-    private Institucion obtenerInstitucion(Long institucionId) {
-        return institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+    private Direccion obtenerDireccion(Long direccionId) {
+        return direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
     }
 
     private int anioActual() {

@@ -136,7 +136,7 @@ public class NubeController {
             Model model, HttpSession session, HttpServletRequest request) {
         Usuario usuario = usuarioActual(session);
         boolean admin = esAdmin(request);
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
 
         if (padreId != null) {
             NubeNodo padre = nubeNodoService.obtenerNodo(padreId)
@@ -147,7 +147,7 @@ public class NubeController {
         }
 
         Long propietarioId = usuario != null ? usuario.getId() : null;
-        nubeNodoService.crearCarpeta(nombre, padreId, propietarioId, institucionId);
+        nubeNodoService.crearCarpeta(nombre, padreId, propietarioId, direccionId);
 
         // Recargar la vista actual (padre o raíz)
         if (padreId != null) {
@@ -166,9 +166,9 @@ public class NubeController {
             HttpSession session, HttpServletRequest request) {
         Usuario usuario = usuarioActual(session);
         boolean admin = esAdmin(request);
-        Long institucionId = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
-        if (institucionId == null) {
-            throw new IllegalStateException("Debe seleccionar una institución");
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new IllegalStateException("Debe seleccionar una dirección");
         }
 
         if (padreId != null) {
@@ -181,7 +181,7 @@ public class NubeController {
 
         Long propietarioId = usuario != null ? usuario.getId() : null;
         try {
-            nubeNodoService.subirArchivo(archivo, padreId, institucionId, propietarioId);
+            nubeNodoService.subirArchivo(archivo, padreId, direccionId, propietarioId);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -560,17 +560,17 @@ public class NubeController {
         return "nube/compartir-modal :: modal-content";
     }
 
-    // Nodos creados antes de esta funcionalidad no tienen institución asignada (no hay forma
-    // de inferirla retroactivamente); en ese caso se usa la institución activa de la sesión
+    // Nodos creados antes de esta funcionalidad no tienen dirección asignada (no hay forma
+    // de inferirla retroactivamente); en ese caso se usa la dirección activa de la sesión
     // para poder listar candidatos para compartir en vez de dejar la lista vacía.
     private void poblarModeloCompartir(Model model, NubeNodo nodo, HttpSession session) {
         List<NubeNodoAcceso> accesos = accesoService.listarAccesos(nodo.getId());
         List<Long> idsConAcceso = accesos.stream().map(a -> a.getUsuario().getId()).collect(Collectors.toList());
-        Long institucionId = nodo.getInstitucion() != null ? nodo.getInstitucion().getId()
-                : (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+        Long direccionId = nodo.getDireccion() != null ? nodo.getDireccion().getId()
+                : (Long) session.getAttribute("SESSION_DIRECCION_ID");
 
-        List<Usuario> disponibles = institucionId != null
-                ? usuarioRepository.findActivosByInstitucionId(institucionId).stream()
+        List<Usuario> disponibles = direccionId != null
+                ? usuarioRepository.findActivosByDireccionId(direccionId).stream()
                         .filter(u -> nodo.getPropietario() == null || !u.getId().equals(nodo.getPropietario().getId()))
                         .filter(u -> !idsConAcceso.contains(u.getId()))
                         .collect(Collectors.toList())

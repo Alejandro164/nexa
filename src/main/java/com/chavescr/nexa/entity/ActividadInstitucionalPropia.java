@@ -42,8 +42,8 @@ public class ActividadInstitucionalPropia {
     private String enlace;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "creado_por_id", nullable = false)
@@ -71,8 +71,8 @@ public class ActividadInstitucionalPropia {
     public void setCategoria(String categoria) { this.categoria = categoria; }
     public String getEnlace() { return enlace; }
     public void setEnlace(String enlace) { this.enlace = enlace; }
-    public Institucion getInstitucion() { return institucion; }
-    public void setInstitucion(Institucion institucion) { this.institucion = institucion; }
+    public Direccion getDireccion() { return direccion; }
+    public void setDireccion(Direccion direccion) { this.direccion = direccion; }
     public Usuario getCreadoPor() { return creadoPor; }
     public void setCreadoPor(Usuario creadoPor) { this.creadoPor = creadoPor; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }

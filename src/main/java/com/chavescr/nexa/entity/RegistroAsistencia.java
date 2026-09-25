@@ -38,8 +38,8 @@ public class RegistroAsistencia {
     private Usuario usuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "institucion_id")
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id")
+    private Direccion direccion;
 
     public enum TipoRegistro {
         ENTRADA, SALIDA
@@ -95,11 +95,11 @@ public class RegistroAsistencia {
         this.usuario = usuario;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 }

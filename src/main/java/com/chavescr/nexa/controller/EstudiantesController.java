@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,24 +52,24 @@ public class EstudiantesController {
 
     @GetMapping("/expedientes")
     public String expedientes(@RequestParam(required = false) String q, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("estudiantes", personalService.listarPorRol(institucionId, ROL_ESTUDIANTE, q));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE, q));
         model.addAttribute("q", q);
         return "estudiantes/expedientes/directorio :: content";
     }
 
     @GetMapping("/expedientes/lista")
     public String expedientesLista(@RequestParam(required = false) String q, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("estudiantes", personalService.listarPorRol(institucionId, ROL_ESTUDIANTE, q));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE, q));
         model.addAttribute("q", q);
         return "estudiantes/expedientes/lista :: content";
     }
 
     @GetMapping("/expedientes/ficha/{id}")
     public String expedientesFicha(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        Usuario estudiante = personalService.obtenerPorId(institucionId, id);
+        Long direccionId = requerirDireccion(session);
+        Usuario estudiante = personalService.obtenerPorId(direccionId, id);
         model.addAttribute("estudiante", estudiante);
         model.addAttribute("padres", usuarioRepository.findPadresByEstudianteId(id));
         return "estudiantes/expedientes/ficha :: modal";
@@ -77,19 +77,19 @@ public class EstudiantesController {
 
     @GetMapping("/expedientes/form")
     public String expedientesFormCrear(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Usuario nuevo = new Usuario();
         nuevo.setRoles(java.util.Set.of(personalService.obtenerRolPorNombre(ROL_ESTUDIANTE)));
         model.addAttribute("usuario", nuevo);
-        model.addAttribute("niveles", nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId));
+        model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
         return "estudiantes/expedientes/formulario :: form-content";
     }
 
     @GetMapping("/expedientes/form/{id}")
     public String expedientesFormEditar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("usuario", personalService.obtenerPorId(institucionId, id));
-        model.addAttribute("niveles", nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("usuario", personalService.obtenerPorId(direccionId, id));
+        model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
         return "estudiantes/expedientes/formulario :: form-content";
     }
 
@@ -104,37 +104,37 @@ public class EstudiantesController {
             @RequestParam(defaultValue = "false") boolean activo,
             @RequestParam(required = false) Long nivelId,
             Model model, HttpSession session, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
             // El rol de una cuenta creada desde este módulo siempre es Estudiante — no lo elige el admin
             // (a diferencia de Personal, que sí permite cualquier combinación de roles).
             List<Long> rolIds = List.of(personalService.obtenerRolPorNombre(ROL_ESTUDIANTE).getId());
-            personalService.guardar(institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds, nivelId);
-            model.addAttribute("estudiantes", personalService.listarPorRol(institucionId, ROL_ESTUDIANTE));
+            personalService.guardar(direccionId, id, nombre, email, usuario, cedula, password, activo, rolIds, nivelId);
+            model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE));
             return "estudiantes/expedientes/lista :: content";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#estudiantes-modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id));
-            model.addAttribute("niveles", nivelAcademicoRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId));
+            model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(direccionId, id));
+            model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
             return "estudiantes/expedientes/formulario :: form-content";
         }
     }
 
     @DeleteMapping("/expedientes/{id}")
     public String expedientesEliminar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.eliminar(institucionId, id);
-        model.addAttribute("estudiantes", personalService.listarPorRol(institucionId, ROL_ESTUDIANTE));
+        Long direccionId = requerirDireccion(session);
+        personalService.eliminar(direccionId, id);
+        model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE));
         return "estudiantes/expedientes/lista :: content";
     }
 
     @PutMapping("/expedientes/{id}/activo")
     public String expedientesToggleActivo(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.toggleActivo(institucionId, id);
-        model.addAttribute("estudiantes", personalService.listarPorRol(institucionId, ROL_ESTUDIANTE));
+        Long direccionId = requerirDireccion(session);
+        personalService.toggleActivo(direccionId, id);
+        model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE));
         return "estudiantes/expedientes/lista :: content";
     }
 
@@ -142,9 +142,9 @@ public class EstudiantesController {
 
     @GetMapping("/expedientes/{id}/padres")
     public String padresTab(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("estudiante", personalService.obtenerPorId(institucionId, id));
-        model.addAttribute("padresVinculados", personalService.listarPadresDe(institucionId, id));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("estudiante", personalService.obtenerPorId(direccionId, id));
+        model.addAttribute("padresVinculados", personalService.listarPadresDe(direccionId, id));
         return "estudiantes/expedientes/padres-tab :: content";
     }
 
@@ -152,9 +152,9 @@ public class EstudiantesController {
     @ResponseBody
     public Map<String, Object> buscarPadre(@RequestParam String cedula, HttpSession session) {
         Map<String, Object> resultado = new HashMap<>();
-        Long institucionId = institucionId(session);
-        Optional<Usuario> padreOpt = institucionId == null ? Optional.empty()
-                : usuarioRepository.findPadreByCedulaAndInstitucionId(cedula.trim(), institucionId);
+        Long direccionId = direccionId(session);
+        Optional<Usuario> padreOpt = direccionId == null ? Optional.empty()
+                : personalService.buscarPadrePorCedula(direccionId, cedula.trim());
         if (padreOpt.isPresent()) {
             Usuario padre = padreOpt.get();
             resultado.put("encontrado", true);
@@ -182,8 +182,8 @@ public class EstudiantesController {
 
     @PostMapping("/expedientes/{id}/padres/vincular")
     public String vincularPadre(@PathVariable Long id, @RequestParam Long padreId, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.vincularPadre(institucionId, id, padreId);
+        Long direccionId = requerirDireccion(session);
+        personalService.vincularPadre(direccionId, id, padreId);
         return padresTab(id, model, session);
     }
 
@@ -195,38 +195,38 @@ public class EstudiantesController {
             @RequestParam(required = false) String cedula,
             @RequestParam String password,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
             Long rolPadreId = personalService.obtenerRolPorNombre(ROL_PADRE).getId();
-            Usuario nuevoPadre = personalService.guardar(institucionId, null, nombre, email, usuario, cedula,
+            Usuario nuevoPadre = personalService.guardar(direccionId, null, nombre, email, usuario, cedula,
                     password, true, List.of(rolPadreId));
-            personalService.vincularPadre(institucionId, id, nuevoPadre.getId());
+            personalService.vincularPadre(direccionId, id, nuevoPadre.getId());
             return padresTab(id, model, session);
         } catch (Exception e) {
             model.addAttribute("errorPadre", e.getMessage());
-            model.addAttribute("estudiante", personalService.obtenerPorId(institucionId, id));
-            model.addAttribute("padresVinculados", personalService.listarPadresDe(institucionId, id));
+            model.addAttribute("estudiante", personalService.obtenerPorId(direccionId, id));
+            model.addAttribute("padresVinculados", personalService.listarPadresDe(direccionId, id));
             return "estudiantes/expedientes/padres-tab :: content";
         }
     }
 
     @DeleteMapping("/expedientes/{id}/padres/{padreId}")
     public String desvincularPadre(@PathVariable Long id, @PathVariable Long padreId, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.desvincularPadre(institucionId, id, padreId);
+        Long direccionId = requerirDireccion(session);
+        personalService.desvincularPadre(direccionId, id, padreId);
         return padresTab(id, model, session);
     }
 
     // ─── HELPERS ───────────────────────────────────────────────
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long direccionId(HttpSession session) {
+        return (Long) session.getAttribute("SESSION_DIRECCION_ID");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = institucionId(session);
+    private Long requerirDireccion(HttpSession session) {
+        Long id = direccionId(session);
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

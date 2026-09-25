@@ -32,18 +32,18 @@ public class BitacoraService {
         this.historialCambioRepository = historialCambioRepository;
     }
 
-    public void registrar(Long institucionId, ModuloSistema modulo, String area, AccionHistorial accion, Long itemId,
+    public void registrar(Long direccionId, ModuloSistema modulo, String area, AccionHistorial accion, Long itemId,
             String itemTitulo, Long usuarioId, String usuarioNombre) {
-        registrar(institucionId, modulo, area, accion, itemId, itemTitulo, usuarioId, usuarioNombre, null);
+        registrar(direccionId, modulo, area, accion, itemId, itemTitulo, usuarioId, usuarioNombre, null);
     }
 
-    public void registrar(Long institucionId, ModuloSistema modulo, String area, AccionHistorial accion, Long itemId,
+    public void registrar(Long direccionId, ModuloSistema modulo, String area, AccionHistorial accion, Long itemId,
             String itemTitulo, Long usuarioId, String usuarioNombre, String detalle) {
-        if (institucionId == null || modulo == null || accion == null) {
+        if (direccionId == null || modulo == null || accion == null) {
             return;
         }
         BitacoraEvento evento = new BitacoraEvento();
-        evento.setInstitucionId(institucionId);
+        evento.setDireccionId(direccionId);
         evento.setModulo(modulo);
         evento.setArea(area);
         evento.setAccion(accion);
@@ -57,28 +57,28 @@ public class BitacoraService {
     }
 
     /** Copia un evento académico ya persistido para que también aparezca en la bitácora del módulo. */
-    public void registrarDesdeHistorialAcademico(Long institucionId, ModuloAcademico academico, Long itemId,
+    public void registrarDesdeHistorialAcademico(Long direccionId, ModuloAcademico academico, Long itemId,
             String itemTitulo, AccionHistorial accion, Long usuarioId, String usuarioNombre, String detalle) {
-        registrar(institucionId, ModuloSistema.GESTION_ACADEMICA, ModuloSistema.areaDe(academico), accion, itemId,
+        registrar(direccionId, ModuloSistema.GESTION_ACADEMICA, ModuloSistema.areaDe(academico), accion, itemId,
                 itemTitulo, usuarioId, usuarioNombre, detalle);
     }
 
     @Transactional(readOnly = true)
-    public List<FilaBitacora> listar(Long institucionId, ModuloSistema modulo, AccionHistorial accion) {
+    public List<FilaBitacora> listar(Long direccionId, ModuloSistema modulo, AccionHistorial accion) {
         PageRequest limite = PageRequest.of(0, LIMITE_PANEL);
         List<BitacoraEvento> eventos = modulo == null
                 ? (accion == null
-                        ? repository.findByInstitucionIdOrderByFechaDesc(institucionId, limite)
-                        : repository.findByInstitucionIdAndAccionOrderByFechaDesc(institucionId, accion, limite))
+                        ? repository.findByDireccionIdOrderByFechaDesc(direccionId, limite)
+                        : repository.findByDireccionIdAndAccionOrderByFechaDesc(direccionId, accion, limite))
                 : (accion == null
-                        ? repository.findByInstitucionIdAndModuloOrderByFechaDesc(institucionId, modulo, limite)
-                        : repository.findByInstitucionIdAndModuloAndAccionOrderByFechaDesc(institucionId, modulo,
+                        ? repository.findByDireccionIdAndModuloOrderByFechaDesc(direccionId, modulo, limite)
+                        : repository.findByDireccionIdAndModuloAndAccionOrderByFechaDesc(direccionId, modulo,
                                 accion, limite));
 
         List<FilaBitacora> filas = new ArrayList<>(eventos.stream().map(FilaBitacora::desde).toList());
 
         if (modulo == null || modulo == ModuloSistema.GESTION_ACADEMICA) {
-            incorporarHistorialAcademicoPrevio(institucionId, accion, filas);
+            incorporarHistorialAcademicoPrevio(direccionId, accion, filas);
         }
 
         filas.sort(Comparator.comparing(FilaBitacora::getFecha).reversed());
@@ -92,8 +92,8 @@ public class BitacoraService {
      * El historial académico existía antes de la bitácora global. Se mezcla aquí para no perder
      * creaciones/ediciones ya guardadas, evitando duplicar las que también se escribieron en bitácora.
      */
-    private void incorporarHistorialAcademicoPrevio(Long institucionId, AccionHistorial accion, List<FilaBitacora> filas) {
-        List<HistorialCambio> historial = historialCambioRepository.findByInstitucionIdOrderByFechaDesc(institucionId);
+    private void incorporarHistorialAcademicoPrevio(Long direccionId, AccionHistorial accion, List<FilaBitacora> filas) {
+        List<HistorialCambio> historial = historialCambioRepository.findByDireccionIdOrderByFechaDesc(direccionId);
         for (HistorialCambio evento : historial) {
             if (accion != null && evento.getAccion() != accion) {
                 continue;

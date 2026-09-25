@@ -10,11 +10,11 @@ import com.chavescr.nexa.entity.Aula;
 
 public interface AulaRepository extends JpaRepository<Aula, Long> {
     @EntityGraph(attributePaths = "tipoAula")
-    List<Aula> findByInstitucionIdOrderByNombreAsc(Long institucionId);
+    List<Aula> findByDireccionIdOrderByNombreAsc(Long direccionId);
 
     @EntityGraph(attributePaths = "tipoAula")
-    List<Aula> findByInstitucionIdAndActivoTrueOrderByNombreAsc(Long institucionId);
+    List<Aula> findByDireccionIdAndActivoTrueOrderByNombreAsc(Long direccionId);
 
     @EntityGraph(attributePaths = "tipoAula")
-    Optional<Aula> findByIdAndInstitucionId(Long id, Long institucionId);
+    Optional<Aula> findByIdAndDireccionId(Long id, Long direccionId);
 }

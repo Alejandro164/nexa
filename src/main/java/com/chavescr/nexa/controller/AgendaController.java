@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -54,7 +54,7 @@ public class AgendaController {
     public String calendario(@RequestParam(required = false) String vista,
             @RequestParam(required = false) String fecha,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long usuarioId = requerirUsuario(session);
 
         String vistaActual = (vista == null || vista.isBlank()) ? "semana" : vista;
@@ -62,13 +62,13 @@ public class AgendaController {
 
         switch (vistaActual) {
             case "semana" -> model.addAttribute("semana",
-                    calendarioService.construirSemana(institucionId, usuarioId, referencia));
+                    calendarioService.construirSemana(direccionId, usuarioId, referencia));
             case "dia" -> model.addAttribute("dia",
-                    calendarioService.construirDia(institucionId, usuarioId, referencia));
+                    calendarioService.construirDia(direccionId, usuarioId, referencia));
             case "agenda" -> model.addAttribute("agendaDias",
-                    calendarioService.construirAgenda(institucionId, usuarioId, referencia));
+                    calendarioService.construirAgenda(direccionId, usuarioId, referencia));
             default -> model.addAttribute("semanas",
-                    calendarioService.construirMes(institucionId, usuarioId, referencia));
+                    calendarioService.construirMes(direccionId, usuarioId, referencia));
         }
 
         model.addAttribute("miniSemanas", calendarioService.construirMesSimple(referencia));
@@ -133,27 +133,27 @@ public class AgendaController {
 
     @GetMapping("/tareas")
     public String tareas(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
         return "agenda/tareas/tareas :: content";
     }
 
     @GetMapping("/tareas/lista")
     public String tareasLista(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
         return "agenda/tareas/tareas :: tabla-tareas";
     }
 
     @GetMapping("/tareas/form")
     public String tareaFormCrear(@RequestParam(required = false) Long miembroId,
                                  Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaProyecto());
-        model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
         if (miembroId != null) {
-            model.addAttribute("miembroLock", proyectoService.obtenerMiembro(institucionId, miembroId));
+            model.addAttribute("miembroLock", proyectoService.obtenerMiembro(direccionId, miembroId));
         }
         return "agenda/tareas/formulario :: form-content";
     }
@@ -161,20 +161,20 @@ public class AgendaController {
     @GetMapping("/tareas/form/{id}")
     public String tareaFormEditar(@PathVariable Long id, @RequestParam(required = false) Long miembroId,
                                   Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("tarea", proyectoService.obtenerTareaInstitucion(institucionId, id));
-        model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("tarea", proyectoService.obtenerTareaDireccion(direccionId, id));
+        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
         if (miembroId != null) {
-            model.addAttribute("miembroLock", proyectoService.obtenerMiembro(institucionId, miembroId));
+            model.addAttribute("miembroLock", proyectoService.obtenerMiembro(direccionId, miembroId));
         }
         return "agenda/tareas/formulario :: form-content";
     }
 
     @GetMapping("/tareas/miembros")
     public String tareasMiembrosDeProyecto(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
         return "agenda/tareas/miembros-options :: options";
     }
 
@@ -189,7 +189,7 @@ public class AgendaController {
             @RequestParam(required = false) com.chavescr.nexa.entity.TareaProyecto.PrioridadTarea prioridad,
             Model model, HttpSession session,
             jakarta.servlet.http.HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
             Long proyectoId = null;
             Long usuarioId = null;
@@ -199,26 +199,26 @@ public class AgendaController {
                 else if (asignarA.startsWith("u_")) usuarioId = Long.parseLong(asignarA.substring(2));
                 else if (asignarA.startsWith("m_")) miembroId = Long.parseLong(asignarA.substring(2));
             }
-            proyectoService.guardarTareaGeneral(institucionId, id, proyectoId, usuarioId, miembroId,
+            proyectoService.guardarTareaGeneral(direccionId, id, proyectoId, usuarioId, miembroId,
                     titulo, descripcion, fechaLimite, estado, prioridad);
-            model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
+            model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
             return "agenda/tareas/tareas :: tabla-tareas";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
             model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaProyecto());
-            model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
-            model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+            model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
+            model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
             return "agenda/tareas/formulario :: form-content";
         }
     }
 
     @DeleteMapping("/tareas/{id}")
     public String tareaEliminar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        proyectoService.eliminarTareaGeneral(institucionId, id);
-        model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
+        Long direccionId = requerirDireccion(session);
+        proyectoService.eliminarTareaGeneral(direccionId, id);
+        model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
         return "agenda/tareas/tareas :: tabla-tareas";
     }
 
@@ -226,14 +226,14 @@ public class AgendaController {
     public String tareaEstado(@PathVariable Long id,
             @RequestParam com.chavescr.nexa.entity.TareaProyecto.EstadoTarea estado,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        com.chavescr.nexa.entity.TareaProyecto t = proyectoService.obtenerTareaInstitucion(institucionId, id);
+        Long direccionId = requerirDireccion(session);
+        com.chavescr.nexa.entity.TareaProyecto t = proyectoService.obtenerTareaDireccion(direccionId, id);
         t.setEstado(estado);
         if (estado == com.chavescr.nexa.entity.TareaProyecto.EstadoTarea.COMPLETADA)
             t.setFechaCompletada(java.time.LocalDateTime.now());
         else t.setFechaCompletada(null);
         proyectoService.cambiarEstadoTarea(t.getProyecto().getId(), id, estado);
-        model.addAttribute("tareas", proyectoService.listarTareasInstitucion(institucionId));
+        model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
         return "agenda/tareas/tareas :: tabla-tareas";
     }
 
@@ -242,9 +242,9 @@ public class AgendaController {
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) String filtro,
             Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(institucionId, mes, categoria, filtro));
-        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(direccionId, mes, categoria, filtro));
+        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(direccionId));
         model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
         model.addAttribute("mesSel", mes);
         model.addAttribute("categoriaSel", categoria);
@@ -259,8 +259,8 @@ public class AgendaController {
     @GetMapping("/actividad/detalle/{id}")
     public String actividadDetalle(@PathVariable String id, Model model, HttpSession session,
             HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("evento", actividadInstitucionalService.obtenerEvento(institucionId, id).orElse(null));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("evento", actividadInstitucionalService.obtenerEvento(direccionId, id).orElse(null));
         model.addAttribute("puedeCrearActividad", esDirectorOAdmin(request));
         return "agenda/actividad/actividad :: detalle-modal";
     }
@@ -276,8 +276,8 @@ public class AgendaController {
     public String actividadFormEditar(@PathVariable Long id, Model model, HttpSession session,
             HttpServletRequest request) {
         exigirDirectorOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("actividad", actividadInstitucionalService.obtenerActividadPropiaEntidad(institucionId, id));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("actividad", actividadInstitucionalService.obtenerActividadPropiaEntidad(direccionId, id));
         return "agenda/actividad/formulario :: form-content";
     }
 
@@ -293,13 +293,13 @@ public class AgendaController {
             Model model, HttpSession session, HttpServletRequest request,
             jakarta.servlet.http.HttpServletResponse response) {
         exigirDirectorOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long usuarioId = requerirUsuario(session);
         try {
-            actividadInstitucionalService.guardarActividadPropia(institucionId, usuarioId, id,
+            actividadInstitucionalService.guardarActividadPropia(direccionId, usuarioId, id,
                     titulo, descripcion, fechaInicio, fechaFin, categoria, enlace);
-            model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(institucionId, null, null, null));
-            model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(institucionId));
+            model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(direccionId, null, null, null));
+            model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(direccionId));
             model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
             model.addAttribute("puedeCrearActividad", true);
             return "agenda/actividad/actividad :: content";
@@ -324,10 +324,10 @@ public class AgendaController {
     public String actividadEliminar(@PathVariable Long id, Model model, HttpSession session,
             HttpServletRequest request) {
         exigirDirectorOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
-        actividadInstitucionalService.eliminarActividadPropia(institucionId, id);
-        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(institucionId, null, null, null));
-        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(institucionId));
+        Long direccionId = requerirDireccion(session);
+        actividadInstitucionalService.eliminarActividadPropia(direccionId, id);
+        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(direccionId, null, null, null));
+        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(direccionId));
         model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
         model.addAttribute("puedeCrearActividad", true);
         return "agenda/actividad/actividad :: content";
@@ -335,9 +335,9 @@ public class AgendaController {
 
     @GetMapping("/recordatorios")
     public String recordatorios(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long usuarioId = requerirUsuario(session);
-        model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(institucionId, usuarioId));
+        model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(direccionId, usuarioId));
         return "agenda/recordatorio/recordatorios :: content";
     }
 
@@ -349,9 +349,9 @@ public class AgendaController {
 
     @GetMapping("/recordatorios/form/{id}")
     public String recordatorioFormEditar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long usuarioId = requerirUsuario(session);
-        model.addAttribute("recordatorio", recordatorioService.obtenerRecordatorio(institucionId, usuarioId, id));
+        model.addAttribute("recordatorio", recordatorioService.obtenerRecordatorio(direccionId, usuarioId, id));
         return "agenda/recordatorio/formulario :: form-content";
     }
 
@@ -364,11 +364,11 @@ public class AgendaController {
             @RequestParam(required = false) Recordatorio.EstadoRecordatorio estado,
             Model model, HttpSession session,
             jakarta.servlet.http.HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long usuarioId = requerirUsuario(session);
         try {
-            recordatorioService.guardarRecordatorio(institucionId, usuarioId, id, titulo, descripcion, fechaLimite, estado);
-            model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(institucionId, usuarioId));
+            recordatorioService.guardarRecordatorio(direccionId, usuarioId, id, titulo, descripcion, fechaLimite, estado);
+            model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(direccionId, usuarioId));
             return "agenda/recordatorio/recordatorios :: tabla-recordatorios";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#recordatorios-modal-container");
@@ -387,10 +387,10 @@ public class AgendaController {
 
     @DeleteMapping("/recordatorios/{id}")
     public String recordatorioEliminar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long usuarioId = requerirUsuario(session);
-        recordatorioService.eliminarRecordatorio(institucionId, usuarioId, id);
-        model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(institucionId, usuarioId));
+        recordatorioService.eliminarRecordatorio(direccionId, usuarioId, id);
+        model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(direccionId, usuarioId));
         return "agenda/recordatorio/recordatorios :: tabla-recordatorios";
     }
 
@@ -398,10 +398,10 @@ public class AgendaController {
     public String recordatorioEstado(@PathVariable Long id,
             @RequestParam Recordatorio.EstadoRecordatorio estado,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         Long usuarioId = requerirUsuario(session);
-        recordatorioService.cambiarEstadoRecordatorio(institucionId, usuarioId, id, estado);
-        model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(institucionId, usuarioId));
+        recordatorioService.cambiarEstadoRecordatorio(direccionId, usuarioId, id, estado);
+        model.addAttribute("recordatorios", recordatorioService.listarRecordatorios(direccionId, usuarioId));
         return "agenda/recordatorio/recordatorios :: tabla-recordatorios";
     }
 
@@ -412,8 +412,8 @@ public class AgendaController {
                                 @RequestParam(required = false) String rol,
                                 @RequestParam(required = false) String estado,
                                 Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("participantes", participacionService.listarParticipantes(institucionId, filtro, rol, estado));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("participantes", participacionService.listarParticipantes(direccionId, filtro, rol, estado));
         model.addAttribute("filtro", filtro);
         model.addAttribute("rolSel", rol);
         model.addAttribute("estadoSel", estado);
@@ -425,8 +425,8 @@ public class AgendaController {
 
     @GetMapping("/participacion/detalle/{usuarioId}")
     public String participacionDetalle(@PathVariable Long usuarioId, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("detalle", participacionService.obtenerDetalle(institucionId, usuarioId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("detalle", participacionService.obtenerDetalle(direccionId, usuarioId));
         return "agenda/participacion/detalle :: contenido";
     }
 
@@ -434,25 +434,25 @@ public class AgendaController {
 
     @GetMapping("/proyectos")
     public String proyectos(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
         return "agenda/proyecto/contenido :: content";
     }
 
     @GetMapping("/proyectos/form")
     public String proyectoFormCrear(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         model.addAttribute("proyecto", new Proyecto());
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
         model.addAttribute("miembrosIds", java.util.List.of());
         return "agenda/proyecto/formulario :: form-content";
     }
 
     @GetMapping("/proyectos/form/{id}")
     public String proyectoFormEditar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("proyecto", proyectoService.obtenerProyecto(institucionId, id));
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("proyecto", proyectoService.obtenerProyecto(direccionId, id));
+        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
         model.addAttribute("miembrosIds", proyectoService.listarIdsMiembros(id));
         return "agenda/proyecto/formulario :: form-content";
     }
@@ -461,42 +461,42 @@ public class AgendaController {
     public String proyectoGuardar(@ModelAttribute Proyecto datos,
             @RequestParam(required = false) java.util.List<Long> miembroIds,
             Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        Proyecto guardado = proyectoService.guardarProyecto(institucionId, datos);
-        proyectoService.sincronizarMiembrosFormulario(institucionId, guardado.getId(), miembroIds);
-        model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        Proyecto guardado = proyectoService.guardarProyecto(direccionId, datos);
+        proyectoService.sincronizarMiembrosFormulario(direccionId, guardado.getId(), miembroIds);
+        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
         return "agenda/proyecto/contenido :: tabla-proyectos";
     }
 
     @DeleteMapping("/proyectos/{id}")
     public String proyectoEliminar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        proyectoService.eliminarProyecto(institucionId, id);
-        model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        proyectoService.eliminarProyecto(direccionId, id);
+        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
         return "agenda/proyecto/contenido :: tabla-proyectos";
     }
 
     @PutMapping("/proyectos/{id}/toggle")
     public String proyectoToggleActivo(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        proyectoService.toggleActivoProyecto(institucionId, id);
-        model.addAttribute("proyectos", proyectoService.listarProyectos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        proyectoService.toggleActivoProyecto(direccionId, id);
+        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
         return "agenda/proyecto/contenido :: tabla-proyectos";
     }
 
     @GetMapping("/proyectos/buscar")
     public String proyectoBuscar(@RequestParam String filtro, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("proyectos", proyectoService.buscarProyectos(institucionId, filtro));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("proyectos", proyectoService.buscarProyectos(direccionId, filtro));
         return "agenda/proyecto/contenido :: tabla-proyectos";
     }
 
     @GetMapping("/proyectos/{id}/miembros")
     public String proyectoMiembros(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("proyecto", proyectoService.obtenerProyecto(institucionId, id));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("proyecto", proyectoService.obtenerProyecto(direccionId, id));
         model.addAttribute("miembros", proyectoService.listarMiembros(id));
-        model.addAttribute("usuariosDisponibles", proyectoService.listarUsuariosDisponibles(institucionId, id));
+        model.addAttribute("usuariosDisponibles", proyectoService.listarUsuariosDisponibles(direccionId, id));
         return "agenda/proyecto/miembros :: contenido";
     }
 
@@ -505,29 +505,29 @@ public class AgendaController {
                                          @RequestParam Long usuarioId,
                                          @RequestParam(defaultValue = "MIEMBRO") String rol,
                                          Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        proyectoService.agregarMiembro(institucionId, id, usuarioId, rol);
-        model.addAttribute("proyecto", proyectoService.obtenerProyecto(institucionId, id));
+        Long direccionId = requerirDireccion(session);
+        proyectoService.agregarMiembro(direccionId, id, usuarioId, rol);
+        model.addAttribute("proyecto", proyectoService.obtenerProyecto(direccionId, id));
         model.addAttribute("miembros", proyectoService.listarMiembros(id));
-        model.addAttribute("usuariosDisponibles", proyectoService.listarUsuariosDisponibles(institucionId, id));
+        model.addAttribute("usuariosDisponibles", proyectoService.listarUsuariosDisponibles(direccionId, id));
         return "agenda/proyecto/miembros :: contenido";
     }
 
     @DeleteMapping("/proyectos/{id}/miembros/{miembroId}")
     public String proyectoEliminarMiembro(@PathVariable Long id, @PathVariable Long miembroId,
                                           Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        proyectoService.eliminarMiembro(institucionId, id, miembroId);
-        model.addAttribute("proyecto", proyectoService.obtenerProyecto(institucionId, id));
+        Long direccionId = requerirDireccion(session);
+        proyectoService.eliminarMiembro(direccionId, id, miembroId);
+        model.addAttribute("proyecto", proyectoService.obtenerProyecto(direccionId, id));
         model.addAttribute("miembros", proyectoService.listarMiembros(id));
-        model.addAttribute("usuariosDisponibles", proyectoService.listarUsuariosDisponibles(institucionId, id));
+        model.addAttribute("usuariosDisponibles", proyectoService.listarUsuariosDisponibles(direccionId, id));
         return "agenda/proyecto/miembros :: contenido";
     }
 
     @GetMapping("/proyectos/{id}/dashboard")
     public String proyectoDashboard(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("dashboard", proyectoService.obtenerDashboard(institucionId, id));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("dashboard", proyectoService.obtenerDashboard(direccionId, id));
         model.addAttribute("proyectoId", id);
         return "agenda/proyecto/dashboard :: contenido";
     }
@@ -553,13 +553,13 @@ public class AgendaController {
 
     // ─── HELPERS ───────────────────────────────────────────────
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long direccionId(HttpSession session) {
+        return (Long) session.getAttribute("SESSION_DIRECCION_ID");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = institucionId(session);
-        if (id == null) throw new InstitucionNoSeleccionadaException();
+    private Long requerirDireccion(HttpSession session) {
+        Long id = direccionId(session);
+        if (id == null) throw new DireccionNoSeleccionadaException();
         return id;
     }
 

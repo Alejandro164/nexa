@@ -97,7 +97,7 @@ public class SecurityConfig {
                         // ── Administración: solo ADMIN, salvo Config. Académica e Institucional (también DIRECTOR) ──
                         .requestMatchers("/configuracion-academica/**", "/configuracion-institucional/**")
                                 .hasAnyAuthority(ADMIN, DIRECTOR)
-                        .requestMatchers("/configuracion/**", "/usuarios/**", "/seguridad", "/instituciones/**",
+                        .requestMatchers("/configuracion/**", "/usuarios/**", "/seguridad", "/direcciones/**",
                                 "/componentes").hasAuthority(ADMIN)
 
                         // ── Personal: Solicitudes de Padres también la ve DOCENTE; el resto no ──

@@ -3,7 +3,7 @@
     <div class="bitacora-toolbar">
         <div class="bitacora-alcance" th:if="${puedeVerInstitucional}">
             <button type="button" class="bitacora-chip"
-                    th:classappend="${alcance != 'institucion'} ? ' active'"
+                    th:classappend="${alcance != 'direccion'} ? ' active'"
                     th:hx-get="${accionFiltro != null}
                         ? @{/bitacora/panel(ruta=${ruta}, alcance='modulo', accion=${accionFiltro})}
                         : @{/bitacora/panel(ruta=${ruta}, alcance='modulo')}"
@@ -11,12 +11,12 @@
                 Este módulo
             </button>
             <button type="button" class="bitacora-chip"
-                    th:classappend="${alcance == 'institucion'} ? ' active'"
+                    th:classappend="${alcance == 'direccion'} ? ' active'"
                     th:hx-get="${accionFiltro != null}
-                        ? @{/bitacora/panel(ruta=${ruta}, alcance='institucion', accion=${accionFiltro})}
-                        : @{/bitacora/panel(ruta=${ruta}, alcance='institucion')}"
+                        ? @{/bitacora/panel(ruta=${ruta}, alcance='direccion', accion=${accionFiltro})}
+                        : @{/bitacora/panel(ruta=${ruta}, alcance='direccion')}"
                     hx-target="#bitacora-panel-body" hx-swap="innerHTML">
-                Institución
+                Dirección
             </button>
         </div>
         <div class="bitacora-filtros">
@@ -44,8 +44,8 @@
     </div>
 
     <p class="bitacora-contexto"
-       th:text="${alcance == 'institucion'}
-           ? 'Actividad reciente de toda la institución.'
+       th:text="${alcance == 'direccion'}
+           ? 'Actividad reciente de toda la dirección.'
            : (${modulo != null} ? 'Actividad reciente en ' + ${modulo.etiqueta} + '.' : 'Actividad reciente.')">
         Actividad reciente.
     </p>
@@ -74,8 +74,8 @@
                     <strong th:text="${e.itemTitulo}">Ítem</strong>
                 </div>
                 <div class="bitacora-item-area">
-                    <span th:if="${alcance == 'institucion' and e.modulo != null}" th:text="${e.modulo.etiqueta}">Módulo</span>
-                    <span th:if="${alcance == 'institucion' and e.modulo != null and e.area != null}"> · </span>
+                    <span th:if="${alcance == 'direccion' and e.modulo != null}" th:text="${e.modulo.etiqueta}">Módulo</span>
+                    <span th:if="${alcance == 'direccion' and e.modulo != null and e.area != null}"> · </span>
                     <span th:if="${e.area != null}" th:text="${e.area}">Área</span>
                 </div>
                 <p class="bitacora-item-detalle" th:if="${e.detalle != null and !e.detalle.isBlank()}" th:text="${e.detalle}"></p>

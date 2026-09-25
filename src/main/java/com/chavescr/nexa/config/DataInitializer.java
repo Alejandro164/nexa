@@ -19,13 +19,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.RolRepository;
@@ -38,10 +38,10 @@ import com.chavescr.nexa.repository.UsuarioRepository;
  * por lo que es seguro reiniciar la aplicación sin duplicar datos.
  * 
  * docker exec -i nexa_db_dev psql -U postgres -d nexa -c "
- * TRUNCATE TABLE usuario_roles, usuario_instituciones, usuarios RESTART
+ * TRUNCATE TABLE usuario_roles, usuario_direcciones, usuarios RESTART
  * IDENTITY CASCADE;
  * TRUNCATE TABLE roles RESTART IDENTITY CASCADE;
- * TRUNCATE TABLE instituciones RESTART IDENTITY CASCADE;
+ * TRUNCATE TABLE direcciones RESTART IDENTITY CASCADE;
  * "
  */
 @Component
@@ -65,18 +65,18 @@ public class DataInitializer implements ApplicationRunner {
     };
 
     private final RolRepository rolRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final UsuarioRepository usuarioRepository;
     private final NivelAcademicoRepository nivelAcademicoRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(RolRepository rolRepository,
-            InstitucionRepository institucionRepository,
+            DireccionRepository direccionRepository,
             UsuarioRepository usuarioRepository,
             NivelAcademicoRepository nivelAcademicoRepository,
             PasswordEncoder passwordEncoder) {
         this.rolRepository = rolRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.usuarioRepository = usuarioRepository;
         this.nivelAcademicoRepository = nivelAcademicoRepository;
         this.passwordEncoder = passwordEncoder;
@@ -94,10 +94,10 @@ public class DataInitializer implements ApplicationRunner {
         Rol rolPadre = crearRolSiNoExiste("ROLE_PADRE");
         Rol rolEstudiante = crearRolSiNoExiste("ROLE_ESTUDIANTE");
 
-        // ── 2. Instituciones ──────────────────────────────────────────────────
-        Institucion instAlpha = crearInstitucionSiNoExiste("Liceo Alpha", "1790012301001", "Av. Principal 100");
-        Institucion instBeta = crearInstitucionSiNoExiste("Colegio Beta", "1790098765001", "Calle Secundaria 200");
-        Institucion instGamma = crearInstitucionSiNoExiste("Escuela Gamma", "9000123456-1", "Zona Industrial 300");
+        // ── 2. Direcciones ──────────────────────────────────────────────────
+        Direccion instAlpha = crearDireccionSiNoExiste("Liceo Alpha", "1790012301001", "Av. Principal 100");
+        Direccion instBeta = crearDireccionSiNoExiste("Colegio Beta", "1790098765001", "Calle Secundaria 200");
+        Direccion instGamma = crearDireccionSiNoExiste("Escuela Gamma", "9000123456-1", "Zona Industrial 300");
 
         // ── 3. Usuarios ───────────────────────────────────────────────────────
         crearUsuarioSiNoExiste(
@@ -178,29 +178,29 @@ public class DataInitializer implements ApplicationRunner {
 
         // ── 3.1 Secciones de los estudiantes creados a mano ───────────────────
         List<NivelAcademico> nivelesAlpha = nivelAcademicoRepository
-                .findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(instAlpha.getId());
+                .findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(instAlpha.getId());
         asignarSeccionFaltante(sofia, nivelesAlpha, 0);
         asignarSeccionFaltante(diego, nivelesAlpha, 1);
         List<NivelAcademico> nivelesBeta = nivelAcademicoRepository
-                .findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(instBeta.getId());
+                .findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(instBeta.getId());
         asignarSeccionFaltante(valeria, nivelesBeta, 0);
         asignarSeccionFaltante(kevin, nivelesBeta, 1);
         List<NivelAcademico> nivelesGamma = nivelAcademicoRepository
-                .findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(instGamma.getId());
+                .findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(instGamma.getId());
         asignarSeccionFaltante(fernanda, nivelesGamma, 0);
         asignarSeccionFaltante(andres, nivelesGamma, 1);
 
-        // ── 3.2 Docentes con más de una institución asociada ──────────────────
+        // ── 3.2 Docentes con más de una dirección asociada ──────────────────
         // Un docente puede impartir materias en varios colegios a la vez.
         // Se calculan los tres grupos de candidatos ANTES de guardar ninguno: si se
         // guardara uno por uno, un docente recién vinculado a "destino" podría colarse
         // como candidato de la siguiente llamada (cuyo "origen" es ese mismo "destino").
-        List<Usuario> paraBeta = docentesElegiblesParaSegundaInstitucion(rolDocente, instAlpha, instBeta, 2);
-        List<Usuario> paraGamma = docentesElegiblesParaSegundaInstitucion(rolDocente, instBeta, instGamma, 2);
-        List<Usuario> paraAlpha = docentesElegiblesParaSegundaInstitucion(rolDocente, instGamma, instAlpha, 2);
-        agregarInstitucionADocentes(paraBeta, instBeta);
-        agregarInstitucionADocentes(paraGamma, instGamma);
-        agregarInstitucionADocentes(paraAlpha, instAlpha);
+        List<Usuario> paraBeta = docentesElegiblesParaSegundaDireccion(rolDocente, instAlpha, instBeta, 2);
+        List<Usuario> paraGamma = docentesElegiblesParaSegundaDireccion(rolDocente, instBeta, instGamma, 2);
+        List<Usuario> paraAlpha = docentesElegiblesParaSegundaDireccion(rolDocente, instGamma, instAlpha, 2);
+        agregarDireccionADocentes(paraBeta, instBeta);
+        agregarDireccionADocentes(paraGamma, instGamma);
+        agregarDireccionADocentes(paraAlpha, instAlpha);
 
         // ── 4. Relación Padres-Estudiantes ───────────────────────────────────
         // Rosa tiene dos estudiantes; Sofía tiene dos padres (Rosa y Manuel).
@@ -212,7 +212,7 @@ public class DataInitializer implements ApplicationRunner {
         vincularPadreEstudiante(marcela, fernanda);
         vincularPadreEstudiante(marcela, andres);
 
-        // ── 5. Estudiantes adicionales (mínimo 30 por institución) ───────────
+        // ── 5. Estudiantes adicionales (mínimo 30 por dirección) ───────────
         List<Usuario> estudiantesGenerados = new ArrayList<>();
         estudiantesGenerados.addAll(generarEstudiantes(instAlpha, rolEstudiante, 28, 0));
         estudiantesGenerados.addAll(generarEstudiantes(instBeta, rolEstudiante, 28, 28));
@@ -222,8 +222,8 @@ public class DataInitializer implements ApplicationRunner {
         List<Usuario> padresGenerados = generarPadres(rolPadre, 56, 500);
 
         // ── 7. Asignar 1 o 2 padres a cada estudiante que aún no tenga ────────
-        // Los padres se comparten en un mismo pool entre instituciones, así que un
-        // padre puede terminar con hijos en más de una institución.
+        // Los padres se comparten en un mismo pool entre direcciones, así que un
+        // padre puede terminar con hijos en más de una dirección.
         List<Usuario> todosLosPadres = new ArrayList<>(List.of(rosa, manuel, jorge, marcela));
         todosLosPadres.addAll(padresGenerados);
         List<Usuario> todosLosEstudiantes = new ArrayList<>(List.of(sofia, diego, valeria, kevin, fernanda, andres));
@@ -244,19 +244,19 @@ public class DataInitializer implements ApplicationRunner {
         });
     }
 
-    private Institucion crearInstitucionSiNoExiste(String nombre, String codigo, String direccion) {
-        return institucionRepository.findByCodigo(codigo).orElseGet(() -> {
-            Institucion inst = new Institucion(nombre, codigo);
+    private Direccion crearDireccionSiNoExiste(String nombre, String codigo, String direccion) {
+        return direccionRepository.findByCodigo(codigo).orElseGet(() -> {
+            Direccion inst = new Direccion(nombre, codigo);
             inst.setDireccion(direccion);
-            institucionRepository.save(inst);
-            log.info("  [INSTITUCION creada] {}", nombre);
+            direccionRepository.save(inst);
+            log.info("  [DIRECCION creada] {}", nombre);
             return inst;
         });
     }
 
     private Usuario crearUsuarioSiNoExiste(String nombre, String email, String usuario,
             String cedula, String rawPassword, boolean activo,
-            Set<Rol> roles, Set<Institucion> instituciones) {
+            Set<Rol> roles, Set<Direccion> direcciones) {
         Optional<Usuario> existente = usuarioRepository.findByEmail(email);
         if (existente.isPresent()) {
             log.info("  [USUARIO ya existe] {}", email);
@@ -270,11 +270,11 @@ public class DataInitializer implements ApplicationRunner {
         u.setPassword(passwordEncoder.encode(rawPassword));
         u.setActivo(activo);
         // Copias mutables: los llamadores suelen pasar Set.of(...) (inmutable), y más adelante en el
-        // seeding se hace .add() sobre estas mismas colecciones (ej. agregarInstitucionADocentes,
+        // seeding se hace .add() sobre estas mismas colecciones (ej. agregarDireccionADocentes,
         // asignarPadresFaltantes) — asignar el Set.of(...) tal cual revienta con
         // UnsupportedOperationException la primera vez que la base arranca realmente vacía.
         u.setRoles(new HashSet<>(roles));
-        u.setInstituciones(new HashSet<>(instituciones));
+        u.setDirecciones(new HashSet<>(direcciones));
         usuarioRepository.save(u);
         log.info("  [USUARIO creado] {} / {} ({})", email, usuario, activo ? "activo" : "inactivo");
         return u;
@@ -300,17 +300,17 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     /**
-     * Genera {@code cantidad} estudiantes de relleno para una institución, combinando
-     * nombres/apellidos de ejemplo. {@code offset} debe ser distinto por institución
+     * Genera {@code cantidad} estudiantes de relleno para una dirección, combinando
+     * nombres/apellidos de ejemplo. {@code offset} debe ser distinto por dirección
      * (y del rango usado por {@link #generarPadres}) para que los correos/cédulas
      * generados no colisionen entre sí.
      */
-    private List<Usuario> generarEstudiantes(Institucion institucion, Rol rolEstudiante, int cantidad, int offset) {
+    private List<Usuario> generarEstudiantes(Direccion direccion, Rol rolEstudiante, int cantidad, int offset) {
         List<NivelAcademico> niveles = nivelAcademicoRepository
-                .findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucion.getId());
+                .findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccion.getId());
         List<Usuario> generados = new ArrayList<>();
         for (int i = 0; i < cantidad; i++) {
-            Usuario estudiante = generarPersona(offset + i, rolEstudiante, Set.of(institucion));
+            Usuario estudiante = generarPersona(offset + i, rolEstudiante, Set.of(direccion));
             asignarSeccionFaltante(estudiante, niveles, i);
             generados.add(estudiante);
         }
@@ -318,9 +318,9 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     /**
-     * Asigna una sección (grado + sección) activa de la institución a un estudiante
+     * Asigna una sección (grado + sección) activa de la dirección a un estudiante
      * que aún no tenga una, repartiéndolos de forma rotativa entre las secciones
-     * disponibles. Si la institución no tiene secciones configuradas, no hace nada.
+     * disponibles. Si la dirección no tiene secciones configuradas, no hace nada.
      */
     private void asignarSeccionFaltante(Usuario estudiante, List<NivelAcademico> niveles, int indice) {
         if (estudiante.getNivelAcademico() != null || niveles.isEmpty()) {
@@ -334,33 +334,33 @@ public class DataInitializer implements ApplicationRunner {
      * Elige hasta {@code cantidad} docentes activos de {@code origen} que aún no
      * pertenezcan a {@code destino}, para reflejar el caso de uso de un docente que
      * imparte materias en más de un colegio. No guarda nada todavía (ver
-     * {@link #agregarInstitucionADocentes}).
+     * {@link #agregarDireccionADocentes}).
      */
-    private List<Usuario> docentesElegiblesParaSegundaInstitucion(Rol rolDocente, Institucion origen,
-            Institucion destino, int cantidad) {
+    private List<Usuario> docentesElegiblesParaSegundaDireccion(Rol rolDocente, Direccion origen,
+            Direccion destino, int cantidad) {
         return usuarioRepository
-                .findActivosByInstitucionIdAndRol(origen.getId(), rolDocente.getNombre())
+                .findActivosByDireccionIdAndRol(origen.getId(), rolDocente.getNombre())
                 .stream()
-                .filter(docente -> !docente.getInstituciones().contains(destino))
+                .filter(docente -> !docente.getDirecciones().contains(destino))
                 .limit(cantidad)
                 .toList();
     }
 
-    /** Idempotente: si el docente ya pertenece a la institución, no duplica nada. */
-    private void agregarInstitucionADocentes(List<Usuario> docentes, Institucion institucion) {
+    /** Idempotente: si el docente ya pertenece a la dirección, no duplica nada. */
+    private void agregarDireccionADocentes(List<Usuario> docentes, Direccion direccion) {
         for (Usuario docente : docentes) {
-            if (docente.getInstituciones().add(institucion)) {
+            if (docente.getDirecciones().add(direccion)) {
                 usuarioRepository.save(docente);
-                log.info("  [DOCENTE multi-institución] {} ahora también en {}", docente.getNombre(),
-                        institucion.getNombre());
+                log.info("  [DOCENTE multi-dirección] {} ahora también en {}", docente.getNombre(),
+                        direccion.getNombre());
             }
         }
     }
 
     /**
-     * Genera {@code cantidad} padres de relleno, sin institución asignada de entrada.
-     * Su(s) institución(es) se completan luego en {@link #asignarPadresFaltantes},
-     * a medida que se les vincula con estudiantes de una u otra institución.
+     * Genera {@code cantidad} padres de relleno, sin dirección asignada de entrada.
+     * Su(s) dirección(es) se completan luego en {@link #asignarPadresFaltantes},
+     * a medida que se les vincula con estudiantes de una u otra dirección.
      */
     private List<Usuario> generarPadres(Rol rolPadre, int cantidad, int offset) {
         List<Usuario> generados = new ArrayList<>();
@@ -370,7 +370,7 @@ public class DataInitializer implements ApplicationRunner {
         return generados;
     }
 
-    private Usuario generarPersona(int idx, Rol rol, Set<Institucion> instituciones) {
+    private Usuario generarPersona(int idx, Rol rol, Set<Direccion> direcciones) {
         String nombre = NOMBRES_PERSONAS[idx % NOMBRES_PERSONAS.length];
         String apellido1 = APELLIDOS_PERSONAS[idx % APELLIDOS_PERSONAS.length];
         String apellido2 = APELLIDOS_PERSONAS[(idx + 11) % APELLIDOS_PERSONAS.length];
@@ -380,14 +380,14 @@ public class DataInitializer implements ApplicationRunner {
         String cedula = "9-" + String.format("%04d", idx) + "-" + String.format("%04d", 9999 - idx);
 
         return crearUsuarioSiNoExiste(nombreCompleto, email, usuarioHandle,
-                cedula, "user1234", true, Set.of(rol), instituciones);
+                cedula, "user1234", true, Set.of(rol), direcciones);
     }
 
     /**
      * Asegura que cada estudiante tenga 1 o 2 padres. Los que ya tienen al menos uno
      * (vínculos deliberados de la sección 4) se dejan intactos; al resto se le asignan
      * padres al azar (con semilla fija para que el resultado sea el mismo en cada
-     * reinicio) tomados del mismo pool compartido entre instituciones.
+     * reinicio) tomados del mismo pool compartido entre direcciones.
      */
     private void asignarPadresFaltantes(List<Usuario> estudiantes, List<Usuario> padres) {
         Random random = new Random(42);
@@ -401,15 +401,15 @@ public class DataInitializer implements ApplicationRunner {
             for (int i = 0; i < cantidadPadres; i++) {
                 Usuario padre = disponibles.get(i);
                 vincularPadreEstudiante(padre, estudiante);
-                asegurarInstitucionDelPadre(padre, estudiante);
+                asegurarDireccionDelPadre(padre, estudiante);
             }
         }
     }
 
-    private void asegurarInstitucionDelPadre(Usuario padre, Usuario estudiante) {
-        for (Institucion inst : estudiante.getInstituciones()) {
-            if (padre.getInstituciones().stream().noneMatch(i -> i.getId().equals(inst.getId()))) {
-                padre.getInstituciones().add(inst);
+    private void asegurarDireccionDelPadre(Usuario padre, Usuario estudiante) {
+        for (Direccion inst : estudiante.getDirecciones()) {
+            if (padre.getDirecciones().stream().noneMatch(i -> i.getId().equals(inst.getId()))) {
+                padre.getDirecciones().add(inst);
                 usuarioRepository.save(padre);
             }
         }

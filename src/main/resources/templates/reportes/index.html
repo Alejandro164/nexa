@@ -76,8 +76,8 @@
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'mep' }" @click="activeTab = 'mep'">
                         📊 Reportes MEP
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'institucion' }" @click="activeTab = 'institucion'">
-                        🏫 Est. por Institución
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'direccion' }" @click="activeTab = 'direccion'">
+                        🏫 Est. por Dirección
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'circuito' }" @click="activeTab = 'circuito'">
                         🛣️ Est. por Circuito
@@ -115,11 +115,11 @@
                 </div>
             </div>
 
-            <!-- Estadísticas por Institución -->
-            <div x-show="activeTab === 'institucion'" class="tab-pane" x-cloak>
+            <!-- Estadísticas por Dirección -->
+            <div x-show="activeTab === 'direccion'" class="tab-pane" x-cloak>
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Métricas de la Institución</h3>
+                        <h3 class="card-title">Métricas de la Dirección</h3>
                     </div>
                     <div style="padding: 2rem;">
                         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1.5rem; text-align:center;">
@@ -153,7 +153,7 @@
                             <div style="width: 82%; background-color: var(--primary);"></div>
                             <div style="width: 18%; background-color: var(--border);"></div>
                         </div>
-                        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px;">Nuestra Institución se ubica 8.2% sobre el promedio del circuito.</p>
+                        <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:8px;">Nuestra Dirección se ubica 8.2% sobre el promedio del circuito.</p>
                     </div>
                 </div>
             </div>

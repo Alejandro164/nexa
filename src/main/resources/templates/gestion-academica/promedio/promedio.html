@@ -58,43 +58,22 @@
                     <thead>
                         <tr>
                             <th>Estudiante</th>
-                            <th>Cotidiano</th>
-                            <th>Tareas</th>
-                            <th>Proyectos</th>
-                            <th>Exámenes</th>
+                            <th th:each="tipo : ${tiposComponente}" th:text="${tipo.nombre}">Componente</th>
                             <th>Asistencia</th>
                             <th style="background:rgba(45,90,135,0.08);">Promedio Final</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:if="${filas == null or filas.empty}">
-                            <td colspan="7" class="table-empty">No hay estudiantes activos en esta sección.</td>
+                            <td th:attr="colspan=${columnasPromedio}" class="table-empty">No hay estudiantes activos en esta sección.</td>
                         </tr>
                         <tr th:each="fila : ${filas}">
                             <td style="font-weight:600;" th:text="${fila.estudiante.nombre}">Estudiante</td>
-                            <td>
-                                <span th:if="${fila.cotidiano == null}">—</span>
-                                <span th:if="${fila.cotidiano != null and fila.cotidiano >= 80}" class="badge badge-success" th:text="${fila.cotidiano}">95</span>
-                                <span th:if="${fila.cotidiano != null and fila.cotidiano >= 60 and fila.cotidiano < 80}" class="badge badge-warning" th:text="${fila.cotidiano}">70</span>
-                                <span th:if="${fila.cotidiano != null and fila.cotidiano < 60}" class="badge badge-danger" th:text="${fila.cotidiano}">50</span>
-                            </td>
-                            <td>
-                                <span th:if="${fila.tareas == null}">—</span>
-                                <span th:if="${fila.tareas != null and fila.tareas >= 80}" class="badge badge-success" th:text="${fila.tareas}">95</span>
-                                <span th:if="${fila.tareas != null and fila.tareas >= 60 and fila.tareas < 80}" class="badge badge-warning" th:text="${fila.tareas}">70</span>
-                                <span th:if="${fila.tareas != null and fila.tareas < 60}" class="badge badge-danger" th:text="${fila.tareas}">50</span>
-                            </td>
-                            <td>
-                                <span th:if="${fila.proyectos == null}">—</span>
-                                <span th:if="${fila.proyectos != null and fila.proyectos >= 80}" class="badge badge-success" th:text="${fila.proyectos}">95</span>
-                                <span th:if="${fila.proyectos != null and fila.proyectos >= 60 and fila.proyectos < 80}" class="badge badge-warning" th:text="${fila.proyectos}">70</span>
-                                <span th:if="${fila.proyectos != null and fila.proyectos < 60}" class="badge badge-danger" th:text="${fila.proyectos}">50</span>
-                            </td>
-                            <td>
-                                <span th:if="${fila.examenes == null}">—</span>
-                                <span th:if="${fila.examenes != null and fila.examenes >= 80}" class="badge badge-success" th:text="${fila.examenes}">95</span>
-                                <span th:if="${fila.examenes != null and fila.examenes >= 60 and fila.examenes < 80}" class="badge badge-warning" th:text="${fila.examenes}">70</span>
-                                <span th:if="${fila.examenes != null and fila.examenes < 60}" class="badge badge-danger" th:text="${fila.examenes}">50</span>
+                            <td th:each="nota : ${fila.notas}">
+                                <span th:if="${nota == null}">—</span>
+                                <span th:if="${nota != null and nota >= 80}" class="badge badge-success" th:text="${nota}">95</span>
+                                <span th:if="${nota != null and nota >= 60 and nota < 80}" class="badge badge-warning" th:text="${nota}">70</span>
+                                <span th:if="${nota != null and nota < 60}" class="badge badge-danger" th:text="${nota}">50</span>
                             </td>
                             <td>
                                 <span th:if="${fila.asistencia == null}">—</span>

@@ -14,10 +14,10 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
-/** Oficio administrativo (correspondencia oficial saliente de la institución). El documento firmado es un PDF subido por el usuario, no generado por el sistema. */
+/** Oficio administrativo (correspondencia oficial saliente de la dirección). El documento firmado es un PDF subido por el usuario, no generado por el sistema. */
 @Entity
 @Table(name = "oficios", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_oficio_institucion_numero", columnNames = {"institucion_id", "numero"})
+        @UniqueConstraint(name = "uk_oficio_direccion_numero", columnNames = {"direccion_id", "numero"})
 })
 public class Oficio {
 
@@ -26,8 +26,8 @@ public class Oficio {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @Column(nullable = false, length = 30)
     private String numero;
@@ -39,10 +39,10 @@ public class Oficio {
     @Column(nullable = false, length = 300)
     private String asunto;
 
-    /** El oficio siempre se dirige a una institución registrada. */
+    /** El oficio siempre se dirige a una dirección registrada. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "destinatario_institucion_id", nullable = false)
-    private Institucion destinatarioInstitucion;
+    @JoinColumn(name = "destinatario_direccion_id", nullable = false)
+    private Direccion destinatarioDireccion;
 
     @Column(name = "numero_circular", length = 30)
     private String numeroCircular;
@@ -53,7 +53,7 @@ public class Oficio {
     @Column(nullable = false)
     private LocalDate fecha;
 
-    /** El documento vive en Nube Nexa (carpeta "Oficios" de la institución) — no se duplica su ruta/nombre aquí. */
+    /** El documento vive en Nube Nexa (carpeta "Oficios" de la dirección) — no se duplica su ruta/nombre aquí. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nube_nodo_id")
     private NubeNodo nubeNodo;
@@ -73,12 +73,12 @@ public class Oficio {
         this.id = id;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 
     public String getNumero() {
@@ -105,12 +105,12 @@ public class Oficio {
         this.asunto = asunto;
     }
 
-    public Institucion getDestinatarioInstitucion() {
-        return destinatarioInstitucion;
+    public Direccion getDestinatarioDireccion() {
+        return destinatarioDireccion;
     }
 
-    public void setDestinatarioInstitucion(Institucion destinatarioInstitucion) {
-        this.destinatarioInstitucion = destinatarioInstitucion;
+    public void setDestinatarioDireccion(Direccion destinatarioDireccion) {
+        this.destinatarioDireccion = destinatarioDireccion;
     }
 
     public String getNumeroCircular() {

@@ -30,7 +30,7 @@
                         No hay ninguna activa.
                     </th:block>
                     <th:block th:unless="${bloqueoTipoNombre != null and materias.empty}">
-                        Debes tener materias activas y aulas activas asociadas a la institución.
+                        Debes tener materias activas y aulas activas asociadas a la dirección.
                     </th:block>
                 </div>
                 <form th:unless="${leccionCerrada or materias.empty or aulas.empty}"

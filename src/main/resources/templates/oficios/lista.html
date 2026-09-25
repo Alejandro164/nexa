@@ -17,7 +17,7 @@
                     <td colspan="7" class="table-empty">No se encontraron oficios.</td>
                 </tr>
                 <tr th:each="o : ${oficios}"
-                    th:with="nombreDest=${o.destinatarioInstitucion != null ? o.destinatarioInstitucion.nombre : '—'}">
+                    th:with="nombreDest=${o.destinatarioDireccion != null ? o.destinatarioDireccion.nombre : '—'}">
                     <td class="col-oficio" th:title="${o.numero}"><span class="oficio-number" th:text="${o.numero}">2026-001</span></td>
                     <td class="col-redactor" th:title="${o.redactadoPor != null ? o.redactadoPor.nombre : ''}"
                         th:text="${o.redactadoPor != null ? o.redactadoPor.nombre : '—'}">Redactor</td>

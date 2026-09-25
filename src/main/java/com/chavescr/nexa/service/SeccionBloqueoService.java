@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.chavescr.nexa.entity.SeccionBloqueoLeccion;
 import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 import com.chavescr.nexa.repository.SeccionBloqueoLeccionRepository;
@@ -24,65 +24,65 @@ public class SeccionBloqueoService {
     private final HorarioLeccionRepository horarioRepository;
     private final NivelAcademicoRepository nivelRepository;
     private final PeriodoAcademicoRepository periodoRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final TipoMateriaRepository tipoMateriaRepository;
-    private final ConfiguracionInstitucionService configuracionInstitucionService;
+    private final ConfiguracionDireccionService configuracionDireccionService;
 
     public SeccionBloqueoService(SeccionBloqueoLeccionRepository bloqueoRepository,
             HorarioLeccionRepository horarioRepository,
             NivelAcademicoRepository nivelRepository,
             PeriodoAcademicoRepository periodoRepository,
-            InstitucionRepository institucionRepository,
+            DireccionRepository direccionRepository,
             TipoMateriaRepository tipoMateriaRepository,
-            ConfiguracionInstitucionService configuracionInstitucionService) {
+            ConfiguracionDireccionService configuracionDireccionService) {
         this.bloqueoRepository = bloqueoRepository;
         this.horarioRepository = horarioRepository;
         this.nivelRepository = nivelRepository;
         this.periodoRepository = periodoRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.tipoMateriaRepository = tipoMateriaRepository;
-        this.configuracionInstitucionService = configuracionInstitucionService;
+        this.configuracionDireccionService = configuracionDireccionService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public Map<String, TipoMateria> mapa(Long institucionId, Long periodoId, Long nivelId) {
+    public Map<String, TipoMateria> mapa(Long direccionId, Long periodoId, Long nivelId) {
         Map<String, TipoMateria> mapa = new LinkedHashMap<>();
         if (periodoId == null || nivelId == null) {
             return mapa;
         }
-        bloqueoRepository.findByInstitucionIdAndPeriodoIdAndNivelId(institucionId, periodoId, nivelId)
+        bloqueoRepository.findByDireccionIdAndPeriodoIdAndNivelId(direccionId, periodoId, nivelId)
                 .forEach(b -> mapa.put(ConfiguracionAcademicaService.clave(b.getDia(), b.getNumeroLeccion()),
                         b.getTipoMateria()));
         return mapa;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public Optional<TipoMateria> tipoBloqueado(Long institucionId, Long periodoId, Long nivelId, String dia,
+    public Optional<TipoMateria> tipoBloqueado(Long direccionId, Long periodoId, Long nivelId, String dia,
             Integer numeroLeccion) {
         if (periodoId == null || nivelId == null) {
             return Optional.empty();
         }
         return bloqueoRepository
-                .findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
-                        institucionId, periodoId, nivelId, dia, numeroLeccion)
+                .findByDireccionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
+                        direccionId, periodoId, nivelId, dia, numeroLeccion)
                 .map(SeccionBloqueoLeccion::getTipoMateria);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void alternar(Long institucionId, Long periodoId, Long nivelId, String dia, Integer numeroLeccion,
+    public void alternar(Long direccionId, Long periodoId, Long nivelId, String dia, Integer numeroLeccion,
             Long tipoMateriaId) {
-        var config = configuracionInstitucionService.obtener(institucionId);
+        var config = configuracionDireccionService.obtener(direccionId);
         if (!config.getDias().contains(dia) || !config.getLecciones().contains(numeroLeccion)) {
             throw new IllegalArgumentException("Día o número de lección inválido");
         }
-        if (horarioRepository.existsByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
-                institucionId, periodoId, nivelId, dia, numeroLeccion)) {
+        if (horarioRepository.existsByDireccionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
+                direccionId, periodoId, nivelId, dia, numeroLeccion)) {
             throw new IllegalArgumentException("No se puede bloquear una lección ya asignada");
         }
 
         Optional<SeccionBloqueoLeccion> existente = bloqueoRepository
-                .findByInstitucionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
-                        institucionId, periodoId, nivelId, dia, numeroLeccion);
+                .findByDireccionIdAndPeriodoIdAndNivelIdAndDiaAndNumeroLeccion(
+                        direccionId, periodoId, nivelId, dia, numeroLeccion);
         if (existente.isPresent()) {
             SeccionBloqueoLeccion bloqueo = existente.get();
             if (!bloqueo.getTipoMateria().getId().equals(tipoMateriaId)) {
@@ -94,11 +94,11 @@ public class SeccionBloqueoService {
         }
 
         SeccionBloqueoLeccion bloqueo = new SeccionBloqueoLeccion();
-        bloqueo.setInstitucion(institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada")));
-        bloqueo.setNivel(nivelRepository.findByIdAndInstitucionId(nivelId, institucionId)
+        bloqueo.setDireccion(direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada")));
+        bloqueo.setNivel(nivelRepository.findByIdAndDireccionId(nivelId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Nivel no encontrado")));
-        bloqueo.setPeriodo(periodoRepository.findByIdAndInstitucionId(periodoId, institucionId)
+        bloqueo.setPeriodo(periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Período no encontrado")));
         bloqueo.setTipoMateria(tipoMateriaRepository.findById(tipoMateriaId)
                 .filter(tipo -> Boolean.TRUE.equals(tipo.getActivo()))
@@ -109,12 +109,12 @@ public class SeccionBloqueoService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void eliminarPorNivel(Long institucionId, Long nivelId) {
-        bloqueoRepository.deleteByInstitucionIdAndNivelId(institucionId, nivelId);
+    public void eliminarPorNivel(Long direccionId, Long nivelId) {
+        bloqueoRepository.deleteByDireccionIdAndNivelId(direccionId, nivelId);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void eliminarPorPeriodo(Long institucionId, Long periodoId) {
-        bloqueoRepository.deleteByInstitucionIdAndPeriodoId(institucionId, periodoId);
+    public void eliminarPorPeriodo(Long direccionId, Long periodoId) {
+        bloqueoRepository.deleteByDireccionIdAndPeriodoId(direccionId, periodoId);
     }
 }

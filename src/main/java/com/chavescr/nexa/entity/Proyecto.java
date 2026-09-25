@@ -51,8 +51,8 @@ public class Proyecto {
     private Boolean activo = true;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
@@ -88,8 +88,8 @@ public class Proyecto {
     public void setEstado(EstadoProyecto estado) { this.estado = estado; }
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }
-    public Institucion getInstitucion() { return institucion; }
-    public void setInstitucion(Institucion institucion) { this.institucion = institucion; }
+    public Direccion getDireccion() { return direccion; }
+    public void setDireccion(Direccion direccion) { this.direccion = direccion; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
     public List<MiembroProyecto> getMiembros() { return miembros; }

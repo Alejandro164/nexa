@@ -19,8 +19,8 @@ public class HistorialCambio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "institucion_id", nullable = false)
-    private Long institucionId;
+    @Column(name = "direccion_id", nullable = false)
+    private Long direccionId;
 
     @Column(name = "nivel_id", nullable = false)
     private Long nivelId;
@@ -62,12 +62,12 @@ public class HistorialCambio {
         this.id = id;
     }
 
-    public Long getInstitucionId() {
-        return institucionId;
+    public Long getDireccionId() {
+        return direccionId;
     }
 
-    public void setInstitucionId(Long institucionId) {
-        this.institucionId = institucionId;
+    public void setDireccionId(Long direccionId) {
+        this.direccionId = direccionId;
     }
 
     public Long getNivelId() {

@@ -12,7 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
-/** Credenciales de WhatsApp Business Cloud API (Meta) para el envío de notificaciones de una institución. */
+/** Credenciales de WhatsApp Business Cloud API (Meta) para el envío de notificaciones de una dirección. */
 @Entity
 @Table(name = "whatsapp_configuraciones")
 public class WhatsAppConfiguracion {
@@ -22,8 +22,8 @@ public class WhatsAppConfiguracion {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false, unique = true)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false, unique = true)
+    private Direccion direccion;
 
     @Column(name = "phone_number_id", length = 50)
     private String phoneNumberId;
@@ -46,9 +46,9 @@ public class WhatsAppConfiguracion {
     @Column(name = "ultima_prueba_exitosa")
     private LocalDateTime ultimaPruebaExitosa;
 
-    public static WhatsAppConfiguracion predeterminada(Institucion institucion) {
+    public static WhatsAppConfiguracion predeterminada(Direccion direccion) {
         WhatsAppConfiguracion config = new WhatsAppConfiguracion();
-        config.setInstitucion(institucion);
+        config.setDireccion(direccion);
         return config;
     }
 
@@ -64,12 +64,12 @@ public class WhatsAppConfiguracion {
         this.id = id;
     }
 
-    public Institucion getInstitucion() {
-        return institucion;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setInstitucion(Institucion institucion) {
-        this.institucion = institucion;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 
     public String getPhoneNumberId() {

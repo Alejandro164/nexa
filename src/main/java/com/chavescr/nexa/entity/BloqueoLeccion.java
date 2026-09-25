@@ -27,8 +27,8 @@ public class BloqueoLeccion {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "institucion_id", nullable = false)
-    private Institucion institucion;
+    @JoinColumn(name = "direccion_id", nullable = false)
+    private Direccion direccion;
 
     @Column(nullable = false, length = 80)
     private String lecciones;
@@ -177,8 +177,8 @@ public class BloqueoLeccion {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Institucion getInstitucion() { return institucion; }
-    public void setInstitucion(Institucion institucion) { this.institucion = institucion; }
+    public Direccion getDireccion() { return direccion; }
+    public void setDireccion(Direccion direccion) { this.direccion = direccion; }
     public String getLecciones() { return lecciones; }
     public void setLecciones(String lecciones) { this.lecciones = lecciones; }
     public String getDias() { return dias; }

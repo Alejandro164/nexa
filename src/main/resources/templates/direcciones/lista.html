@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="tabla-direcciones">
+        <div class="module-card">
+            <div class="module-card-header">
+                <h3 class="module-card-title" th:text="'Instituciones (' + ${instituciones != null ? #lists.size(instituciones) : 0} + ')'">Instituciones (0)</h3>
+                <button class="btn-primary"
+                        hx-get="/direcciones/form" hx-target="#modal-container" hx-swap="innerHTML"
+                        @click="document.getElementById('modal-container').classList.add('show')"
+                        style="font-size:0.85rem;padding:8px 16px;">+ Nueva institución</button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Direcciones</th>
+                        <th>Ubicación</th>
+                        <th>Estado</th>
+                        <th style="text-align:right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${instituciones == null or instituciones.empty}">
+                        <td colspan="5" class="table-empty">No hay instituciones registrados.</td>
+                    </tr>
+                    <tr th:each="institucion : ${instituciones}">
+                        <td>
+                            <div style="font-weight:600;color:#0f172a;" th:text="${institucion.nombre}">Institucion</div>
+                            <div style="font-size:0.8rem;color:#94a3b8;"
+                                th:text="${institucion.cedula != null ? institucion.cedula : institucion.email}">cédula</div>
+                        </td>
+                        <td>
+                            <span th:each="inst : ${institucion.direcciones}" class="badge-xs badge-activo"
+                                  style="margin-right:4px;"
+                                  th:text="${inst.oferta != null ? inst.oferta.etiqueta : 'Sin clasificar'}">Primaria</span>
+                        </td>
+                        <td th:text="${institucion.direccion}" style="color:#64748b;">Dirección</td>
+                        <td>
+                            <span class="badge-xs" th:classappend="${institucion.activa ? 'badge-activo' : 'badge-inactivo'}"
+                                  th:text="${institucion.activa ? 'Activo' : 'Inactivo'}">Estado</span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get=@{/direcciones/form/{id}(id=${institucion.id})}"
+                                        hx-target="#modal-container" hx-swap="innerHTML"
+                                        @click="document.getElementById('modal-container').classList.add('show')"
+                                        title="Editar">✏️</button>
+                                <button class="btn-xs btn-danger-ghost"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        th:attr="data-delete-url=@{/direcciones/{id}(id=${institucion.id})},data-delete-target='#direcciones-list',data-delete-title='Eliminar institución',data-delete-message='¿Deseas eliminar permanentemente la institución ' + ${institucion.nombre} + '? Solo se puede si sus direcciones no tienen personas ni secciones.'"
+                                        title="Eliminar">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

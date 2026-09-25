@@ -27,17 +27,17 @@ public class DatabaseIndexInitializer {
                 "CREATE INDEX IF NOT EXISTS idx_usuarios_usuario ON usuarios (usuario)",
                 "CREATE INDEX IF NOT EXISTS idx_usuarios_cedula  ON usuarios (cedula)",
                 "CREATE INDEX IF NOT EXISTS idx_usuarios_nombre  ON usuarios (nombre)",
-                "CREATE INDEX IF NOT EXISTS idx_instituciones_nombre ON instituciones (nombre)",
-                "CREATE INDEX IF NOT EXISTS idx_instituciones_codigo ON instituciones (codigo)",
+                "CREATE INDEX IF NOT EXISTS idx_direcciones_nombre ON direcciones (nombre)",
+                "CREATE INDEX IF NOT EXISTS idx_direcciones_codigo ON direcciones (codigo)",
                 "CREATE INDEX IF NOT EXISTS idx_user_roles_uid   ON usuario_roles (usuario_id)",
                 "CREATE INDEX IF NOT EXISTS idx_user_roles_rid   ON usuario_roles (rol_id)",
-                "CREATE INDEX IF NOT EXISTS idx_user_inst_uid    ON usuario_instituciones (usuario_id)",
-                "CREATE INDEX IF NOT EXISTS idx_user_inst_iid    ON usuario_instituciones (institucion_id)",
-                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_fecha ON bitacora_evento (institucion_id, fecha DESC)",
-                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_modulo ON bitacora_evento (institucion_id, modulo, fecha DESC)",
-                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo ON incidentes_conducta (institucion_id, periodo_id)",
-                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo_tipo ON incidentes_conducta (institucion_id, periodo_id, tipo)",
-                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_estudiante_periodo ON incidentes_conducta (institucion_id, periodo_id, estudiante_id)"
+                "CREATE INDEX IF NOT EXISTS idx_user_inst_uid    ON usuario_direcciones (usuario_id)",
+                "CREATE INDEX IF NOT EXISTS idx_user_inst_iid    ON usuario_direcciones (direccion_id)",
+                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_fecha ON bitacora_evento (direccion_id, fecha DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_bitacora_inst_modulo ON bitacora_evento (direccion_id, modulo, fecha DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo ON incidentes_conducta (direccion_id, periodo_id)",
+                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_inst_periodo_tipo ON incidentes_conducta (direccion_id, periodo_id, tipo)",
+                "CREATE INDEX IF NOT EXISTS idx_incidente_conducta_estudiante_periodo ON incidentes_conducta (direccion_id, periodo_id, estudiante_id)"
         };
 
         for (String sql : statements) {
@@ -52,6 +52,87 @@ public class DatabaseIndexInitializer {
         log.info("=== Índices verificados ===");
         eliminarAmonestacionesConducta();
         eliminarExtraclase();
+        copiarRubrosAComponentes();
+    }
+
+    private void copiarRubrosAComponentes() {
+        copiar("indicadores_cotidiano", "COTIDIANO", "fecha", false);
+        copiar("tareas_definicion", "TAREA", "fecha_entrega", false);
+        copiar("proyectos_definicion", "PROYECTO", "fecha", true);
+        copiar("examenes", "EXAMEN", "fecha", true);
+        migrarResultados("evaluaciones_cotidiano", "indicador_id", "COTIDIANO", "cal.periodo_id");
+        migrarResultados("tareas_calificaciones", "tarea_definicion_id", "TAREA", "cal.periodo_id");
+        migrarResultados("proyectos_calificaciones", "proyecto_definicion_id", "PROYECTO", "c.periodo_id");
+        migrarResultados("notas_examen", "examen_id", "EXAMEN", "c.periodo_id");
+    }
+
+    private void migrarResultados(String tabla, String columnaOrigen, String clave, String periodo) {
+        if (!existeTabla(tabla)) {
+            return;
+        }
+        enlazar(tabla, columnaOrigen, clave);
+        if (copiarResultados(tabla, periodo)) {
+            eliminarTabla(tabla);
+        }
+    }
+
+    private boolean copiarResultados(String tabla, String periodo) {
+        try {
+            jdbcTemplate.execute(
+                    "INSERT INTO resultados_componente (componente_id, estudiante_id, periodo_id, calificacion, "
+                            + "puntos_obtenidos, observacion) "
+                            + "SELECT cal.componente_id, cal.estudiante_id, " + periodo + ", cal.calificacion, "
+                            + "cal.puntos_obtenidos, cal.observacion FROM " + tabla + " cal "
+                            + "JOIN componentes c ON c.id = cal.componente_id "
+                            + "WHERE cal.componente_id IS NOT NULL AND " + periodo + " IS NOT NULL "
+                            + "AND NOT EXISTS (SELECT 1 FROM resultados_componente r "
+                            + "WHERE r.componente_id = cal.componente_id AND r.estudiante_id = cal.estudiante_id "
+                            + "AND r.periodo_id = " + periodo + ")");
+            return true;
+        } catch (Exception e) {
+            log.warn("No se copiaron resultados de {}: {}", tabla, e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean existeTabla(String tabla) {
+        Boolean existe = jdbcTemplate.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
+                        + "WHERE table_schema = 'public' AND table_name = ?)",
+                Boolean.class, tabla);
+        return Boolean.TRUE.equals(existe);
+    }
+
+    private void eliminarTabla(String tabla) {
+        jdbcTemplate.execute("DROP TABLE IF EXISTS " + tabla + " CASCADE");
+        log.info("Tabla {} eliminada", tabla);
+    }
+
+    private void copiar(String tabla, String clave, String columnaFecha, boolean conPeriodo) {
+        try {
+            String periodo = conPeriodo ? "periodo_id" : "NULL";
+            jdbcTemplate.execute(
+                    "INSERT INTO componentes (direccion_id, clave, periodo_id, nivel_id, materia_id, titulo, "
+                            + "descripcion, fecha, porcentaje, puntos_totales, origen_id) "
+                            + "SELECT direccion_id, '" + clave + "', " + periodo + ", nivel_id, materia_id, titulo, "
+                            + "descripcion, " + columnaFecha + ", porcentaje, puntos_totales, id FROM " + tabla + " origen "
+                            + "WHERE NOT EXISTS (SELECT 1 FROM componentes c WHERE c.clave = '" + clave
+                            + "' AND c.origen_id = origen.id)");
+        } catch (Exception e) {
+            log.warn("No se copiaron rubros de {}: {}", tabla, e.getMessage());
+        }
+    }
+
+    private void enlazar(String tabla, String columnaOrigen, String clave) {
+        try {
+            jdbcTemplate.update(
+                    "UPDATE " + tabla + " cal SET componente_id = c.id FROM componentes c "
+                            + "WHERE c.clave = ? AND c.origen_id = cal." + columnaOrigen
+                            + " AND cal.componente_id IS NULL",
+                    clave);
+        } catch (Exception e) {
+            log.warn("No se enlazaron calificaciones de {}: {}", tabla, e.getMessage());
+        }
     }
 
     private void eliminarAmonestacionesConducta() {

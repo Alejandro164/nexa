@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -53,9 +53,9 @@ public class PortalPadresController {
         model.addAttribute("hijos", usuarioService.obtenerEstudiantesDelUsuarioActual());
         model.addAttribute("retiros", retiroEstudianteService.obtenerRetirosDelPadre(usuario.getId()));
         model.addAttribute("misSolicitudes", solicitudService.listarPorPadre(usuario.getId()));
-        Long institucionId = institucionId(session);
-        if (institucionId != null) {
-            model.addAttribute("docentesDisponibles", personalService.listarPorRol(institucionId, "ROLE_DOCENTE"));
+        Long direccionId = direccionId(session);
+        if (direccionId != null) {
+            model.addAttribute("docentesDisponibles", personalService.listarPorRol(direccionId, "ROLE_DOCENTE"));
         }
         return htmxRequest ? "padres/index :: htmx-content" : "padres/index";
     }
@@ -67,9 +67,9 @@ public class PortalPadresController {
             @AuthenticationPrincipal CustomUserDetails usuario,
             RedirectAttributes redirectAttributes) {
         exigirPadreOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            retiroEstudianteService.solicitarRetiro(usuario.getId(), estudianteId, motivo, institucionId);
+            retiroEstudianteService.solicitarRetiro(usuario.getId(), estudianteId, motivo, direccionId);
             redirectAttributes.addFlashAttribute("successMsg", "Solicitud de retiro enviada. Espera la autorización en portería.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
@@ -83,9 +83,9 @@ public class PortalPadresController {
             @AuthenticationPrincipal CustomUserDetails usuario,
             RedirectAttributes redirectAttributes) {
         exigirPadreOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         RegistroAsistencia.TipoRegistro tipoRegistro = RegistroAsistencia.TipoRegistro.valueOf(tipo);
-        registroAsistenciaService.registrar(usuario.getId(), tipoRegistro, "Autorregistro desde Portal Padres", institucionId);
+        registroAsistenciaService.registrar(usuario.getId(), tipoRegistro, "Autorregistro desde Portal Padres", direccionId);
         redirectAttributes.addFlashAttribute("successMsg",
                 tipoRegistro == RegistroAsistencia.TipoRegistro.ENTRADA
                         ? "Ingreso al campus registrado."
@@ -102,9 +102,9 @@ public class PortalPadresController {
             @AuthenticationPrincipal CustomUserDetails usuario,
             RedirectAttributes redirectAttributes) {
         exigirPadreOAdmin(request);
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            solicitudService.crearSolicitud(usuario.getId(), tipo, estudianteId, docenteId, detalle, institucionId);
+            solicitudService.crearSolicitud(usuario.getId(), tipo, estudianteId, docenteId, detalle, direccionId);
             redirectAttributes.addFlashAttribute("successMsg", "Solicitud enviada correctamente.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
@@ -118,14 +118,14 @@ public class PortalPadresController {
         }
     }
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long direccionId(HttpSession session) {
+        return (Long) session.getAttribute("SESSION_DIRECCION_ID");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = institucionId(session);
+    private Long requerirDireccion(HttpSession session) {
+        Long id = direccionId(session);
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

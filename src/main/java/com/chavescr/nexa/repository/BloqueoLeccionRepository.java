@@ -10,7 +10,7 @@ import com.chavescr.nexa.entity.BloqueoLeccion;
 public interface BloqueoLeccionRepository extends JpaRepository<BloqueoLeccion, Long> {
 
     @EntityGraph(attributePaths = "tipoMateria")
-    List<BloqueoLeccion> findByInstitucionIdOrderByIdAsc(Long institucionId);
+    List<BloqueoLeccion> findByDireccionIdOrderByIdAsc(Long direccionId);
 
-    void deleteByInstitucionId(Long institucionId);
+    void deleteByDireccionId(Long direccionId);
 }

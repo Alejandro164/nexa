@@ -24,16 +24,16 @@ public class HistorialCambioService {
     }
 
     /** Registra un evento de creación/edición/eliminación sobre una definición de Gestión Académica. */
-    public void registrar(Long institucionId, Long nivelId, Long materiaId, ModuloAcademico modulo, Long itemId,
+    public void registrar(Long direccionId, Long nivelId, Long materiaId, ModuloAcademico modulo, Long itemId,
             String itemTitulo, AccionHistorial accion, Long usuarioId, String usuarioNombre) {
-        registrar(institucionId, nivelId, materiaId, modulo, itemId, itemTitulo, accion, usuarioId, usuarioNombre, null);
+        registrar(direccionId, nivelId, materiaId, modulo, itemId, itemTitulo, accion, usuarioId, usuarioNombre, null);
     }
 
     /** Igual que {@link #registrar}, pero con un detalle libre (ej. lista de estudiantes calificados y su nota). */
-    public void registrar(Long institucionId, Long nivelId, Long materiaId, ModuloAcademico modulo, Long itemId,
+    public void registrar(Long direccionId, Long nivelId, Long materiaId, ModuloAcademico modulo, Long itemId,
             String itemTitulo, AccionHistorial accion, Long usuarioId, String usuarioNombre, String detalle) {
         HistorialCambio evento = new HistorialCambio();
-        evento.setInstitucionId(institucionId);
+        evento.setDireccionId(direccionId);
         evento.setNivelId(nivelId);
         evento.setMateriaId(materiaId);
         evento.setModulo(modulo);
@@ -45,18 +45,18 @@ public class HistorialCambioService {
         evento.setDetalle(detalle);
         evento.setFecha(LocalDateTime.now());
         repository.save(evento);
-        bitacoraService.registrarDesdeHistorialAcademico(institucionId, modulo, itemId, itemTitulo, accion,
+        bitacoraService.registrarDesdeHistorialAcademico(direccionId, modulo, itemId, itemTitulo, accion,
                 usuarioId, usuarioNombre, detalle);
     }
 
     @Transactional(readOnly = true)
-    public List<HistorialCambio> listar(Long institucionId, Long nivelId, Long materiaId) {
-        return repository.findByInstitucionIdAndNivelIdAndMateriaIdOrderByFechaDesc(institucionId, nivelId, materiaId);
+    public List<HistorialCambio> listar(Long direccionId, Long nivelId, Long materiaId) {
+        return repository.findByDireccionIdAndNivelIdAndMateriaIdOrderByFechaDesc(direccionId, nivelId, materiaId);
     }
 
-    /** Últimos cambios académicos (tareas, exámenes, notas, etc.) de la institución, para el dashboard. */
+    /** Últimos cambios académicos (tareas, exámenes, notas, etc.) de la dirección, para el dashboard. */
     @Transactional(readOnly = true)
-    public List<HistorialCambio> listarRecientes(Long institucionId) {
-        return repository.findTop8ByInstitucionIdOrderByFechaDesc(institucionId);
+    public List<HistorialCambio> listarRecientes(Long direccionId) {
+        return repository.findTop8ByDireccionIdOrderByFechaDesc(direccionId);
     }
 }

@@ -8,9 +8,9 @@ import com.chavescr.nexa.entity.RegimenDisciplinario;
 
 public interface RegimenDisciplinarioRepository extends JpaRepository<RegimenDisciplinario, Long> {
 
-    List<RegimenDisciplinario> findByInstitucionIdOrderByFechaDesc(Long institucionId);
+    List<RegimenDisciplinario> findByDireccionIdOrderByFechaDesc(Long direccionId);
 
-    List<RegimenDisciplinario> findByInstitucionIdAndTipoOrderByFechaDesc(Long institucionId, RegimenDisciplinario.TipoRegimen tipo);
+    List<RegimenDisciplinario> findByDireccionIdAndTipoOrderByFechaDesc(Long direccionId, RegimenDisciplinario.TipoRegimen tipo);
 
-    java.util.Optional<RegimenDisciplinario> findByIdAndInstitucionId(Long id, Long institucionId);
+    java.util.Optional<RegimenDisciplinario> findByIdAndDireccionId(Long id, Long direccionId);
 }

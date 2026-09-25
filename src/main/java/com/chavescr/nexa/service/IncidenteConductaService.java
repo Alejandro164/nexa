@@ -12,12 +12,12 @@ import com.chavescr.nexa.dto.PanelIncidenteConducta;
 import com.chavescr.nexa.entity.IncidenteConducta;
 import com.chavescr.nexa.entity.IncidenteConducta.EstadoIncidente;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.IncidenteConductaRepository;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
@@ -30,28 +30,28 @@ public class IncidenteConductaService {
     private final PeriodoAcademicoRepository periodoRepository;
     private final NivelAcademicoRepository nivelRepository;
     private final UsuarioRepository usuarioRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final DocenteGuiaService docenteGuiaService;
     private final AlcanceDocenteService alcanceDocenteService;
 
     public IncidenteConductaService(IncidenteConductaRepository incidenteRepository,
             PeriodoAcademicoRepository periodoRepository, NivelAcademicoRepository nivelRepository,
-            UsuarioRepository usuarioRepository, InstitucionRepository institucionRepository,
+            UsuarioRepository usuarioRepository, DireccionRepository direccionRepository,
             DocenteGuiaService docenteGuiaService, AlcanceDocenteService alcanceDocenteService) {
         this.incidenteRepository = incidenteRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
         this.usuarioRepository = usuarioRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.docenteGuiaService = docenteGuiaService;
         this.alcanceDocenteService = alcanceDocenteService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public PanelIncidenteConducta cargarPanel(TipoIncidente tipo, Long institucionId, Long periodoId, Integer grado,
+    public PanelIncidenteConducta cargarPanel(TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,
             Long nivelId, Long docenteId) {
-        List<PeriodoAcademico> periodos = periodoRepository.findByInstitucionIdOrderByFechaInicioDesc(institucionId);
-        List<NivelAcademico> nivelesVisibles = nivelesVisibles(institucionId, docenteId);
+        List<PeriodoAcademico> periodos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
+        List<NivelAcademico> nivelesVisibles = nivelesVisibles(direccionId, docenteId);
         List<Integer> grados = nivelesVisibles.stream()
                 .map(NivelAcademico::getGrado)
                 .filter(Objects::nonNull)
@@ -79,7 +79,7 @@ public class IncidenteConductaService {
             }
         }
 
-        List<IncidenteConducta> incidentes = listar(tipo, institucionId, periodo.getId(), grado, nivelId,
+        List<IncidenteConducta> incidentes = listar(tipo, direccionId, periodo.getId(), grado, nivelId,
                 docenteId != null, nivelesVisibles);
         List<FilaIncidenteConducta> filas = incidentes.stream().map(this::construirFila).toList();
 
@@ -87,8 +87,8 @@ public class IncidenteConductaService {
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public List<Usuario> listarEstudiantes(Long institucionId, Integer grado, Long nivelId, Long docenteId) {
-        List<NivelAcademico> nivelesVisibles = nivelesVisibles(institucionId, docenteId);
+    public List<Usuario> listarEstudiantes(Long direccionId, Integer grado, Long nivelId, Long docenteId) {
+        List<NivelAcademico> nivelesVisibles = nivelesVisibles(direccionId, docenteId);
         Integer gradoFiltro = grado;
         Long seccionFiltro = nivelId;
         if (gradoFiltro != null) {
@@ -107,11 +107,11 @@ public class IncidenteConductaService {
                 seccionFiltro = null;
             }
         }
-        return listarEstudiantes(institucionId, gradoFiltro, seccionFiltro, nivelesVisibles, docenteId != null);
+        return listarEstudiantes(direccionId, gradoFiltro, seccionFiltro, nivelesVisibles, docenteId != null);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public String crear(TipoIncidente tipo, Long institucionId, Long periodoId, Long estudianteId, LocalDate fecha,
+    public String crear(TipoIncidente tipo, Long direccionId, Long periodoId, Long estudianteId, LocalDate fecha,
             String motivo, String descripcion, Integer puntos, Long registradoPorId, Long docenteId) {
         if (periodoId == null) {
             throw new IllegalArgumentException("Seleccione un período académico.");
@@ -137,16 +137,16 @@ public class IncidenteConductaService {
         }
         int puntosDescontados = resolverPuntos(tipo, puntos);
 
-        PeriodoAcademico periodo = periodoRepository.findByIdAndInstitucionId(periodoId, institucionId)
+        PeriodoAcademico periodo = periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
-        Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, institucionId)
+        Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
-        exigirAlcance(institucionId, docenteId, estudiante);
-        Institucion institucion = institucionRepository.findById(institucionId)
-                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada"));
+        exigirAlcance(direccionId, docenteId, estudiante);
+        Direccion direccion = direccionRepository.findById(direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
 
         IncidenteConducta incidente = new IncidenteConducta();
-        incidente.setInstitucion(institucion);
+        incidente.setDireccion(direccion);
         incidente.setPeriodo(periodo);
         incidente.setEstudiante(estudiante);
         incidente.setTipo(tipo);
@@ -156,7 +156,7 @@ public class IncidenteConductaService {
         incidente.setEstado(EstadoIncidente.PENDIENTE);
         incidente.setPuntosDescontados(puntosDescontados);
         if (registradoPorId != null) {
-            usuarioRepository.findActivoByIdAndInstitucionId(registradoPorId, institucionId)
+            usuarioRepository.findActivoByIdAndDireccionId(registradoPorId, direccionId)
                     .ifPresent(incidente::setRegistradoPor);
         }
         incidenteRepository.save(incidente);
@@ -168,16 +168,16 @@ public class IncidenteConductaService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public String resolver(TipoIncidente tipo, Long institucionId, Long incidenteId, Long docenteId) {
+    public String resolver(TipoIncidente tipo, Long direccionId, Long incidenteId, Long docenteId) {
         if (incidenteId == null) {
             throw new IllegalArgumentException(etiqueta(tipo) + " no encontrada");
         }
-        IncidenteConducta incidente = incidenteRepository.findByIdAndInstitucionId(incidenteId, institucionId)
+        IncidenteConducta incidente = incidenteRepository.findByIdAndDireccionId(incidenteId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException(etiqueta(tipo) + " no encontrada"));
         if (incidente.getTipo() != tipo) {
             throw new IllegalArgumentException(etiqueta(tipo) + " no encontrada");
         }
-        exigirAlcance(institucionId, docenteId, incidente.getEstudiante());
+        exigirAlcance(direccionId, docenteId, incidente.getEstudiante());
         if (incidente.getEstado() == EstadoIncidente.RESUELTO) {
             return "Este registro ya estaba resuelto.";
         }
@@ -186,28 +186,28 @@ public class IncidenteConductaService {
         return etiqueta(tipo) + " de " + incidente.getEstudiante().getNombre() + " marcada como resuelta.";
     }
 
-    private List<IncidenteConducta> listar(TipoIncidente tipo, Long institucionId, Long periodoId, Integer grado,
+    private List<IncidenteConducta> listar(TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,
             Long nivelId, boolean limitarANiveles, List<NivelAcademico> nivelesVisibles) {
         if (!limitarANiveles) {
-            return incidenteRepository.findDelPeriodo(institucionId, periodoId, tipo, grado, nivelId);
+            return incidenteRepository.findDelPeriodo(direccionId, periodoId, tipo, grado, nivelId);
         }
         List<Long> nivelIds = nivelesVisibles.stream().map(NivelAcademico::getId).toList();
         if (nivelIds.isEmpty()) {
             return List.of();
         }
-        return incidenteRepository.findDelPeriodoEnNiveles(institucionId, periodoId, tipo, nivelIds, grado, nivelId);
+        return incidenteRepository.findDelPeriodoEnNiveles(direccionId, periodoId, tipo, nivelIds, grado, nivelId);
     }
 
-    private List<Usuario> listarEstudiantes(Long institucionId, Integer grado, Long nivelId,
+    private List<Usuario> listarEstudiantes(Long direccionId, Integer grado, Long nivelId,
             List<NivelAcademico> nivelesVisibles, boolean limitarANiveles) {
         if (!limitarANiveles) {
-            return usuarioRepository.findEstudiantesActivosConNivel(institucionId, grado, nivelId);
+            return usuarioRepository.findEstudiantesActivosConNivel(direccionId, grado, nivelId);
         }
         List<Long> nivelIds = nivelesVisibles.stream().map(NivelAcademico::getId).toList();
         if (nivelIds.isEmpty()) {
             return List.of();
         }
-        return usuarioRepository.findEstudiantesActivosConNivelEn(institucionId, nivelIds, grado, nivelId);
+        return usuarioRepository.findEstudiantesActivosConNivelEn(direccionId, nivelIds, grado, nivelId);
     }
 
     private FilaIncidenteConducta construirFila(IncidenteConducta incidente) {
@@ -258,11 +258,11 @@ public class IncidenteConductaService {
         return String.format("%s-%d-%03d", prefijo, anio, incidente.getId());
     }
 
-    private void exigirAlcance(Long institucionId, Long docenteId, Usuario estudiante) {
+    private void exigirAlcance(Long direccionId, Long docenteId, Usuario estudiante) {
         if (docenteId == null) {
             return;
         }
-        List<NivelAcademico> niveles = nivelesVisibles(institucionId, docenteId);
+        List<NivelAcademico> niveles = nivelesVisibles(direccionId, docenteId);
         Long nivelEstudiante = estudiante.getNivelAcademico() != null ? estudiante.getNivelAcademico().getId() : null;
         boolean visible = nivelEstudiante != null
                 && niveles.stream().anyMatch(n -> n.getId().equals(nivelEstudiante));
@@ -271,15 +271,15 @@ public class IncidenteConductaService {
         }
     }
 
-    private List<NivelAcademico> nivelesVisibles(Long institucionId, Long docenteId) {
+    private List<NivelAcademico> nivelesVisibles(Long direccionId, Long docenteId) {
         if (docenteId == null) {
-            return nivelRepository.findByInstitucionIdAndActivoTrueOrderByGradoAscSeccionAsc(institucionId);
+            return nivelRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId);
         }
-        List<NivelAcademico> guias = docenteGuiaService.listarSecciones(institucionId, docenteId);
+        List<NivelAcademico> guias = docenteGuiaService.listarSecciones(direccionId, docenteId);
         if (!guias.isEmpty()) {
             return guias;
         }
-        return alcanceDocenteService.nivelesVisibles(institucionId, docenteId);
+        return alcanceDocenteService.nivelesVisibles(direccionId, docenteId);
     }
 
     private List<NivelAcademico> seccionesDeGrado(List<NivelAcademico> niveles, Integer grado) {

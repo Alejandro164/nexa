@@ -13,12 +13,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.chavescr.nexa.dto.InstitucionDTO;
+import com.chavescr.nexa.dto.DireccionDTO;
 import com.chavescr.nexa.dto.UsuarioDTO;
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.Usuario;
-import com.chavescr.nexa.repository.InstitucionRepository;
+import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.RolRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
@@ -28,14 +28,14 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
-    private final InstitucionRepository institucionRepository;
+    private final DireccionRepository direccionRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UsuarioService(UsuarioRepository usuarioRepository, RolRepository rolRepository,
-            InstitucionRepository institucionRepository, PasswordEncoder passwordEncoder) {
+            DireccionRepository direccionRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
-        this.institucionRepository = institucionRepository;
+        this.direccionRepository = direccionRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -43,7 +43,7 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public Usuario obtenerUsuarioActual() {
         String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
-        return usuarioRepository.findByIdentifierWithInstituciones(identifier)
+        return usuarioRepository.findByIdentifierWithDirecciones(identifier)
                 .orElseThrow(() -> new IllegalStateException("Usuario autenticado no encontrado"));
     }
 
@@ -91,44 +91,44 @@ public class UsuarioService {
         return usuarioRepository.findByNombreOrEmail(filtro.trim().toLowerCase());
     }
 
-    /** Cantidad de usuarios activos de un rol específico (ej. ROLE_ESTUDIANTE) en una institución, para el dashboard. */
+    /** Cantidad de usuarios activos de un rol específico (ej. ROLE_ESTUDIANTE) en una dirección, para el dashboard. */
     @Transactional(readOnly = true)
-    public long contarActivosPorInstitucionYRol(Long institucionId, String rolNombre) {
-        return usuarioRepository.findActivosByInstitucionIdAndRol(institucionId, rolNombre).size();
+    public long contarActivosPorDireccionYRol(Long direccionId, String rolNombre) {
+        return usuarioRepository.findActivosByDireccionIdAndRol(direccionId, rolNombre).size();
     }
 
-    /** Personal (admin/director/docente) activo de una institución, para selectores como el de Control de Acceso. */
+    /** Personal (admin/director/docente) activo de una dirección, para selectores como el de Control de Acceso. */
     @Transactional(readOnly = true)
-    public List<Usuario> obtenerPersonalActivoPorInstitucion(Long institucionId) {
-        return usuarioRepository.findActivosByInstitucionIdAndRolIn(institucionId,
+    public List<Usuario> obtenerPersonalActivoPorDireccion(Long direccionId) {
+        return usuarioRepository.findActivosByDireccionIdAndRolIn(direccionId,
                 List.of("ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_DOCENTE"));
     }
 
     @Transactional(readOnly = true)
-    public List<InstitucionDTO> obtenerInstitucionesDelUsuarioActual() {
+    public List<DireccionDTO> obtenerDireccionesDelUsuarioActual() {
         String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
-        return usuarioRepository.findByIdentifierWithInstituciones(identifier)
-                .map(usuario -> usuario.getInstituciones().stream()
-                        .filter(Institucion::getActiva)
-                        .map(InstitucionDTO::new)
+        return usuarioRepository.findByIdentifierWithDirecciones(identifier)
+                .map(usuario -> usuario.getDirecciones().stream()
+                        .filter(Direccion::getActiva)
+                        .map(DireccionDTO::new)
                         .toList())
                 .orElse(Collections.emptyList());
     }
 
-    /** La última institución con la que trabajó el usuario autenticado, o null si nunca eligió una. */
+    /** La última dirección con la que trabajó el usuario autenticado, o null si nunca eligió una. */
     @Transactional(readOnly = true)
-    public Long obtenerUltimaInstitucionIdDelUsuarioActual() {
+    public Long obtenerUltimaDireccionIdDelUsuarioActual() {
         String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
         return usuarioRepository.findByIdentifier(identifier)
-                .map(Usuario::getUltimaInstitucion)
-                .map(Institucion::getId)
+                .map(Usuario::getUltimaDireccion)
+                .map(Direccion::getId)
                 .orElse(null);
     }
 
-    /** Recuerda la institución elegida para que se auto-seleccione en el próximo login. */
-    public void actualizarUltimaInstitucion(Long usuarioId, Institucion institucion) {
+    /** Recuerda la dirección elegida para que se auto-seleccione en el próximo login. */
+    public void actualizarUltimaDireccion(Long usuarioId, Direccion direccion) {
         usuarioRepository.findById(usuarioId).ifPresent(usuario -> {
-            usuario.setUltimaInstitucion(institucion);
+            usuario.setUltimaDireccion(direccion);
             usuarioRepository.save(usuario);
         });
     }
@@ -145,7 +145,7 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public Usuario findByUsername(String username) {
-        return usuarioRepository.findByEmailWithInstituciones(username).orElse(null);
+        return usuarioRepository.findByEmailWithDirecciones(username).orElse(null);
     }
 
     @CacheEvict(value = "usuarios", allEntries = true)
@@ -153,11 +153,11 @@ public class UsuarioService {
     public void evictAllCaches() {
     }
 
-    // ── CRUD global de Usuarios (pantalla /usuarios, admin sin institución seleccionada) ──────────
+    // ── CRUD global de Usuarios (pantalla /usuarios, admin sin dirección seleccionada) ──────────
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarTodosConInstituciones(String filtro) {
-        List<Usuario> todos = usuarioRepository.findAllWithInstituciones();
+    public List<Usuario> listarTodosConDirecciones(String filtro) {
+        List<Usuario> todos = usuarioRepository.findAllWithDirecciones();
         if (filtro == null || filtro.isBlank()) {
             return todos;
         }
@@ -178,12 +178,12 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public Usuario obtenerPorId(Long id) {
-        return usuarioRepository.findByIdWithInstituciones(id)
+        return usuarioRepository.findByIdWithDirecciones(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
     }
 
     public Usuario guardar(Long id, String nombre, String email, String usuarioLogin, String cedula,
-            String rawPassword, boolean activo, List<Long> rolIds, List<Long> institucionIds) {
+            String rawPassword, boolean activo, List<Long> rolIds, List<Long> direccionIds) {
         Usuario u;
         if (id == null) {
             if (rawPassword == null || rawPassword.isBlank()) {
@@ -211,12 +211,16 @@ public class UsuarioService {
                         .collect(Collectors.toSet());
         u.setRoles(roles);
 
-        Set<Institucion> instituciones = institucionIds == null ? Set.of() :
-                institucionIds.stream()
-                        .map(iid -> institucionRepository.findById(iid)
-                                .orElseThrow(() -> new IllegalArgumentException("Institución no encontrada: " + iid)))
+        Set<Direccion> direcciones = direccionIds == null ? Set.of() :
+                direccionIds.stream()
+                        .map(iid -> direccionRepository.findById(iid)
+                                .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada: " + iid)))
                         .collect(Collectors.toSet());
-        u.setInstituciones(instituciones);
+        boolean estudiante = roles.stream().anyMatch(r -> "ROLE_ESTUDIANTE".equals(r.getNombre()));
+        if (estudiante && direcciones.size() != 1) {
+            throw new IllegalArgumentException("Un estudiante pertenece a una sola dirección.");
+        }
+        u.setDirecciones(direcciones);
 
         Usuario guardado = usuarioRepository.save(u);
         evictAllCaches();

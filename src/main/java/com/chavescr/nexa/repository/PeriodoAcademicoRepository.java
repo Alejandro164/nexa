@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 
 public interface PeriodoAcademicoRepository extends JpaRepository<PeriodoAcademico, Long> {
-    List<PeriodoAcademico> findByInstitucionIdOrderByFechaInicioDesc(Long institucionId);
-    List<PeriodoAcademico> findByInstitucionIdAndActivoTrueOrderByFechaInicioDesc(Long institucionId);
-    Optional<PeriodoAcademico> findByIdAndInstitucionId(Long id, Long institucionId);
+    List<PeriodoAcademico> findByDireccionIdOrderByFechaInicioDesc(Long direccionId);
+    List<PeriodoAcademico> findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(Long direccionId);
+    Optional<PeriodoAcademico> findByIdAndDireccionId(Long id, Long direccionId);
 }

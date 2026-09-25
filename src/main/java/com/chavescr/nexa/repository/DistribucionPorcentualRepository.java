@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.chavescr.nexa.entity.DistribucionPorcentual;
 
 public interface DistribucionPorcentualRepository extends JpaRepository<DistribucionPorcentual, Long> {
-    Optional<DistribucionPorcentual> findByInstitucionIdAndPeriodoIdAndMateriaId(
-            Long institucionId, Long periodoId, Long materiaId);
+    Optional<DistribucionPorcentual> findByDireccionIdAndPeriodoIdAndMateriaId(
+            Long direccionId, Long periodoId, Long materiaId);
 }

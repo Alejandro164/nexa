@@ -57,10 +57,10 @@ public class Usuario implements UserDetails {
     @JoinTable(name = "usuario_roles", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "rol_id"))
     private Set<Rol> roles = new HashSet<>();
 
-    // Many-to-Many con Institucion
+    // Many-to-Many con Direccion
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "usuario_instituciones", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "institucion_id"))
-    private Set<Institucion> instituciones = new HashSet<>();
+    @JoinTable(name = "usuario_direcciones", joinColumns = @JoinColumn(name = "usuario_id"), inverseJoinColumns = @JoinColumn(name = "direccion_id"))
+    private Set<Direccion> direcciones = new HashSet<>();
 
     // Many-to-Many auto-referencial: un padre puede tener varios estudiantes asignados
     @ManyToMany(fetch = FetchType.LAZY)
@@ -76,10 +76,10 @@ public class Usuario implements UserDetails {
     @JoinColumn(name = "nivel_academico_id")
     private NivelAcademico nivelAcademico;
 
-    // Última institución con la que trabajó, para auto-seleccionarla en el próximo login
+    // Última dirección con la que trabajó, para auto-seleccionarla en el próximo login
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ultima_institucion_id")
-    private Institucion ultimaInstitucion;
+    @JoinColumn(name = "ultima_direccion_id")
+    private Direccion ultimaDireccion;
 
     public Usuario() {
     }
@@ -195,12 +195,12 @@ public class Usuario implements UserDetails {
     }
 
     @JsonIgnore
-    public Set<Institucion> getInstituciones() {
-        return instituciones;
+    public Set<Direccion> getDirecciones() {
+        return direcciones;
     }
 
-    public void setInstituciones(Set<Institucion> instituciones) {
-        this.instituciones = instituciones;
+    public void setDirecciones(Set<Direccion> direcciones) {
+        this.direcciones = direcciones;
     }
 
     @JsonIgnore
@@ -229,17 +229,17 @@ public class Usuario implements UserDetails {
         this.nivelAcademico = nivelAcademico;
     }
 
-    public Institucion getUltimaInstitucion() {
-        return ultimaInstitucion;
+    public Direccion getUltimaDireccion() {
+        return ultimaDireccion;
     }
 
-    public void setUltimaInstitucion(Institucion ultimaInstitucion) {
-        this.ultimaInstitucion = ultimaInstitucion;
+    public void setUltimaDireccion(Direccion ultimaDireccion) {
+        this.ultimaDireccion = ultimaDireccion;
     }
 
     @Override
     public String toString() {
         return "Usuario [id=" + id + ", nombre=" + nombre + ", email=" + email + ", usuario=" + usuario + ", cedula="
-                + cedula + ", activo=" + activo + ", roles=" + roles + ", instituciones=" + instituciones + "]";
+                + cedula + ", activo=" + activo + ", roles=" + roles + ", direcciones=" + direcciones + "]";
     }
 }

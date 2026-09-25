@@ -10,13 +10,13 @@ import com.chavescr.nexa.entity.Materia;
 
 public interface MateriaRepository extends JpaRepository<Materia, Long> {
     @EntityGraph(attributePaths = "tipoMateria")
-    List<Materia> findByInstitucionIdOrderByNombreAsc(Long institucionId);
+    List<Materia> findByDireccionIdOrderByNombreAsc(Long direccionId);
 
     @EntityGraph(attributePaths = "tipoMateria")
-    List<Materia> findByInstitucionIdAndActivoTrueOrderByNombreAsc(Long institucionId);
+    List<Materia> findByDireccionIdAndActivoTrueOrderByNombreAsc(Long direccionId);
 
     @EntityGraph(attributePaths = "tipoMateria")
-    Optional<Materia> findByIdAndInstitucionId(Long id, Long institucionId);
+    Optional<Materia> findByIdAndDireccionId(Long id, Long direccionId);
 
-    boolean existsByInstitucionIdAndNombreIgnoreCase(Long institucionId, String nombre);
+    boolean existsByDireccionIdAndNombreIgnoreCase(Long direccionId, String nombre);
 }

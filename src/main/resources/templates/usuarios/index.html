@@ -9,13 +9,13 @@
 <body>
 
     <h2 layout:fragment="page-title">Usuarios</h2>
-    <p layout:fragment="page-subtitle">Gestión de cuentas de usuario de todas las instituciones</p>
+    <p layout:fragment="page-subtitle">Gestión de cuentas de usuario de todas las direcciones</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Usuarios</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestión de cuentas de usuario de todas las instituciones</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestión de cuentas de usuario de todas las direcciones</p>
     <main layout:fragment="content"
           x-data="{
               openModal(id) {

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.chavescr.nexa.entity.Institucion;
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.PreferenciaUsuario;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.security.CustomUserDetails;
@@ -82,8 +82,8 @@ public class ConfiguracionCuentaController {
         texto.append("Teléfono: ").append(usuario.getTelefono() != null ? usuario.getTelefono() : "No especificado")
                 .append("\n\n");
 
-        texto.append("Instituciones asociadas:\n");
-        for (Institucion inst : usuario.getInstituciones()) {
+        texto.append("Direcciones asociadas:\n");
+        for (Direccion inst : usuario.getDirecciones()) {
             texto.append(" - ").append(inst.getNombre()).append("\n");
         }
 

@@ -11,27 +11,27 @@ import com.chavescr.nexa.entity.DocenteBloqueoLeccion;
 
 public interface DocenteBloqueoLeccionRepository extends JpaRepository<DocenteBloqueoLeccion, Long> {
 
-    Optional<DocenteBloqueoLeccion> findByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
-            Long institucionId, Long periodoId, Long docenteId, String dia, Integer numeroLeccion);
+    Optional<DocenteBloqueoLeccion> findByDireccionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
+            Long direccionId, Long periodoId, Long docenteId, String dia, Integer numeroLeccion);
 
-    List<DocenteBloqueoLeccion> findByInstitucionIdAndPeriodoIdAndDocenteId(
-            Long institucionId, Long periodoId, Long docenteId);
+    List<DocenteBloqueoLeccion> findByDireccionIdAndPeriodoIdAndDocenteId(
+            Long direccionId, Long periodoId, Long docenteId);
 
     @Query("SELECT b.docente.id FROM DocenteBloqueoLeccion b "
-            + "WHERE b.institucion.id = :institucionId AND b.periodo.id = :periodoId "
+            + "WHERE b.direccion.id = :direccionId AND b.periodo.id = :periodoId "
             + "AND b.dia = :dia AND b.numeroLeccion = :numeroLeccion")
     List<Long> findDocenteIdsBloqueados(
-            @Param("institucionId") Long institucionId, @Param("periodoId") Long periodoId,
+            @Param("direccionId") Long direccionId, @Param("periodoId") Long periodoId,
             @Param("dia") String dia, @Param("numeroLeccion") Integer numeroLeccion);
 
-    boolean existsByInstitucionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
-            Long institucionId, Long periodoId, Long docenteId, String dia, Integer numeroLeccion);
+    boolean existsByDireccionIdAndPeriodoIdAndDocenteIdAndDiaAndNumeroLeccion(
+            Long direccionId, Long periodoId, Long docenteId, String dia, Integer numeroLeccion);
 
-    boolean existsByInstitucionIdAndNumeroLeccionGreaterThan(Long institucionId, Integer numeroLeccion);
+    boolean existsByDireccionIdAndNumeroLeccionGreaterThan(Long direccionId, Integer numeroLeccion);
 
-    boolean existsByInstitucionIdAndDia(Long institucionId, String dia);
+    boolean existsByDireccionIdAndDia(Long direccionId, String dia);
 
     void deleteByDocenteId(Long docenteId);
 
-    void deleteByInstitucionIdAndPeriodoId(Long institucionId, Long periodoId);
+    void deleteByDireccionIdAndPeriodoId(Long direccionId, Long periodoId);
 }

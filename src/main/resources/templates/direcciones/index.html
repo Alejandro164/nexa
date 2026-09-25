@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{index}">
+
+<head>
+    <title>Direcciones — Nexa</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Instituciones</h2>
+    <p layout:fragment="page-subtitle">Cada institución puede tener Preescolar, Primaria y Secundaria</p>
+
+    <th:block th:fragment="htmx-content">
+    <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
+         (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
+    <h2 id="topbar-page-title" hx-swap-oob="true">Instituciones</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Cada institución puede tener Preescolar, Primaria y Secundaria</p>
+    <main layout:fragment="content">
+
+        <div id="direcciones-list" th:insert="~{direcciones/lista :: tabla-direcciones}"></div>
+
+        <!-- Contenedor genérico para Modales -->
+        <div id="modal-container" class="modal-overlay"></div>
+
+    </main>
+    </th:block>
+
+</body>
+</html>

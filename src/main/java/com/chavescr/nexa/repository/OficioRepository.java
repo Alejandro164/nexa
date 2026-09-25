@@ -8,9 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.chavescr.nexa.entity.Oficio;
 
 public interface OficioRepository extends JpaRepository<Oficio, Long> {
-    List<Oficio> findByInstitucionIdOrderByFechaDesc(Long institucionId);
+    List<Oficio> findByDireccionIdOrderByFechaDesc(Long direccionId);
 
-    Optional<Oficio> findByIdAndInstitucionId(Long id, Long institucionId);
+    Optional<Oficio> findByIdAndDireccionId(Long id, Long direccionId);
 
-    long countByInstitucionIdAndNumeroStartingWith(Long institucionId, String prefijo);
+    long countByDireccionIdAndNumeroStartingWith(Long direccionId, String prefijo);
 }

@@ -22,7 +22,7 @@ import com.chavescr.nexa.dto.DiaCalendarioDTO;
 import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.entity.Aula;
-import com.chavescr.nexa.entity.ConfiguracionInstitucion;
+import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
@@ -119,7 +119,7 @@ class ProyectoApplicationTests {
 		context.setVariable("nivelesActivos", List.of(nivel));
 		context.setVariable("periodoSeleccionado", 1L);
 		context.setVariable("nivelSeleccionado", 1L);
-		ConfiguracionInstitucion configJornada = ConfiguracionInstitucion.predeterminada(null);
+		ConfiguracionDireccion configJornada = ConfiguracionDireccion.predeterminada(null);
 		context.setVariable("dias", configJornada.getDias());
 		context.setVariable("lecciones", configJornada.getLecciones());
 		context.setVariable("franjas", configJornada.franjas());

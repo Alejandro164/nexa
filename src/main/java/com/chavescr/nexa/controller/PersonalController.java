@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import java.util.List;
 
@@ -64,15 +64,15 @@ public class PersonalController {
 
     @GetMapping("/directorio")
     public String directorio(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("personal", personalService.listarTodos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("personal", personalService.listarTodos(direccionId));
         return "personal/directorio/directorio :: content";
     }
 
     @GetMapping("/directorio/lista")
     public String directorioLista(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("personal", personalService.listarTodos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("personal", personalService.listarTodos(direccionId));
         return "personal/directorio/lista :: content";
     }
 
@@ -85,8 +85,8 @@ public class PersonalController {
 
     @GetMapping("/directorio/form/{id}")
     public String directorioFormEditar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("usuario", personalService.obtenerPorId(institucionId, id));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("usuario", personalService.obtenerPorId(direccionId, id));
         model.addAttribute("roles", personalService.listarRoles());
         return "personal/directorio/formulario :: form-content";
     }
@@ -103,16 +103,16 @@ public class PersonalController {
             @RequestParam(required = false) List<Long> rolIds,
             Model model, HttpSession session,
             jakarta.servlet.http.HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            personalService.guardar(institucionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
-            model.addAttribute("personal", personalService.listarTodos(institucionId));
+            personalService.guardar(direccionId, id, nombre, email, usuario, cedula, password, activo, rolIds);
+            model.addAttribute("personal", personalService.listarTodos(direccionId));
             return "personal/directorio/lista :: content";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#dir-modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(institucionId, id));
+            model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(direccionId, id));
             model.addAttribute("roles", personalService.listarRoles());
             return "personal/directorio/formulario :: form-content";
         }
@@ -120,17 +120,17 @@ public class PersonalController {
 
     @DeleteMapping("/directorio/{id}")
     public String directorioEliminar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.eliminar(institucionId, id);
-        model.addAttribute("personal", personalService.listarTodos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        personalService.eliminar(direccionId, id);
+        model.addAttribute("personal", personalService.listarTodos(direccionId));
         return "personal/directorio/lista :: content";
     }
 
     @PutMapping("/directorio/{id}/activo")
     public String directorioToggleActivo(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        personalService.toggleActivo(institucionId, id);
-        model.addAttribute("personal", personalService.listarTodos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        personalService.toggleActivo(direccionId, id);
+        model.addAttribute("personal", personalService.listarTodos(direccionId));
         return "personal/directorio/lista :: content";
     }
 
@@ -138,75 +138,75 @@ public class PersonalController {
 
     @GetMapping("/regimen")
     public String regimen(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("registros", regimenService.listarTodos(institucionId));
-        model.addAttribute("funcionarios", regimenService.listarFuncionarios(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("registros", regimenService.listarTodos(direccionId));
+        model.addAttribute("funcionarios", regimenService.listarFuncionarios(direccionId));
         return "personal/regimen/index :: content";
     }
 
     @GetMapping("/regimen/todos")
     public String regimenTodos(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("registros", regimenService.listarTodos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("registros", regimenService.listarTodos(direccionId));
         return "personal/regimen/todos/todos :: content";
     }
 
     @GetMapping("/regimen/llamadas")
     public String regimenLlamadas(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("registros", regimenService.listarPorTipo(direccionId,
                 RegimenDisciplinario.TipoRegimen.LLAMADA_ATENCION));
         return "personal/regimen/llamadas/llamadas :: content";
     }
 
     @GetMapping("/regimen/amonestaciones")
     public String regimenAmonestaciones(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("registros", regimenService.listarPorTipo(direccionId,
                 RegimenDisciplinario.TipoRegimen.AMONESTACION));
         return "personal/regimen/amonestaciones/amonestaciones :: content";
     }
 
     @GetMapping("/regimen/procesos")
     public String regimenProcesos(Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("registros", regimenService.listarPorTipo(institucionId,
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("registros", regimenService.listarPorTipo(direccionId,
                 RegimenDisciplinario.TipoRegimen.PROCESO_DISCIPLINARIO));
         return "personal/regimen/procesos/procesos :: content";
     }
 
     @GetMapping("/regimen/form")
     public String regimenFormCrear(Model model, HttpSession session) {
-        Long institucionId = institucionId(session);
+        Long direccionId = direccionId(session);
         model.addAttribute("registro", new RegimenDisciplinario());
-        model.addAttribute("funcionarios", regimenService.listarFuncionarios(institucionId));
+        model.addAttribute("funcionarios", regimenService.listarFuncionarios(direccionId));
         return "personal/regimen/formulario :: form-content";
     }
 
     @GetMapping("/regimen/form/{id}")
     public String regimenFormEditar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("registro", regimenService.obtenerPorId(institucionId, id));
-        model.addAttribute("funcionarios", regimenService.listarFuncionarios(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("registro", regimenService.obtenerPorId(direccionId, id));
+        model.addAttribute("funcionarios", regimenService.listarFuncionarios(direccionId));
         return "personal/regimen/formulario :: form-content";
     }
 
     @PostMapping("/regimen")
     public String regimenGuardar(@ModelAttribute RegimenDisciplinario datos,
                                   Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        regimenService.guardar(institucionId, datos);
-        model.addAttribute("registros", regimenService.listarTodos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        regimenService.guardar(direccionId, datos);
+        model.addAttribute("registros", regimenService.listarTodos(direccionId));
         model.addAttribute("tipoActivo", "TODOS");
-        model.addAttribute("funcionarios", regimenService.listarFuncionarios(institucionId));
+        model.addAttribute("funcionarios", regimenService.listarFuncionarios(direccionId));
         return "personal/regimen/todos/todos :: content";
     }
 
     @DeleteMapping("/regimen/{id}")
     public String regimenEliminar(@PathVariable Long id, Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        regimenService.eliminar(institucionId, id);
-        model.addAttribute("registros", regimenService.listarTodos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        regimenService.eliminar(direccionId, id);
+        model.addAttribute("registros", regimenService.listarTodos(direccionId));
         return "personal/regimen/todos/todos :: content";
     }
 
@@ -214,9 +214,9 @@ public class PersonalController {
     public String regimenCambiarEstado(@PathVariable Long id,
                                         @RequestParam String estado,
                                         Model model, HttpSession session) {
-        Long institucionId = requerirInstitucion(session);
-        regimenService.cambiarEstado(institucionId, id, RegimenDisciplinario.EstadoRegimen.valueOf(estado));
-        model.addAttribute("registros", regimenService.listarTodos(institucionId));
+        Long direccionId = requerirDireccion(session);
+        regimenService.cambiarEstado(direccionId, id, RegimenDisciplinario.EstadoRegimen.valueOf(estado));
+        model.addAttribute("registros", regimenService.listarTodos(direccionId));
         return "personal/regimen/todos/todos :: content";
     }
 
@@ -225,16 +225,16 @@ public class PersonalController {
     @GetMapping("/solicitudes")
     public String solicitudes(Model model, HttpSession session, HttpServletRequest request) {
         exigirDocenteODirector(request);
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorDireccion(direccionId));
         return "personal/solicitudes/solicitudes :: content";
     }
 
     @GetMapping("/solicitudes/lista")
     public String solicitudesLista(Model model, HttpSession session, HttpServletRequest request) {
         exigirDocenteODirector(request);
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorDireccion(direccionId));
         return "personal/solicitudes/solicitudes :: tabla-solicitudes";
     }
 
@@ -242,8 +242,8 @@ public class PersonalController {
     public String solicitudEnProceso(@PathVariable Long id, Model model, HttpSession session, HttpServletRequest request) {
         exigirDocenteODirector(request);
         solicitudService.marcarEnProceso(id);
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorDireccion(direccionId));
         return "personal/solicitudes/solicitudes :: tabla-solicitudes";
     }
 
@@ -252,8 +252,8 @@ public class PersonalController {
             Model model, HttpSession session, HttpServletRequest request) {
         exigirDocenteODirector(request);
         solicitudService.resolver(id, respuesta);
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorDireccion(direccionId));
         return "personal/solicitudes/solicitudes :: tabla-solicitudes";
     }
 
@@ -262,20 +262,20 @@ public class PersonalController {
             Model model, HttpSession session, HttpServletRequest request) {
         exigirDocenteODirector(request);
         solicitudService.rechazar(id, respuesta);
-        Long institucionId = requerirInstitucion(session);
-        model.addAttribute("solicitudes", solicitudService.listarPorInstitucion(institucionId));
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("solicitudes", solicitudService.listarPorDireccion(direccionId));
         return "personal/solicitudes/solicitudes :: tabla-solicitudes";
     }
 
     // ─── HELPERS ───────────────────────────────────────────────
 
-    private Long institucionId(HttpSession session) {
-        return (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long direccionId(HttpSession session) {
+        return (Long) session.getAttribute("SESSION_DIRECCION_ID");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = institucionId(session);
-        if (id == null) throw new InstitucionNoSeleccionadaException();
+    private Long requerirDireccion(HttpSession session) {
+        Long id = direccionId(session);
+        if (id == null) throw new DireccionNoSeleccionadaException();
         return id;
     }
 

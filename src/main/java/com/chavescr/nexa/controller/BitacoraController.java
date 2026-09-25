@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import java.util.List;
 
@@ -33,16 +33,16 @@ public class BitacoraController {
             @RequestParam(required = false) String alcance,
             @RequestParam(required = false) AccionHistorial accion,
             Model model, HttpSession session, HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
-        boolean institucional = "institucion".equalsIgnoreCase(alcance) && puedeVerInstitucional(request);
+        Long direccionId = requerirDireccion(session);
+        boolean institucional = "direccion".equalsIgnoreCase(alcance) && puedeVerInstitucional(request);
         ModuloSistema modulo = institucional ? null : ModuloSistema.desdeRuta(ruta);
 
-        List<FilaBitacora> eventos = service.listar(institucionId, modulo, accion);
+        List<FilaBitacora> eventos = service.listar(direccionId, modulo, accion);
 
         model.addAttribute("eventos", eventos);
         model.addAttribute("modulo", modulo);
         model.addAttribute("ruta", ruta);
-        model.addAttribute("alcance", institucional ? "institucion" : "modulo");
+        model.addAttribute("alcance", institucional ? "direccion" : "modulo");
         model.addAttribute("accionFiltro", accion);
         model.addAttribute("puedeVerInstitucional", puedeVerInstitucional(request));
         return "bitacora/panel :: content";
@@ -52,10 +52,10 @@ public class BitacoraController {
         return request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long requerirDireccion(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_DIRECCION_ID");
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }

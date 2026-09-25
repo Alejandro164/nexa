@@ -1,6 +1,6 @@
 package com.chavescr.nexa.controller;
 
-import com.chavescr.nexa.exception.InstitucionNoSeleccionadaException;
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,8 +33,8 @@ public class DistribucionPorcentualController {
     public String distribucion(@RequestParam(required = false) Long periodoId,
             @RequestParam(required = false) Long materiaId, Model model, HttpSession session,
             HttpServletRequest request) {
-        Long institucionId = requerirInstitucion(session);
-        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
+        Long direccionId = requerirDireccion(session);
+        cargarPanel(model, direccionId, periodoId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/distribucion/distribucion :: content";
     }
 
@@ -47,22 +47,22 @@ public class DistribucionPorcentualController {
             @RequestParam(required = false) Integer examenes,
             @RequestParam(required = false) Integer asistencia,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
-        Long institucionId = requerirInstitucion(session);
+        Long direccionId = requerirDireccion(session);
         try {
-            service.guardarDistribucion(institucionId, periodoId, materiaId, cotidiano, tareas, proyectos,
+            service.guardarDistribucion(direccionId, periodoId, materiaId, cotidiano, tareas, proyectos,
                     examenes, asistencia);
             model.addAttribute("guardadoOk", true);
             response.setHeader("HX-Trigger", "promedioDesactualizado");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
         }
-        cargarPanel(model, institucionId, periodoId, materiaId, docenteIdSiAplica(request, session));
+        cargarPanel(model, direccionId, periodoId, materiaId, docenteIdSiAplica(request, session));
         return "gestion-academica/distribucion/distribucion :: content";
     }
 
-    private void cargarPanel(Model model, Long institucionId, Long periodoId, Long materiaId, Long docenteId) {
-        var periodos = service.listarPeriodosActivos(institucionId);
-        var materias = alcanceDocenteService.materiasVisibles(institucionId, docenteId);
+    private void cargarPanel(Model model, Long direccionId, Long periodoId, Long materiaId, Long docenteId) {
+        var periodos = service.listarPeriodosActivos(direccionId);
+        var materias = alcanceDocenteService.materiasVisibles(direccionId, docenteId);
         if (periodoId == null && !periodos.isEmpty()) {
             periodoId = periodos.get(0).getId();
         }
@@ -74,14 +74,14 @@ public class DistribucionPorcentualController {
         model.addAttribute("periodoId", periodoId);
         model.addAttribute("materiaId", materiaId);
         if (periodoId != null && materiaId != null) {
-            model.addAttribute("distribucion", service.obtenerDistribucion(institucionId, periodoId, materiaId));
+            model.addAttribute("distribucion", service.obtenerDistribucion(direccionId, periodoId, materiaId));
         }
     }
 
-    private Long requerirInstitucion(HttpSession session) {
-        Long id = (Long) session.getAttribute("SESSION_INSTITUCION_ID");
+    private Long requerirDireccion(HttpSession session) {
+        Long id = (Long) session.getAttribute("SESSION_DIRECCION_ID");
         if (id == null) {
-            throw new InstitucionNoSeleccionadaException();
+            throw new DireccionNoSeleccionadaException();
         }
         return id;
     }
