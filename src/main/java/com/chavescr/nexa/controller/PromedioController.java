@@ -16,6 +16,7 @@ import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.EnvioNotasDocenteService;
 import com.chavescr.nexa.service.PromedioService;
+import com.chavescr.nexa.service.TipoComponenteService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,12 +29,14 @@ public class PromedioController {
     private final PromedioService service;
     private final AlcanceDocenteService alcanceDocenteService;
     private final EnvioNotasDocenteService envioNotasDocenteService;
+    private final TipoComponenteService tipoComponenteService;
 
     public PromedioController(PromedioService service, AlcanceDocenteService alcanceDocenteService,
-            EnvioNotasDocenteService envioNotasDocenteService) {
+            EnvioNotasDocenteService envioNotasDocenteService, TipoComponenteService tipoComponenteService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
         this.envioNotasDocenteService = envioNotasDocenteService;
+        this.tipoComponenteService = tipoComponenteService;
     }
 
     @GetMapping
@@ -50,8 +53,9 @@ public class PromedioController {
         if (materiaId == null && !materias.isEmpty()) {
             materiaId = materias.get(0).getId();
         }
+        var tipos = tipoComponenteService.listarActivos(direccionId);
         List<FilaPromedio> filas = nivelId != null && materiaId != null
-                ? service.calcularPromedio(direccionId, nivelId, materiaId)
+                ? service.calcularPromedio(direccionId, nivelId, materiaId, tipos)
                 : List.of();
         List<Double> promedios = filas.stream()
                 .map(FilaPromedio::getPromedioFinal)
@@ -66,6 +70,8 @@ public class PromedioController {
         model.addAttribute("materias", materias);
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
+        model.addAttribute("tiposComponente", tipos);
+        model.addAttribute("columnasPromedio", tipos.size() + 3);
         model.addAttribute("filas", filas);
         model.addAttribute("estudiantesEvaluados", promedios.size());
         model.addAttribute("promedioGrupo", promedios.stream().mapToDouble(Double::doubleValue).average().orElse(0));

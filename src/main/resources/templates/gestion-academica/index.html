@@ -127,22 +127,11 @@
                         @click="activeTab = 'asistencia'">
                         📅 Asistencia
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'cotidiano' }"
-                        @click="activeTab = 'cotidiano'">
-                        📝 Cotidiano
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'tareas' }"
-                        @click="activeTab = 'tareas'">
-                        📚 Tareas
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'proyectos' }"
-                        @click="activeTab = 'proyectos'">
-                        🎯 Proyectos
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'examenes' }"
-                        @click="activeTab = 'examenes'">
-                        📋 Exámenes
-                    </button>
+                    <button th:each="tipo : ${tiposComponente}" type="button" class="config-tab-btn"
+                        th:data-tab="${'tipo-' + tipo.id}"
+                        @click="activeTab = $el.dataset.tab"
+                        :class="{ 'active': activeTab === $el.dataset.tab }"
+                        th:text="${(tipo.emoji != null and !#strings.isEmpty(tipo.emoji) ? tipo.emoji + ' ' : '') + tipo.nombre}">Componente</button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'promedio' }"
                         @click="activeTab = 'promedio'">
                         ✅ Promedio
@@ -163,38 +152,33 @@
                 </div>
             </div>
 
-            <!-- Cotidiano -->
-            <div x-show="activeTab === 'cotidiano'" class="tab-pane" x-cloak>
-                <div id="indicadores-panel" hx-get="/gestion-academica/cotidiano/indicadores" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="card">
-                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando indicadores…</div>
-                    </div>
+            <div th:each="tipo : ${tiposComponente}" class="tab-pane" x-cloak
+                 th:data-tab="${'tipo-' + tipo.id}"
+                 x-show="activeTab === $el.dataset.tab">
+                <div th:if="${tipo.clave != null and tipo.clave.name() == 'COTIDIANO'}"
+                     id="indicadores-panel" hx-get="/gestion-academica/cotidiano/indicadores" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card"><div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando…</div></div>
                 </div>
-            </div>
-
-            <!-- Tareas -->
-            <div x-show="activeTab === 'tareas'" class="tab-pane" x-cloak>
-                <div id="tareas-definiciones-panel" hx-get="/gestion-academica/tareas/definiciones" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="card">
-                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando tareas…</div>
-                    </div>
+                <div th:if="${tipo.clave != null and tipo.clave.name() == 'TAREA'}"
+                     id="tareas-definiciones-panel" hx-get="/gestion-academica/tareas/definiciones" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card"><div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando…</div></div>
                 </div>
-            </div>
-
-            <!-- Proyectos -->
-            <div x-show="activeTab === 'proyectos'" class="tab-pane" x-cloak>
-                <div id="proyectos-panel" hx-get="/gestion-academica/proyectos" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="card">
-                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando proyectos…</div>
-                    </div>
+                <div th:if="${tipo.clave != null and tipo.clave.name() == 'PROYECTO'}"
+                     id="proyectos-panel" hx-get="/gestion-academica/proyectos" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card"><div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando…</div></div>
                 </div>
-            </div>
-
-            <!-- Exámenes -->
-            <div x-show="activeTab === 'examenes'" class="tab-pane" x-cloak>
-                <div id="examenes-panel" hx-get="/gestion-academica/examenes" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="card">
-                        <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando exámenes…</div>
+                <div th:if="${tipo.clave != null and tipo.clave.name() == 'EXAMEN'}"
+                     id="examenes-panel" hx-get="/gestion-academica/examenes" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="card"><div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando…</div></div>
+                </div>
+                <div th:if="${tipo.clave == null}" class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title" th:text="${tipo.nombre}">Tipo</h3>
+                            <p class="text-muted text-sm" style="margin:4px 0 0 0;">
+                                Este tipo está activo. Todavía no tiene rubros ni notas: el motor de calificación sigue en los tipos del sistema.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

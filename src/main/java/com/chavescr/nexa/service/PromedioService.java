@@ -1,5 +1,7 @@
 package com.chavescr.nexa.service;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -15,6 +17,7 @@ import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.ResultadoComponente;
+import com.chavescr.nexa.entity.TipoComponente;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
@@ -64,7 +67,8 @@ public class PromedioService {
                 .stream().findFirst().orElse(null);
     }
 
-    public List<FilaPromedio> calcularPromedio(Long direccionId, Long nivelId, Long materiaId) {
+    public List<FilaPromedio> calcularPromedio(Long direccionId, Long nivelId, Long materiaId,
+            List<TipoComponente> tipos) {
         PeriodoAcademico periodo = periodoActual(direccionId);
         if (periodo == null) {
             return List.of();
@@ -79,38 +83,45 @@ public class PromedioService {
                 .stream().collect(Collectors.groupingBy(r -> r.getEstudiante().getId()));
 
         DistribucionPorcentual distribucion = distribucionService.obtenerDistribucion(direccionId, periodoId, materiaId);
-        Map<Long, Double> pesosCotidiano = componenteService.calcularPesosEfectivos(
-                componenteService.listar(direccionId, ClaveComponente.COTIDIANO, nivelId, materiaId, null));
-        Map<Long, Double> pesosTareas = componenteService.calcularPesosEfectivos(
-                componenteService.listar(direccionId, ClaveComponente.TAREA, nivelId, materiaId, null));
-        Map<Long, Double> pesosProyectos = componenteService.calcularPesosEfectivos(
-                componenteService.listar(direccionId, ClaveComponente.PROYECTO, nivelId, materiaId, periodoId));
-        Map<Long, Double> pesosExamenes = componenteService.calcularPesosEfectivos(
-                componenteService.listar(direccionId, ClaveComponente.EXAMEN, nivelId, materiaId, periodoId));
+        List<TipoComponente> columnas = tipos == null ? List.of() : tipos;
+        Map<ClaveComponente, Map<Long, Double>> pesos = pesosDe(direccionId, nivelId, materiaId, periodoId, columnas);
 
         return estudiantes.stream()
                 .map(est -> calcularFila(est, periodo, materiaId, direccionId,
-                        resultadosPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, pesosCotidiano,
-                        pesosTareas, pesosProyectos, pesosExamenes))
+                        resultadosPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, columnas, pesos))
                 .toList();
+    }
+
+    private Map<ClaveComponente, Map<Long, Double>> pesosDe(Long direccionId, Long nivelId, Long materiaId,
+            Long periodoId, List<TipoComponente> tipos) {
+        Map<ClaveComponente, Map<Long, Double>> pesos = new EnumMap<>(ClaveComponente.class);
+        for (TipoComponente tipo : tipos) {
+            if (tipo.getClave() == null || pesos.containsKey(tipo.getClave())) {
+                continue;
+            }
+            Long periodoDelTipo = tipo.getClave() == ClaveComponente.PROYECTO
+                    || tipo.getClave() == ClaveComponente.EXAMEN ? periodoId : null;
+            pesos.put(tipo.getClave(), componenteService.calcularPesosEfectivos(
+                    componenteService.listar(direccionId, tipo.getClave(), nivelId, materiaId, periodoDelTipo)));
+        }
+        return pesos;
     }
 
     private FilaPromedio calcularFila(Usuario estudiante, PeriodoAcademico periodo, Long materiaId,
             Long direccionId, List<ResultadoComponente> resultados, DistribucionPorcentual distribucion,
-            Map<Long, Double> pesosCotidiano, Map<Long, Double> pesosTareas, Map<Long, Double> pesosProyectos,
-            Map<Long, Double> pesosExamenes) {
-        Integer cotidiano = promedioDe(resultados, ClaveComponente.COTIDIANO, pesosCotidiano);
-        Integer tareasScore = promedioDe(resultados, ClaveComponente.TAREA, pesosTareas);
-        Integer proyectosScore = promedioDe(resultados, ClaveComponente.PROYECTO, pesosProyectos);
-        Integer examenesScore = promedioDe(resultados, ClaveComponente.EXAMEN, pesosExamenes);
+            List<TipoComponente> tipos, Map<ClaveComponente, Map<Long, Double>> pesos) {
+        List<Integer> notas = new ArrayList<>();
+        for (TipoComponente tipo : tipos) {
+            if (tipo.getClave() == null) {
+                notas.add(null);
+                continue;
+            }
+            notas.add(promedioDe(resultados, tipo.getClave(), pesos.getOrDefault(tipo.getClave(), Map.of())));
+        }
 
         Integer asistenciaScore = calcularAsistencia(direccionId, estudiante.getId(), materiaId, periodo);
-
-        Double promedioFinal = promedioFinal(distribucion, cotidiano, tareasScore, proyectosScore,
-                examenesScore, asistenciaScore);
-
-        return new FilaPromedio(estudiante, cotidiano, tareasScore, proyectosScore, examenesScore,
-                asistenciaScore, promedioFinal);
+        Double promedioFinal = promedioFinal(distribucion, tipos, notas, asistenciaScore);
+        return new FilaPromedio(estudiante, notas, asistenciaScore, promedioFinal);
     }
 
     private Integer calcularAsistencia(Long direccionId, Long estudianteId, Long materiaId,
@@ -145,25 +156,18 @@ public class PromedioService {
         return (int) Math.round(suma / sumaPesos);
     }
 
-    private Double promedioFinal(DistribucionPorcentual d, Integer cotidiano, Integer tareas, Integer proyectos,
-            Integer examenes, Integer asistencia) {
+    private Double promedioFinal(DistribucionPorcentual d, List<TipoComponente> tipos, List<Integer> notas,
+            Integer asistencia) {
         double sumaPonderada = 0;
         double sumaPesos = 0;
-        if (cotidiano != null) {
-            sumaPonderada += cotidiano * d.getCotidiano();
-            sumaPesos += d.getCotidiano();
-        }
-        if (tareas != null) {
-            sumaPonderada += tareas * d.getTareas();
-            sumaPesos += d.getTareas();
-        }
-        if (proyectos != null) {
-            sumaPonderada += proyectos * d.getProyectos();
-            sumaPesos += d.getProyectos();
-        }
-        if (examenes != null) {
-            sumaPonderada += examenes * d.getExamenes();
-            sumaPesos += d.getExamenes();
+        for (int i = 0; i < tipos.size(); i++) {
+            Integer nota = notas.get(i);
+            Integer peso = pesoDe(d, tipos.get(i).getClave());
+            if (nota == null || peso == null || peso <= 0) {
+                continue;
+            }
+            sumaPonderada += nota * peso;
+            sumaPesos += peso;
         }
         if (asistencia != null) {
             sumaPonderada += asistencia * d.getAsistencia();
@@ -173,5 +177,17 @@ public class PromedioService {
             return null;
         }
         return Math.round((sumaPonderada / sumaPesos) * 10) / 10.0;
+    }
+
+    private Integer pesoDe(DistribucionPorcentual d, ClaveComponente clave) {
+        if (clave == null || d == null) {
+            return null;
+        }
+        return switch (clave) {
+            case COTIDIANO -> d.getCotidiano();
+            case TAREA -> d.getTareas();
+            case PROYECTO -> d.getProyectos();
+            case EXAMEN -> d.getExamenes();
+        };
     }
 }

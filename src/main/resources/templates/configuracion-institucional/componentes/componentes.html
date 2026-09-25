@@ -1,28 +1,236 @@
-<div th:fragment="content" id="institucional-componentes-panel" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="content" id="institucional-componentes-panel" xmlns:th="http://www.thymeleaf.org"
+     th:with="emojis=${ {'📝','📚','🎯','📋','🧪','🎤','📐','✏️','🏆','🧠'} }">
+    <style>
+        .tipo-comp-body {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.25fr);
+            align-items: start;
+        }
+        .tipo-comp-form,
+        .tipo-comp-lista {
+            padding: 1.35rem 1.4rem 1.5rem;
+        }
+        .tipo-comp-form {
+            border-right: 1px solid var(--border);
+            background: #f8fafc;
+        }
+        .tipo-comp-form .form-input,
+        .tipo-comp-form .form-select,
+        .tipo-comp-nombre {
+            padding-left: 0.75rem;
+        }
+        .tipo-comp-kicker {
+            margin: 0 0 0.85rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+        .tipo-comp-emojis {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .tipo-comp-emoji {
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            font-size: 1.15rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .tipo-comp-emoji:hover { border-color: #cbd5e1; }
+        .tipo-comp-emoji.is-on {
+            border-color: var(--primary);
+            background: #e8f0f8;
+            box-shadow: 0 0 0 2px rgba(45, 90, 135, 0.18);
+        }
+        .tipo-comp-cards {
+            display: grid;
+            gap: 0.75rem;
+        }
+        .tipo-comp-card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.9rem 1rem 1rem;
+        }
+        .tipo-comp-card.is-off { background: #f8fafc; }
+        .tipo-comp-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .tipo-comp-marca {
+            flex: 0 0 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            background: #e8f0f8;
+            font-size: 1.45rem;
+        }
+        .tipo-comp-card.is-off .tipo-comp-marca {
+            background: #f1f5f9;
+            filter: grayscale(0.4);
+        }
+        .tipo-comp-main { flex: 1; min-width: 0; }
+        .tipo-comp-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-top: 0.45rem;
+        }
+        .tipo-comp-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.12rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .tipo-comp-chip.is-on { color: #166534; background: #dcfce7; }
+        .tipo-comp-chip.is-off { color: #64748b; background: #e2e8f0; }
+        .tipo-comp-chip.is-sistema { color: #1e3a5f; background: #e8f0f8; }
+        .tipo-comp-acciones {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.4rem;
+            margin-top: 0.75rem;
+        }
+        .tipo-comp-vacio {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.84rem;
+        }
+        @media (max-width: 860px) {
+            .tipo-comp-body { grid-template-columns: 1fr; }
+            .tipo-comp-form { border-right: 0; border-bottom: 1px solid var(--border); }
+        }
+    </style>
+
     <div class="card">
         <div class="card-header">
             <div>
-                <h3 class="card-title">Componentes</h3>
-                <p class="academic-help">Módulos y piezas de evaluación que usa esta dirección.</p>
+                <h3 class="card-title">Tipos de componente</h3>
+                <p class="academic-help">El nombre y el emoji se ven igual en los botones de Gestión académica.</p>
             </div>
         </div>
-        <form class="institucional-form" onsubmit="return false;">
-            <div class="institucional-grid">
+        <div class="tipo-comp-body">
+            <form class="tipo-comp-form"
+                  th:action="@{/configuracion-institucional/componentes}"
+                  hx-post="/configuracion-institucional/componentes"
+                  hx-target="#institucional-componentes-panel"
+                  hx-swap="outerHTML">
+                <p class="tipo-comp-kicker">Nuevo tipo</p>
                 <div class="form-group">
-                    <label class="form-label">Nombre del componente</label>
-                    <input class="form-input" type="text" name="nombre" placeholder="Cotidiano, tareas, proyecto…">
+                    <label class="form-label">Emoji</label>
+                    <input type="hidden" name="emoji" value="📝">
+                    <div class="tipo-comp-emojis">
+                        <button th:each="emoji : ${emojis}" type="button" class="tipo-comp-emoji"
+                                th:classappend="${emojiStat.index == 0} ? 'is-on' : ''"
+                                th:data-emoji="${emoji}" th:text="${emoji}"
+                                onclick="elegirEmojiTipo(this)">📝</button>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Estado</label>
-                    <select class="form-select" name="activo">
+                    <label class="form-label" for="tipo-componente-nombre">Nombre</label>
+                    <input class="form-input" id="tipo-componente-nombre" type="text" name="nombre"
+                           maxlength="60" required placeholder="Laboratorio, quiz, exposición…">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="tipo-componente-activo">Uso</label>
+                    <select class="form-select" id="tipo-componente-activo" name="activo">
                         <option value="true">Activo</option>
                         <option value="false">Inactivo</option>
                     </select>
                 </div>
+                <div class="institucional-actions">
+                    <button type="submit" class="btn btn-primary">Agregar tipo</button>
+                </div>
+            </form>
+
+            <div class="tipo-comp-lista">
+                <p class="tipo-comp-kicker">En esta dirección</p>
+                <p class="tipo-comp-vacio" th:if="${tiposComponente == null or tiposComponente.empty}">
+                    Todavía no hay tipos de componente.
+                </p>
+                <div class="tipo-comp-cards">
+                    <article th:each="tipo : ${tiposComponente}" class="tipo-comp-card"
+                             th:classappend="${tipo.activo} ? '' : 'is-off'">
+                        <form th:id="${'tipo-form-' + tipo.id}"
+                              th:action="@{/configuracion-institucional/componentes/{id}(id=${tipo.id})}"
+                              th:hx-post="@{/configuracion-institucional/componentes/{id}(id=${tipo.id})}"
+                              hx-target="#institucional-componentes-panel"
+                              hx-swap="outerHTML">
+                            <input type="hidden" name="activo" th:value="${tipo.activo}">
+                            <input type="hidden" name="emoji" th:value="${tipo.emoji}">
+                            <div class="tipo-comp-top">
+                                <div class="tipo-comp-marca" th:text="${tipo.emoji != null ? tipo.emoji : '📝'}">📝</div>
+                                <div class="tipo-comp-main">
+                                    <input class="form-input tipo-comp-nombre" type="text" name="nombre" maxlength="60"
+                                           required th:value="${tipo.nombre}">
+                                    <div class="tipo-comp-meta">
+                                        <span class="tipo-comp-chip" th:classappend="${tipo.activo} ? 'is-on' : 'is-off'"
+                                              th:text="${tipo.activo} ? 'Activo' : 'Inactivo'">Activo</span>
+                                        <span class="tipo-comp-chip is-sistema" th:if="${tipo.delSistema}">Del sistema</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tipo-comp-emojis" style="margin-top: 0.75rem;">
+                                <button th:each="emoji : ${emojis}" type="button" class="tipo-comp-emoji"
+                                        th:classappend="${tipo.emoji == emoji} ? 'is-on' : ''"
+                                        th:data-emoji="${emoji}" th:text="${emoji}"
+                                        onclick="elegirEmojiTipo(this)">📝</button>
+                            </div>
+                        </form>
+                        <div class="tipo-comp-acciones">
+                            <button type="submit" class="btn btn-secondary btn-sm"
+                                    th:form="${'tipo-form-' + tipo.id}">Guardar</button>
+                            <form th:action="@{/configuracion-institucional/componentes/{id}(id=${tipo.id})}"
+                                  th:hx-post="@{/configuracion-institucional/componentes/{id}(id=${tipo.id})}"
+                                  hx-target="#institucional-componentes-panel"
+                                  hx-swap="outerHTML">
+                                <input type="hidden" name="nombre" th:value="${tipo.nombre}">
+                                <input type="hidden" name="activo" th:value="${!tipo.activo}">
+                                <button type="submit" class="btn btn-ghost btn-sm"
+                                        th:text="${tipo.activo} ? 'Desactivar' : 'Activar'">Desactivar</button>
+                            </form>
+                            <form th:if="${!tipo.delSistema}"
+                                  th:action="@{/configuracion-institucional/componentes/{id}/eliminar(id=${tipo.id})}"
+                                  th:hx-post="@{/configuracion-institucional/componentes/{id}/eliminar(id=${tipo.id})}"
+                                  hx-target="#institucional-componentes-panel"
+                                  hx-swap="outerHTML"
+                                  hx-confirm="¿Eliminar este tipo de componente?">
+                                <button type="submit" class="btn btn-ghost btn-sm">Eliminar</button>
+                            </form>
+                        </div>
+                    </article>
+                </div>
             </div>
-            <div class="institucional-actions">
-                <button type="button" class="btn btn-primary">Guardar componentes</button>
-            </div>
-        </form>
+        </div>
     </div>
+    <script>
+        function elegirEmojiTipo(boton) {
+            var form = boton.closest('form');
+            if (!form) {
+                return;
+            }
+            var input = form.querySelector('input[name="emoji"]');
+            if (input) {
+                input.value = boton.getAttribute('data-emoji') || '';
+            }
+            var marca = form.querySelector('.tipo-comp-marca');
+            if (marca) {
+                marca.textContent = input ? input.value : '';
+            }
+            form.querySelectorAll('.tipo-comp-emoji').forEach(function (item) {
+                item.classList.toggle('is-on', item === boton);
+            });
+        }
+    </script>
 </div>
