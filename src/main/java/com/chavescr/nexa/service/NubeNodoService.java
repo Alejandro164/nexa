@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 
 import com.chavescr.nexa.entity.Direccion;
+import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.NubeNodo;
 import com.chavescr.nexa.entity.TipoNodo;
 import com.chavescr.nexa.repository.DireccionRepository;
@@ -45,17 +47,20 @@ public class NubeNodoService {
     private final DocumentConversionService conversionService;
     private final UsuarioRepository usuarioRepository;
     private final NubeNodoAccesoRepository accesoRepository;
+    private final InstitucionService institucionService;
 
     public NubeNodoService(NubeNodoRepository repository,
             DireccionRepository direccionRepository,
             DocumentConversionService conversionService,
             UsuarioRepository usuarioRepository,
-            NubeNodoAccesoRepository accesoRepository) {
+            NubeNodoAccesoRepository accesoRepository,
+            InstitucionService institucionService) {
         this.repository = repository;
         this.direccionRepository = direccionRepository;
         this.conversionService = conversionService;
         this.usuarioRepository = usuarioRepository;
         this.accesoRepository = accesoRepository;
+        this.institucionService = institucionService;
     }
 
     public String getRutaRecursos() {
@@ -180,9 +185,9 @@ public class NubeNodoService {
 
         Direccion direccion = direccionRepository.findById(direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
-        String codigoDireccion = sanitizarNombreCarpeta(direccion.getCodigo());
+        String carpetaInstitucion = carpetaInstitucion(direccion);
 
-        Path directorioDestino = Paths.get(rutaRecursos, codigoDireccion, "nube-nexa");
+        Path directorioDestino = Paths.get(rutaRecursos, carpetaInstitucion, "nube-nexa");
         if (!Files.exists(directorioDestino)) {
             Files.createDirectories(directorioDestino);
         }
@@ -198,7 +203,7 @@ public class NubeNodoService {
 
         Files.copy(archivo.getInputStream(), rutaDestino, StandardCopyOption.REPLACE_EXISTING);
 
-        String rutaRelativa = codigoDireccion + "/nube-nexa/" + nombreArchivoUnico;
+        String rutaRelativa = carpetaInstitucion + "/nube-nexa/" + nombreArchivoUnico;
 
         NubeNodo nodoArchivo = new NubeNodo();
         nodoArchivo.setNombre(nombreOriginal);
@@ -221,11 +226,131 @@ public class NubeNodoService {
         return repository.save(nodoArchivo);
     }
 
-    private String sanitizarNombreCarpeta(String nombre) {
-        if (nombre == null || nombre.isBlank()) {
-            return "direccion";
+    // Los archivos se agrupan físicamente por institución: <ruta.recursos>/<cédula-institución>/nube-nexa/...
+    // Así las direcciones (Preescolar, Primaria, Secundaria) de una misma institución comparten carpeta.
+    // Sin cédula se falla explícitamente en vez de usar una carpeta genérica que mezclaría instituciones.
+    private String carpetaInstitucion(Direccion direccion) {
+        if (direccion.getInstitucion() == null) {
+            institucionService.asegurarInstituciones();
         }
+        String cedula = cedulaInstitucion(direccion);
+        if (cedula == null) {
+            throw new IllegalArgumentException("La institución no tiene cédula registrada. "
+                    + "Regístrela en la configuración de la institución antes de subir archivos.");
+        }
+        return sanitizarNombreCarpeta(cedula);
+    }
+
+    private String cedulaInstitucion(Direccion direccion) {
+        Institucion institucion = direccion.getInstitucion();
+        if (institucion == null || institucion.getCedula() == null || institucion.getCedula().isBlank()) {
+            return null;
+        }
+        return institucion.getCedula();
+    }
+
+    private String sanitizarNombreCarpeta(String nombre) {
         return nombre.trim().replaceAll("[^a-zA-Z0-9_\\-]", "_");
+    }
+
+    // Reubica los archivos guardados con el esquema anterior (<código-presupuestario>/nube-nexa/...)
+    // en la carpeta de su institución (<cédula>/nube-nexa/...) y actualiza sus rutas. Idempotente:
+    // los que ya están en su carpeta se saltan, y los de instituciones sin cédula quedan intactos
+    // hasta que se les registre una.
+    @Transactional(rollbackFor = Exception.class)
+    public void migrarArchivosACarpetaInstitucion() {
+        institucionService.asegurarInstituciones();
+
+        Set<Long> direccionesSinCedula = new HashSet<>();
+        Set<Path> carpetasAnteriores = new HashSet<>();
+        int movidos = 0;
+
+        for (NubeNodo nodo : repository.findByTipoAndUrlArchivoIsNotNull(TipoNodo.ARCHIVO)) {
+            Direccion direccion = nodo.getDireccion();
+            if (direccion == null) {
+                continue;
+            }
+            String cedula = cedulaInstitucion(direccion);
+            if (cedula == null) {
+                if (direccionesSinCedula.add(direccion.getId())) {
+                    log.warn("Nube Nexa: la institución de la dirección '{}' (id {}) no tiene cédula; "
+                            + "sus archivos no se reubican hasta que se registre una.",
+                            direccion.getNombre(), direccion.getId());
+                }
+                continue;
+            }
+
+            String prefijo = sanitizarNombreCarpeta(cedula) + "/nube-nexa/";
+            if (nodo.getUrlArchivo().startsWith(prefijo)) {
+                continue;
+            }
+
+            String nuevaUrl;
+            try {
+                nuevaUrl = reubicar(nodo.getUrlArchivo(), prefijo);
+            } catch (IOException e) {
+                log.error("Nube Nexa: no se pudo reubicar el archivo del nodo {} ({})", nodo.getId(),
+                        nodo.getUrlArchivo(), e);
+                continue;
+            }
+            if (nuevaUrl == null) {
+                log.warn("Nube Nexa: archivo físico no encontrado para el nodo {} ({}); se deja sin reubicar.",
+                        nodo.getId(), nodo.getUrlArchivo());
+                continue;
+            }
+            carpetasAnteriores.add(Paths.get(rutaRecursos).resolve(nodo.getUrlArchivo()).getParent());
+            nodo.setUrlArchivo(nuevaUrl);
+
+            // Si la vista previa no se puede mover se descarta; generarPreview la regenera a demanda.
+            if (nodo.getUrlPrevisualizacion() != null) {
+                String nuevaPreview = null;
+                try {
+                    nuevaPreview = reubicar(nodo.getUrlPrevisualizacion(), prefijo);
+                } catch (IOException e) {
+                    log.warn("Nube Nexa: no se pudo reubicar la vista previa del nodo {}", nodo.getId(), e);
+                }
+                nodo.setUrlPrevisualizacion(nuevaPreview);
+            }
+
+            repository.save(nodo);
+            movidos++;
+        }
+
+        eliminarCarpetasVacias(carpetasAnteriores);
+        if (movidos > 0) {
+            log.info("Nube Nexa: {} archivo(s) reubicado(s) en la carpeta de su institución.", movidos);
+        }
+    }
+
+    // Mueve el archivo físico a <prefijo><nombre> y devuelve la nueva ruta relativa, o null si no existe.
+    private String reubicar(String urlActual, String prefijo) throws IOException {
+        String nuevaUrl = prefijo + Paths.get(urlActual).getFileName().toString();
+        Path origen = Paths.get(rutaRecursos).resolve(urlActual);
+        Path destino = Paths.get(rutaRecursos).resolve(nuevaUrl);
+
+        if (Files.exists(origen)) {
+            Files.createDirectories(destino.getParent());
+            Files.move(origen, destino, StandardCopyOption.REPLACE_EXISTING);
+            return nuevaUrl;
+        }
+        // Ya se movió en una corrida anterior cuya transacción no llegó a confirmar la nueva ruta
+        return Files.exists(destino) ? nuevaUrl : null;
+    }
+
+    // Limpia <código>/nube-nexa y <código> si quedaron vacías tras la migración.
+    private void eliminarCarpetasVacias(Set<Path> carpetas) {
+        Path raiz = Paths.get(rutaRecursos);
+        for (Path carpeta : carpetas) {
+            Path actual = carpeta;
+            while (actual != null && !actual.equals(raiz) && actual.startsWith(raiz)) {
+                try {
+                    Files.deleteIfExists(actual);
+                } catch (IOException e) {
+                    break; // no vacía (DirectoryNotEmptyException) o sin permisos: se deja
+                }
+                actual = actual.getParent();
+            }
+        }
     }
 
     public boolean generarPreview(Long nodoId) {
