@@ -1,0 +1,115 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org"
+     th:with="esTarea=${tipo.name() == 'TAREA'}, esAnuncio=${tipo.name() == 'ANUNCIO'},
+              panel=${tipo.name() == 'TAREA' ? '#tareas-panel' : (tipo.name() == 'MATERIAL' ? '#materiales-panel' : '#tablon-panel')},
+              nombre=${tipo.name() == 'TAREA' ? 'tarea' : (tipo.name() == 'MATERIAL' ? 'material' : 'anuncio')}">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
+        <div class="modal-dialog" style="max-width: 640px;">
+            <div class="modal-loading-overlay htmx-indicator" id="modal-loading-overlay">
+                <div class="spinner"></div>
+                <span>Guardando...</span>
+            </div>
+            <div class="modal-header">
+                <h3 class="modal-title"
+                    th:text="${(pub == null ? (esTarea ? 'Nueva ' : 'Nuevo ') : 'Editar ') + nombre}">Nueva tarea</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form th:hx-post="@{/classroom/clase/{id}/publicacion(id=${ctx.clase.id})}"
+                      hx-encoding="multipart/form-data"
+                      th:hx-target="${panel}" hx-swap="innerHTML"
+                      hx-indicator="#modal-loading-overlay"
+                      hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()"
+                      th:x-data="|{ rubro: '${pub != null and pub.claveComponente != null ? pub.claveComponente.name() : ''}' }|">
+                    <input type="hidden" name="tipo" th:value="${tipo.name()}">
+                    <input th:if="${pub != null}" type="hidden" name="publicacionId" th:value="${pub.id}">
+
+                    <div th:unless="${esAnuncio}" class="cr-field">
+                        <label>Título *</label>
+                        <input type="text" name="titulo" maxlength="200" required th:value="${pub?.titulo}"
+                               th:placeholder="${esTarea ? 'Ej. Resumen del capítulo 3' : 'Ej. Presentación de la Unidad 1'}">
+                    </div>
+
+                    <div class="cr-field">
+                        <label th:text="${esAnuncio ? 'Anuncio' : (esTarea ? 'Instrucciones' : 'Descripción')}">Instrucciones</label>
+                        <textarea name="contenido" maxlength="5000" th:text="${pub?.contenido}"
+                                  th:placeholder="${esTarea ? 'Explica qué deben hacer y cómo se evaluará (opcional)' : '(opcional)'}"></textarea>
+                    </div>
+
+                    <div th:unless="${esAnuncio}" class="cr-field">
+                        <label>Tema</label>
+                        <input type="text" name="tema" maxlength="100" list="cr-temas" th:value="${pub?.tema}"
+                               placeholder="Ej. Unidad 1 (opcional)">
+                        <datalist id="cr-temas">
+                            <option th:each="t : ${temas}" th:value="${t}"></option>
+                        </datalist>
+                        <small>Agrupa tareas y materiales en la clase.</small>
+                    </div>
+
+                    <!-- ── Solo tareas: fecha, puntos y calificación ── -->
+                    <th:block th:if="${esTarea}">
+                        <div class="cr-row">
+                            <div class="cr-field">
+                                <label>Fecha de entrega <span x-show="rubro" x-cloak>*</span></label>
+                                <input type="datetime-local" name="fechaEntrega" :required="rubro !== ''"
+                                       th:value="${pub != null and pub.fechaEntrega != null ? #temporals.format(pub.fechaEntrega, 'yyyy-MM-dd''T''HH:mm') : null}">
+                            </div>
+                            <div class="cr-field">
+                                <label>Puntos <span x-show="rubro" x-cloak>*</span></label>
+                                <input type="number" name="puntosTotales" min="1" :required="rubro !== ''"
+                                       th:value="${pub?.puntosTotales}" placeholder="Sin puntos">
+                            </div>
+                        </div>
+
+                        <div class="cr-calificable">
+                            <div class="cr-field">
+                                <label>Calificación en Notas</label>
+                                <select name="claveComponente" x-model="rubro">
+                                    <option value="">No calificable</option>
+                                    <option th:each="r : ${rubros}" th:value="${r.key.name()}" th:text="${r.value}"
+                                            th:selected="${pub != null and pub.claveComponente == r.key}">Tarea</option>
+                                </select>
+                                <small x-show="!rubro">La tarea no genera nota; solo se entrega y se devuelve con comentarios.</small>
+                                <small x-show="rubro" x-cloak
+                                       th:text="${'Se crea el rubro en Gestión Académica para la sección ' + ctx.clase.seccion + ' y las notas que asignes aquí cuentan en el promedio.'}">Info</small>
+                            </div>
+                            <div class="cr-field" x-show="rubro" x-cloak>
+                                <label>Porcentaje del rubro</label>
+                                <input type="number" name="porcentaje" min="1" max="100" th:value="${porcentaje}"
+                                       placeholder="Automático">
+                                <small>Vacío = se reparte en partes iguales con los demás del mismo rubro.</small>
+                            </div>
+                        </div>
+                    </th:block>
+
+                    <!-- ── Adjuntos ── -->
+                    <div th:if="${pub != null and !pub.adjuntos.empty}" class="cr-field">
+                        <label>Adjuntos actuales</label>
+                        <label th:each="a : ${pub.adjuntos}" class="cr-archivo-fila" style="font-weight: 400; cursor: pointer;">
+                            <span class="cr-chip" style="flex: 1; max-width: none;">
+                                <span class="cr-chip-ico" th:text="${a.enlace ? '🔗' : (a.extension != null ? a.extension : 'DOC')}">PDF</span>
+                                <span th:text="${a.nombre}">archivo</span>
+                            </span>
+                            <input type="checkbox" name="quitarAdjunto" th:value="${a.id}">
+                            <span class="cr-meta">Quitar</span>
+                        </label>
+                    </div>
+                    <div class="cr-field">
+                        <label>Agregar archivos</label>
+                        <input type="file" name="archivos" multiple class="cr-file-input">
+                    </div>
+                    <div class="cr-field">
+                        <label>Enlaces</label>
+                        <textarea name="enlaces" style="min-height: 60px;"
+                                  placeholder="Un enlace por línea (ej. https://youtube.com/…)"></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
+                        <button type="submit" class="btn-primary"
+                                th:text="${pub != null ? 'Guardar cambios' : (esTarea ? 'Asignar' : 'Publicar')}">Publicar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

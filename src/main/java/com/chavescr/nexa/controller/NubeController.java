@@ -35,6 +35,7 @@ import com.chavescr.nexa.service.NubeAccesoService;
 import com.chavescr.nexa.service.NubeNodoService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -163,7 +164,7 @@ public class NubeController {
     public String subirArchivo(@RequestParam("archivo") MultipartFile archivo,
             @RequestParam(required = false) Long padreId,
             Model model,
-            HttpSession session, HttpServletRequest request) {
+            HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         Usuario usuario = usuarioActual(session);
         boolean admin = esAdmin(request);
         Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
@@ -182,8 +183,11 @@ public class NubeController {
         Long propietarioId = usuario != null ? usuario.getId() : null;
         try {
             nubeNodoService.subirArchivo(archivo, padreId, direccionId, propietarioId);
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
+            notificarError(response, "No se pudo subir el archivo.");
         }
 
         if (padreId != null) {
@@ -579,5 +583,16 @@ public class NubeController {
         model.addAttribute("nodo", nodo);
         model.addAttribute("accesos", accesos);
         model.addAttribute("usuariosDisponibles", disponibles);
+    }
+
+    private void notificarError(HttpServletResponse response, String mensaje) {
+        response.setHeader("HX-Trigger", "{\"nubeError\":{\"mensaje\":\"" + escaparJson(mensaje) + "\"}}");
+    }
+
+    private String escaparJson(String texto) {
+        if (texto == null) {
+            return "";
+        }
+        return texto.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

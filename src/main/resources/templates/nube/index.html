@@ -1483,6 +1483,16 @@
                 </template>
             </div>
         </div>
+        <script>
+            if (!window.nubeEventsRegistrados) {
+                document.addEventListener('nubeError', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje, 'error');
+                    }
+                });
+                window.nubeEventsRegistrados = true;
+            }
+        </script>
     </main>
     </th:block>
 

@@ -129,6 +129,12 @@ class ProyectoApplicationTests {
 		context.setVariable("franja", configJornada.franjas().get(1));
 		context.setVariable("diasCatalogo", DiaLaboral.CATALOGO);
 		context.setVariable("horario", Map.of("1-LUNES", List.of(leccion)));
+		// Atributos que agregó el bloqueo de horario por tipo de materia (#22)
+		context.setVariable("bloqueosSeccion", Map.of());
+		context.setVariable("tiposMateria", List.of());
+		context.setVariable("totalLecciones", 1);
+		context.setVariable("leccionCerrada", false);
+		context.setVariable("docentesAsociadosVacios", false);
 		context.setVariable("leccion", leccion);
 		context.setVariable("periodoId", 1L);
 		context.setVariable("nivelId", 1L);

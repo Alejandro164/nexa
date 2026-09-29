@@ -131,6 +131,11 @@ public class SecurityConfig {
                         .requestMatchers("/coordinacion-academica/**", "/archivo-graduados/**", "/oficios/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR)
 
+                        // ── Classroom: docentes y estudiantes de cada clase; ADMIN/DIRECTOR en solo lectura.
+                        //    La pertenencia a cada clase la valida ClassroomService ──
+                        .requestMatchers("/classroom/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+
                         // ── Comunicación: visible para todos los roles (declarado explícito) ──
                         .requestMatchers("/comunicacion/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, PADRE, ESTUDIANTE)

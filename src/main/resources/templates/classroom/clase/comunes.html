@@ -1,0 +1,23 @@
+<!-- Piezas reutilizadas por las pestañas de la clase (el CSS vive en classroom/clase/index.html) -->
+<th:block xmlns:th="http://www.thymeleaf.org">
+
+    <!-- Respuesta de error (422): htmx no la inserta, solo procesa el HX-Trigger con el mensaje -->
+    <th:block th:fragment="vacio"></th:block>
+
+    <!-- Avatar con la inicial y un color estable por usuario -->
+    <span th:fragment="avatar(usuario, tam)" class="cr-avatar" th:classappend="${tam}"
+          th:style="|background: hsl(${(usuario.id * 47) % 360}, 45%, 45%)|"
+          th:text="${usuario.nombre != null and !usuario.nombre.isEmpty() ? usuario.nombre.substring(0, 1) : '?'}"
+          th:title="${usuario.nombre}">A</span>
+
+    <!-- Archivos y enlaces adjuntos -->
+    <div th:fragment="chips(adjuntos)" th:if="${adjuntos != null and !adjuntos.empty}" class="cr-adjuntos">
+        <a th:each="a : ${adjuntos}" class="cr-chip" target="_blank" rel="noopener noreferrer"
+           th:href="${a.enlace} ? ${a.url} : @{/classroom/adjunto/{id}(id=${a.id})}"
+           th:title="${a.nombre}">
+            <span class="cr-chip-ico" th:text="${a.enlace ? '🔗' : (a.extension != null ? a.extension : 'DOC')}">PDF</span>
+            <span th:text="${a.nombre}">archivo.pdf</span>
+        </a>
+    </div>
+
+</th:block>

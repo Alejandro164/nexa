@@ -1,0 +1,183 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+
+    <button type="button" class="cr-back"
+            th:hx-get="@{/classroom/clase/{id}/tareas(id=${ctx.clase.id})}"
+            hx-target="#tareas-panel" hx-swap="innerHTML">← Todas las tareas</button>
+
+    <div class="cr-detalle" th:classappend="${!ctx.rol.estudiante} ? 'revision'">
+
+        <!-- ════════ Instrucciones ════════ -->
+        <section class="cr-panel cr-detalle-main">
+            <div class="cr-detalle-titulo">
+                <span class="cr-type-ico">📝</span>
+                <div style="flex: 1; min-width: 0;">
+                    <h3 th:text="${tarea.titulo}">Tarea</h3>
+                    <span class="cr-meta"
+                          th:text="${tarea.autor.nombre + ' · ' + #temporals.format(tarea.fechaCreacion, 'dd/MM/yyyy HH:mm') + (tarea.fechaEdicion != null ? ' · editada' : '')}">Docente · fecha</span>
+                </div>
+                <div th:if="${ctx.rol.docente}" class="cr-menu" x-data="{ menu: false }" @click.outside="menu = false">
+                    <button type="button" class="cr-icon-btn" @click="menu = !menu" aria-label="Opciones">⋮</button>
+                    <div class="cr-menu-list" x-show="menu" x-cloak>
+                        <button type="button" @click="menu = false"
+                                th:hx-get="@{/classroom/clase/{id}/form(id=${ctx.clase.id}, publicacionId=${tarea.id})}"
+                                hx-target="#modal-container" hx-swap="innerHTML" onclick="abrirModalAcademico()">Editar</button>
+                        <button type="button" class="danger" @click="menu = false"
+                                th:hx-post="@{/classroom/clase/{id}/publicacion/{pid}/eliminar(id=${ctx.clase.id}, pid=${tarea.id})}"
+                                hx-target="#tareas-panel" hx-swap="innerHTML"
+                                hx-confirm="¿Eliminar esta tarea con sus entregas? Si ya tiene calificaciones no se podrá eliminar.">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cr-detalle-info">
+                <span th:if="${tarea.puntosTotales != null}"><strong th:text="${tarea.puntosTotales}">20</strong> puntos</span>
+                <span th:if="${tarea.puntosTotales == null}">Sin calificación</span>
+                <span th:if="${tarea.fechaEntrega != null}">Fecha de entrega:
+                    <strong th:text="${#temporals.format(tarea.fechaEntrega, 'dd/MM/yyyy HH:mm')}">12/10</strong></span>
+                <span th:if="${tarea.fechaEntrega == null}">Sin fecha de entrega</span>
+                <span th:if="${tarea.tema != null}" th:text="${'Tema: ' + tarea.tema}">Tema</span>
+                <span th:if="${tarea.calificable}" class="cr-badge rubro" th:text="${'Rubro: ' + tarea.etiquetaRubro}">Rubro</span>
+            </div>
+
+            <p th:if="${tarea.contenido != null}" class="cr-texto" th:text="${tarea.contenido}">Instrucciones</p>
+            <p th:if="${tarea.contenido == null}" class="cr-meta" style="margin: 0;">Sin instrucciones adicionales.</p>
+            <div th:replace="~{classroom/clase/comunes :: chips(${tarea.adjuntos})}"></div>
+
+            <div th:if="${tarea.calificable and !ctx.rol.estudiante}" class="cr-nota-info"
+                 th:text="${'Las calificaciones de esta tarea se registran en Gestión Académica › ' + tarea.etiquetaRubro + ' de la sección ' + ctx.clase.seccion + ' y cuentan en los promedios.'}">
+                Info
+            </div>
+
+            <!-- ════════ Revisión (docente / supervisión) ════════ -->
+            <th:block th:unless="${ctx.rol.estudiante}">
+                <div class="cr-stats">
+                    <div class="cr-stat">
+                        <b th:text="${#lists.size(filas.?[estado.name() == 'ENTREGADA'])}">0</b>
+                        <span>Por revisar</span>
+                    </div>
+                    <div class="cr-stat">
+                        <b th:text="${#lists.size(filas.?[estado.name() == 'ASIGNADA'])}">0</b>
+                        <span>Sin entregar</span>
+                    </div>
+                    <div class="cr-stat">
+                        <b th:text="${#lists.size(filas.?[estado.name() == 'DEVUELTA'])}">0</b>
+                        <span>Revisadas</span>
+                    </div>
+                </div>
+
+                <div th:if="${filas.empty}" class="cr-empty">La sección no tiene estudiantes activos.</div>
+
+                <div th:each="f : ${filas}" class="cr-fila" x-data="{ ver: false }">
+                    <div class="cr-fila-est">
+                        <span th:replace="~{classroom/clase/comunes :: avatar(${f.estudiante}, 'sm')}"></span>
+                        <div style="min-width: 0;">
+                            <strong th:text="${f.estudiante.nombre}">Estudiante</strong>
+                            <span th:if="${f.entrega != null and f.entrega.fechaEntrega != null}" class="cr-meta" style="display: block;"
+                                  th:text="${'Entregó ' + #temporals.format(f.entrega.fechaEntrega, 'dd/MM HH:mm')}">Entregó</span>
+                        </div>
+                    </div>
+
+                    <div class="cr-fila-estado">
+                        <span th:if="${f.estado.name() == 'ASIGNADA'}" class="cr-badge"
+                              th:classappend="${tarea.vencida} ? 'tarde' : 'asignada'"
+                              th:text="${tarea.vencida ? 'Sin entregar' : 'Asignada'}">Asignada</span>
+                        <span th:if="${f.estado.name() == 'ENTREGADA'}" class="cr-badge entregada">Entregada</span>
+                        <span th:if="${f.estado.name() == 'DEVUELTA'}" class="cr-badge devuelta">Revisada</span>
+                        <span th:if="${f.tarde}" class="cr-badge tarde">Tarde</span>
+                        <span th:if="${f.calificacion != null}" class="cr-meta"
+                              th:text="${(f.puntos != null ? f.puntos + '/' + tarea.puntosTotales + ' · ' : '') + f.calificacion + '%'}">18/20 · 90%</span>
+                    </div>
+
+                    <div style="min-width: 0;">
+                        <button th:if="${f.entrega != null and (f.entrega.texto != null or !f.entrega.adjuntos.empty)}"
+                                type="button" class="cr-btn cr-btn-secondary cr-btn-sm" @click="ver = !ver"
+                                x-text="ver ? 'Ocultar trabajo' : 'Ver trabajo'">Ver trabajo</button>
+                        <div x-show="ver" x-cloak th:if="${f.entrega != null}">
+                            <div th:if="${f.entrega.texto != null}" class="cr-respuesta cr-texto" th:text="${f.entrega.texto}">Respuesta</div>
+                            <div th:replace="~{classroom/clase/comunes :: chips(${f.entrega.adjuntos})}"></div>
+                        </div>
+
+                        <form th:if="${ctx.rol.docente}" class="cr-calificar" style="margin-top: 0.5rem;"
+                              th:hx-post="@{/classroom/clase/{id}/tarea/{tid}/calificar(id=${ctx.clase.id}, tid=${tarea.id})}"
+                              hx-target="#tareas-panel" hx-swap="innerHTML">
+                            <input type="hidden" name="estudianteId" th:value="${f.estudiante.id}">
+                            <input th:if="${tarea.calificable}" type="number" name="puntos" min="0"
+                                   th:max="${tarea.puntosTotales}" th:value="${f.puntos}"
+                                   th:placeholder="${'/' + tarea.puntosTotales}" required>
+                            <input type="text" name="comentario" maxlength="500" placeholder="Comentario privado (opcional)"
+                                   th:value="${f.entrega != null ? f.entrega.comentarioDocente : null}">
+                            <button type="submit" class="cr-btn cr-btn-primary cr-btn-sm"
+                                    th:text="${f.estado.name() == 'DEVUELTA' ? 'Actualizar' : 'Devolver'}">Devolver</button>
+                        </form>
+                        <p th:if="${ctx.rol.supervisor and f.entrega != null and f.entrega.comentarioDocente != null}"
+                           class="cr-meta" style="margin: 0.4rem 0 0;" th:text="${'Comentario: ' + f.entrega.comentarioDocente}">Comentario</p>
+                    </div>
+                </div>
+            </th:block>
+        </section>
+
+        <!-- ════════ Tu trabajo (estudiante) ════════ -->
+        <aside th:if="${ctx.rol.estudiante}" class="cr-panel cr-trabajo"
+               th:with="estado=${entrega != null ? entrega.estado.name() : 'ASIGNADA'}">
+            <div class="cr-trabajo-head">
+                <h5>Tu trabajo</h5>
+                <span th:if="${estado == 'DEVUELTA'}" class="cr-badge devuelta">Revisada</span>
+                <span th:if="${estado == 'ENTREGADA'}" class="cr-badge entregada"
+                      th:text="${entrega.tarde ? 'Entregada tarde' : 'Entregada'}">Entregada</span>
+                <span th:if="${estado == 'ASIGNADA' and tarea.vencida}" class="cr-badge tarde">Atrasada</span>
+                <span th:if="${estado == 'ASIGNADA' and !tarea.vencida}" class="cr-badge pendiente">Asignada</span>
+            </div>
+
+            <!-- Nota y devolución -->
+            <div th:if="${nota != null or (entrega != null and entrega.comentarioDocente != null)}" class="cr-devolucion">
+                <div th:if="${nota != null}">
+                    <span class="cr-nota-grande"
+                          th:text="${nota.puntosObtenidos != null ? nota.puntosObtenidos + '/' + tarea.puntosTotales : nota.calificacion + '%'}">18/20</span>
+                    <span th:if="${nota.puntosObtenidos != null}" class="cr-meta" th:text="${'(' + nota.calificacion + '%)'}">(90%)</span>
+                </div>
+                <p th:if="${entrega != null and entrega.comentarioDocente != null}" class="cr-texto"
+                   style="font-size: 0.84rem; margin-top: 0.35rem;" th:text="${entrega.comentarioDocente}">Comentario</p>
+            </div>
+
+            <!-- Lo ya adjuntado -->
+            <th:block th:if="${entrega != null}">
+                <div th:if="${entrega.texto != null and estado != 'ASIGNADA'}" class="cr-respuesta cr-texto"
+                     style="margin-bottom: 0.6rem;" th:text="${entrega.texto}">Respuesta</div>
+                <div th:each="a : ${entrega.adjuntos}" class="cr-archivo-fila">
+                    <a class="cr-chip" target="_blank" rel="noopener" th:href="@{/classroom/adjunto/{id}(id=${a.id})}" th:title="${a.nombre}">
+                        <span class="cr-chip-ico" th:text="${a.extension != null ? a.extension : 'DOC'}">PDF</span>
+                        <span th:text="${a.nombre}">archivo</span>
+                    </a>
+                    <button th:if="${estado == 'ASIGNADA'}" type="button" class="cr-icon-btn" aria-label="Quitar archivo"
+                            th:hx-post="@{/classroom/clase/{id}/entrega/archivo/{aid}/quitar(id=${ctx.clase.id}, aid=${a.id})}"
+                            hx-target="#tareas-panel" hx-swap="innerHTML">×</button>
+                </div>
+            </th:block>
+
+            <!-- Entregar -->
+            <form th:if="${estado == 'ASIGNADA'}"
+                  th:hx-post="@{/classroom/clase/{id}/tarea/{tid}/entregar(id=${ctx.clase.id}, tid=${tarea.id})}"
+                  hx-encoding="multipart/form-data" hx-target="#tareas-panel" hx-swap="innerHTML">
+                <div class="cr-field">
+                    <textarea name="texto" maxlength="5000" style="min-height: 90px;"
+                              placeholder="Escribe tu respuesta (opcional)"
+                              th:text="${entrega != null ? entrega.texto : null}"></textarea>
+                </div>
+                <div class="cr-field">
+                    <input type="file" name="archivos" multiple class="cr-file-input">
+                </div>
+                <button type="submit" class="cr-btn cr-btn-primary" style="width: 100%;"
+                        th:text="${tarea.vencida ? 'Entregar (tarde)' : 'Entregar'}">Entregar</button>
+            </form>
+
+            <!-- Anular -->
+            <button th:if="${estado == 'ENTREGADA'}" type="button" class="cr-btn cr-btn-secondary" style="width: 100%; margin-top: 0.5rem;"
+                    th:hx-post="@{/classroom/clase/{id}/tarea/{tid}/anular(id=${ctx.clase.id}, tid=${tarea.id})}"
+                    hx-target="#tareas-panel" hx-swap="innerHTML"
+                    hx-confirm="¿Anular la entrega? Podrás modificarla y volver a entregar.">Anular entrega</button>
+
+            <p th:if="${estado == 'DEVUELTA'}" class="cr-meta" style="margin: 0.6rem 0 0;">
+                El docente ya revisó tu trabajo.</p>
+        </aside>
+    </div>
+</div>
