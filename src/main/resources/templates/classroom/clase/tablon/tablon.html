@@ -1,0 +1,139 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org" class="cr-stream">
+
+    <!-- ── Columna lateral: próximas entregas ── -->
+    <aside class="cr-panel cr-side">
+        <h5>Próximas entregas</h5>
+        <button type="button" th:each="p : ${proximas}" class="cr-side-item" @click="tab = 'tareas'"
+                th:hx-get="@{/classroom/clase/{id}/tarea/{tid}(id=${ctx.clase.id}, tid=${p.id})}"
+                hx-target="#tareas-panel" hx-swap="innerHTML">
+            <strong th:text="${p.titulo}">Tarea</strong>
+            <span th:text="${'Vence ' + #temporals.format(p.fechaEntrega, 'dd/MM HH:mm')}">Vence 12/10</span>
+        </button>
+        <p th:if="${proximas.empty}" class="cr-meta" style="margin: 0;"
+           th:text="${ctx.rol.estudiante ? '¡Nada pendiente por ahora!' : 'No hay entregas próximas.'}">Nada pendiente</p>
+    </aside>
+
+    <div class="cr-feed">
+
+        <!-- ── Redactor de anuncios (solo docente) ── -->
+        <div th:if="${ctx.rol.docente}" class="cr-panel cr-composer" x-data="{ abierto: false }">
+            <button type="button" class="cr-composer-trigger" x-show="!abierto" @click="abierto = true; $nextTick(() => $refs.texto.focus())">
+                <span th:replace="~{classroom/clase/comunes :: avatar(${ctx.usuario}, '')}"></span>
+                <span>Anuncia algo a tu clase…</span>
+            </button>
+            <form x-show="abierto" x-cloak
+                  th:hx-post="@{/classroom/clase/{id}/publicacion(id=${ctx.clase.id})}"
+                  hx-encoding="multipart/form-data" hx-target="#tablon-panel" hx-swap="innerHTML">
+                <input type="hidden" name="tipo" value="ANUNCIO">
+                <textarea name="contenido" x-ref="texto" maxlength="5000"
+                          placeholder="Escribe un aviso para tus estudiantes…"></textarea>
+                <div class="cr-field" style="margin: 0.75rem 0 0;">
+                    <input type="file" name="archivos" multiple class="cr-file-input">
+                </div>
+                <div class="cr-field" style="margin: 0.6rem 0 0;" x-data="{ enlaces: false }">
+                    <button type="button" class="cr-btn cr-btn-secondary cr-btn-sm" x-show="!enlaces" @click="enlaces = true">🔗 Agregar enlace</button>
+                    <textarea x-show="enlaces" x-cloak name="enlaces" style="min-height: 60px;"
+                              placeholder="Un enlace por línea (ej. https://youtube.com/…)"></textarea>
+                </div>
+                <div class="cr-composer-actions">
+                    <span class="cr-meta">Lo verán todos los estudiantes de la sección.</span>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="cr-btn cr-btn-secondary" @click="abierto = false">Cancelar</button>
+                        <button type="submit" class="cr-btn cr-btn-primary">Publicar</button>
+                    </div>
+                </div>
+            </form>
+            <div class="cr-quick">
+                <button type="button" class="cr-btn cr-btn-secondary cr-btn-sm"
+                        th:hx-get="@{/classroom/clase/{id}/form(id=${ctx.clase.id}, tipo='TAREA')}"
+                        hx-target="#modal-container" hx-swap="innerHTML" onclick="abrirModalAcademico()">📝 Crear tarea</button>
+                <button type="button" class="cr-btn cr-btn-secondary cr-btn-sm"
+                        th:hx-get="@{/classroom/clase/{id}/form(id=${ctx.clase.id}, tipo='MATERIAL')}"
+                        hx-target="#modal-container" hx-swap="innerHTML" onclick="abrirModalAcademico()">📚 Crear material</button>
+            </div>
+        </div>
+
+        <!-- ── Publicaciones ── -->
+        <th:block th:each="pub : ${publicaciones}">
+
+            <!-- Anuncio completo, con comentarios -->
+            <article th:if="${pub.tipo.name() == 'ANUNCIO'}" class="cr-panel cr-post">
+                <div class="cr-post-head">
+                    <span th:replace="~{classroom/clase/comunes :: avatar(${pub.autor}, '')}"></span>
+                    <div class="cr-post-autor">
+                        <strong th:text="${pub.autor.nombre}">Docente</strong>
+                        <span class="cr-meta"
+                              th:text="${#temporals.format(pub.fechaCreacion, 'dd/MM/yyyy HH:mm') + (pub.fechaEdicion != null ? ' · editado' : '')}">12/10/2026 08:00</span>
+                    </div>
+                    <div th:if="${ctx.rol.docente}" class="cr-menu" x-data="{ menu: false }" @click.outside="menu = false">
+                        <button type="button" class="cr-icon-btn" @click="menu = !menu" aria-label="Opciones">⋮</button>
+                        <div class="cr-menu-list" x-show="menu" x-cloak>
+                            <button type="button" @click="menu = false"
+                                    th:hx-get="@{/classroom/clase/{id}/form(id=${ctx.clase.id}, publicacionId=${pub.id})}"
+                                    hx-target="#modal-container" hx-swap="innerHTML" onclick="abrirModalAcademico()">Editar</button>
+                            <button type="button" class="danger" @click="menu = false"
+                                    th:hx-post="@{/classroom/clase/{id}/publicacion/{pid}/eliminar(id=${ctx.clase.id}, pid=${pub.id})}"
+                                    hx-target="#tablon-panel" hx-swap="innerHTML"
+                                    hx-confirm="¿Eliminar este anuncio y sus comentarios?">Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="cr-post-body">
+                    <p th:if="${pub.contenido != null}" class="cr-texto" th:text="${pub.contenido}">Texto</p>
+                    <div th:replace="~{classroom/clase/comunes :: chips(${pub.adjuntos})}"></div>
+                </div>
+                <div th:replace="~{:: comentarios}"></div>
+            </article>
+
+            <!-- Tarea o material: aviso compacto que lleva a su pestaña -->
+            <div th:unless="${pub.tipo.name() == 'ANUNCIO'}" class="cr-panel cr-post-mini"
+                 th:data-tab="${pub.tipo.name() == 'TAREA'} ? 'tareas' : 'materiales'" @click="tab = $el.dataset.tab"
+                 th:hx-get="${pub.tipo.name() == 'TAREA'}
+                     ? @{/classroom/clase/{id}/tarea/{tid}(id=${ctx.clase.id}, tid=${pub.id})}
+                     : @{/classroom/clase/{id}/materiales(id=${ctx.clase.id})}"
+                 th:hx-target="${pub.tipo.name() == 'TAREA'} ? '#tareas-panel' : '#materiales-panel'"
+                 hx-swap="innerHTML">
+                <span class="cr-type-ico" th:classappend="${pub.tipo.name() == 'MATERIAL'} ? 'material'"
+                      th:text="${pub.tipo.name() == 'TAREA' ? '📝' : '📚'}">📝</span>
+                <div>
+                    <strong th:text="${pub.autor.nombre + (pub.tipo.name() == 'TAREA' ? ' asignó una tarea: ' : ' publicó un material: ') + pub.titulo}">Docente asignó una tarea</strong>
+                    <span class="cr-meta" th:text="${#temporals.format(pub.fechaCreacion, 'dd/MM/yyyy HH:mm')}">12/10/2026</span>
+                </div>
+                <span th:if="${pub.calificable}" class="cr-badge rubro" th:text="${pub.etiquetaRubro}">Tarea</span>
+            </div>
+        </th:block>
+
+        <div th:if="${publicaciones.empty}" class="cr-panel cr-empty">
+            <div class="cr-empty-icon">📣</div>
+            <div th:text="${ctx.rol.docente ? 'Aquí aparecerán tus anuncios, tareas y materiales. ¡Publica el primero!' : 'Todavía no hay publicaciones en esta clase.'}">Sin publicaciones</div>
+        </div>
+    </div>
+</div>
+
+<!-- Comentarios de una publicación; se vuelve a renderizar solo al comentar o eliminar -->
+<div th:fragment="comentarios" xmlns:th="http://www.thymeleaf.org" class="cr-comentarios"
+     th:id="|comentarios-${pub.id}|">
+    <div th:if="${!pub.comentarios.empty}" class="cr-comentarios-count"
+         th:text="${pub.comentarios.size() == 1 ? '1 comentario de la clase' : pub.comentarios.size() + ' comentarios de la clase'}">2 comentarios</div>
+    <div th:each="c : ${pub.comentarios}" class="cr-comentario">
+        <span th:replace="~{classroom/clase/comunes :: avatar(${c.autor}, 'sm')}"></span>
+        <div>
+            <strong th:text="${c.autor.nombre}">Estudiante</strong>
+            <span class="cr-meta" th:text="${#temporals.format(c.fecha, 'dd/MM HH:mm')}">12/10 09:00</span>
+            <p th:text="${c.contenido}">Comentario</p>
+        </div>
+        <button th:if="${ctx.rol.docente or c.autor.id == ctx.usuario.id}" type="button" class="cr-icon-btn"
+                aria-label="Eliminar comentario"
+                th:hx-post="@{/classroom/clase/{id}/comentario/{cid}/eliminar(id=${ctx.clase.id}, cid=${c.id})}"
+                th:hx-target="|#comentarios-${pub.id}|" hx-swap="outerHTML"
+                hx-confirm="¿Eliminar este comentario?">×</button>
+    </div>
+    <form th:unless="${ctx.rol.supervisor}" class="cr-comentar"
+          th:hx-post="@{/classroom/clase/{id}/publicacion/{pid}/comentarios(id=${ctx.clase.id}, pid=${pub.id})}"
+          th:hx-target="|#comentarios-${pub.id}|" hx-swap="outerHTML">
+        <span th:replace="~{classroom/clase/comunes :: avatar(${ctx.usuario}, 'sm')}"></span>
+        <input type="text" name="contenido" maxlength="2000" placeholder="Agrega un comentario de la clase…" required
+               autocomplete="off">
+        <button type="submit" class="cr-icon-btn" aria-label="Enviar comentario">➤</button>
+    </form>
+</div>

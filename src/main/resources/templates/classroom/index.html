@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Classroom</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">🎓 Classroom</h2>
+    <p layout:fragment="page-subtitle">Tus clases: anuncios, tareas y materiales en un solo lugar</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">🎓 Classroom</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Tus clases: anuncios, tareas y materiales en un solo lugar</p>
+    <main layout:fragment="content">
+        <style>
+            .cr-head {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 1rem;
+                margin-bottom: 1.25rem;
+            }
+            .cr-head h3 {
+                margin: 0;
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .cr-head span {
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+            }
+
+            .cr-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+                gap: 1.25rem;
+            }
+
+            .cr-card {
+                --clase-color: var(--primary);
+                display: flex;
+                flex-direction: column;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                overflow: hidden;
+                box-shadow: var(--shadow-sm);
+                cursor: pointer;
+                transition: box-shadow 0.2s, transform 0.2s;
+                text-decoration: none;
+                color: inherit;
+                min-height: 230px;
+            }
+            .cr-card:hover {
+                box-shadow: var(--shadow-lg);
+                transform: translateY(-2px);
+            }
+            .cr-card:focus-visible {
+                outline: 3px solid var(--primary-light);
+                outline-offset: 2px;
+            }
+            .cr-card-banner {
+                position: relative;
+                padding: 1.1rem 1.2rem 1rem;
+                color: #fff;
+                background:
+                    radial-gradient(circle at 88% 20%, rgba(255, 255, 255, 0.18) 0 38px, transparent 39px),
+                    radial-gradient(circle at 100% 100%, rgba(255, 255, 255, 0.12) 0 70px, transparent 71px),
+                    linear-gradient(135deg, var(--clase-color), color-mix(in srgb, var(--clase-color) 65%, #0f172a));
+                min-height: 92px;
+            }
+            .cr-card-banner h4 {
+                margin: 0 0 4px;
+                font-size: 1.1rem;
+                font-weight: 700;
+                line-height: 1.25;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+            }
+            .cr-card-banner p {
+                margin: 0;
+                font-size: 0.8rem;
+                opacity: 0.92;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .cr-card-tag {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                font-size: 0.65rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
+                background: rgba(15, 23, 42, 0.35);
+                padding: 3px 8px;
+                border-radius: 999px;
+            }
+            .cr-card-body {
+                flex: 1;
+                padding: 0.9rem 1.2rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+            }
+            .cr-card-label {
+                font-size: 0.68rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #64748b;
+            }
+            .cr-proxima {
+                display: flex;
+                justify-content: space-between;
+                gap: 0.5rem;
+                font-size: 0.82rem;
+                color: #334155;
+            }
+            .cr-proxima span:first-child {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .cr-proxima span:last-child {
+                flex-shrink: 0;
+                color: var(--text-secondary);
+                font-size: 0.75rem;
+            }
+            .cr-muted {
+                font-size: 0.82rem;
+                color: var(--text-light);
+            }
+            .cr-pill {
+                align-self: flex-start;
+                font-size: 0.75rem;
+                font-weight: 600;
+                padding: 4px 10px;
+                border-radius: 999px;
+                background: #fef3c7;
+                color: #92400e;
+            }
+            .cr-pill.ok {
+                background: #dcfce7;
+                color: #166534;
+            }
+            .cr-card-foot {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0.65rem 1.2rem;
+                border-top: 1px solid #f1f5f9;
+                font-size: 0.78rem;
+                color: var(--text-secondary);
+            }
+            .cr-card-foot strong {
+                color: var(--primary);
+                font-weight: 600;
+            }
+
+            .cr-empty {
+                background: #fff;
+                border: 1px dashed #cbd5e1;
+                border-radius: 14px;
+                padding: 3.5rem 1.5rem;
+                text-align: center;
+                color: var(--text-secondary);
+            }
+            .cr-empty .cr-empty-icon {
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+            }
+            .cr-empty h4 {
+                margin: 0 0 0.35rem;
+                color: #0f172a;
+                font-size: 1rem;
+            }
+            .cr-empty p {
+                margin: 0 auto;
+                max-width: 440px;
+                font-size: 0.88rem;
+            }
+        </style>
+
+        <div class="cr-head">
+            <h3>Mis clases</h3>
+            <span th:if="${!tarjetas.empty}" th:text="${tarjetas.size() == 1 ? '1 clase' : tarjetas.size() + ' clases'}">3 clases</span>
+        </div>
+
+        <div th:if="${tarjetas.empty}" class="cr-empty">
+            <div class="cr-empty-icon">🎓</div>
+            <h4>Todavía no hay clases</h4>
+            <p sec:authorize="hasAuthority('ROLE_ESTUDIANTE')">
+                Tus clases aparecen aquí cuando tu sección tiene materias en el horario.
+            </p>
+            <p sec:authorize="!hasAuthority('ROLE_ESTUDIANTE')">
+                Las clases se crean solas a partir del horario: cada materia que un docente imparte a una sección
+                es una clase. Configura el horario en Configuración Académica para empezar.
+            </p>
+        </div>
+
+        <div th:unless="${tarjetas.empty}" class="cr-grid">
+            <a th:each="t : ${tarjetas}" class="cr-card"
+               th:href="@{/classroom/clase/{id}(id=${t.clase.id})}"
+               th:hx-get="@{/classroom/clase/{id}(id=${t.clase.id})}"
+               hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true"
+               th:style="${t.clase.materia.color != null and t.clase.materia.color.matches('^#[0-9a-fA-F]{6}$')} ? '--clase-color: ' + ${t.clase.materia.color} : null">
+                <div class="cr-card-banner">
+                    <span th:if="${t.rol.supervisor}" class="cr-card-tag">Solo lectura</span>
+                    <span th:if="${t.rol.docente}" class="cr-card-tag">Docente</span>
+                    <h4 th:text="${t.clase.materia.nombre}">Matemáticas</h4>
+                    <p th:text="'Sección ' + ${t.clase.seccion}">Sección 7-1</p>
+                </div>
+                <div class="cr-card-body">
+                    <th:block th:if="${t.rol.estudiante}">
+                        <span class="cr-card-label">Próximas entregas</span>
+                        <div th:each="p : ${t.proximas}" class="cr-proxima">
+                            <span th:text="${p.titulo}">Tarea</span>
+                            <span th:text="${#temporals.format(p.fechaEntrega, 'dd/MM HH:mm')}">12/10 23:59</span>
+                        </div>
+                        <span th:if="${t.proximas.empty}" class="cr-muted">No tienes tareas pendientes 🎉</span>
+                    </th:block>
+                    <th:block th:unless="${t.rol.estudiante}">
+                        <span class="cr-card-label">Docente</span>
+                        <span style="font-size: 0.85rem; color: #334155;"
+                              th:text="${t.docentes != null and !t.docentes.isEmpty() ? t.docentes : 'Sin docente asignado'}">Docente</span>
+                        <span th:if="${t.rol.docente and t.porRevisar > 0}" class="cr-pill"
+                              th:text="${t.porRevisar == 1 ? '1 entrega por revisar' : t.porRevisar + ' entregas por revisar'}">2 por revisar</span>
+                        <span th:if="${t.rol.docente and t.porRevisar == 0}" class="cr-pill ok">Todo revisado</span>
+                    </th:block>
+                </div>
+                <div class="cr-card-foot">
+                    <span th:text="${t.totalEstudiantes == 1 ? '1 estudiante' : t.totalEstudiantes + ' estudiantes'}">30 estudiantes</span>
+                    <strong>Abrir →</strong>
+                </div>
+            </a>
+        </div>
+    </main>
+    </th:block>
+
+</body>
+
+</html>

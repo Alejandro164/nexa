@@ -17,6 +17,17 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
 
     boolean existsByDireccionIdAndPeriodoId(Long direccionId, Long periodoId);
 
+    // Grupos del horario (Classroom): cada fila es [Materia, NivelAcademico, Usuario docente].
+    // Sin ORDER BY: con DISTINCT, Postgres exige que el orden use columnas seleccionadas; se ordena en Java.
+    @Query("SELECT DISTINCT h.materia, h.nivel, h.docente FROM HorarioLeccion h " +
+            "WHERE h.direccion.id = :direccionId AND h.periodo.id = :periodoId")
+    List<Object[]> findGruposByDireccionIdAndPeriodoId(
+            @Param("direccionId") Long direccionId, @Param("periodoId") Long periodoId);
+
+    @Query("SELECT DISTINCT h.materia, h.nivel, h.docente FROM HorarioLeccion h " +
+            "WHERE h.direccion.id = :direccionId")
+    List<Object[]> findGruposByDireccionId(@Param("direccionId") Long direccionId);
+
     @Query("SELECT DISTINCT h.materia FROM HorarioLeccion h " +
             "WHERE h.direccion.id = :direccionId AND h.docente.id = :docenteId " +
             "ORDER BY h.materia.nombre")

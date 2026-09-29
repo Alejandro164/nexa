@@ -1,0 +1,46 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+
+    <div class="cr-toolbar">
+        <h4>Materiales</h4>
+        <button th:if="${ctx.rol.docente}" type="button" class="cr-btn cr-btn-primary"
+                th:hx-get="@{/classroom/clase/{id}/form(id=${ctx.clase.id}, tipo='MATERIAL')}"
+                hx-target="#modal-container" hx-swap="innerHTML" onclick="abrirModalAcademico()">+ Crear material</button>
+    </div>
+
+    <div th:if="${grupos.empty}" class="cr-panel cr-empty">
+        <div class="cr-empty-icon">📚</div>
+        <div th:text="${ctx.rol.docente ? 'Comparte lecturas, presentaciones o enlaces útiles para la clase.' : 'Todavía no hay materiales en esta clase.'}">Sin materiales</div>
+    </div>
+
+    <div th:each="grupo : ${grupos}" class="cr-tema">
+        <h5 th:if="${!grupo.key.isEmpty()}" class="cr-tema-titulo" th:text="${grupo.key}">Unidad 1</h5>
+
+        <article th:each="m : ${grupo.value}" class="cr-panel cr-material" x-data="{ abierto: false }">
+            <div class="cr-material-head" @click="abierto = !abierto">
+                <span class="cr-type-ico material">📚</span>
+                <div>
+                    <strong th:text="${m.titulo}">Material</strong>
+                    <span class="cr-meta"
+                          th:text="${#temporals.format(m.fechaCreacion, 'dd/MM/yyyy') + (m.adjuntos.empty ? '' : ' · ' + m.adjuntos.size() + (m.adjuntos.size() == 1 ? ' adjunto' : ' adjuntos'))}">fecha</span>
+                </div>
+                <div th:if="${ctx.rol.docente}" class="cr-menu" x-data="{ menu: false }" @click.outside="menu = false" @click.stop>
+                    <button type="button" class="cr-icon-btn" @click="menu = !menu" aria-label="Opciones">⋮</button>
+                    <div class="cr-menu-list" x-show="menu" x-cloak>
+                        <button type="button" @click="menu = false"
+                                th:hx-get="@{/classroom/clase/{id}/form(id=${ctx.clase.id}, publicacionId=${m.id})}"
+                                hx-target="#modal-container" hx-swap="innerHTML" onclick="abrirModalAcademico()">Editar</button>
+                        <button type="button" class="danger" @click="menu = false"
+                                th:hx-post="@{/classroom/clase/{id}/publicacion/{pid}/eliminar(id=${ctx.clase.id}, pid=${m.id})}"
+                                hx-target="#materiales-panel" hx-swap="innerHTML"
+                                hx-confirm="¿Eliminar este material?">Eliminar</button>
+                    </div>
+                </div>
+                <span class="cr-meta" x-text="abierto ? '▲' : '▼'">▼</span>
+            </div>
+            <div x-show="abierto" x-cloak style="padding-top: 0.85rem; margin-top: 0.85rem; border-top: 1px solid #f1f5f9;">
+                <p th:if="${m.contenido != null}" class="cr-texto" th:text="${m.contenido}">Descripción</p>
+                <div th:replace="~{classroom/clase/comunes :: chips(${m.adjuntos})}"></div>
+            </div>
+        </article>
+    </div>
+</div>

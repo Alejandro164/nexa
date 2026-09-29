@@ -24,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 
 import com.chavescr.nexa.entity.Direccion;
-import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.NubeNodo;
 import com.chavescr.nexa.entity.TipoNodo;
 import com.chavescr.nexa.repository.DireccionRepository;
@@ -48,19 +47,22 @@ public class NubeNodoService {
     private final UsuarioRepository usuarioRepository;
     private final NubeNodoAccesoRepository accesoRepository;
     private final InstitucionService institucionService;
+    private final AlmacenamientoService almacenamientoService;
 
     public NubeNodoService(NubeNodoRepository repository,
             DireccionRepository direccionRepository,
             DocumentConversionService conversionService,
             UsuarioRepository usuarioRepository,
             NubeNodoAccesoRepository accesoRepository,
-            InstitucionService institucionService) {
+            InstitucionService institucionService,
+            AlmacenamientoService almacenamientoService) {
         this.repository = repository;
         this.direccionRepository = direccionRepository;
         this.conversionService = conversionService;
         this.usuarioRepository = usuarioRepository;
         this.accesoRepository = accesoRepository;
         this.institucionService = institucionService;
+        this.almacenamientoService = almacenamientoService;
     }
 
     public String getRutaRecursos() {
@@ -185,7 +187,7 @@ public class NubeNodoService {
 
         Direccion direccion = direccionRepository.findById(direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
-        String carpetaInstitucion = carpetaInstitucion(direccion);
+        String carpetaInstitucion = almacenamientoService.carpetaInstitucion(direccion);
 
         Path directorioDestino = Paths.get(rutaRecursos, carpetaInstitucion, "nube-nexa");
         if (!Files.exists(directorioDestino)) {
@@ -226,33 +228,6 @@ public class NubeNodoService {
         return repository.save(nodoArchivo);
     }
 
-    // Los archivos se agrupan físicamente por institución: <ruta.recursos>/<cédula-institución>/nube-nexa/...
-    // Así las direcciones (Preescolar, Primaria, Secundaria) de una misma institución comparten carpeta.
-    // Sin cédula se falla explícitamente en vez de usar una carpeta genérica que mezclaría instituciones.
-    private String carpetaInstitucion(Direccion direccion) {
-        if (direccion.getInstitucion() == null) {
-            institucionService.asegurarInstituciones();
-        }
-        String cedula = cedulaInstitucion(direccion);
-        if (cedula == null) {
-            throw new IllegalArgumentException("La institución no tiene cédula registrada. "
-                    + "Regístrela en la configuración de la institución antes de subir archivos.");
-        }
-        return sanitizarNombreCarpeta(cedula);
-    }
-
-    private String cedulaInstitucion(Direccion direccion) {
-        Institucion institucion = direccion.getInstitucion();
-        if (institucion == null || institucion.getCedula() == null || institucion.getCedula().isBlank()) {
-            return null;
-        }
-        return institucion.getCedula();
-    }
-
-    private String sanitizarNombreCarpeta(String nombre) {
-        return nombre.trim().replaceAll("[^a-zA-Z0-9_\\-]", "_");
-    }
-
     // Reubica los archivos guardados con el esquema anterior (<código-presupuestario>/nube-nexa/...)
     // en la carpeta de su institución (<cédula>/nube-nexa/...) y actualiza sus rutas. Idempotente:
     // los que ya están en su carpeta se saltan, y los de instituciones sin cédula quedan intactos
@@ -270,8 +245,8 @@ public class NubeNodoService {
             if (direccion == null) {
                 continue;
             }
-            String cedula = cedulaInstitucion(direccion);
-            if (cedula == null) {
+            String carpeta = almacenamientoService.carpetaInstitucionOpcional(direccion);
+            if (carpeta == null) {
                 if (direccionesSinCedula.add(direccion.getId())) {
                     log.warn("Nube Nexa: la institución de la dirección '{}' (id {}) no tiene cédula; "
                             + "sus archivos no se reubican hasta que se registre una.",
@@ -280,7 +255,7 @@ public class NubeNodoService {
                 continue;
             }
 
-            String prefijo = sanitizarNombreCarpeta(cedula) + "/nube-nexa/";
+            String prefijo = carpeta + "/nube-nexa/";
             if (nodo.getUrlArchivo().startsWith(prefijo)) {
                 continue;
             }

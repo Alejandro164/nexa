@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Classroom</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">🎓 Classroom</h2>
+    <p layout:fragment="page-subtitle" th:text="${ctx.clase.materia.nombre + ' · Sección ' + ctx.clase.seccion}">Clase</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">🎓 Classroom</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true"
+       th:text="${ctx.clase.materia.nombre + ' · Sección ' + ctx.clase.seccion}">Clase</p>
+    <main layout:fragment="content">
+        <style>
+            /* ════════ Estructura de la clase ════════ */
+            .cr-clase { --clase-color: var(--primary); }
+            .cr-back {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                margin-bottom: 0.9rem;
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                cursor: pointer;
+                background: none;
+                border: none;
+                padding: 0;
+                font-family: inherit;
+            }
+            .cr-back:hover { color: var(--primary); }
+
+            .cr-hero {
+                position: relative;
+                border-radius: 16px;
+                padding: 1.75rem 1.75rem 1.5rem;
+                color: #fff;
+                margin-bottom: 1.25rem;
+                overflow: hidden;
+                background:
+                    radial-gradient(circle at 92% 18%, rgba(255, 255, 255, 0.16) 0 60px, transparent 61px),
+                    radial-gradient(circle at 100% 110%, rgba(255, 255, 255, 0.10) 0 120px, transparent 121px),
+                    linear-gradient(135deg, var(--clase-color), color-mix(in srgb, var(--clase-color) 60%, #0f172a));
+                box-shadow: var(--shadow);
+            }
+            .cr-hero h3 { margin: 0 0 6px; font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
+            .cr-hero p { margin: 0; font-size: 0.9rem; opacity: 0.92; }
+            .cr-hero-tag {
+                display: inline-block;
+                margin-top: 0.85rem;
+                font-size: 0.7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
+                background: rgba(15, 23, 42, 0.3);
+                padding: 4px 10px;
+                border-radius: 999px;
+            }
+
+            .config-tabs-container {
+                margin-bottom: 1.5rem;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar { display: none; }
+            .config-tabs { display: flex; width: 100%; gap: 6px; }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+                font-family: inherit;
+            }
+            .config-tab-btn:hover { color: var(--primary); background-color: var(--input-bg); }
+            .config-tab-btn.active { color: #fff !important; background-color: var(--primary) !important; box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25); }
+            .tab-pane { animation: crFade 0.3s ease-out; }
+            @keyframes crFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+            .cr-loading { padding: 2rem; text-align: center; color: var(--text-secondary); }
+
+            /* ════════ Piezas comunes ════════ */
+            .cr-panel {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                box-shadow: var(--shadow-sm);
+            }
+            .cr-toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+            .cr-toolbar h4 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #0f172a; }
+            .cr-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                height: 38px;
+                padding: 0 16px;
+                border-radius: 999px;
+                font-size: 0.83rem;
+                font-weight: 600;
+                font-family: inherit;
+                cursor: pointer;
+                border: 1px solid transparent;
+                white-space: nowrap;
+                transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
+            }
+            .cr-btn-primary { background: var(--primary); color: #fff; }
+            .cr-btn-primary:hover { background: #1e3a5f; box-shadow: 0 4px 12px rgba(45, 90, 135, 0.25); }
+            .cr-btn-secondary { background: #fff; color: #334155; border-color: var(--border); }
+            .cr-btn-secondary:hover { background: #f1f5f9; }
+            .cr-btn-danger { background: #fff; color: #dc2626; border-color: #fecaca; }
+            .cr-btn-danger:hover { background: #fef2f2; }
+            .cr-btn-sm { height: 32px; padding: 0 12px; font-size: 0.78rem; }
+            .cr-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+            .cr-icon-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                border: none;
+                background: transparent;
+                color: #64748b;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.1rem;
+                flex-shrink: 0;
+            }
+            .cr-icon-btn:hover { background: #f1f5f9; color: #0f172a; }
+
+            .cr-avatar {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 0.85rem;
+                color: #fff;
+                flex-shrink: 0;
+                text-transform: uppercase;
+            }
+            .cr-avatar.sm { width: 30px; height: 30px; font-size: 0.75rem; }
+
+            .cr-menu { position: relative; }
+            .cr-menu-list {
+                position: absolute;
+                right: 0;
+                top: 34px;
+                z-index: 20;
+                min-width: 150px;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                box-shadow: var(--shadow-lg);
+                padding: 4px;
+            }
+            .cr-menu-list button {
+                display: block;
+                width: 100%;
+                text-align: left;
+                padding: 8px 12px;
+                border: none;
+                background: none;
+                border-radius: 6px;
+                font-size: 0.83rem;
+                font-family: inherit;
+                color: #334155;
+                cursor: pointer;
+            }
+            .cr-menu-list button:hover { background: #f1f5f9; }
+            .cr-menu-list button.danger { color: #dc2626; }
+
+            .cr-texto { white-space: pre-wrap; word-wrap: break-word; font-size: 0.9rem; color: #1e293b; line-height: 1.55; margin: 0; }
+            .cr-meta { font-size: 0.76rem; color: var(--text-secondary); }
+
+            .cr-adjuntos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.85rem; }
+            .cr-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                max-width: 280px;
+                padding: 7px 12px 7px 8px;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background: #fff;
+                font-size: 0.8rem;
+                color: #334155;
+                text-decoration: none;
+                transition: border-color 0.2s, background 0.2s;
+            }
+            .cr-chip:hover { border-color: var(--primary-light); background: #f8fafc; }
+            .cr-chip-ico {
+                width: 28px;
+                height: 28px;
+                border-radius: 7px;
+                background: rgba(45, 90, 135, 0.1);
+                color: var(--primary);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.62rem;
+                font-weight: 700;
+                flex-shrink: 0;
+            }
+            .cr-chip span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+            .cr-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 3px 10px;
+                border-radius: 999px;
+                font-size: 0.7rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+            .cr-badge.asignada { background: #f1f5f9; color: #475569; }
+            .cr-badge.entregada { background: #dbeafe; color: #1e40af; }
+            .cr-badge.devuelta { background: #dcfce7; color: #166534; }
+            .cr-badge.tarde { background: #fee2e2; color: #991b1b; }
+            .cr-badge.rubro { background: #f3e8ff; color: #6b21a8; }
+            .cr-badge.pendiente { background: #fef3c7; color: #92400e; }
+
+            .cr-empty {
+                padding: 3rem 1.5rem;
+                text-align: center;
+                color: var(--text-secondary);
+                font-size: 0.88rem;
+            }
+            .cr-empty .cr-empty-icon { font-size: 2.2rem; margin-bottom: 0.4rem; }
+
+            /* ════════ Tablón ════════ */
+            .cr-stream { display: grid; grid-template-columns: 230px 1fr; gap: 1.25rem; align-items: start; }
+            .cr-side { padding: 1rem 1.1rem; position: sticky; top: 1rem; }
+            .cr-side h5 { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 700; color: #0f172a; }
+            .cr-side-item {
+                display: block;
+                width: 100%;
+                text-align: left;
+                background: none;
+                border: none;
+                padding: 6px 0;
+                cursor: pointer;
+                font-family: inherit;
+            }
+            .cr-side-item strong { display: block; font-size: 0.8rem; color: #334155; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .cr-side-item span { font-size: 0.72rem; color: var(--text-secondary); }
+            .cr-side-item:hover strong { color: var(--primary); }
+            .cr-feed { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+
+            .cr-composer { padding: 1rem 1.2rem; }
+            .cr-composer-trigger {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+                border: none;
+                background: none;
+                cursor: pointer;
+                font-family: inherit;
+                font-size: 0.88rem;
+                color: var(--text-secondary);
+                text-align: left;
+                padding: 0;
+            }
+            .cr-composer-trigger:hover span { color: var(--primary); }
+            .cr-composer textarea,
+            .cr-field textarea,
+            .cr-field input[type="text"],
+            .cr-field input[type="number"],
+            .cr-field input[type="datetime-local"],
+            .cr-field select {
+                width: 100%;
+                box-sizing: border-box;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 0.6rem 0.8rem;
+                font-family: inherit;
+                font-size: 0.88rem;
+                background: var(--input-bg);
+                color: #0f172a;
+                transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            }
+            .cr-composer textarea:focus,
+            .cr-field textarea:focus,
+            .cr-field input:focus,
+            .cr-field select:focus {
+                outline: none;
+                border-color: var(--primary-light);
+                background: #fff;
+                box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18);
+            }
+            .cr-composer textarea { min-height: 110px; resize: vertical; }
+            .cr-composer-actions {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                margin-top: 0.75rem;
+                flex-wrap: wrap;
+            }
+            .cr-quick { display: flex; gap: 0.5rem; margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid #f1f5f9; flex-wrap: wrap; }
+
+            .cr-post { padding: 1.1rem 1.2rem 0; }
+            .cr-post-head { display: flex; align-items: center; gap: 12px; margin-bottom: 0.75rem; }
+            .cr-post-head .cr-post-autor { flex: 1; min-width: 0; }
+            .cr-post-head strong { display: block; font-size: 0.88rem; color: #0f172a; }
+            .cr-post-body { padding-bottom: 1rem; }
+
+            .cr-post-mini {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 0.9rem 1.2rem;
+                cursor: pointer;
+                transition: background 0.2s;
+                border-radius: 14px;
+            }
+            .cr-post-mini:hover { background: #f8fafc; }
+            .cr-type-ico {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.05rem;
+                flex-shrink: 0;
+                background: var(--clase-color);
+                color: #fff;
+            }
+            .cr-type-ico.material { background: #0f766e; }
+            .cr-post-mini div { min-width: 0; flex: 1; }
+            .cr-post-mini strong { display: block; font-size: 0.87rem; color: #0f172a; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+            .cr-comentarios { border-top: 1px solid #f1f5f9; padding: 0.75rem 0 0.9rem; }
+            .cr-comentarios-count { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; }
+            .cr-comentario { display: flex; gap: 10px; padding: 6px 0; }
+            .cr-comentario div { flex: 1; min-width: 0; }
+            .cr-comentario strong { font-size: 0.8rem; color: #0f172a; margin-right: 6px; }
+            .cr-comentario p { margin: 2px 0 0; font-size: 0.85rem; color: #334155; white-space: pre-wrap; word-wrap: break-word; }
+            .cr-comentario .cr-icon-btn { width: 26px; height: 26px; font-size: 0.9rem; opacity: 0; }
+            .cr-comentario:hover .cr-icon-btn { opacity: 1; }
+            .cr-comentar { display: flex; align-items: center; gap: 10px; margin-top: 0.4rem; }
+            .cr-comentar input {
+                flex: 1;
+                border: 1px solid var(--border);
+                border-radius: 999px;
+                padding: 0.5rem 0.95rem;
+                font-family: inherit;
+                font-size: 0.84rem;
+                background: var(--input-bg);
+            }
+            .cr-comentar input:focus { outline: none; border-color: var(--primary-light); background: #fff; }
+
+            /* ════════ Tareas y materiales ════════ */
+            .cr-tema { margin-bottom: 1.25rem; }
+            .cr-tema-titulo {
+                font-size: 1.05rem;
+                font-weight: 700;
+                color: var(--clase-color);
+                padding-bottom: 0.5rem;
+                margin: 0 0 0.25rem;
+                border-bottom: 2px solid color-mix(in srgb, var(--clase-color) 25%, transparent);
+            }
+            .cr-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 0.8rem 0.9rem;
+                border-bottom: 1px solid #f1f5f9;
+                cursor: pointer;
+                border-radius: 10px;
+                transition: background 0.2s;
+            }
+            .cr-item:hover { background: #f8fafc; }
+            .cr-item-main { flex: 1; min-width: 0; }
+            .cr-item-main strong { display: block; font-size: 0.9rem; color: #0f172a; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .cr-item-side { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+            .cr-material { padding: 1rem 1.1rem; margin-bottom: 0.75rem; }
+            .cr-material-head { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+            .cr-material-head div { flex: 1; min-width: 0; }
+            .cr-material-head strong { display: block; font-size: 0.9rem; color: #0f172a; }
+
+            /* ════════ Detalle de tarea ════════ */
+            .cr-detalle { display: grid; grid-template-columns: 1fr 320px; gap: 1.25rem; align-items: start; }
+            .cr-detalle.revision { grid-template-columns: 1fr; }
+            .cr-detalle-main { padding: 1.4rem 1.5rem; }
+            .cr-detalle-titulo { display: flex; align-items: flex-start; gap: 14px; }
+            .cr-detalle-titulo h3 { margin: 0 0 4px; font-size: 1.35rem; font-weight: 700; color: var(--clase-color); }
+            .cr-detalle-info {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem 1.25rem;
+                align-items: center;
+                margin: 1rem 0;
+                padding: 0.75rem 0;
+                border-top: 1px solid #f1f5f9;
+                border-bottom: 1px solid #f1f5f9;
+                font-size: 0.83rem;
+                color: #334155;
+            }
+            .cr-detalle-info strong { color: #0f172a; }
+            .cr-nota-info {
+                margin-top: 1rem;
+                padding: 0.7rem 0.9rem;
+                border-radius: 10px;
+                background: #f5f3ff;
+                color: #5b21b6;
+                font-size: 0.8rem;
+            }
+            .cr-trabajo { padding: 1.2rem; position: sticky; top: 1rem; }
+            .cr-trabajo-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; }
+            .cr-trabajo-head h5 { margin: 0; font-size: 1rem; font-weight: 700; color: #0f172a; }
+            .cr-nota-grande { font-size: 1.6rem; font-weight: 700; color: #166534; }
+            .cr-devolucion { background: #f0fdf4; border-radius: 10px; padding: 0.75rem 0.9rem; margin-bottom: 0.85rem; }
+            .cr-archivo-fila { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+            .cr-archivo-fila .cr-chip { flex: 1; max-width: none; }
+            .cr-file-input {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 0.65rem;
+                border: 1.5px dashed #cbd5e1;
+                border-radius: 10px;
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+                background: #f8fafc;
+                cursor: pointer;
+            }
+            .cr-file-input:hover { border-color: var(--primary-light); }
+
+            .cr-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 1.25rem 0 1rem; }
+            .cr-stat { background: #f8fafc; border-radius: 12px; padding: 0.85rem 1rem; }
+            .cr-stat b { display: block; font-size: 1.5rem; color: #0f172a; }
+            .cr-stat span { font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
+            .cr-fila {
+                display: grid;
+                grid-template-columns: minmax(180px, 1.3fr) 130px minmax(0, 2fr);
+                gap: 1rem;
+                align-items: start;
+                padding: 0.9rem 0;
+                border-top: 1px solid #f1f5f9;
+            }
+            .cr-fila-est { display: flex; align-items: center; gap: 10px; min-width: 0; }
+            .cr-fila-est strong { font-size: 0.86rem; color: #0f172a; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .cr-fila-estado { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+            .cr-calificar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+            .cr-calificar input[name="puntos"] { width: 78px; }
+            .cr-calificar input[name="comentario"] { flex: 1; min-width: 140px; }
+            .cr-calificar input {
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 0.45rem 0.65rem;
+                font-family: inherit;
+                font-size: 0.83rem;
+                background: var(--input-bg);
+            }
+            .cr-calificar input:focus { outline: none; border-color: var(--primary-light); background: #fff; }
+            .cr-respuesta { margin-top: 0.4rem; padding: 0.6rem 0.75rem; background: #f8fafc; border-radius: 8px; font-size: 0.82rem; }
+
+            /* ════════ Personas ════════ */
+            .cr-personas { max-width: 780px; }
+            .cr-personas-grupo { padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+            .cr-personas-grupo h4 {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                margin: 0 0 0.5rem;
+                padding-bottom: 0.65rem;
+                font-size: 1.15rem;
+                color: var(--clase-color);
+                border-bottom: 2px solid color-mix(in srgb, var(--clase-color) 25%, transparent);
+            }
+            .cr-personas-grupo h4 span { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
+            .cr-persona { display: flex; align-items: center; gap: 12px; padding: 0.55rem 0; border-bottom: 1px solid #f8fafc; }
+            .cr-persona strong { font-size: 0.88rem; color: #0f172a; font-weight: 500; }
+
+            /* ════════ Formulario ════════ */
+            .cr-field { margin-bottom: 1rem; }
+            .cr-field > label { display: block; font-size: 0.8rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
+            .cr-field textarea { min-height: 110px; resize: vertical; }
+            .cr-field small { display: block; margin-top: 0.3rem; font-size: 0.74rem; color: var(--text-secondary); }
+            .cr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+            .cr-calificable {
+                border: 1px solid #e9d5ff;
+                background: #faf5ff;
+                border-radius: 12px;
+                padding: 0.9rem 1rem 0.1rem;
+                margin-bottom: 1rem;
+            }
+
+            @media (max-width: 900px) {
+                .cr-stream, .cr-detalle { grid-template-columns: 1fr; }
+                .cr-side, .cr-trabajo { position: static; }
+                .cr-fila { grid-template-columns: 1fr; gap: 0.5rem; }
+            }
+            @media (max-width: 600px) {
+                .cr-row, .cr-stats { grid-template-columns: 1fr; }
+                .cr-hero h3 { font-size: 1.3rem; }
+            }
+        </style>
+
+        <div class="cr-clase" x-data="{ tab: 'tablon' }"
+             th:style="${ctx.clase.materia.color != null and ctx.clase.materia.color.matches('^#[0-9a-fA-F]{6}$')} ? '--clase-color: ' + ${ctx.clase.materia.color} : null">
+
+            <a class="cr-back" href="/classroom" hx-get="/classroom" hx-target=".content-area" hx-swap="innerHTML"
+               hx-push-url="true">← Mis clases</a>
+
+            <div class="cr-hero">
+                <h3 th:text="${ctx.clase.materia.nombre}">Matemáticas</h3>
+                <p th:text="${'Sección ' + ctx.clase.seccion + ' · ' + ctx.nombresDocentes}">Sección 7-1 · Docente</p>
+                <span th:if="${ctx.rol.supervisor}" class="cr-hero-tag">Supervisión · solo lectura</span>
+                <span th:if="${ctx.rol.docente}" class="cr-hero-tag">Eres docente de esta clase</span>
+            </div>
+
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button type="button" class="config-tab-btn" :class="{ 'active': tab === 'tablon' }"
+                            @click="tab = 'tablon'"
+                            th:hx-get="@{/classroom/clase/{id}/tablon(id=${ctx.clase.id})}"
+                            hx-target="#tablon-panel" hx-swap="innerHTML">Tablón</button>
+                    <button type="button" class="config-tab-btn" :class="{ 'active': tab === 'tareas' }"
+                            @click="tab = 'tareas'"
+                            th:hx-get="@{/classroom/clase/{id}/tareas(id=${ctx.clase.id})}"
+                            hx-target="#tareas-panel" hx-swap="innerHTML">Tareas</button>
+                    <button type="button" class="config-tab-btn" :class="{ 'active': tab === 'materiales' }"
+                            @click="tab = 'materiales'"
+                            th:hx-get="@{/classroom/clase/{id}/materiales(id=${ctx.clase.id})}"
+                            hx-target="#materiales-panel" hx-swap="innerHTML">Materiales</button>
+                    <button type="button" class="config-tab-btn" :class="{ 'active': tab === 'personas' }"
+                            @click="tab = 'personas'"
+                            th:hx-get="@{/classroom/clase/{id}/personas(id=${ctx.clase.id})}"
+                            hx-target="#personas-panel" hx-swap="innerHTML">Personas</button>
+                </div>
+            </div>
+
+            <!-- Cada pestaña se recarga al hacer clic, así siempre refleja lo publicado en las otras -->
+            <div x-show="tab === 'tablon'" class="tab-pane">
+                <div id="tablon-panel" th:hx-get="@{/classroom/clase/{id}/tablon(id=${ctx.clase.id})}"
+                     hx-trigger="load" hx-swap="innerHTML">
+                    <div class="cr-loading">Cargando tablón…</div>
+                </div>
+            </div>
+            <div x-show="tab === 'tareas'" class="tab-pane" x-cloak>
+                <div id="tareas-panel"><div class="cr-loading">Cargando tareas…</div></div>
+            </div>
+            <div x-show="tab === 'materiales'" class="tab-pane" x-cloak>
+                <div id="materiales-panel"><div class="cr-loading">Cargando materiales…</div></div>
+            </div>
+            <div x-show="tab === 'personas'" class="tab-pane" x-cloak>
+                <div id="personas-panel"><div class="cr-loading">Cargando personas…</div></div>
+            </div>
+        </div>
+
+        <script th:inline="none">
+            if (!window.classroomEventsRegistrados) {
+                document.addEventListener('classroomGuardado', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje);
+                    }
+                });
+                document.addEventListener('classroomError', function (event) {
+                    if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
+                        showNotification(event.detail.mensaje, 'error');
+                    }
+                });
+                window.classroomEventsRegistrados = true;
+            }
+        </script>
+    </main>
+    </th:block>
+
+</body>
+
+</html>

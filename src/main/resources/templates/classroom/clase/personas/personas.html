@@ -1,0 +1,24 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org" class="cr-personas">
+
+    <section class="cr-panel cr-personas-grupo">
+        <h4>Docentes <span th:text="${ctx.docentes.size()}">1</span></h4>
+        <div th:each="d : ${ctx.docentes}" class="cr-persona">
+            <span th:replace="~{classroom/clase/comunes :: avatar(${d}, '')}"></span>
+            <div>
+                <strong th:text="${d.nombre}">Docente</strong>
+                <span th:if="${d.email != null}" class="cr-meta" style="display: block;" th:text="${d.email}">correo</span>
+            </div>
+        </div>
+        <p th:if="${ctx.docentes.empty}" class="cr-meta">Esta clase no tiene docente en el horario.</p>
+    </section>
+
+    <section class="cr-panel cr-personas-grupo">
+        <h4>Estudiantes
+            <span th:text="${estudiantes.size() == 1 ? '1 estudiante' : estudiantes.size() + ' estudiantes'}">30</span></h4>
+        <div th:each="e : ${estudiantes}" class="cr-persona">
+            <span th:replace="~{classroom/clase/comunes :: avatar(${e}, 'sm')}"></span>
+            <strong th:text="${e.nombre}">Estudiante</strong>
+        </div>
+        <p th:if="${estudiantes.empty}" class="cr-meta">La sección no tiene estudiantes activos.</p>
+    </section>
+</div>
