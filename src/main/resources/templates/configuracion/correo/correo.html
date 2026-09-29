@@ -1,0 +1,258 @@
+<div th:fragment="content" id="correo-panel" xmlns:th="http://www.thymeleaf.org">
+
+    <style>
+        .correo-help {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin: 4px 0 0;
+        }
+
+        .correo-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .correo-form-grid .full {
+            grid-column: 1 / -1;
+        }
+
+        .correo-seccion {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin: 0 0 1rem;
+        }
+
+        .correo-presets {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .correo-preset {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: #fff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #334155;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .correo-preset:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .correo-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .correo-toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 0.5rem;
+        }
+
+        .correo-toggle {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .correo-toggle input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .correo-toggle-track {
+            position: absolute;
+            inset: 0;
+            background: #e2e8f0;
+            border-radius: 9999px;
+            pointer-events: none;
+            transition: background .15s;
+        }
+
+        .correo-toggle input:checked+.correo-toggle-track {
+            background: var(--primary);
+        }
+
+        .correo-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+            pointer-events: none;
+            transition: transform .15s;
+        }
+
+        .correo-toggle input:checked~.correo-toggle-thumb {
+            transform: translateX(18px);
+        }
+    </style>
+
+    <div th:if="${sinDireccionAdmin}" class="card" style="padding: 2.5rem; text-align: center;">
+        <p style="color: var(--text-secondary);">Selecciona una dirección en la barra lateral para configurar el
+            servidor de correo.</p>
+    </div>
+
+    <div th:unless="${sinDireccionAdmin}">
+        <div class="card">
+            <form hx-post="/configuracion/correo" hx-target="#correo-panel" hx-swap="outerHTML"
+                  hx-indicator="#correo-loading"
+                  th:x-data="|{ host: '${#strings.escapeJavaScript(correoConfig.host != null ? correoConfig.host : '')}', puerto: ${correoConfig.puerto != null ? correoConfig.puerto : 587}, seguridad: '${correoConfig.seguridad.name()}' }|">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Correo electrónico (SMTP)</h3>
+                        <p class="correo-help">Conecta el correo de la dirección para enviar notificaciones a padres,
+                            estudiantes y personal.</p>
+                    </div>
+                    <span class="badge" th:classappend="${correoConfig.activo} ? 'badge-success' : 'badge-secondary'"
+                          th:text="${correoConfig.activo} ? 'Envío activo' : 'Envío desactivado'">Envío
+                        desactivado</span>
+                </div>
+
+                <div id="correo-loading" class="htmx-indicator panel-loading-overlay"
+                     style="align-items: center; justify-content: flex-start; padding-top: 4rem;">
+                    <div class="spinner"></div>
+                    <span>Procesando...</span>
+                </div>
+
+                <div style="padding: 2rem;">
+                    <div class="correo-presets">
+                        <span class="correo-help" style="margin: 0 0.25rem 0 0;">Autocompletar para:</span>
+                        <button type="button" class="correo-preset"
+                                @click="host = 'smtp.gmail.com'; puerto = 587; seguridad = 'STARTTLS'">Gmail / Google Workspace</button>
+                        <button type="button" class="correo-preset"
+                                @click="host = 'smtp.office365.com'; puerto = 587; seguridad = 'STARTTLS'">Outlook / Microsoft 365</button>
+                    </div>
+
+                    <p class="correo-seccion">Servidor</p>
+                    <div class="correo-form-grid">
+                        <div class="form-group full">
+                            <label class="form-label">Servidor SMTP</label>
+                            <input class="form-input" type="text" name="host" required x-model="host"
+                                   placeholder="Ej: smtp.gmail.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Puerto</label>
+                            <input class="form-input" type="number" name="puerto" min="1" max="65535" required
+                                   x-model="puerto">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Seguridad</label>
+                            <select class="form-input" name="seguridad" x-model="seguridad">
+                                <option value="STARTTLS">STARTTLS (recomendado, puerto 587)</option>
+                                <option value="SSL">SSL/TLS (puerto 465)</option>
+                                <option value="NINGUNA">Ninguna (solo servidores internos)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Usuario</label>
+                            <input class="form-input" type="text" name="usuario" autocomplete="off"
+                                   th:value="${correoConfig.usuario}" placeholder="Normalmente el correo completo">
+                            <p class="correo-help">Déjalo vacío si el servidor no pide autenticación.</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contraseña</label>
+                            <input class="form-input" type="password" name="password" autocomplete="new-password"
+                                   th:placeholder="${correoConfig.tienePassword()} ? 'Dejar en blanco para mantener la actual' : 'Contraseña o contraseña de aplicación'">
+                            <p class="correo-help">Se guarda cifrada. En Gmail y Microsoft 365 usa una
+                                <strong>contraseña de aplicación</strong>, no la contraseña normal.</p>
+                            <label th:if="${correoConfig.tienePassword()}" class="correo-help"
+                                   style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                <input type="checkbox" name="borrarPassword" value="true"> Borrar la contraseña guardada
+                            </label>
+                        </div>
+                    </div>
+
+                    <p class="correo-seccion">Remitente</p>
+                    <div class="correo-form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Correo remitente</label>
+                            <input class="form-input" type="email" name="remitenteEmail" required
+                                   th:value="${correoConfig.remitenteEmail}" placeholder="Ej: notificaciones@colegio.ed.cr">
+                            <p class="correo-help">Debe ser una dirección que el servidor permita usar con ese usuario.</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nombre del remitente</label>
+                            <input class="form-input" type="text" name="remitenteNombre" maxlength="150"
+                                   th:value="${correoConfig.remitenteNombre}" placeholder="Ej: Colegio Beta">
+                            <p class="correo-help">Si se deja vacío se usa el nombre de la dirección.</p>
+                        </div>
+                    </div>
+
+                    <div class="correo-toggle-row">
+                        <label class="correo-toggle">
+                            <input type="checkbox" name="activo" value="true" th:checked="${correoConfig.activo}">
+                            <span class="correo-toggle-track"></span><span class="correo-toggle-thumb"></span>
+                        </label>
+                        <div>
+                            <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">Habilitar
+                                envío de notificaciones</div>
+                            <div class="correo-help">Con esto desactivado, la conexión queda guardada pero ninguna
+                                funcionalidad enviará correos automáticos.</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1.5rem;">
+                        <button type="submit" class="btn btn-primary">Guardar configuración</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="card" th:if="${correoConfig.id != null}" style="margin-top: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title">Probar conexión</h3>
+                <span th:if="${correoConfig.ultimaPruebaExitosa != null}" class="badge badge-success"
+                      th:text="'Última prueba: ' + ${#temporals.format(correoConfig.ultimaPruebaExitosa, 'dd/MM/yyyy HH:mm')}">Última
+                    prueba</span>
+            </div>
+            <div style="padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: space-between;">
+                    <p class="correo-help" style="margin: 0;">Se conecta al servidor e inicia sesión con el usuario y
+                        la contraseña guardados, sin enviar ningún correo.</p>
+                    <button class="btn btn-secondary" hx-post="/configuracion/correo/probar"
+                            hx-target="#correo-panel" hx-swap="outerHTML" hx-indicator="#correo-loading">
+                        Probar conexión
+                    </button>
+                </div>
+                <form hx-post="/configuracion/correo/prueba-mensaje" hx-target="#correo-panel"
+                      hx-swap="outerHTML" hx-indicator="#correo-loading"
+                      style="display: flex; align-items: flex-end; gap: 1rem; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                    <div class="form-group" style="margin: 0; flex: 1; min-width: 220px;">
+                        <label class="form-label">Enviar correo de prueba a</label>
+                        <input class="form-input" type="email" name="emailPrueba" required
+                               placeholder="Ej: tu-correo@gmail.com">
+                        <p class="correo-help">Llega con el mismo diseño que las notificaciones.</p>
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Enviar correo de prueba</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
