@@ -5,17 +5,22 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
+import com.chavescr.nexa.service.NotasConsultaService;
 import com.chavescr.nexa.service.TipoComponenteService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class MenuController {
 
     private final TipoComponenteService tipoComponenteService;
+    private final NotasConsultaService notasConsultaService;
 
-    public MenuController(TipoComponenteService tipoComponenteService) {
+    public MenuController(TipoComponenteService tipoComponenteService, NotasConsultaService notasConsultaService) {
         this.tipoComponenteService = tipoComponenteService;
+        this.notasConsultaService = notasConsultaService;
     }
 
     @GetMapping("/estudiantes")
@@ -54,7 +59,18 @@ public class MenuController {
     }
 
     @GetMapping("/notas")
-    public String notas(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+    public String notas(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            Model model, HttpSession session, HttpServletRequest request) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        boolean admin = request.isUserInRole("ROLE_ADMIN");
+        boolean director = request.isUserInRole("ROLE_DIRECTOR");
+        boolean supervision = admin || director;
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        model.addAttribute("notasCatalogo", notasConsultaService.consultar(
+                direccionId, usuarioId, supervision, supervision));
         return htmxRequest ? "notas/index :: htmx-content" : "notas/index";
     }
 

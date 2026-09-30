@@ -53,4 +53,18 @@ public interface IncidenteConductaRepository extends JpaRepository<IncidenteCond
             + "WHERE i.id = :id AND i.direccion.id = :direccionId")
     Optional<IncidenteConducta> findByIdAndDireccionId(@Param("id") Long id,
             @Param("direccionId") Long direccionId);
+
+    @Query("""
+            SELECT i.estudiante.id, i.periodo.id, SUM(i.puntosDescontados)
+            FROM IncidenteConducta i
+            WHERE i.direccion.id = :direccionId
+              AND i.periodo.id IN :periodoIds
+              AND i.estudiante.id IN :estudianteIds
+              AND i.tipo = :tipo
+            GROUP BY i.estudiante.id, i.periodo.id
+            """)
+    List<Object[]> sumarPuntosPorEstudianteYPeriodo(@Param("direccionId") Long direccionId,
+            @Param("periodoIds") Collection<Long> periodoIds,
+            @Param("estudianteIds") Collection<Long> estudianteIds,
+            @Param("tipo") TipoIncidente tipo);
 }

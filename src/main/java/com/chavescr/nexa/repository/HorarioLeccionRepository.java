@@ -1,5 +1,6 @@
 package com.chavescr.nexa.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -128,4 +129,12 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
             + "WHERE h.direccion.id = :direccionId AND h.periodo.id = :periodoId")
     List<Object[]> findCombosDocenteMateriaNivel(
             @Param("direccionId") Long direccionId, @Param("periodoId") Long periodoId);
+
+    @Query("SELECT DISTINCT h.nivel.id, h.materia.id, h.materia.nombre, h.docente.nombre, h.periodo.id "
+            + "FROM HorarioLeccion h "
+            + "WHERE h.direccion.id = :direccionId AND h.periodo.id IN :periodoIds AND h.nivel.id IN :nivelIds")
+    List<Object[]> findAsignacionesNivelMateria(
+            @Param("direccionId") Long direccionId,
+            @Param("periodoIds") Collection<Long> periodoIds,
+            @Param("nivelIds") Collection<Long> nivelIds);
 }

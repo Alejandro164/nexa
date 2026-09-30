@@ -9,32 +9,136 @@
 <body>
 
     <h2 layout:fragment="page-title">Notas</h2>
-    <p layout:fragment="page-subtitle">Calificaciones por estudiante, materia y período académico</p>
+    <p layout:fragment="page-subtitle">Calificaciones por estudiante, materia y año lectivo</p>
 
     <th:block th:fragment="htmx-content">
     <h2 id="topbar-page-title" hx-swap-oob="true">Notas</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Calificaciones por estudiante, materia y período académico</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Calificaciones por estudiante, materia y año lectivo</p>
     <main layout:fragment="content">
         <style>
             [x-cloak] { display: none !important; }
 
-            .notas-toolbar {
+            .notas-filtros {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: flex-end;
+                gap: 0.75rem 1rem;
                 background: #fff;
                 border: 1px solid var(--border);
                 border-radius: 12px;
                 box-shadow: var(--shadow-sm);
-                padding: 0.9rem 1.15rem;
+                padding: 0.85rem 1.15rem;
                 margin-bottom: 1rem;
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                gap: 0.75rem 1rem;
             }
-            .notas-search-wrap {
-                position: relative;
-                flex: 1 1 22rem;
-                min-width: 0;
-                max-width: 36rem;
+            .notas-field {
+                display: flex;
+                flex-direction: column;
+                gap: 0.3rem;
+                min-width: 10.5rem;
+                flex: 1 1 10.5rem;
+                max-width: 16rem;
+            }
+            .notas-field span {
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: #64748b;
+            }
+            .notas-field select {
+                width: 100%;
+                min-height: 38px;
+                padding: 0.45rem 0.7rem;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: #f8fafc;
+                font-size: 0.85rem;
+                font-family: inherit;
+                color: #0f172a;
+                outline: none;
+                box-sizing: border-box;
+            }
+            .notas-field select:focus {
+                background: #fff;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
+            }
+            .notas-period-fijo {
+                min-height: 38px;
+                display: flex;
+                align-items: center;
+                padding: 0.45rem 0.7rem;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: #f8fafc;
+                font-size: 0.85rem;
+                font-weight: 650;
+                color: #0f172a;
+                white-space: nowrap;
+            }
+            .notas-clear {
+                min-height: 38px;
+                padding: 0 0.9rem;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: #fff;
+                color: #64748b;
+                font-size: 0.78rem;
+                font-weight: 700;
+                font-family: inherit;
+                cursor: pointer;
+            }
+            .notas-clear:hover { border-color: #cbd5e1; color: #334155; }
+            .notas-filtros .notas-count { margin-left: auto; align-self: center; }
+            .notas-split {
+                display: grid;
+                grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+                gap: 1rem;
+                align-items: stretch;
+                min-height: min(680px, calc(100vh - 290px));
+            }
+            .notas-pane {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                box-shadow: var(--shadow-sm);
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+                overflow: hidden;
+            }
+            .notas-pane-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                padding: 1rem 1.15rem 0.85rem;
+                border-bottom: 1px solid var(--border);
+                background: #f8fafc;
+            }
+            .notas-pane-title {
+                margin: 0;
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: #0f172a;
+                letter-spacing: -0.01em;
+            }
+            .notas-count {
+                font-size: 0.72rem;
+                font-weight: 700;
+                color: var(--primary);
+                background: rgba(45, 90, 135, 0.08);
+                padding: 3px 10px;
+                border-radius: 999px;
+                white-space: nowrap;
+            }
+            .notas-pane-tools {
+                padding: 0.85rem 1.15rem;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                gap: 0.7rem;
+                background: #fff;
             }
             .notas-search {
                 position: relative;
@@ -49,7 +153,7 @@
             }
             .notas-search input {
                 width: 100%;
-                min-height: 40px;
+                min-height: 38px;
                 padding: 0.5rem 0.85rem 0.5rem 2.3rem;
                 border: 1px solid var(--border);
                 border-radius: 8px;
@@ -65,44 +169,40 @@
                 border-color: var(--primary);
                 box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
             }
-            .notas-results {
-                position: absolute;
-                z-index: 20;
-                left: 0;
-                right: 0;
-                top: calc(100% + 6px);
-                background: #fff;
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
-                max-height: 320px;
+            .notas-list {
                 overflow-y: auto;
-                padding: 0.35rem;
+                flex: 1;
+                padding: 0.4rem;
             }
+            .notas-list:focus { outline: none; }
             .notas-student {
                 width: 100%;
                 display: flex;
                 align-items: center;
                 gap: 10px;
-                padding: 0.65rem 0.7rem;
+                padding: 0.7rem 0.75rem;
                 border: 1px solid transparent;
-                border-radius: 8px;
+                border-radius: 10px;
                 background: transparent;
                 cursor: pointer;
                 text-align: left;
                 font-family: inherit;
-                transition: background 0.15s;
+                transition: background 0.15s, border-color 0.15s;
             }
-            .notas-student:hover,
-            .notas-student.is-on { background: #f8fafc; }
+            .notas-student:hover { background: #f8fafc; }
+            .notas-student.is-on {
+                background: rgba(45, 90, 135, 0.07);
+                border-color: rgba(45, 90, 135, 0.18);
+                box-shadow: inset 3px 0 0 var(--primary);
+            }
             .notas-avatar {
-                width: 32px;
-                height: 32px;
+                width: 36px;
+                height: 36px;
                 border-radius: 50%;
                 display: grid;
                 place-items: center;
                 color: #fff;
-                font-size: 0.7rem;
+                font-size: 0.72rem;
                 font-weight: 700;
                 flex-shrink: 0;
             }
@@ -120,56 +220,6 @@
                 color: #64748b;
                 margin-top: 1px;
             }
-            .notas-results-empty {
-                padding: 0.85rem 0.75rem;
-                font-size: 0.82rem;
-                color: #94a3b8;
-            }
-            .notas-chips {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.4rem;
-            }
-            .notas-chip {
-                border: 1px solid var(--border);
-                background: #fff;
-                color: #64748b;
-                font-size: 0.72rem;
-                font-weight: 700;
-                letter-spacing: 0.02em;
-                padding: 5px 10px;
-                border-radius: 999px;
-                cursor: pointer;
-                font-family: inherit;
-                transition: background 0.15s, color 0.15s, border-color 0.15s;
-            }
-            .notas-chip:hover { border-color: #cbd5e1; color: #334155; }
-            .notas-chip.is-on {
-                background: var(--primary);
-                border-color: var(--primary);
-                color: #fff;
-            }
-            .notas-count {
-                font-size: 0.72rem;
-                font-weight: 700;
-                color: var(--primary);
-                background: rgba(45, 90, 135, 0.08);
-                padding: 3px 10px;
-                border-radius: 999px;
-                white-space: nowrap;
-                margin-left: auto;
-            }
-
-            .notas-pane {
-                background: #fff;
-                border: 1px solid var(--border);
-                border-radius: 12px;
-                box-shadow: var(--shadow-sm);
-                display: flex;
-                flex-direction: column;
-                min-height: min(640px, calc(100vh - 250px));
-                overflow: hidden;
-            }
             .notas-pill {
                 font-size: 0.78rem;
                 font-weight: 800;
@@ -182,9 +232,6 @@
             .notas-pill.bueno { background: #dbeafe; color: #1e40af; }
             .notas-pill.regular { background: #fef3c7; color: #92400e; }
             .notas-pill.deficiente { background: #fee2e2; color: #991b1b; }
-            .notas-pill.aprobado { background: #dcfce7; color: #166534; }
-            .notas-pill.aplazado { background: #fef3c7; color: #92400e; }
-            .notas-pill.reprobado { background: #fee2e2; color: #991b1b; }
 
             .notas-empty {
                 flex: 1;
@@ -296,7 +343,6 @@
             }
             .notas-kpi-value.is-risk { color: #dc2626; }
             .notas-kpi-value.is-ok { color: #15803d; }
-            .notas-kpi-value.is-aplazado { color: #a16207; }
 
             .notas-table-wrap {
                 overflow: auto;
@@ -305,16 +351,7 @@
             .notas-table {
                 width: 100%;
                 border-collapse: collapse;
-                min-width: 560px;
-            }
-            .notas-th-sub {
-                display: block;
-                font-size: 0.62rem;
-                font-weight: 600;
-                letter-spacing: 0.02em;
-                text-transform: none;
-                color: #94a3b8;
-                margin-top: 2px;
+                min-width: 720px;
             }
             .notas-table th {
                 text-align: left;
@@ -330,7 +367,16 @@
                 top: 0;
                 z-index: 1;
             }
-            .notas-table th.num, .notas-table td.num { text-align: right; }
+            .notas-table th.num, .notas-table td.num { text-align: right; white-space: nowrap; }
+            .notas-table th.num { min-width: 5.75rem; }
+            .notas-celda {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 2px;
+            }
+            .notas-col-anio { background: rgba(45, 90, 135, 0.05); }
+            .notas-table tr:hover td.notas-col-anio { background: rgba(45, 90, 135, 0.08); }
             .notas-table td {
                 padding: 0.8rem 0.85rem;
                 font-size: 0.84rem;
@@ -339,6 +385,8 @@
                 vertical-align: middle;
             }
             .notas-table tr:hover td { background: #f8fafc; }
+            .notas-conducta td { border-top: 1px solid var(--border); background: #f8fafc; }
+            .notas-table tr.notas-conducta:hover td { background: #f1f5f9; }
             .notas-materia {
                 font-weight: 650;
                 color: #0f172a;
@@ -358,9 +406,6 @@
             .notas-final.bueno { color: #1e40af; }
             .notas-final.regular { color: #92400e; }
             .notas-final.deficiente { color: #991b1b; }
-            .notas-final.aprobado { color: #166534; }
-            .notas-final.aplazado { color: #a16207; }
-            .notas-final.reprobado { color: #991b1b; }
             .notas-bar {
                 height: 4px;
                 border-radius: 99px;
@@ -373,6 +418,70 @@
             .notas-bar-fill {
                 height: 100%;
                 border-radius: inherit;
+            }
+            .notas-ausencias {
+                flex-shrink: 0;
+                border-top: 1px solid var(--border);
+                padding: 1rem 1.15rem 1.15rem;
+                background: #fff;
+            }
+            .notas-ausencias-table {
+                width: 100%;
+                border-collapse: collapse;
+                border: 1px solid var(--border);
+            }
+            .notas-ausencias-table th,
+            .notas-ausencias-table td {
+                border: 1px solid #e2e8f0;
+                padding: 0.55rem 0.85rem;
+                font-size: 0.82rem;
+                color: #334155;
+            }
+            .notas-ausencias-table th {
+                background: #f8fafc;
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+                color: #64748b;
+                text-align: center;
+            }
+            .notas-ausencias-table th:first-child,
+            .notas-ausencias-table td:first-child {
+                text-align: left;
+                text-transform: none;
+                letter-spacing: 0;
+                font-size: 0.84rem;
+                font-weight: 650;
+                color: #0f172a;
+                width: 42%;
+            }
+            .notas-ausencias-table td.num {
+                text-align: center;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+                color: #0f172a;
+            }
+            .notas-observaciones { padding-top: 0; }
+            .notas-observaciones-table thead th:first-child {
+                text-align: center;
+                text-transform: none;
+                letter-spacing: 0;
+                font-size: 0.92rem;
+                font-weight: 700;
+                color: #0f172a;
+                width: auto;
+            }
+            .notas-observaciones-table td:first-child {
+                width: 8.5rem;
+                white-space: nowrap;
+                vertical-align: top;
+            }
+            .notas-obs-texto {
+                font-weight: 500;
+                line-height: 1.5;
+                text-align: left;
+                color: #334155;
             }
             .notas-legend {
                 display: flex;
@@ -392,312 +501,453 @@
                 .notas-kpi:nth-child(1),
                 .notas-kpi:nth-child(2) { border-bottom: 1px solid var(--border); }
             }
-            @media (max-width: 720px) {
-                .notas-count { margin-left: 0; width: 100%; }
-                .notas-search-wrap { max-width: none; flex-basis: 100%; }
+            @media (max-width: 960px) {
+                .notas-split {
+                    grid-template-columns: 1fr;
+                    min-height: 0;
+                }
+                .notas-pane--list { max-height: 42vh; }
+                .notas-pane--detail { min-height: 520px; }
+                .notas-field { max-width: none; }
+                .notas-filtros .notas-count { margin-left: 0; }
             }
         </style>
 
         <div id="notas-root" x-cloak>
-            <div class="notas-toolbar">
-                <div class="notas-search-wrap" @click.outside="abierto = false">
-                    <div class="notas-search">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                        <input type="search" placeholder="Buscar estudiante por nombre o cédula..."
-                               aria-label="Buscar estudiante"
-                               autocomplete="off"
-                               role="combobox"
-                               aria-autocomplete="list"
-                               :aria-expanded="abierto"
-                               x-model="q"
-                               @focus="abrir()"
-                               @input="abrir()"
-                               @keydown.arrow-down.prevent="mover(1)"
-                               @keydown.arrow-up.prevent="mover(-1)"
-                               @keydown.enter.prevent="elegirResaltado()"
-                               @keydown.escape="abierto = false">
-                    </div>
-                    <div class="notas-results" x-show="abierto" x-cloak role="listbox" aria-label="Resultados">
-                        <template x-for="(e, i) in filtrados" :key="e.id">
-                            <button type="button" class="notas-student"
-                                    role="option"
-                                    :class="{ 'is-on': hi === i || selectedId === e.id }"
-                                    :aria-selected="selectedId === e.id"
-                                    @mousedown.prevent="elegir(e)">
-                                <span class="notas-avatar" :style="'background:' + e.color" x-text="e.iniciales"></span>
-                                <span class="notas-student-meta">
-                                    <span class="notas-student-name" x-text="e.nombre"></span>
-                                    <span class="notas-student-sub" x-text="e.cedula + ' · ' + e.seccion"></span>
-                                </span>
-                                <span class="notas-pill" :class="nivel(promedioDe(e))"
-                                      x-text="promedioDe(e)"></span>
-                            </button>
+            <div class="notas-filtros" role="search" aria-label="Filtrar por año, grado y sección">
+                <label class="notas-field" th:if="${notasCatalogo.elegirAnio}">
+                    <span>Año</span>
+                    <select aria-label="Año" x-model="anio"
+                            x-init="$nextTick(() => { $el.value = anio })">
+                        <template x-for="a in anios" :key="a.anio">
+                            <option :value="String(a.anio)" x-text="a.etiqueta"></option>
                         </template>
-                        <div class="notas-results-empty" x-show="filtrados.length === 0">
-                            Sin coincidencias. Pruebe con otro nombre, cédula o sección.
-                        </div>
-                    </div>
+                    </select>
+                </label>
+                <div class="notas-field" th:unless="${notasCatalogo.elegirAnio}">
+                    <span>Año</span>
+                    <div class="notas-period-fijo" th:text="${notasCatalogo.anioEtiqueta}">Año lectivo</div>
                 </div>
-                <div class="notas-chips" role="tablist" aria-label="Filtrar por sección">
-                    <button type="button" class="notas-chip" :class="{ 'is-on': seccion === '' }"
-                            @click="seccion = ''">Todas</button>
-                    <template x-for="s in secciones" :key="s">
-                        <button type="button" class="notas-chip" :class="{ 'is-on': seccion === s }"
-                                @click="seccion = s" x-text="s"></button>
-                    </template>
-                </div>
-                <span class="notas-count" x-text="filtrados.length + ' de ' + estudiantes.length"></span>
+                <label class="notas-field">
+                    <span>Grado</span>
+                    <select aria-label="Grado" x-model="grado" @change="alCambiarGrado()">
+                        <option value="">Todos los grados</option>
+                        <template x-for="g in grados" :key="g">
+                            <option :value="g" x-text="'Grado ' + g"></option>
+                        </template>
+                    </select>
+                </label>
+                <label class="notas-field">
+                    <span>Sección</span>
+                    <select aria-label="Sección" x-model="seccion" @change="asegurarSeleccion()">
+                        <option value="">Todas las secciones</option>
+                        <template x-for="s in seccionesDisponibles" :key="s.id">
+                            <option :value="s.id" x-text="s.etiqueta"></option>
+                        </template>
+                    </select>
+                </label>
+                <button type="button" class="notas-clear" x-show="grado || seccion" x-cloak
+                        @click="limpiarFiltros()">Limpiar</button>
+                <span class="notas-count" x-text="cohorte.length + (cohorte.length === 1 ? ' estudiante' : ' estudiantes')"></span>
             </div>
-
-            <section class="notas-pane" aria-label="Notas del estudiante">
-                <template x-if="!seleccionado">
-                    <div class="notas-empty">
-                        <div class="notas-empty-icon">
-                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <div class="notas-split">
+                <section class="notas-pane notas-pane--list" aria-label="Estudiantes">
+                    <div class="notas-pane-head">
+                        <h3 class="notas-pane-title">Estudiantes</h3>
+                        <span class="notas-count" x-text="filtrados.length + ' de ' + cohorte.length"></span>
+                    </div>
+                    <div class="notas-pane-tools">
+                        <div class="notas-search">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
+                            <input type="search" placeholder="Nombre o cédula..."
+                                   aria-label="Buscar estudiante" x-model="q">
                         </div>
-                        <strong>Busque un estudiante</strong>
-                        <span>Escriba el nombre o la cédula en el recuadro superior para ver las calificaciones por materia y período.</span>
                     </div>
-                </template>
+                    <div class="notas-list" role="listbox" aria-label="Lista de estudiantes" tabindex="0"
+                         @keydown.arrow-down.prevent="mover(1)"
+                         @keydown.arrow-up.prevent="mover(-1)">
+                        <template x-for="e in filtrados" :key="e.id">
+                            <button type="button" class="notas-student"
+                                    role="option"
+                                    :class="{ 'is-on': selectedId === e.id }"
+                                    :aria-selected="selectedId === e.id"
+                                    @click="selectedId = e.id">
+                                <span class="notas-avatar" :style="'background:' + e.color" x-text="e.iniciales"></span>
+                                <span class="notas-student-meta">
+                                    <span class="notas-student-name" x-text="e.nombre"></span>
+                                    <span class="notas-student-sub" x-text="e.cedula + ' · ' + grupoDe(e)"></span>
+                                </span>
+                                <span class="notas-pill" x-show="promedioDe(e) != null"
+                                      :class="nivel(promedioDe(e))" x-text="promedioDe(e)"></span>
+                            </button>
+                        </template>
+                        <div class="notas-empty" x-show="filtrados.length === 0">
+                            <strong x-text="tituloVacio()"></strong>
+                            <span x-text="mensajeVacio()"></span>
+                        </div>
+                    </div>
+                </section>
 
-                <template x-if="seleccionado">
-                    <div style="display:flex;flex-direction:column;min-height:0;flex:1;">
-                        <div class="notas-detail-head">
-                            <div class="notas-ring" :style="'--pct:' + promedioDe(seleccionado)">
-                                <div class="notas-ring-inner" x-text="promedioDe(seleccionado)"></div>
+                <section class="notas-pane notas-pane--detail" aria-label="Notas del estudiante">
+                    <template x-if="!seleccionado">
+                        <div class="notas-empty">
+                            <div class="notas-empty-icon">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                    <rect x="8" y="2" width="8" height="4" rx="1"></rect>
+                                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    <line x1="8" y1="16" x2="16" y2="16"></line>
+                                </svg>
                             </div>
-                            <div class="notas-detail-id">
-                                <h3 class="notas-detail-name" x-text="seleccionado.nombre"></h3>
-                                <div class="notas-detail-sub">
-                                    <span x-text="seleccionado.cedula"></span>
-                                    <span x-text="'Sección ' + seleccionado.seccion"></span>
-                                    <span class="notas-pill" :class="condicion(promedioDe(seleccionado))"
-                                          x-text="condicionEtiqueta(promedioDe(seleccionado))"></span>
+                            <strong>Seleccione un estudiante</strong>
+                            <span>Las calificaciones de cada materia, por período del año, se muestran aquí al elegir un estudiante.</span>
+                        </div>
+                    </template>
+
+                    <template x-if="seleccionado">
+                        <div style="display:flex;flex-direction:column;min-height:0;flex:1;">
+                            <div class="notas-detail-head">
+                                <div class="notas-ring" :style="'--pct:' + (promedioDe(seleccionado) == null ? 0 : promedioDe(seleccionado))">
+                                    <div class="notas-ring-inner"
+                                         x-text="promedioDe(seleccionado) == null ? '—' : promedioDe(seleccionado)"></div>
+                                </div>
+                                <div class="notas-detail-id">
+                                    <h3 class="notas-detail-name" x-text="seleccionado.nombre"></h3>
+                                    <div class="notas-detail-sub">
+                                        <span x-text="seleccionado.cedula"></span>
+                                        <span x-text="'Sección ' + grupoDe(seleccionado)"></span>
+                                        <span class="notas-pill" x-show="promedioDe(seleccionado) != null"
+                                              :class="nivel(promedioDe(seleccionado))"
+                                              x-text="etiqueta(promedioDe(seleccionado))"></span>
+                                    </div>
+                                </div>
+                                <span class="notas-period" x-text="etiquetaAnio()"></span>
+                            </div>
+                            <div class="notas-empty" x-show="!tieneMaterias(seleccionado)" style="min-height: 220px;">
+                                <strong>Sin materias</strong>
+                                <span>No hay materias asignadas a la sección de este estudiante en el año seleccionado.</span>
+                            </div>
+                            <div class="notas-kpis" x-show="tieneMaterias(seleccionado)">
+                                <div class="notas-kpi">
+                                    <div class="notas-kpi-label">Promedio</div>
+                                    <div class="notas-kpi-value" x-text="promedioDe(seleccionado) == null ? '—' : promedioDe(seleccionado)"></div>
+                                </div>
+                                <div class="notas-kpi">
+                                    <div class="notas-kpi-label">Materias</div>
+                                    <div class="notas-kpi-value" x-text="materiasDe(seleccionado).length"></div>
+                                </div>
+                                <div class="notas-kpi">
+                                    <div class="notas-kpi-label">Aprobadas</div>
+                                    <div class="notas-kpi-value is-ok" x-text="conteo(seleccionado, 70, true)"></div>
+                                </div>
+                                <div class="notas-kpi">
+                                    <div class="notas-kpi-label">En riesgo</div>
+                                    <div class="notas-kpi-value" :class="{ 'is-risk': conteo(seleccionado, 70, false) > 0 }"
+                                         x-text="conteo(seleccionado, 70, false)"></div>
                                 </div>
                             </div>
-                            <span class="notas-period" x-text="'Año lectivo 2026 · ' + periodos.length + ' períodos'"></span>
-                        </div>
-                        <div class="notas-kpis">
-                            <div class="notas-kpi">
-                                <div class="notas-kpi-label">Promedio</div>
-                                <div class="notas-kpi-value" x-text="promedioDe(seleccionado)"></div>
-                            </div>
-                            <div class="notas-kpi">
-                                <div class="notas-kpi-label">Aprobadas</div>
-                                <div class="notas-kpi-value is-ok" x-text="conteoCondicion(seleccionado, 'aprobado')"></div>
-                            </div>
-                            <div class="notas-kpi">
-                                <div class="notas-kpi-label">Aplazadas</div>
-                                <div class="notas-kpi-value" :class="{ 'is-aplazado': conteoCondicion(seleccionado, 'aplazado') > 0 }"
-                                     x-text="conteoCondicion(seleccionado, 'aplazado')"></div>
-                            </div>
-                            <div class="notas-kpi">
-                                <div class="notas-kpi-label">Reprobadas</div>
-                                <div class="notas-kpi-value" :class="{ 'is-risk': conteoCondicion(seleccionado, 'reprobado') > 0 }"
-                                     x-text="conteoCondicion(seleccionado, 'reprobado')"></div>
-                            </div>
-                        </div>
-                        <div class="notas-table-wrap">
-                            <table class="notas-table">
-                                <thead>
-                                    <tr>
-                                        <th>Materia</th>
-                                        <template x-for="p in periodos" :key="p.id">
-                                            <th class="num">
-                                                <span x-text="p.etiqueta"></span>
-                                                <span class="notas-th-sub" x-text="p.codigo"></span>
-                                            </th>
-                                        </template>
-                                        <th class="num">Promedio</th>
-                                        <th>Condición</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <template x-for="m in seleccionado.materias" :key="m.nombre">
+                            <div class="notas-table-wrap" x-show="tieneMaterias(seleccionado)">
+                                <table class="notas-table">
+                                    <thead>
                                         <tr>
-                                            <td>
-                                                <span class="notas-materia" x-text="m.nombre"></span>
-                                                <span class="notas-docente" x-text="m.docente"></span>
-                                            </td>
-                                            <template x-for="(p, i) in periodos" :key="m.nombre + '-' + p.id">
-                                                <td class="num">
-                                                    <div class="notas-final" :class="nivel(notaDe(m, i))"
-                                                         x-text="notaDe(m, i)"></div>
-                                                </td>
+                                            <th>Materia</th>
+                                            <template x-for="p in periodosDelAnio" :key="p.id">
+                                                <th class="num" :title="p.titulo" x-text="p.etiqueta"></th>
                                             </template>
-                                            <td class="num">
-                                                <div class="notas-final" :class="condicion(finalDe(m))"
-                                                     x-text="finalDe(m)"></div>
-                                                <div class="notas-bar">
-                                                    <div class="notas-bar-fill"
-                                                         :style="'width:' + finalDe(m) + '%;background:' + colorDe(finalDe(m))"></div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="notas-pill" :class="condicion(finalDe(m))"
-                                                      x-text="condicionEtiqueta(finalDe(m))"></span>
-                                            </td>
+                                            <th class="num notas-col-anio">Año</th>
+                                            <th>Nivel</th>
                                         </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="m in materiasDe(seleccionado)" :key="m.id">
+                                            <tr :class="{ 'notas-conducta': esConducta(m) }">
+                                                <td>
+                                                    <span class="notas-materia" x-text="m.nombre"></span>
+                                                    <span class="notas-docente" x-text="m.docente"></span>
+                                                </td>
+                                                <template x-for="p in periodosDelAnio" :key="m.id + '-' + p.id">
+                                                    <td class="num">
+                                                        <div class="notas-final" :class="nivel(pctDe(notaDe(m, p.id)))"
+                                                             x-text="fmtNota(notaDe(m, p.id))"></div>
+                                                    </td>
+                                                </template>
+                                                <td class="num notas-col-anio">
+                                                    <div class="notas-celda">
+                                                        <div class="notas-final" :class="nivel(pctDe(resumenDe(m)))"
+                                                             x-text="fmtNota(resumenDe(m))"></div>
+                                                        <div class="notas-bar" x-show="pctDe(resumenDe(m)) != null">
+                                                            <div class="notas-bar-fill" :style="barraDe(resumenDe(m))"></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="notas-pill" x-show="pctDe(resumenDe(m)) != null"
+                                                          :class="nivel(pctDe(resumenDe(m)))"
+                                                          x-text="etiqueta(pctDe(resumenDe(m)))"></span>
+                                                    <span x-show="pctDe(resumenDe(m)) == null">—</span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="notas-legend" x-show="tieneMaterias(seleccionado)">
+                                <span>La nota es el promedio ponderado del período, según la distribución de la materia y la asistencia.</span>
+                                <span><b>Conducta</b> inicia en 100. Solo las boletas del período descuentan puntos.</span>
+                                <span><b>Año</b> es el promedio de los períodos que tienen nota.</span>
+                            </div>
+                            <div class="notas-ausencias">
+                                <table class="notas-ausencias-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Ausencias</th>
+                                            <template x-for="p in periodosDelAnio" :key="'aus-' + p.id">
+                                                <th class="num" x-text="p.etiqueta"></th>
+                                            </template>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="fila in filasAusencia" :key="fila.nombre">
+                                            <tr>
+                                                <td x-text="fila.nombre"></td>
+                                                <template x-for="(p, i) in periodosDelAnio" :key="fila.nombre + '-' + p.id">
+                                                    <td class="num" x-text="valorAusencia(fila, i)"></td>
+                                                </template>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="notas-ausencias notas-observaciones">
+                                <table class="notas-ausencias-table notas-observaciones-table">
+                                    <thead>
+                                        <tr>
+                                            <th colspan="2">Observaciones del docente guía</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(p, i) in periodosDelAnio" :key="'obs-' + p.id">
+                                            <tr>
+                                                <td x-text="p.etiqueta"></td>
+                                                <td class="notas-obs-texto" x-text="textoObservacion(i)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="notas-legend">
-                            <template x-for="p in periodos" :key="'leyenda-' + p.id">
-                                <span><b x-text="p.etiqueta"></b> <span x-text="p.codigo"></span></span>
-                            </template>
-                            <span><b>Aprobado</b> 70 o más</span>
-                            <span><b>Aplazado</b> 60 a 69</span>
-                            <span><b>Reprobado</b> menos de 60</span>
-                            <span>Promedio de la materia = media de los períodos. Promedio general = media de las materias.</span>
-                        </div>
-                    </div>
-                </template>
-            </section>
+                    </template>
+                </section>
+            </div>
         </div>
 
-        <script>
+        <script th:inline="javascript">
+            var NOTAS_CATALOGO = /*[[${notasCatalogo}]]*/ {};
+
             function notasModulo() {
-                const periodos = [
-                    { id: 'p1', codigo: 'I-2026', etiqueta: 'I período' },
-                    { id: 'p2', codigo: 'II-2026', etiqueta: 'II período' }
-                ];
-                const catalogo = [
-                    { nombre: 'Español', docente: 'Prof. Ana Vargas' },
-                    { nombre: 'Matemáticas', docente: 'Prof. Pedro Miranda' },
-                    { nombre: 'Ciencias', docente: 'Prof. Laura Méndez' },
-                    { nombre: 'Estudios Sociales', docente: 'Prof. Carlos Rojas' },
-                    { nombre: 'Inglés', docente: 'Prof. Helen Castro' },
-                    { nombre: 'Educación Cívica', docente: 'Prof. Ana Vargas' },
-                    { nombre: 'Educación Física', docente: 'Prof. Diego Solís' }
-                ];
-                const base = [
-                    { id: 1, nombre: 'Valeria Solano Mora', cedula: '9-2345-6789', seccion: '1-A', color: '#2d5a87', perfil: 93 },
-                    { id: 2, nombre: 'Gabriela Brenes Gómez', cedula: '9-0028-9971', seccion: '1-A', color: '#059669', perfil: 97 },
-                    { id: 3, nombre: 'Melissa Sánchez Gutiérrez', cedula: '9-0034-9965', seccion: '1-A', color: '#0284c7', perfil: 82 },
-                    { id: 4, nombre: 'Carlos Díaz Castro', cedula: '9-0040-9959', seccion: '1-A', color: '#7c3aed', perfil: 68 },
-                    { id: 5, nombre: 'Fernando Chavarría Quesada', cedula: '9-0046-9953', seccion: '1-A', color: '#e11d48', perfil: 55 },
-                    { id: 6, nombre: 'Francisco Jiménez Pérez', cedula: '9-0052-9947', seccion: '7-A', color: '#ca8a04', perfil: 92 },
-                    { id: 7, nombre: 'Lucía Fernández Rojas', cedula: '3-6001-0101', seccion: '7-A', color: '#db2777', perfil: 97 },
-                    { id: 8, nombre: 'Mateo Vargas Solís', cedula: '3-6002-0202', seccion: '7-A', color: '#0891b2', perfil: 80 }
-                ];
+                const catalogo = NOTAS_CATALOGO || {};
+                const niveles = catalogo.niveles || [];
+                const estudiantes = catalogo.estudiantes || [];
+                const gradosUnicos = [...new Set(niveles.map(function (n) { return n.grado; }))]
+                    .sort(function (a, b) { return Number(a) - Number(b); });
+                const gradoInicial = gradosUnicos.length === 1 ? String(gradosUnicos[0]) : '';
+                const seccionInicial = niveles.length === 1 ? String(niveles[0].id) : '';
 
-                function clamp(n) { return Math.min(100, Math.max(40, Math.round(n))); }
-                function around(perfil, offset) { return clamp(perfil + offset); }
-                function materiasDe(est) {
-                    const p = est.perfil;
-                    return catalogo.map(function (m, i) {
-                        const sway = ((est.id * 3 + i * 5) % 9) - 4;
-                        return {
-                            nombre: m.nombre,
-                            docente: m.docente,
-                            notas: periodos.map(function (_per, pi) {
-                                return around(p, sway + (pi === 0 ? -2 : 1));
-                            })
-                        };
-                    });
+                function mismaCohorte(e, grado, seccion) {
+                    if (grado && String(e.grado) !== String(grado)) return false;
+                    if (seccion && String(e.nivelId) !== String(seccion)) return false;
+                    return true;
                 }
-
-                const estudiantes = base.map(function (e) {
-                    const parts = e.nombre.split(' ');
-                    return Object.assign({}, e, {
-                        iniciales: parts[0].charAt(0) + parts[1].charAt(0),
-                        materias: materiasDe(e)
-                    });
+                const iniciales = estudiantes.filter(function (e) {
+                    return mismaCohorte(e, gradoInicial, seccionInicial);
                 });
 
                 return {
                     q: '',
-                    seccion: '',
-                    selectedId: null,
-                    abierto: false,
-                    hi: 0,
-                    periodos: periodos,
+                    elegirAnio: !!catalogo.elegirAnio,
+                    anio: catalogo.anio == null ? '' : String(catalogo.anio),
+                    anioEtiqueta: catalogo.anioEtiqueta || 'Sin períodos',
+                    aviso: catalogo.aviso || '',
+                    grado: gradoInicial,
+                    seccion: seccionInicial,
+                    selectedId: iniciales[0] ? iniciales[0].id : null,
+                    anios: catalogo.anios || [],
+                    periodos: catalogo.periodos || [],
+                    filasAusencia: [
+                        { nombre: 'Ausencias justificadas', valores: [0, 2, 0] },
+                        { nombre: 'Ausencias injustificadas', valores: [0, 0, 0] },
+                        { nombre: 'Tardías justificadas', valores: [0, 0, 0] },
+                        { nombre: 'Tardías injustificadas', valores: [0, 0, 0] }
+                    ],
+                    observacionesGuia: [
+                        'Durante este primer período ha demostrado esfuerzo, dedicación y compromiso en cada una de sus actividades. Cada tarea realizada y cada reto superado son muestra de su constancia y deseo de aprender.',
+                        'Ha realizado un buen trabajo durante este período, demostrando responsabilidad, interés y disposición para aprender. Continúe fortaleciendo sus habilidades y esforzándose cada día para alcanzar nuevas metas.',
+                        'Sigue avanzando con constancia. El trabajo realizado hasta ahora le acerca cada vez más a sus metas. Continúe esforzándose y creyendo en sus capacidades.'
+                    ],
+                    niveles: niveles,
                     estudiantes: estudiantes,
-                    get secciones() {
-                        return [...new Set(this.estudiantes.map(function (e) { return e.seccion; }))];
+                    get periodosDelAnio() {
+                        const anio = String(this.anio);
+                        return this.periodos.filter(function (p) { return String(p.anio) === anio; });
+                    },
+                    get grados() {
+                        return [...new Set(this.niveles.map(function (n) { return n.grado; }))]
+                            .sort(function (a, b) { return Number(a) - Number(b); });
+                    },
+                    get seccionesDisponibles() {
+                        const grado = this.grado;
+                        return this.niveles.filter(function (n) {
+                            return !grado || String(n.grado) === String(grado);
+                        });
+                    },
+                    get cohorte() {
+                        const grado = this.grado;
+                        const seccion = this.seccion;
+                        return this.estudiantes.filter(function (e) {
+                            return mismaCohorte(e, grado, seccion);
+                        });
                     },
                     get filtrados() {
                         const q = this.q.trim().toLowerCase();
-                        return this.estudiantes.filter((e) => {
-                            if (this.seccion && e.seccion !== this.seccion) return false;
+                        return this.cohorte.filter(function (e) {
                             if (!q) return true;
-                            return (e.nombre + ' ' + e.cedula + ' ' + e.seccion).toLowerCase().includes(q);
+                            return (e.nombre + ' ' + e.cedula + ' ' + e.grado + '-' + e.seccion).toLowerCase().includes(q);
                         });
                     },
                     get seleccionado() {
-                        if (this.selectedId == null) return null;
-                        return this.estudiantes.find((e) => e.id === this.selectedId) || null;
+                        const id = this.selectedId;
+                        return this.filtrados.find(function (e) { return e.id === id; })
+                            || this.cohorte.find(function (e) { return e.id === id; })
+                            || null;
                     },
-                    abrir() {
-                        this.abierto = true;
-                        this.hi = 0;
-                        if (this.seleccionado && this.q.trim() !== this.seleccionado.nombre) {
-                            this.selectedId = null;
+                    grupoDe(e) {
+                        return e.grado + '-' + e.seccion;
+                    },
+                    alCambiarGrado() {
+                        const ids = this.seccionesDisponibles.map(function (n) { return String(n.id); });
+                        if (this.seccion && ids.indexOf(String(this.seccion)) < 0) {
+                            this.seccion = '';
                         }
+                        this.asegurarSeleccion();
                     },
-                    elegir(e) {
-                        this.selectedId = e.id;
-                        this.q = e.nombre;
-                        this.abierto = false;
+                    idsDelAnio() {
+                        return this.periodosDelAnio.map(function (p) { return String(p.id); });
                     },
-                    elegirResaltado() {
-                        const e = this.filtrados[this.hi];
-                        if (e) this.elegir(e);
+                    materiasDe(est) {
+                        if (!est || !est.materias) return [];
+                        const ids = this.idsDelAnio();
+                        return est.materias.filter(function (m) {
+                            return (m.periodoIds || []).some(function (id) { return ids.indexOf(String(id)) >= 0; });
+                        });
                     },
-                    notaDe(m, i) {
-                        if (!m || !m.notas || m.notas[i] == null) return '—';
-                        return m.notas[i];
+                    tieneMaterias(est) {
+                        return this.materiasDe(est).length > 0;
                     },
-                    finalDe(m) {
-                        if (!m || !m.notas || !m.notas.length) return 0;
-                        const sum = m.notas.reduce(function (acc, n) { return acc + n; }, 0);
-                        return +(sum / m.notas.length).toFixed(1);
+                    esConducta(m) {
+                        return !!(m && m.id < 0);
+                    },
+                    etiquetaAnio() {
+                        const n = this.periodosDelAnio.length;
+                        const base = this.anio || this.anioEtiqueta;
+                        if (!n) return String(base);
+                        return base + ' · ' + n + (n === 1 ? ' período' : ' períodos');
+                    },
+                    notaDe(m, periodoId) {
+                        if (!m || !m.notas) return null;
+                        const id = String(periodoId);
+                        return m.notas.find(function (n) { return String(n.periodoId) === id; }) || null;
+                    },
+                    resumenDe(m) {
+                        const ids = this.idsDelAnio();
+                        const notas = (m && m.notas ? m.notas : []).filter(function (n) {
+                            return ids.indexOf(String(n.periodoId)) >= 0;
+                        });
+                        const conPct = notas.filter(function (n) { return n.porcentaje != null; });
+                        if (!conPct.length) return null;
+                        const pct = +(conPct.reduce(function (acc, n) { return acc + Number(n.porcentaje); }, 0) / conPct.length).toFixed(1);
+                        return { porcentaje: pct };
+                    },
+                    pctDe(n) {
+                        return n && n.porcentaje != null ? Number(n.porcentaje) : null;
+                    },
+                    fmtNota(n) {
+                        const pct = this.pctDe(n);
+                        return pct == null ? '—' : pct.toFixed(1);
+                    },
+                    valorAusencia(fila, indice) {
+                        const valor = fila && fila.valores ? fila.valores[indice] : null;
+                        return valor == null ? 0 : valor;
+                    },
+                    textoObservacion(indice) {
+                        const texto = this.observacionesGuia[indice];
+                        return texto || 'Sin observación registrada para este período.';
+                    },
+                    barraDe(n) {
+                        const pct = this.pctDe(n);
+                        if (pct == null) return '';
+                        const ancho = Math.max(0, Math.min(100, pct));
+                        return 'width:' + ancho + '%;background:' + this.colorDe(pct);
+                    },
+                    tituloVacio() {
+                        if (this.aviso && !this.q.trim()) return 'Sin secciones';
+                        return 'Sin coincidencias';
+                    },
+                    mensajeVacio() {
+                        if (this.aviso && !this.q.trim()) return this.aviso;
+                        if (!this.estudiantes.length) return 'No hay estudiantes activos en las secciones disponibles.';
+                        return 'Ajuste la búsqueda o los filtros de grado y sección.';
+                    },
+                    asegurarSeleccion() {
+                        const sigue = this.cohorte.some((e) => e.id === this.selectedId);
+                        if (!sigue) this.selectedId = this.cohorte[0] ? this.cohorte[0].id : null;
+                    },
+                    limpiarFiltros() {
+                        this.grado = '';
+                        this.seccion = '';
+                        this.asegurarSeleccion();
                     },
                     promedioDe(est) {
-                        if (!est || !est.materias.length) return 0;
-                        const sum = est.materias.reduce((acc, m) => acc + this.finalDe(m), 0);
-                        return +(sum / est.materias.length).toFixed(1);
+                        const materias = this.materiasDe(est);
+                        const notas = materias
+                            .map((m) => this.pctDe(this.resumenDe(m)))
+                            .filter((n) => n != null);
+                        if (!notas.length) return null;
+                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(1);
                     },
-                    conteoCondicion(est, cond) {
-                        if (!est) return 0;
-                        return est.materias.filter((m) => this.condicion(this.finalDe(m)) === cond).length;
+                    conteo(est, umbral, aprobadas) {
+                        return this.materiasDe(est).filter((m) => {
+                            const n = this.pctDe(this.resumenDe(m));
+                            if (n == null) return false;
+                            return aprobadas ? n >= umbral : n < umbral;
+                        }).length;
                     },
                     nivel(n) {
+                        if (n == null) return '';
                         if (n >= 90) return 'excelente';
                         if (n >= 80) return 'bueno';
                         if (n >= 70) return 'regular';
                         return 'deficiente';
                     },
                     etiqueta(n) {
-                        return this.condicionEtiqueta(n);
-                    },
-                    condicion(n) {
-                        if (n >= 70) return 'aprobado';
-                        if (n >= 60) return 'aplazado';
-                        return 'reprobado';
-                    },
-                    condicionEtiqueta(n) {
-                        const map = { aprobado: 'Aprobado', aplazado: 'Aplazado', reprobado: 'Reprobado' };
-                        return map[this.condicion(n)];
+                        const map = { excelente: 'Excelente', bueno: 'Bueno', regular: 'Regular', deficiente: 'Aplazado' };
+                        return map[this.nivel(n)];
                     },
                     colorDe(n) {
-                        const map = { aprobado: '#16a34a', aplazado: '#d97706', reprobado: '#dc2626' };
-                        return map[this.condicion(n)];
+                        const map = { excelente: '#16a34a', bueno: '#2563eb', regular: '#d97706', deficiente: '#dc2626' };
+                        return map[this.nivel(n)];
                     },
                     mover(dir) {
                         const list = this.filtrados;
                         if (!list.length) return;
-                        this.abierto = true;
-                        this.hi = Math.max(0, Math.min(list.length - 1, this.hi + dir));
+                        let i = list.findIndex((e) => e.id === this.selectedId);
+                        if (i < 0) i = 0;
+                        i = Math.max(0, Math.min(list.length - 1, i + dir));
+                        this.selectedId = list[i].id;
                     }
                 };
             }
