@@ -717,7 +717,7 @@
         </style>
 
         <div x-data>
-            <!-- Menú Horizontal de 4 Botones -->
+            <!-- Menú horizontal -->
             <div class="config-tabs-container">
                 <div class="config-tabs">
                     <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'periodos' }"
@@ -739,6 +739,10 @@
                     <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'horario' }"
                             @click="$store.academico.activeTab = 'horario'; recargarHorarioAcademico()">
                         Horario
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'subgrupos' }"
+                            @click="$store.academico.activeTab = 'subgrupos'">
+                        Subgrupos
                     </button>
                 </div>
             </div>
@@ -766,6 +770,11 @@
             <!-- Contenido Visual de Horario -->
             <div x-show="$store.academico.activeTab === 'horario'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-academica/horario/horario :: content}"></div>
+            </div>
+
+            <!-- Contenido Visual de Subgrupos -->
+            <div x-show="$store.academico.activeTab === 'subgrupos'" class="tab-pane" x-cloak>
+                <div th:replace="~{configuracion-academica/subgrupos/subgrupos :: content}"></div>
             </div>
         </div>
 
