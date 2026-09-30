@@ -376,49 +376,36 @@
             }
         </style>
 
-        <div x-data>
+        <div x-data="{ activeTab: 'jornada' }">
             <div class="config-tabs-container">
                 <div class="config-tabs">
-                    <button class="config-tab-btn" :class="{ 'active': $store.institucional.activeTab === 'jornada' }"
-                            @click="$store.institucional.activeTab = 'jornada'">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'jornada' }"
+                            @click="activeTab = 'jornada'">
                         Jornada
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': $store.institucional.activeTab === 'componentes' }"
-                            @click="$store.institucional.activeTab = 'componentes'">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'componentes' }"
+                            @click="activeTab = 'componentes'">
                         Componentes
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': $store.institucional.activeTab === 'bloqueo-leccion' }"
-                            @click="$store.institucional.activeTab = 'bloqueo-leccion'">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'bloqueo-leccion' }"
+                            @click="activeTab = 'bloqueo-leccion'">
                         Bloqueo lección
                     </button>
                 </div>
             </div>
 
-            <div x-show="$store.institucional.activeTab === 'jornada'" class="tab-pane">
+            <div x-show="activeTab === 'jornada'" class="tab-pane">
                 <div th:replace="~{configuracion-institucional/jornada/jornada :: content}"></div>
             </div>
-            <div x-show="$store.institucional.activeTab === 'componentes'" class="tab-pane" x-cloak>
+            <div x-show="activeTab === 'componentes'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-institucional/componentes/componentes :: content}"></div>
             </div>
-            <div x-show="$store.institucional.activeTab === 'bloqueo-leccion'" class="tab-pane" x-cloak>
+            <div x-show="activeTab === 'bloqueo-leccion'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content}"></div>
             </div>
         </div>
 
         <script>
-            (function asegurarStoreInstitucional() {
-                function crear() {
-                    if (!window.Alpine || typeof Alpine.store !== 'function') {
-                        return;
-                    }
-                    if (!Alpine.store('institucional')) {
-                        Alpine.store('institucional', { activeTab: 'jornada' });
-                    }
-                }
-                crear();
-                document.addEventListener('alpine:init', crear);
-            })();
-
             window.jornadaLectiva = function jornadaLectiva(el) {
                 var d = el && el.dataset ? el.dataset : {};
                 var maxLecciones = 16;
@@ -800,6 +787,23 @@
                 });
                 window.institucionalEventsRegistrados = true;
             }
+
+            function activarPanelInstitucional(id, metodo) {
+                var el = document.getElementById(id);
+                if (!el || !window.Alpine) {
+                    return;
+                }
+                var data = el._x_dataStack && el._x_dataStack[0];
+                if (data && typeof data[metodo] === 'function') {
+                    return;
+                }
+                if (el._x_dataStack) {
+                    Alpine.destroyTree(el);
+                }
+                Alpine.initTree(el);
+            }
+            activarPanelInstitucional('institucional-jornada-panel', 'pintarBloques');
+            activarPanelInstitucional('institucional-bloqueo-leccion-panel', 'aplicar');
         </script>
     </main>
     </th:block>

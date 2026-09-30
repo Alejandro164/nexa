@@ -398,7 +398,7 @@
             }
         </style>
 
-        <div id="notas-root" x-data="notasModulo()" x-cloak>
+        <div id="notas-root" x-cloak>
             <div class="notas-toolbar">
                 <div class="notas-search-wrap" @click.outside="abierto = false">
                     <div class="notas-search">
@@ -702,11 +702,29 @@
                 };
             }
 
+            function montarNotas() {
+                var el = document.getElementById('notas-root');
+                if (!el || !window.Alpine) return;
+                var data = el._x_dataStack && el._x_dataStack[0];
+                if (data && typeof data.promedioDe === 'function' && el._x_dataStack.length === 1) return;
+                if (el._x_dataStack) {
+                    Alpine.destroyTree(el);
+                    delete el._x_dataStack;
+                }
+                Alpine.mutateDom(function () {
+                    el.setAttribute('x-data', 'notasModulo()');
+                });
+                Alpine.initTree(el);
+            }
+
             (function () {
                 var el = document.getElementById('notas-root');
-                if (el && window.Alpine && !el._x_dataStack) {
-                    Alpine.initTree(el);
+                if (!el) return;
+                if (!window.Alpine) {
+                    el.setAttribute('x-data', 'notasModulo()');
+                    return;
                 }
+                montarNotas();
             })();
         </script>
     </main>
