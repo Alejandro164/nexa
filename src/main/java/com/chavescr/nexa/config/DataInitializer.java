@@ -20,12 +20,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Direccion;
+import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.DireccionRepository;
+import com.chavescr.nexa.repository.InstitucionRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.RolRepository;
@@ -68,17 +70,20 @@ public class DataInitializer implements ApplicationRunner {
     private final DireccionRepository direccionRepository;
     private final UsuarioRepository usuarioRepository;
     private final NivelAcademicoRepository nivelAcademicoRepository;
+    private final InstitucionRepository institucionRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(RolRepository rolRepository,
             DireccionRepository direccionRepository,
             UsuarioRepository usuarioRepository,
             NivelAcademicoRepository nivelAcademicoRepository,
+            InstitucionRepository institucionRepository,
             PasswordEncoder passwordEncoder) {
         this.rolRepository = rolRepository;
         this.direccionRepository = direccionRepository;
         this.usuarioRepository = usuarioRepository;
         this.nivelAcademicoRepository = nivelAcademicoRepository;
+        this.institucionRepository = institucionRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -95,9 +100,14 @@ public class DataInitializer implements ApplicationRunner {
         Rol rolEstudiante = crearRolSiNoExiste("ROLE_ESTUDIANTE");
 
         // ── 2. Direcciones ──────────────────────────────────────────────────
-        Direccion instAlpha = crearDireccionSiNoExiste("Liceo Alpha", "1790012301001", "Av. Principal 100");
-        Direccion instBeta = crearDireccionSiNoExiste("Colegio Beta", "1790098765001", "Calle Secundaria 200");
-        Direccion instGamma = crearDireccionSiNoExiste("Escuela Gamma", "9000123456-1", "Zona Industrial 300");
+        // El código (presupuestario) es la llave de idempotencia; la cédula jurídica es la
+        // que usa Nube Nexa para nombrar la carpeta de archivos de la institución.
+        Direccion instAlpha = crearDireccionSiNoExiste("Liceo Alpha", "1790012301001", "3-007-045001",
+                "Av. Principal 100");
+        Direccion instBeta = crearDireccionSiNoExiste("Colegio Beta", "1790098765001", "3-007-045002",
+                "Calle Secundaria 200");
+        Direccion instGamma = crearDireccionSiNoExiste("Escuela Gamma", "9000123456-1", "3-007-045003",
+                "Zona Industrial 300");
 
         // ── 3. Usuarios ───────────────────────────────────────────────────────
         crearUsuarioSiNoExiste(
@@ -244,14 +254,37 @@ public class DataInitializer implements ApplicationRunner {
         });
     }
 
-    private Direccion crearDireccionSiNoExiste(String nombre, String codigo, String direccion) {
-        return direccionRepository.findByCodigo(codigo).orElseGet(() -> {
+    private Direccion crearDireccionSiNoExiste(String nombre, String codigo, String cedula, String direccion) {
+        Direccion registro = direccionRepository.findByCodigo(codigo).orElseGet(() -> {
             Direccion inst = new Direccion(nombre, codigo);
+            inst.setCedula(cedula);
             inst.setDireccion(direccion);
             direccionRepository.save(inst);
             log.info("  [DIRECCION creada] {}", nombre);
             return inst;
         });
+        asegurarCedula(registro, cedula);
+        return registro;
+    }
+
+    /**
+     * Las BD de desarrollo sembradas antes de que Nube Nexa usara la cédula quedaron sin ella
+     * (en la dirección y en la institución que se generó a partir de esta). Se completa solo
+     * si falta y si ningún otro registro la usa ya, para no chocar con la restricción unique.
+     */
+    private void asegurarCedula(Direccion direccion, String cedula) {
+        if (direccion.getCedula() == null && direccionRepository.findByCedula(cedula).isEmpty()) {
+            direccion.setCedula(cedula);
+            direccionRepository.save(direccion);
+            log.info("  [DIRECCION cédula asignada] {} -> {}", direccion.getNombre(), cedula);
+        }
+        Institucion institucion = direccion.getInstitucion();
+        if (institucion != null && institucion.getCedula() == null
+                && institucionRepository.findByCedula(cedula).isEmpty()) {
+            institucion.setCedula(cedula);
+            institucionRepository.save(institucion);
+            log.info("  [INSTITUCION cédula asignada] {} -> {}", institucion.getNombre(), cedula);
+        }
     }
 
     private Usuario crearUsuarioSiNoExiste(String nombre, String email, String usuario,

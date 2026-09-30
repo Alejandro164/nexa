@@ -1,0 +1,49 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+
+    <div class="cr-toolbar">
+        <h4>Tareas</h4>
+        <button th:if="${ctx.rol.docente}" type="button" class="cr-btn cr-btn-primary"
+                th:hx-get="@{/classroom/clase/{id}/form(id=${ctx.clase.id}, tipo='TAREA')}"
+                hx-target="#modal-container" hx-swap="innerHTML" onclick="abrirModalAcademico()">+ Crear tarea</button>
+    </div>
+
+    <div th:if="${grupos.empty}" class="cr-panel cr-empty">
+        <div class="cr-empty-icon">📝</div>
+        <div th:text="${ctx.rol.docente ? 'Aún no has asignado tareas. Las calificables se registran solas en Notas.' : 'No hay tareas asignadas en esta clase.'}">Sin tareas</div>
+    </div>
+
+    <div th:each="grupo : ${grupos}" class="cr-panel cr-tema" style="padding: 1rem 1.1rem;">
+        <h5 th:if="${!grupo.key.isEmpty()}" class="cr-tema-titulo" th:text="${grupo.key}">Unidad 1</h5>
+
+        <div th:each="t : ${grupo.value}" class="cr-item"
+             th:hx-get="@{/classroom/clase/{id}/tarea/{tid}(id=${ctx.clase.id}, tid=${t.id})}"
+             hx-target="#tareas-panel" hx-swap="innerHTML">
+            <span class="cr-type-ico">📝</span>
+            <div class="cr-item-main">
+                <strong th:text="${t.titulo}">Tarea</strong>
+                <span class="cr-meta"
+                      th:text="${t.fechaEntrega != null ? 'Fecha de entrega: ' + #temporals.format(t.fechaEntrega, 'dd/MM/yyyy HH:mm') : 'Sin fecha de entrega'}">Fecha</span>
+            </div>
+            <div class="cr-item-side">
+                <span th:if="${t.calificable}" class="cr-badge rubro"
+                      th:text="${t.etiquetaRubro + ' · ' + t.puntosTotales + ' pts'}">Tarea · 20 pts</span>
+                <span th:if="${!t.calificable and t.puntosTotales != null}" class="cr-meta"
+                      th:text="${t.puntosTotales + ' pts'}">20 pts</span>
+
+                <!-- Estudiante: estado de su propia entrega -->
+                <th:block th:if="${ctx.rol.estudiante}" th:with="e=${misEntregas.get(t.id)}">
+                    <span th:if="${e != null and e.estado.name() == 'DEVUELTA'}" class="cr-badge devuelta">Revisada</span>
+                    <span th:if="${e != null and e.estado.name() == 'ENTREGADA'}" class="cr-badge entregada"
+                          th:text="${e.tarde ? 'Entregada tarde' : 'Entregada'}">Entregada</span>
+                    <span th:if="${(e == null or e.estado.name() == 'ASIGNADA') and t.vencida}" class="cr-badge tarde">Atrasada</span>
+                    <span th:if="${(e == null or e.estado.name() == 'ASIGNADA') and !t.vencida}" class="cr-badge pendiente">Pendiente</span>
+                </th:block>
+
+                <!-- Docente / supervisión: entregas por revisar -->
+                <span th:if="${!ctx.rol.estudiante and porRevisar.get(t.id) != null and porRevisar.get(t.id) > 0}"
+                      class="cr-badge entregada"
+                      th:text="${porRevisar.get(t.id) + ' por revisar'}">3 por revisar</span>
+            </div>
+        </div>
+    </div>
+</div>

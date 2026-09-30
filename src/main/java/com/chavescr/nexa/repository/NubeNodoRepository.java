@@ -34,4 +34,7 @@ public interface NubeNodoRepository extends JpaRepository<NubeNodo, Long> {
 
     // Nodos abiertos recientemente (excluye los que están en la papelera), más reciente primero
     List<NubeNodo> findTop50ByFechaEliminacionIsNullAndUltimoAccesoIsNotNullOrderByUltimoAccesoDesc();
+
+    // Todos los archivos con ruta física (incluye papelera), usado por la migración a carpetas por cédula
+    List<NubeNodo> findByTipoAndUrlArchivoIsNotNull(TipoNodo tipo);
 }
