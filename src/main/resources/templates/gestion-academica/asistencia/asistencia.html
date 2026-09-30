@@ -52,6 +52,27 @@
                         hx-target="#asistencia-panel" hx-swap="innerHTML" hx-indicator="#asistencia-loading"
                         th:attr="hx-vals=|js:{nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}'}|"
                         th:text="'Copiar asistencia de Lección ' + ${leccionAnterior}">Copiar asistencia de la lección anterior</button>
+                <div class="asist-acciones-lista">
+                    <th:block th:if="${filas != null and !filas.empty}"
+                              th:with="pendientes=${#lists.size(filas.?[estado == null])}">
+                        <button type="button" class="asist-pendientes"
+                                th:if="${pendientes > 0}"
+                                title="Marcar los pendientes como presentes"
+                                hx-post="/gestion-academica/asistencia/marcar-pendientes"
+                                hx-target="#asistencia-panel" hx-swap="innerHTML" hx-indicator="#asistencia-loading"
+                                th:attr="hx-vals=|js:{nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}'}|">
+                            <span class="asist-pendientes-num" th:text="${pendientes}">0</span>
+                            <span th:text="${pendientes == 1} ? 'pendiente de pasar lista' : 'pendientes de pasar lista'">pendientes de pasar lista</span>
+                        </button>
+                        <span class="asist-pendientes is-completa"
+                              th:if="${pendientes == 0}"
+                              title="Todos los estudiantes tienen asistencia registrada">
+                            <span class="asist-pendientes-num">0</span>
+                            <span>pendientes de pasar lista</span>
+                        </span>
+                    </th:block>
+                    <div th:replace="~{gestion-academica/asistencia/pasar-lista :: launcher}"></div>
+                </div>
             </div>
         </div>
         <div th:if="${avisoPeriodo}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${avisoPeriodo}"></div>
@@ -63,43 +84,77 @@
                         <tr>
                             <th>Estudiante</th>
                             <th>Estado Asistencia</th>
-                            <th>Observaciones</th>
+                            <th>Justificación</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr th:if="${mensajeVacio}">
                             <td colspan="3" class="table-empty" th:text="${mensajeVacio}"></td>
                         </tr>
-                        <tr th:each="f : ${filas}">
+                        <tr th:each="f : ${filas}"
+                            th:with="ausente=${f.estado != null and f.estado.esAusencia()},
+                                     tardia=${f.estado != null and f.estado.esTardia()},
+                                     justificada=${f.estado != null and f.estado.esJustificada()},
+                                     puedeJustificar=${ausente or tardia},
+                                     estadoAusente=${ausente and justificada ? 'JUSTIFICADA' : 'AUSENTE'},
+                                     estadoTardia=${tardia and justificada ? 'TARDIA_JUSTIFICADA' : 'TARDIA'},
+                                     tituloJustificacion=${justificada ? 'Quitar justificación' : 'Marcar como justificada'},
+                                     baseJustificacion=${tardia ? 'TARDIA' : 'AUSENTE'}">
                             <td style="font-weight:600;" th:text="${f.estudiante.nombre}">Nombre</td>
                             <td>
-                                <div style="display:flex; gap:8px;">
-                                    <button type="button" class="btn"
-                                            th:style="${f.estado != null and f.estado.name() == 'PRESENTE'} ? 'padding:4px 10px;font-size:0.75rem;background-color:var(--success);color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
+                                <div class="asist-estados">
+                                    <button type="button" class="btn asist-estado"
+                                            th:classappend="${f.estado != null and f.estado.name() == 'PRESENTE'} ? 'is-presente' : ''"
                                             hx-post="/gestion-academica/asistencia/registrar"
                                             th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: 'PRESENTE'}|"
                                             hx-target="#asistencia-panel" hx-swap="innerHTML">Presente</button>
-                                    <button type="button" class="btn"
-                                            th:style="${f.estado != null and f.estado.name() == 'AUSENTE'} ? 'padding:4px 10px;font-size:0.75rem;background-color:var(--danger);color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
+                                    <button type="button" class="btn asist-estado"
+                                            th:classappend="${ausente} ? 'is-ausente' : ''"
+                                            th:title="${ausente and justificada} ? 'Ausencia justificada' : 'Ausencia injustificada'"
                                             hx-post="/gestion-academica/asistencia/registrar"
-                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: 'AUSENTE'}|"
+                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: '${estadoAusente}'}|"
                                             hx-target="#asistencia-panel" hx-swap="innerHTML">Ausente</button>
-                                    <button type="button" class="btn"
-                                            th:style="${f.estado != null and f.estado.name() == 'TARDIA'} ? 'padding:4px 10px;font-size:0.75rem;background-color:#d97706;color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
+                                    <button type="button" class="btn asist-estado"
+                                            th:classappend="${tardia} ? 'is-tardia' : ''"
+                                            th:title="${tardia and justificada} ? 'Tardía justificada' : 'Tardía injustificada'"
                                             hx-post="/gestion-academica/asistencia/registrar"
-                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: 'TARDIA'}|"
+                                            th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: '${estadoTardia}'}|"
                                             hx-target="#asistencia-panel" hx-swap="innerHTML">Tardía</button>
-                                    <button type="button" class="btn"
-                                            th:style="${f.estado != null and f.estado.name() == 'JUSTIFICADA'} ? 'padding:4px 10px;font-size:0.75rem;background-color:var(--primary);color:white;border:none;border-radius:6px;' : 'padding:4px 10px;font-size:0.75rem;background:var(--input-bg);color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;'"
-                                            th:attr="onclick=|registrarJustificada(this, ${f.estudiante.id}, ${nivelId}, ${materiaId}, ${numeroLeccion}, '${fecha}')|">Justificada</button>
+                                    <span class="asist-sep" aria-hidden="true"></span>
+                                    <button type="button" class="btn asist-estado asist-justificar"
+                                            th:classappend="${justificada} ? 'is-justificada' : ''"
+                                            th:disabled="${!puedeJustificar}"
+                                            th:title="${puedeJustificar ? tituloJustificacion : 'Disponible al marcar Ausente o Tardía'}"
+                                            th:attr="onclick=|alternarJustificacion(this, ${f.estudiante.id}, ${nivelId}, ${materiaId}, ${numeroLeccion}, '${fecha}', ${justificada}, '${baseJustificacion}')|">Justificada</button>
                                 </div>
                             </td>
                             <td>
-                                <input type="text" class="form-input" name="observaciones" style="padding-left:10px; height: 32px;"
-                                       placeholder="Agregar nota..." th:value="${f.observaciones}"
-                                       hx-post="/gestion-academica/asistencia/registrar" hx-trigger="change"
-                                       th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}'}|"
-                                       hx-target="#asistencia-panel" hx-swap="innerHTML">
+                                <div th:if="${justificada}" class="asist-justificacion">
+                                    <input type="text" class="form-input asist-motivo" name="observaciones"
+                                           placeholder="Detalle" th:value="${f.observaciones}"
+                                           hx-post="/gestion-academica/asistencia/registrar" hx-trigger="change"
+                                           th:attr="hx-vals=|js:{estudianteId: ${f.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}'}|"
+                                           hx-target="#asistencia-panel" hx-swap="innerHTML">
+                                    <form class="asist-doc">
+                                        <input type="hidden" name="estudianteId" th:value="${f.estudiante.id}">
+                                        <input type="hidden" name="nivelId" th:value="${nivelId}">
+                                        <input type="hidden" name="materiaId" th:value="${materiaId}">
+                                        <input type="hidden" name="numeroLeccion" th:value="${numeroLeccion}">
+                                        <input type="hidden" name="fecha" th:value="${fecha}">
+                                        <label class="asist-doc-btn"
+                                               th:classappend="${f.documentoNombre != null} ? ' is-adjunto'"
+                                               th:title="${f.documentoNombre != null ? f.documentoNombre : 'Adjuntar documento'}">
+                                            Documento
+                                            <input type="file" name="archivo"
+                                                   accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp"
+                                                   hx-post="/gestion-academica/asistencia/documento"
+                                                   hx-encoding="multipart/form-data"
+                                                   hx-include="closest form"
+                                                   hx-target="#asistencia-panel" hx-swap="innerHTML"
+                                                   hx-trigger="change">
+                                        </label>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -107,22 +162,98 @@
             </div>
         </div>
     </div>
+    <style>
+        .asist-estados { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .asist-estados > .asist-estado {
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .asist-estados > .asist-estado.is-presente { background: var(--success); color: #fff; border-color: transparent; }
+        .asist-estados > .asist-estado.is-ausente { background: var(--danger); color: #fff; border-color: transparent; }
+        .asist-estados > .asist-estado.is-tardia { background: #d97706; color: #fff; border-color: transparent; }
+        .asist-estados > .asist-estado.is-justificada { background: var(--primary); color: #fff; border-color: transparent; }
+        .asist-estados > .asist-justificar:disabled { opacity: 0.4; cursor: not-allowed; }
+        .asist-sep { width: 1px; align-self: stretch; min-height: 22px; background: var(--border-solid); margin: 0 2px; }
+        .asist-justificacion { display: flex; align-items: center; gap: 8px; }
+        .asist-motivo { flex: 1; min-width: 140px; height: 32px; padding-left: 10px; }
+        .asist-doc { flex: none; }
+        .asist-doc-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            height: 32px;
+            padding: 0 12px;
+            font-size: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .asist-doc-btn.is-adjunto { background: var(--primary); color: #fff; border-color: transparent; }
+        .asist-doc-btn input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .asist-acciones-lista {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .asist-pendientes {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: inherit;
+            line-height: inherit;
+            white-space: nowrap;
+            background: rgba(217, 119, 6, 0.12);
+            color: #b45309;
+            border: 1px solid rgba(217, 119, 6, 0.35);
+            cursor: pointer;
+        }
+        button.asist-pendientes:hover {
+            background: rgba(217, 119, 6, 0.22);
+        }
+        .asist-pendientes.is-completa {
+            background: rgba(34, 197, 94, 0.12);
+            color: #15803d;
+            border-color: rgba(34, 197, 94, 0.35);
+        }
+        .asist-pendientes-num {
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
     <script>
-        function registrarJustificada(btn, estudianteId, nivelId, materiaId, numeroLeccion, fecha) {
-            var fila = btn.closest('tr');
-            var nota = fila.querySelector('input[name="observaciones"]');
-            if (!nota || !nota.value.trim()) {
-                if (nota) {
-                    nota.style.borderColor = 'var(--danger)';
-                    nota.placeholder = 'Escribe una nota para justificar...';
-                    nota.focus();
-                }
+        function alternarJustificacion(btn, estudianteId, nivelId, materiaId, numeroLeccion, fecha, justificada, base) {
+            if (btn.disabled) {
                 return;
             }
+            var values = {
+                estudianteId: estudianteId,
+                nivelId: nivelId,
+                materiaId: materiaId,
+                numeroLeccion: numeroLeccion,
+                fecha: fecha
+            };
+            values.estado = justificada ? base : (base === 'TARDIA' ? 'TARDIA_JUSTIFICADA' : 'JUSTIFICADA');
             htmx.ajax('POST', '/gestion-academica/asistencia/registrar', {
                 target: '#asistencia-panel',
                 swap: 'innerHTML',
-                values: { estudianteId: estudianteId, nivelId: nivelId, materiaId: materiaId, numeroLeccion: numeroLeccion, fecha: fecha, estado: 'JUSTIFICADA', observaciones: nota.value.trim() }
+                values: values
             });
         }
     </script>

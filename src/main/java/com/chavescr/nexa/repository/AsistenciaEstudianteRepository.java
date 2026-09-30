@@ -16,6 +16,8 @@ public interface AsistenciaEstudianteRepository extends JpaRepository<Asistencia
     List<AsistenciaEstudiante> findByDireccionIdAndNivelAcademicoIdAndFechaAndMateriaIdAndNumeroLeccion(
             Long direccionId, Long nivelId, LocalDate fecha, Long materiaId, Integer numeroLeccion);
 
+    long countByDocumentoRuta(String documentoRuta);
+
     Optional<AsistenciaEstudiante> findByDireccionIdAndEstudianteIdAndFechaAndMateriaIdAndNumeroLeccion(
             Long direccionId, Long estudianteId, LocalDate fecha, Long materiaId, Integer numeroLeccion);
 

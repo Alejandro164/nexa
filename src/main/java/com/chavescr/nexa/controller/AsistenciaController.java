@@ -2,14 +2,24 @@ package com.chavescr.nexa.controller;
 
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
+import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,6 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.chavescr.nexa.dto.FilaAsistencia;
 import com.chavescr.nexa.entity.Materia;
@@ -69,11 +80,14 @@ public class AsistenciaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String observaciones,
+            @RequestParam(required = false) boolean pasarLista,
             Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         exigirDocenteODirectorOAdmin(request);
         Long direccionId = requerirDireccion(session);
         Long registradoPorId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         try {
+            exigirLeccionACargo(direccionId, docenteIdSiAplica(request, session), nivelId, materiaId, numeroLeccion,
+                    fecha);
             service.registrarEstado(direccionId, estudianteId, nivelId, materiaId, numeroLeccion, fecha, estado,
                     observaciones, registradoPorId);
             notificarPromedioDesactualizado(response);
@@ -90,7 +104,59 @@ public class AsistenciaController {
             model.addAttribute("error", e.getMessage());
         }
         cargarPanel(model, direccionId, nivelId, materiaId, numeroLeccion, fecha, docenteIdSiAplica(request, session));
+        if (pasarLista) {
+            model.addAttribute("pasarListaAbierta", true);
+        }
         return FRAGMENTO;
+    }
+
+    @PostMapping("/documento")
+    public String subirDocumento(@RequestParam Long estudianteId,
+            @RequestParam Long nivelId,
+            @RequestParam Long materiaId,
+            @RequestParam Integer numeroLeccion,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            @RequestParam("archivo") MultipartFile archivo,
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+        exigirDocenteODirectorOAdmin(request);
+        Long direccionId = requerirDireccion(session);
+        try {
+            exigirLeccionACargo(direccionId, docenteIdSiAplica(request, session), nivelId, materiaId, numeroLeccion,
+                    fecha);
+            service.guardarDocumento(direccionId, estudianteId, nivelId, materiaId, numeroLeccion, fecha, archivo);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        cargarPanel(model, direccionId, nivelId, materiaId, numeroLeccion, fecha, docenteIdSiAplica(request, session));
+        return FRAGMENTO;
+    }
+
+    @GetMapping("/documento")
+    public ResponseEntity<Resource> verDocumento(@RequestParam Long estudianteId,
+            @RequestParam Long materiaId,
+            @RequestParam Integer numeroLeccion,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            HttpSession session, HttpServletRequest request) {
+        exigirDocenteODirectorOAdmin(request);
+        try {
+            var documento = service.obtenerDocumento(requerirDireccion(session), estudianteId, materiaId,
+                    numeroLeccion, fecha);
+            if (!Files.isReadable(documento.ruta())) {
+                return ResponseEntity.notFound().build();
+            }
+            MediaType tipo = MediaTypeFactory.getMediaType(documento.nombre()).orElse(MediaType.APPLICATION_OCTET_STREAM);
+            boolean enLinea = MediaType.APPLICATION_PDF.includes(tipo) || "image".equals(tipo.getType());
+            ContentDisposition disposicion = (enLinea ? ContentDisposition.inline() : ContentDisposition.attachment())
+                    .filename(documento.nombre(), StandardCharsets.UTF_8)
+                    .build();
+            return ResponseEntity.ok()
+                    .contentType(tipo)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, disposicion.toString())
+                    .header("X-Content-Type-Options", "nosniff")
+                    .body(new UrlResource(documento.ruta().toUri()));
+        } catch (IllegalArgumentException | MalformedURLException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/copiar-leccion-anterior")
@@ -102,6 +168,13 @@ public class AsistenciaController {
         exigirDocenteODirectorOAdmin(request);
         Long direccionId = requerirDireccion(session);
         Long docenteId = docenteIdSiAplica(request, session);
+        try {
+            exigirLeccionACargo(direccionId, docenteId, nivelId, materiaId, numeroLeccion, fecha);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+            cargarPanel(model, direccionId, nivelId, materiaId, numeroLeccion, fecha, docenteId);
+            return FRAGMENTO;
+        }
         var periodo = service.obtenerUltimoPeriodoActivo(direccionId);
         if (service.validarPeriodoParaAsistencia(direccionId, fecha, periodo) == null) {
             String dia = DIA_ES.get(fecha.getDayOfWeek());
@@ -123,6 +196,43 @@ public class AsistenciaController {
         }
         cargarPanel(model, direccionId, nivelId, materiaId, numeroLeccion, fecha, docenteId);
         return FRAGMENTO;
+    }
+
+    @PostMapping("/marcar-pendientes")
+    public String marcarPendientes(@RequestParam Long nivelId,
+            @RequestParam Long materiaId,
+            @RequestParam Integer numeroLeccion,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+        exigirDocenteODirectorOAdmin(request);
+        Long direccionId = requerirDireccion(session);
+        Long registradoPorId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        try {
+            exigirLeccionACargo(direccionId, docenteIdSiAplica(request, session), nivelId, materiaId, numeroLeccion,
+                    fecha);
+            marcarPendientesPresentes(response, direccionId, nivelId, materiaId, numeroLeccion, fecha,
+                    registradoPorId);
+        } catch (DataIntegrityViolationException e) {
+            try {
+                marcarPendientesPresentes(response, direccionId, nivelId, materiaId, numeroLeccion, fecha,
+                        registradoPorId);
+            } catch (IllegalArgumentException e2) {
+                model.addAttribute("error", e2.getMessage());
+            }
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        cargarPanel(model, direccionId, nivelId, materiaId, numeroLeccion, fecha, docenteIdSiAplica(request, session));
+        return FRAGMENTO;
+    }
+
+    private void marcarPendientesPresentes(HttpServletResponse response, Long direccionId, Long nivelId,
+            Long materiaId, Integer numeroLeccion, LocalDate fecha, Long registradoPorId) {
+        int marcados = service.marcarPendientesPresentes(direccionId, nivelId, materiaId, fecha, numeroLeccion,
+                registradoPorId);
+        if (marcados > 0) {
+            notificarPromedioDesactualizado(response);
+        }
     }
 
     private void notificarPromedioDesactualizado(HttpServletResponse response) {
@@ -227,6 +337,23 @@ public class AsistenciaController {
         if (!request.isUserInRole("ROLE_DOCENTE") && !request.isUserInRole("ROLE_DIRECTOR")
                 && !request.isUserInRole("ROLE_ADMIN")) {
             throw new AccessDeniedException("Solo docentes, directores o administradores pueden registrar asistencia");
+        }
+    }
+
+    private void exigirLeccionACargo(Long direccionId, Long docenteId, Long nivelId, Long materiaId,
+            Integer numeroLeccion, LocalDate fecha) {
+        if (docenteId == null) {
+            return;
+        }
+        var periodo = service.obtenerUltimoPeriodoActivo(direccionId);
+        if (periodo == null || fecha == null) {
+            return;
+        }
+        String dia = DIA_ES.get(fecha.getDayOfWeek());
+        List<Integer> lecciones = alcanceDocenteService.leccionesVisiblesEnPeriodo(
+                direccionId, periodo.getId(), nivelId, materiaId, dia, docenteId);
+        if (numeroLeccion == null || !lecciones.contains(numeroLeccion)) {
+            throw new IllegalArgumentException("Esta lección no está a su cargo");
         }
     }
 

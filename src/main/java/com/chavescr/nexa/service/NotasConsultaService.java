@@ -417,7 +417,7 @@ public class NotasConsultaService {
                 int[] contador = mapa.computeIfAbsent(
                         new AsistKey((Long) fila[0], (Long) fila[1], periodo.getId()), k -> new int[2]);
                 contador[1]++;
-                if (estado == EstadoAsistencia.PRESENTE || estado == EstadoAsistencia.TARDIA) {
+                if (estado != null && estado.cuentaComoPresente()) {
                     contador[0]++;
                 }
             }

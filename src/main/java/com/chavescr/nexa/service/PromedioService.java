@@ -133,8 +133,7 @@ public class PromedioService {
             return null;
         }
         long presentes = registros.stream()
-                .filter(r -> r.getEstado() == AsistenciaEstudiante.EstadoAsistencia.PRESENTE
-                        || r.getEstado() == AsistenciaEstudiante.EstadoAsistencia.TARDIA)
+                .filter(r -> r.getEstado() != null && r.getEstado().cuentaComoPresente())
                 .count();
         return (int) Math.round(presentes * 100.0 / registros.size());
     }

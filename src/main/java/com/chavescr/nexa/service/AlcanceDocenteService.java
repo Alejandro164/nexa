@@ -1,20 +1,27 @@
 package com.chavescr.nexa.service;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.entity.DocenteMateria;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
+import com.chavescr.nexa.repository.DocenteMateriaRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 
 /**
- * Filtra las materias y secciones visibles en el módulo de gestión académica según
- * lo que el docente tiene efectivamente asignado en el horario. Con docenteId null
- * (director/admin) no se restringe nada.
+ * Alcance de los filtros de asistencia.
+ * Director y administrador ({@code docenteId} null) ven el catálogo completo de materias
+ * activas y todas las secciones de todos los grados. El docente solo ve las materias que
+ * imparte en el horario o tiene asociadas, las secciones en las que las da y las lecciones
+ * que tiene a cargo.
  */
 @Service
 @Transactional(readOnly = true)
@@ -23,13 +30,16 @@ public class AlcanceDocenteService {
     private final HorarioLeccionRepository horarioLeccionRepository;
     private final MateriaRepository materiaRepository;
     private final NivelAcademicoRepository nivelAcademicoRepository;
+    private final DocenteMateriaRepository docenteMateriaRepository;
 
     public AlcanceDocenteService(HorarioLeccionRepository horarioLeccionRepository,
             MateriaRepository materiaRepository,
-            NivelAcademicoRepository nivelAcademicoRepository) {
+            NivelAcademicoRepository nivelAcademicoRepository,
+            DocenteMateriaRepository docenteMateriaRepository) {
         this.horarioLeccionRepository = horarioLeccionRepository;
         this.materiaRepository = materiaRepository;
         this.nivelAcademicoRepository = nivelAcademicoRepository;
+        this.docenteMateriaRepository = docenteMateriaRepository;
     }
 
     public List<Materia> materiasVisibles(Long direccionId, Long docenteId) {
@@ -47,24 +57,38 @@ public class AlcanceDocenteService {
     }
 
     public List<Materia> materiasVisiblesEnPeriodo(Long direccionId, Long periodoId, Long docenteId) {
+        if (docenteId == null) {
+            return materiaRepository.findByDireccionIdAndActivoTrueOrderByNombreAsc(direccionId);
+        }
         if (periodoId == null) {
             return List.of();
         }
-        if (docenteId == null) {
-            return horarioLeccionRepository.findMateriasDistinctByDireccionIdAndPeriodoId(direccionId, periodoId);
+        Map<Long, Materia> porId = new LinkedHashMap<>();
+        for (Materia materia : horarioLeccionRepository.findMateriasDistinctByDireccionIdAndPeriodoIdAndDocenteId(
+                direccionId, periodoId, docenteId)) {
+            if (Boolean.TRUE.equals(materia.getActivo())) {
+                porId.put(materia.getId(), materia);
+            }
         }
-        return horarioLeccionRepository.findMateriasDistinctByDireccionIdAndPeriodoIdAndDocenteId(
-                direccionId, periodoId, docenteId);
+        for (DocenteMateria asignacion : docenteMateriaRepository
+                .findByDireccionIdAndDocenteIdOrderByMateria_NombreAsc(direccionId, docenteId)) {
+            Materia materia = asignacion.getMateria();
+            if (materia != null && Boolean.TRUE.equals(materia.getActivo())) {
+                porId.putIfAbsent(materia.getId(), materia);
+            }
+        }
+        return porId.values().stream()
+                .sorted(Comparator.comparing(Materia::getNombre, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .toList();
     }
 
     public List<NivelAcademico> nivelesVisiblesEnPeriodoPorMateria(Long direccionId, Long periodoId, Long materiaId,
             Long docenteId) {
+        if (docenteId == null) {
+            return nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId);
+        }
         if (periodoId == null || materiaId == null) {
             return List.of();
-        }
-        if (docenteId == null) {
-            return horarioLeccionRepository.findNivelesDistinctByDireccionIdAndPeriodoIdAndMateriaId(
-                    direccionId, periodoId, materiaId);
         }
         return horarioLeccionRepository.findNivelesDistinctByDireccionIdAndPeriodoIdAndMateriaIdAndDocenteId(
                 direccionId, periodoId, materiaId, docenteId);

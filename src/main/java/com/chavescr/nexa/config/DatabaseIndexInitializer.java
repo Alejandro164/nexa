@@ -50,9 +50,25 @@ public class DatabaseIndexInitializer {
         }
 
         log.info("=== Índices verificados ===");
+        ampliarEstadoAsistencia();
         eliminarAmonestacionesConducta();
         eliminarExtraclase();
         copiarRubrosAComponentes();
+    }
+
+    /** TARDIA_JUSTIFICADA no cabe en varchar(15) ni en el check anterior. */
+    private void ampliarEstadoAsistencia() {
+        try {
+            jdbcTemplate.execute(
+                    "ALTER TABLE asistencias_estudiantes ALTER COLUMN estado TYPE varchar(20)");
+            jdbcTemplate.execute(
+                    "ALTER TABLE asistencias_estudiantes DROP CONSTRAINT IF EXISTS asistencias_estudiantes_estado_check");
+            jdbcTemplate.execute(
+                    "ALTER TABLE asistencias_estudiantes ADD CONSTRAINT asistencias_estudiantes_estado_check "
+                            + "CHECK (estado IN ('PRESENTE', 'AUSENTE', 'TARDIA', 'JUSTIFICADA', 'TARDIA_JUSTIFICADA'))");
+        } catch (Exception e) {
+            log.warn("No se pudo ampliar estado de asistencia: {}", e.getMessage());
+        }
     }
 
     private void copiarRubrosAComponentes() {
