@@ -9,11 +9,11 @@
 <body>
 
     <h2 layout:fragment="page-title">Configuración Institucional</h2>
-    <p layout:fragment="page-subtitle">Jornada, componentes y lecciones bloqueadas o reservadas por tipo</p>
+    <p layout:fragment="page-subtitle">Jornada, componentes, escala de notas y lecciones bloqueadas o reservadas por tipo</p>
 
     <th:block th:fragment="htmx-content">
     <h2 id="topbar-page-title" hx-swap-oob="true">Configuración Institucional</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Jornada, componentes y lecciones bloqueadas o reservadas por tipo</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Jornada, componentes, escala de notas y lecciones bloqueadas o reservadas por tipo</p>
     <main layout:fragment="content">
         <style>
             .config-tabs-container {
@@ -387,6 +387,10 @@
                             @click="activeTab = 'componentes'">
                         Componentes
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'escala-notas' }"
+                            @click="activeTab = 'escala-notas'">
+                        Escala notas
+                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'bloqueo-leccion' }"
                             @click="activeTab = 'bloqueo-leccion'">
                         Bloqueo lección
@@ -399,6 +403,9 @@
             </div>
             <div x-show="activeTab === 'componentes'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-institucional/componentes/componentes :: content}"></div>
+            </div>
+            <div x-show="activeTab === 'escala-notas'" class="tab-pane" x-cloak>
+                <div th:replace="~{configuracion-institucional/escala-notas/escala-notas :: content}"></div>
             </div>
             <div x-show="activeTab === 'bloqueo-leccion'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content}"></div>
@@ -803,6 +810,7 @@
                 Alpine.initTree(el);
             }
             activarPanelInstitucional('institucional-jornada-panel', 'pintarBloques');
+            activarPanelInstitucional('institucional-escala-notas-panel', 'guardar');
             activarPanelInstitucional('institucional-bloqueo-leccion-panel', 'aplicar');
         </script>
     </main>
