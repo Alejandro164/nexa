@@ -93,9 +93,10 @@
             .notas-split {
                 display: grid;
                 grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+                grid-template-rows: minmax(0, 1fr);
                 gap: 1rem;
                 align-items: stretch;
-                min-height: min(680px, calc(100vh - 290px));
+                height: min(680px, calc(100vh - 290px));
             }
             .notas-pane {
                 background: #fff;
@@ -171,7 +172,8 @@
             }
             .notas-list {
                 overflow-y: auto;
-                flex: 1;
+                flex: 1 1 auto;
+                min-height: 0;
                 padding: 0.4rem;
             }
             .notas-list:focus { outline: none; }
@@ -261,10 +263,23 @@
             }
             .notas-empty span { font-size: 0.82rem; max-width: 28rem; line-height: 1.5; }
 
+            .notas-detail {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: hidden;
+            }
+            .notas-detail-body {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: auto;
+            }
             .notas-detail-head {
                 display: flex;
                 align-items: center;
                 gap: 1rem;
+                flex-shrink: 0;
                 padding: 1.1rem 1.25rem;
                 border-bottom: 1px solid var(--border);
                 background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
@@ -340,6 +355,7 @@
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
                 gap: 0;
+                flex-shrink: 0;
                 border-bottom: 1px solid var(--border);
             }
             .notas-kpi {
@@ -365,12 +381,12 @@
             .notas-kpi-value.is-ok { color: #15803d; }
 
             .notas-table-wrap {
-                overflow: auto;
-                flex: 1;
+                overflow: visible;
             }
             .notas-table {
                 width: 100%;
-                border-collapse: collapse;
+                border-collapse: separate;
+                border-spacing: 0;
                 min-width: 720px;
             }
             .notas-table th {
@@ -590,6 +606,7 @@
             .notas-legend {
                 display: flex;
                 flex-wrap: wrap;
+                flex-shrink: 0;
                 gap: 0.75rem 1.25rem;
                 padding: 0.75rem 1.25rem;
                 border-top: 1px solid var(--border);
@@ -608,10 +625,15 @@
             @media (max-width: 960px) {
                 .notas-split {
                     grid-template-columns: 1fr;
+                    grid-template-rows: none;
+                    height: auto;
                     min-height: 0;
                 }
                 .notas-pane--list { max-height: 42vh; }
                 .notas-pane--detail { min-height: 520px; }
+                .notas-detail,
+                .notas-detail-body { overflow: visible; }
+                .notas-detail-body { flex: none; }
                 .notas-field { max-width: none; }
                 .notas-filtros .notas-count { margin-left: 0; }
             }
@@ -714,7 +736,7 @@
                     </template>
 
                     <template x-if="seleccionado">
-                        <div style="display:flex;flex-direction:column;min-height:0;flex:1;">
+                        <div class="notas-detail">
                             <div class="notas-detail-head">
                                 <div class="notas-ring" :style="'--pct:' + (promedioDe(seleccionado) == null ? 0 : promedioDe(seleccionado))">
                                     <div class="notas-ring-inner"
@@ -735,6 +757,7 @@
                                     <span class="notas-period" x-text="etiquetaAnio()"></span>
                                 </div>
                             </div>
+                            <div class="notas-detail-body">
                             <div class="notas-empty" x-show="!tieneMaterias(seleccionado)" style="min-height: 220px;">
                                 <strong>Sin materias</strong>
                                 <span>No hay materias asignadas a la sección de este estudiante en el año seleccionado.</span>
@@ -876,6 +899,7 @@
                                         </template>
                                     </tbody>
                                 </table>
+                            </div>
                             </div>
                         </div>
                     </template>
