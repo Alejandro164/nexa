@@ -1,0 +1,214 @@
+<div th:fragment="detalle" id="notas-ausencias-modal" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        #notas-ausencias-modal .modal-dialog {
+            max-width: 820px;
+            display: flex;
+            flex-direction: column;
+            max-height: min(860px, calc(100vh - 2rem));
+        }
+        #notas-ausencias-modal .modal-header { align-items: flex-start; gap: 1rem; }
+        #notas-ausencias-modal .notas-aus-heading { min-width: 0; }
+        #notas-ausencias-modal .modal-title { margin: 0; color: #0f172a; letter-spacing: -0.02em; }
+        #notas-ausencias-modal .notas-aus-sub { margin: 0.2rem 0 0; font-size: 0.8rem; color: #64748b; }
+        #notas-ausencias-modal .notas-aus-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 0.85rem 1.5rem;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            background: #f8fafc;
+        }
+        #notas-ausencias-modal .notas-aus-student { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+        #notas-ausencias-modal .notas-aus-avatar {
+            width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+            color: #fff; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+        }
+        #notas-ausencias-modal .notas-aus-name { font-size: 0.9rem; font-weight: 700; color: #0f172a; }
+        #notas-ausencias-modal .notas-aus-meta { font-size: 0.75rem; color: #64748b; margin-top: 1px; }
+        #notas-ausencias-modal .notas-aus-filtro { display: flex; flex-direction: row; align-items: flex-end; gap: 0.5rem; }
+        #notas-ausencias-modal .notas-aus-filtro-label {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b;
+            white-space: nowrap; padding-bottom: 0.4rem;
+        }
+        #notas-ausencias-modal .notas-aus-periodos-col {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;
+        }
+        #notas-ausencias-modal .notas-aus-filtro .btn-primary.btn-sm {
+            padding: 6px 12px; font-size: 0.8rem; border-radius: 6px;
+        }
+        #notas-ausencias-modal .notas-aus-periodos {
+            display: inline-flex; padding: 3px; border: 1px solid var(--border, #e2e8f0);
+            border-radius: 10px; background: #fff; gap: 2px;
+        }
+        #notas-ausencias-modal .notas-aus-periodo {
+            min-height: 28px; padding: 0 0.7rem; border: none; border-radius: 7px; background: transparent;
+            color: #64748b; font-size: 0.75rem; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap;
+        }
+        #notas-ausencias-modal .notas-aus-periodo.is-on { background: var(--primary, #2d5a87); color: #fff; }
+        #notas-ausencias-modal .modal-body {
+            overflow: hidden; padding: 1rem 1.5rem 1.25rem; background: #f8fafc;
+            display: flex; flex-direction: column; min-height: 0;
+        }
+        #notas-ausencias-modal .modal-dialog > .modal-footer {
+            margin: 0; padding: 0.85rem 1.5rem; border-top: 1px solid var(--border, #e2e8f0); background: #fff;
+        }
+        #notas-ausencias-modal .notas-aus-kpis {
+            display: grid; grid-template-columns: repeat(4, 1fr); background: #fff;
+            border: 1px solid var(--border, #e2e8f0); border-radius: 12px; overflow: hidden; margin-bottom: 0.85rem;
+        }
+        #notas-ausencias-modal .notas-aus-kpi { padding: 0.7rem 0.85rem; border-right: 1px solid var(--border, #e2e8f0); }
+        #notas-ausencias-modal .notas-aus-kpi:last-child { border-right: none; }
+        #notas-ausencias-modal .notas-aus-kpi span {
+            display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.03em;
+            text-transform: uppercase; color: #64748b;
+        }
+        #notas-ausencias-modal .notas-aus-kpi strong {
+            display: block; margin-top: 0.15rem; font-size: 1.15rem; font-weight: 750;
+            color: #0f172a; font-variant-numeric: tabular-nums;
+        }
+        #notas-ausencias-modal .notas-aus-tabla-wrap {
+            background: #fff; border: 1px solid var(--border, #e2e8f0); border-radius: 12px;
+            max-height: min(360px, 46vh); overflow: auto;
+        }
+        #notas-ausencias-modal .notas-aus-tabla { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 720px; }
+        #notas-ausencias-modal .notas-aus-tabla th {
+            position: sticky; top: 0; z-index: 1;
+            padding: 0.75rem 0.85rem; background: #f8fafc;
+            box-shadow: inset 0 -1px 0 var(--border, #e2e8f0);
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+            color: #64748b; text-align: left; white-space: nowrap;
+        }
+        #notas-ausencias-modal .notas-aus-tabla td {
+            padding: 0.7rem 0.85rem; font-size: 0.84rem; color: #334155;
+            border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+        }
+        #notas-ausencias-modal .notas-aus-tabla tr:last-child td { border-bottom: none; }
+        #notas-ausencias-modal .notas-aus-tabla tr:hover td { background: #f8fafc; }
+        #notas-ausencias-modal .notas-aus-fecha { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 650; color: #0f172a; }
+        #notas-ausencias-modal .notas-aus-materia { font-weight: 650; color: #0f172a; }
+        #notas-ausencias-modal .notas-aus-profesor { font-weight: 600; color: #334155; white-space: nowrap; }
+        #notas-ausencias-modal .notas-aus-leccion { font-variant-numeric: tabular-nums; color: #64748b; }
+        #notas-ausencias-modal .notas-aus-obs { color: #64748b; font-size: 0.8rem; }
+        #notas-ausencias-modal .notas-aus-pill {
+            display: inline-flex; align-items: center; font-size: 0.72rem; font-weight: 700;
+            padding: 3px 8px; border-radius: 8px; white-space: nowrap;
+        }
+        #notas-ausencias-modal .notas-aus-pill.justificada { background: #dbeafe; color: #1e40af; }
+        #notas-ausencias-modal .notas-aus-pill.injustificada { background: #fee2e2; color: #991b1b; }
+        #notas-ausencias-modal .notas-aus-pill.tardia-justificada { background: #fef3c7; color: #92400e; }
+        #notas-ausencias-modal .notas-aus-pill.tardia { background: #ffedd5; color: #9a3412; }
+        #notas-ausencias-modal .notas-aus-estado { color: #64748b; font-size: 0.84rem; }
+        @media (max-width: 720px) {
+            #notas-ausencias-modal .notas-aus-kpis { grid-template-columns: repeat(2, 1fr); }
+            #notas-ausencias-modal .notas-aus-kpi:nth-child(2) { border-right: none; }
+            #notas-ausencias-modal .notas-aus-kpi:nth-child(1),
+            #notas-ausencias-modal .notas-aus-kpi:nth-child(2) { border-bottom: 1px solid var(--border, #e2e8f0); }
+            #notas-ausencias-modal .notas-aus-filtro { align-items: flex-end; }
+        }
+    </style>
+
+    <template x-if="ausenciaPeriodo && seleccionado">
+        <div class="modal-backdrop" role="presentation" @click.self="cerrarAusencias()"
+             @keydown.escape.window="cerrarAusencias()">
+            <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="notas-ausencias-titulo">
+                <div class="modal-header">
+                    <div class="notas-aus-heading">
+                        <h3 class="modal-title" id="notas-ausencias-titulo">Ausencias del período</h3>
+                        <p class="notas-aus-sub"
+                           x-text="'Cada lección no presente de ' + ausenciaPeriodo.etiqueta + '.'"></p>
+                    </div>
+                    <button type="button" class="close-btn" aria-label="Cerrar" @click="cerrarAusencias()">&times;</button>
+                </div>
+                <div class="notas-aus-toolbar">
+                    <div class="notas-aus-student">
+                        <span class="notas-aus-avatar" :style="'background:' + seleccionado.color"
+                              x-text="seleccionado.iniciales"></span>
+                        <div>
+                            <div class="notas-aus-name" x-text="seleccionado.nombre"></div>
+                            <div class="notas-aus-meta"
+                                 x-text="seleccionado.cedula + ' · Sección ' + grupoDe(seleccionado)"></div>
+                        </div>
+                    </div>
+                    <div class="notas-aus-filtro">
+                        <span class="notas-aus-filtro-label">Período</span>
+                        <div class="notas-aus-periodos-col">
+                            <button type="button" class="btn-primary btn-sm">Enviar</button>
+                            <div class="notas-aus-periodos" role="group" aria-label="Filtrar ausencias por período">
+                                <template x-for="p in periodosDelAnio" :key="'aus-p-' + p.id">
+                                    <button type="button" class="notas-aus-periodo"
+                                            :class="{ 'is-on': esAusenciaAbierta(p) }"
+                                            :aria-pressed="esAusenciaAbierta(p)"
+                                            @click="abrirAusencias(p)"
+                                            x-text="p.etiqueta"></button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div id="notas-ausencias-cuerpo">
+                        <p class="notas-aus-estado">Cargando…</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" @click="cerrarAusencias()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<div th:fragment="registros">
+    <div class="notas-aus-kpis" th:if="${error == null and ausencias != null}">
+        <div class="notas-aus-kpi">
+            <span>Justificadas</span>
+            <strong th:text="${ausencias.justificadas}">0</strong>
+        </div>
+        <div class="notas-aus-kpi">
+            <span>Injustificadas</span>
+            <strong th:text="${ausencias.injustificadas}">0</strong>
+        </div>
+        <div class="notas-aus-kpi">
+            <span>Tardías justif.</span>
+            <strong th:text="${ausencias.tardiasJustificadas}">0</strong>
+        </div>
+        <div class="notas-aus-kpi">
+            <span>Tardías injust.</span>
+            <strong th:text="${ausencias.tardiasInjustificadas}">0</strong>
+        </div>
+    </div>
+    <div class="notas-aus-tabla-wrap">
+        <table class="notas-aus-tabla">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Materia</th>
+                    <th>Lección</th>
+                    <th>Tipo</th>
+                    <th>Profesor</th>
+                    <th>Observación</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${error != null}">
+                    <td class="notas-aus-estado" colspan="6" th:text="${error}">No se pudo cargar.</td>
+                </tr>
+                <tr th:if="${error == null and (ausencias == null or ausencias.registros.isEmpty)}">
+                    <td class="notas-aus-estado" colspan="6">Sin ausencias ni tardías en este período.</td>
+                </tr>
+                <th:block th:if="${ausencias != null}">
+                    <tr th:each="r : ${ausencias.registros}">
+                        <td class="notas-aus-fecha" th:text="${r.fecha}">01/01/2026</td>
+                        <td class="notas-aus-materia" th:text="${r.materia}">Materia</td>
+                        <td class="notas-aus-leccion" th:text="${r.leccion}">1</td>
+                        <td><span class="notas-aus-pill" th:classappend="${r.clase}" th:text="${r.tipo}">Tipo</span></td>
+                        <td class="notas-aus-profesor" th:text="${#strings.isEmpty(r.profesor) ? '—' : r.profesor}">Profesor</td>
+                        <td class="notas-aus-obs" th:text="${#strings.isEmpty(r.observacion) ? '—' : r.observacion}">—</td>
+                    </tr>
+                </th:block>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -40,4 +40,30 @@ public interface ResultadoComponenteRepository extends JpaRepository<ResultadoCo
     List<ResultadoComponente> findNotasDePeriodos(@Param("direccionId") Long direccionId,
             @Param("periodoIds") Collection<Long> periodoIds,
             @Param("nivelIds") Collection<Long> nivelIds);
+
+    /** Notas de un estudiante en un período. Solo el componente y su materia, para no traer el grafo completo. */
+    @Query("""
+            SELECT r FROM ResultadoComponente r
+            JOIN FETCH r.componente c
+            JOIN FETCH c.materia
+            WHERE c.direccion.id = :direccionId
+              AND c.nivel.id = :nivelId
+              AND r.estudiante.id = :estudianteId
+              AND r.periodo.id = :periodoId
+            """)
+    List<ResultadoComponente> findDeEstudianteEnPeriodo(@Param("direccionId") Long direccionId,
+            @Param("nivelId") Long nivelId, @Param("estudianteId") Long estudianteId,
+            @Param("periodoId") Long periodoId);
+
+    /** Materias de la sección que ya tienen alguna nota en esos períodos, sin traer las calificaciones. */
+    @Query("""
+            SELECT DISTINCT c.materia.id, c.materia.nombre
+            FROM ResultadoComponente r
+            JOIN r.componente c
+            WHERE c.direccion.id = :direccionId
+              AND c.nivel.id = :nivelId
+              AND r.periodo.id IN :periodoIds
+            """)
+    List<Object[]> findMateriasConNota(@Param("direccionId") Long direccionId,
+            @Param("nivelId") Long nivelId, @Param("periodoIds") Collection<Long> periodoIds);
 }

@@ -14,7 +14,10 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.dto.NotasAusenciaDetalle;
+import com.chavescr.nexa.dto.NotasAusenciasPeriodo;
 import com.chavescr.nexa.dto.NotasCatalogo;
+import com.chavescr.nexa.dto.NotasDesgloseFila;
 import com.chavescr.nexa.dto.NotasCatalogo.AnioOpcion;
 import com.chavescr.nexa.dto.NotasCatalogo.AusenciaPeriodo;
 import com.chavescr.nexa.dto.NotasCatalogo.EstudianteOpcion;
@@ -160,6 +163,146 @@ public class NotasConsultaService {
                         .toList());
     }
 
+    /**
+     * Mismas materias que la tabla del año, con el desglose del período elegido.
+     * La lista sale del horario y de las notas de toda la sección en ese año;
+     * las calificaciones que se calculan son solo las del período.
+     */
+    public List<NotasDesgloseFila> desglose(Long direccionId, Long usuarioId, boolean supervision,
+            Long estudianteId, Long periodoId) {
+        Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
+        NivelAcademico nivel = estudiante.getNivelAcademico();
+        if (nivel == null) {
+            throw new IllegalArgumentException("El estudiante no tiene sección asignada");
+        }
+        if (!supervision && nivelesVisibles(direccionId, usuarioId, false).stream()
+                .noneMatch(n -> nivel.getId().equals(n.getId()))) {
+            throw new IllegalArgumentException("No puede consultar las notas de este estudiante");
+        }
+        PeriodoAcademico periodo = periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
+
+        int anio = periodo.getFechaInicio().getYear();
+        List<PeriodoAcademico> delAnio = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId)
+                .stream()
+                .filter(p -> p.getFechaInicio().getYear() == anio)
+                .toList();
+        Long nivelId = nivel.getId();
+        List<Long> nivelIds = List.of(nivelId);
+        List<Long> periodoIdsAnio = delAnio.stream().map(PeriodoAcademico::getId).toList();
+        Map<Long, Long> ordenPeriodo = new HashMap<>();
+        for (PeriodoAcademico delPeriodo : delAnio) {
+            ordenPeriodo.put(delPeriodo.getId(), delPeriodo.getFechaInicio().toEpochDay());
+        }
+
+        Map<Long, Map<Long, MateriaVista>> porNivel = new HashMap<>();
+        for (Object[] fila : horarioRepository.findAsignacionesNivelMateria(direccionId, periodoIdsAnio, nivelIds)) {
+            registrar(porNivel, (Long) fila[0], (Long) fila[1], (String) fila[2], (String) fila[3],
+                    (Long) fila[4], ordenPeriodo);
+        }
+        for (Object[] fila : resultadoRepository.findMateriasConNota(direccionId, nivelId, periodoIdsAnio)) {
+            registrar(porNivel, nivelId, (Long) fila[0], (String) fila[1], null, periodoId, ordenPeriodo);
+        }
+
+        Map<Long, List<ResultadoComponente>> porMateria = new HashMap<>();
+        for (ResultadoComponente resultado : resultadoRepository.findDeEstudianteEnPeriodo(
+                direccionId, nivelId, estudianteId, periodoId)) {
+            Componente componente = resultado.getComponente();
+            if (componente.getMateria() == null) {
+                continue;
+            }
+            porMateria.computeIfAbsent(componente.getMateria().getId(), k -> new ArrayList<>()).add(resultado);
+        }
+
+        List<Long> periodoIds = List.of(periodoId);
+        Map<PesoKey, Map<Long, Double>> pesos = pesosDe(
+                componenteRepository.findParaNotas(direccionId, nivelIds), periodoIds);
+        Map<DistKey, int[]> distribuciones = distribucionesDe(direccionId, periodoIds);
+        Map<Long, int[]> asistencia = asistenciaDeEstudiante(direccionId, estudianteId, periodo);
+        Set<ClaveComponente> claves = clavesActivas(direccionId);
+
+        List<NotasDesgloseFila> filas = new ArrayList<>();
+        for (MateriaVista vista : porNivel.getOrDefault(nivelId, Map.of()).values().stream()
+                .sorted(Comparator.comparing((MateriaVista v) -> v.nombre, String.CASE_INSENSITIVE_ORDER))
+                .toList()) {
+            ComponentesNota nota = ponderar(
+                    porMateria.getOrDefault(vista.id, List.of()),
+                    asistencia.get(vista.id),
+                    distribuciones.getOrDefault(new DistKey(periodoId, vista.id), DISTRIBUCION_DEFECTO),
+                    claves,
+                    pesosDeMateria(pesos, nivelId, vista.id, periodoId));
+            filas.add(new NotasDesgloseFila(vista.nombre, vista.docente, nota.cotidiano(), nota.tareas(),
+                    nota.proyecto(), nota.pruebas(), nota.asistencia(), nota.porcentaje()));
+        }
+
+        int descuento = descuentosConducta(direccionId, periodoIds, List.of(estudianteId))
+                .getOrDefault(estudianteId, Map.of())
+                .getOrDefault(periodoId, 0);
+        filas.add(new NotasDesgloseFila("Conducta", "", null, null, null, null, null,
+                (double) Math.max(0, NOTA_CONDUCTA_INICIAL - descuento)));
+        return filas;
+    }
+
+    /** Cada lección no presente del período, en el mismo orden en que se registró la asistencia. */
+    public NotasAusenciasPeriodo ausencias(Long direccionId, Long usuarioId, boolean supervision,
+            Long estudianteId, Long periodoId) {
+        PeriodoAcademico periodo = periodoDeEstudianteVisible(direccionId, usuarioId, supervision, estudianteId,
+                periodoId);
+        List<NotasAusenciaDetalle> registros = new ArrayList<>();
+        for (Object[] fila : asistenciaRepository.findAusenciasDeEstudiante(
+                direccionId, estudianteId, periodo.getFechaInicio(), periodo.getFechaFin(),
+                EstadoAsistencia.PRESENTE)) {
+            EstadoAsistencia estado = (EstadoAsistencia) fila[2];
+            String observacion = fila[4] == null ? "" : ((String) fila[4]).trim();
+            String profesor = fila[5] == null ? "" : ((String) fila[5]).trim();
+            registros.add(new NotasAusenciaDetalle(
+                    FECHA.format((LocalDate) fila[0]),
+                    (String) fila[3],
+                    ((Number) fila[1]).intValue(),
+                    etiquetaAusencia(estado),
+                    claseAusencia(estado),
+                    observacion,
+                    profesor));
+        }
+        return new NotasAusenciasPeriodo(registros);
+    }
+
+    private PeriodoAcademico periodoDeEstudianteVisible(Long direccionId, Long usuarioId, boolean supervision,
+            Long estudianteId, Long periodoId) {
+        Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
+        if (estudiante.getNivelAcademico() == null) {
+            throw new IllegalArgumentException("El estudiante no tiene sección asignada");
+        }
+        if (!supervision && nivelesVisibles(direccionId, usuarioId, false).stream()
+                .noneMatch(n -> estudiante.getNivelAcademico().getId().equals(n.getId()))) {
+            throw new IllegalArgumentException("No puede consultar las notas de este estudiante");
+        }
+        return periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
+    }
+
+    private String etiquetaAusencia(EstadoAsistencia estado) {
+        return switch (estado) {
+            case JUSTIFICADA -> "Ausencia justificada";
+            case AUSENTE -> "Ausencia injustificada";
+            case TARDIA_JUSTIFICADA -> "Tardía justificada";
+            case TARDIA -> "Tardía injustificada";
+            case PRESENTE -> "";
+        };
+    }
+
+    private String claseAusencia(EstadoAsistencia estado) {
+        return switch (estado) {
+            case JUSTIFICADA -> "justificada";
+            case AUSENTE -> "injustificada";
+            case TARDIA_JUSTIFICADA -> "tardia-justificada";
+            case TARDIA -> "tardia";
+            case PRESENTE -> "";
+        };
+    }
+
     private NotasArmadas materiasPorEstudiante(Long direccionId, List<Long> nivelIds,
             List<Usuario> estudiantes, List<PeriodoAcademico> periodos) {
         if (nivelIds.isEmpty() || periodos.isEmpty() || estudiantes.isEmpty()) {
@@ -294,23 +437,8 @@ public class NotasConsultaService {
         }
 
         int[] dist = distribuciones.getOrDefault(new DistKey(periodoId, materiaId), DISTRIBUCION_DEFECTO);
-        double sumaPonderada = 0;
-        double sumaPesos = 0;
-        for (ClaveComponente clave : claves) {
-            Integer promedio = promedioDe(resultados, clave,
-                    pesos.getOrDefault(new PesoKey(nivelId, materiaId, periodoDe(clave, periodoId), clave), Map.of()));
-            int peso = pesoDe(dist, clave);
-            if (promedio == null || peso <= 0) {
-                continue;
-            }
-            sumaPonderada += promedio * peso;
-            sumaPesos += peso;
-        }
-        if (asist != null && asist[1] > 0 && dist[4] > 0) {
-            int score = (int) Math.round(asist[0] * 100.0 / asist[1]);
-            sumaPonderada += score * dist[4];
-            sumaPesos += dist[4];
-        }
+        ComponentesNota componentes = ponderar(resultados, asist, dist, claves,
+                pesosDeMateria(pesos, nivelId, materiaId, periodoId));
 
         int puntos = 0;
         int totales = 0;
@@ -330,11 +458,71 @@ public class NotasConsultaService {
             tienePuntos = true;
         }
 
-        Double porcentaje = sumaPesos <= 0 ? null : Math.round((sumaPonderada / sumaPesos) * 10) / 10.0;
-        if (porcentaje == null && !tienePuntos) {
+        if (componentes.porcentaje() == null && !tienePuntos) {
             return null;
         }
-        return new NotaPeriodo(periodoId, porcentaje, tienePuntos ? puntos : null, tienePuntos ? totales : null);
+        return new NotaPeriodo(periodoId, componentes.porcentaje(), tienePuntos ? puntos : null,
+                tienePuntos ? totales : null);
+    }
+
+    private Map<ClaveComponente, Map<Long, Double>> pesosDeMateria(Map<PesoKey, Map<Long, Double>> pesos,
+            Long nivelId, Long materiaId, Long periodoId) {
+        Map<ClaveComponente, Map<Long, Double>> porClave = new HashMap<>();
+        for (ClaveComponente clave : ClaveComponente.values()) {
+            porClave.put(clave, pesos.getOrDefault(
+                    new PesoKey(nivelId, materiaId, periodoDe(clave, periodoId), clave), Map.of()));
+        }
+        return porClave;
+    }
+
+    /** Misma ponderación que la nota del período: un componente entra solo si tiene calificación y peso. */
+    private ComponentesNota ponderar(List<ResultadoComponente> resultados, int[] asist, int[] dist,
+            Set<ClaveComponente> claves, Map<ClaveComponente, Map<Long, Double>> pesosPorClave) {
+        Integer cotidiano = null;
+        Integer tareas = null;
+        Integer proyecto = null;
+        Integer pruebas = null;
+        double sumaPonderada = 0;
+        double sumaPesos = 0;
+        for (ClaveComponente clave : claves) {
+            Integer promedio = promedioDe(resultados, clave, pesosPorClave.getOrDefault(clave, Map.of()));
+            switch (clave) {
+                case COTIDIANO -> cotidiano = promedio;
+                case TAREA -> tareas = promedio;
+                case PROYECTO -> proyecto = promedio;
+                case EXAMEN -> pruebas = promedio;
+            }
+            int peso = pesoDe(dist, clave);
+            if (promedio == null || peso <= 0) {
+                continue;
+            }
+            sumaPonderada += promedio * peso;
+            sumaPesos += peso;
+        }
+        Integer asistencia = null;
+        if (asist != null && asist[1] > 0) {
+            asistencia = (int) Math.round(asist[0] * 100.0 / asist[1]);
+            if (dist[4] > 0) {
+                sumaPonderada += asistencia * dist[4];
+                sumaPesos += dist[4];
+            }
+        }
+        Double porcentaje = sumaPesos <= 0 ? null : Math.round((sumaPonderada / sumaPesos) * 10) / 10.0;
+        return new ComponentesNota(cotidiano, tareas, proyecto, pruebas, asistencia, porcentaje);
+    }
+
+    private Map<Long, int[]> asistenciaDeEstudiante(Long direccionId, Long estudianteId, PeriodoAcademico periodo) {
+        Map<Long, int[]> mapa = new HashMap<>();
+        for (Object[] fila : asistenciaRepository.findEstadosDeEstudiante(
+                direccionId, estudianteId, periodo.getFechaInicio(), periodo.getFechaFin())) {
+            int[] contador = mapa.computeIfAbsent((Long) fila[0], k -> new int[2]);
+            contador[1]++;
+            EstadoAsistencia estado = (EstadoAsistencia) fila[1];
+            if (estado != null && estado.cuentaComoPresente()) {
+                contador[0]++;
+            }
+        }
+        return mapa;
     }
 
     private Integer promedioDe(List<ResultadoComponente> resultados, ClaveComponente clave, Map<Long, Double> pesos) {
@@ -581,6 +769,10 @@ public class NotasConsultaService {
             this.id = id;
             this.nombre = nombre;
         }
+    }
+
+    private record ComponentesNota(Integer cotidiano, Integer tareas, Integer proyecto, Integer pruebas,
+            Integer asistencia, Double porcentaje) {
     }
 
     private record NotaKey(long estudianteId, long materiaId, long periodoId) {

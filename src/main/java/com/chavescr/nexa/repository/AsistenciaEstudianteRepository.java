@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.chavescr.nexa.entity.AsistenciaEstudiante;
+import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 
 public interface AsistenciaEstudianteRepository extends JpaRepository<AsistenciaEstudiante, Long> {
 
@@ -34,4 +35,33 @@ public interface AsistenciaEstudianteRepository extends JpaRepository<Asistencia
     List<Object[]> findEstadosEntre(@Param("direccionId") Long direccionId,
             @Param("nivelIds") Collection<Long> nivelIds,
             @Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
+
+    @Query("""
+            SELECT a.materia.id, a.estado
+            FROM AsistenciaEstudiante a
+            WHERE a.direccion.id = :direccionId
+              AND a.estudiante.id = :estudianteId
+              AND a.fecha >= :desde AND a.fecha <= :hasta
+            """)
+    List<Object[]> findEstadosDeEstudiante(@Param("direccionId") Long direccionId,
+            @Param("estudianteId") Long estudianteId,
+            @Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
+
+    /** Lecciones que no cuentan como presente: ausencia o tardía, con la materia. */
+    @Query("""
+            SELECT a.fecha, a.numeroLeccion, a.estado, m.nombre, a.observaciones, p.nombre
+            FROM AsistenciaEstudiante a
+            JOIN a.materia m
+            LEFT JOIN a.registradoPor p
+            WHERE a.direccion.id = :direccionId
+              AND a.estudiante.id = :estudianteId
+              AND a.fecha >= :desde AND a.fecha <= :hasta
+              AND a.estado IS NOT NULL
+              AND a.estado <> :presente
+            ORDER BY a.fecha, a.numeroLeccion, m.nombre
+            """)
+    List<Object[]> findAusenciasDeEstudiante(@Param("direccionId") Long direccionId,
+            @Param("estudianteId") Long estudianteId,
+            @Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta,
+            @Param("presente") EstadoAsistencia presente);
 }

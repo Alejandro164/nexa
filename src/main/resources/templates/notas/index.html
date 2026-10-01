@@ -389,6 +389,45 @@
             }
             .notas-table th.num, .notas-table td.num { text-align: right; white-space: nowrap; }
             .notas-table th.num { min-width: 5.75rem; }
+            .notas-th-periodo { vertical-align: middle; }
+            .notas-periodo-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 26px;
+                padding: 0.18rem 0.55rem;
+                border: 1px solid #cbd5e1;
+                border-radius: 7px;
+                background: #fff;
+                color: var(--primary);
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+                font-family: inherit;
+                line-height: 1.2;
+                cursor: pointer;
+                white-space: nowrap;
+                box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+                transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+            }
+            .notas-periodo-btn:hover {
+                background: rgba(45, 90, 135, 0.08);
+                border-color: var(--primary);
+            }
+            .notas-periodo-btn:focus-visible {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.18);
+            }
+            .notas-periodo-btn:active {
+                background: rgba(45, 90, 135, 0.14);
+            }
+            .notas-periodo-btn.is-on {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff;
+            }
             .notas-celda {
                 display: flex;
                 flex-direction: column;
@@ -582,7 +621,7 @@
             <div class="notas-filtros" role="search" aria-label="Filtrar por año, grado y sección">
                 <label class="notas-field" th:if="${notasCatalogo.elegirAnio}">
                     <span>Año</span>
-                    <select aria-label="Año" x-model="anio"
+                    <select aria-label="Año" x-model="anio" @change="cerrarDetalle()"
                             x-init="$nextTick(() => { $el.value = anio })">
                         <template x-for="a in anios" :key="a.anio">
                             <option :value="String(a.anio)" x-text="a.etiqueta"></option>
@@ -640,7 +679,7 @@
                                     role="option"
                                     :class="{ 'is-on': selectedId === e.id }"
                                     :aria-selected="selectedId === e.id"
-                                    @click="selectedId = e.id">
+                                    @click="elegirEstudiante(e)">
                                 <span class="notas-avatar" :style="'background:' + e.color" x-text="e.iniciales"></span>
                                 <span class="notas-student-meta">
                                     <span class="notas-student-name" x-text="e.nombre"></span>
@@ -725,7 +764,15 @@
                                         <tr>
                                             <th>Materia</th>
                                             <template x-for="p in periodosDelAnio" :key="p.id">
-                                                <th class="num" :title="p.titulo" x-text="p.etiqueta"></th>
+                                                <th class="num notas-th-periodo">
+                                                    <button type="button" class="notas-periodo-btn"
+                                                            :class="{ 'is-on': esPeriodoAbierto(p) }"
+                                                            :title="p.titulo"
+                                                            :aria-pressed="esPeriodoAbierto(p)"
+                                                            aria-haspopup="dialog"
+                                                            @click="abrirDesglose(p)"
+                                                            x-text="p.etiqueta"></button>
+                                                </th>
                                             </template>
                                             <th class="num notas-col-anio">Año</th>
                                             <th>Nivel</th>
@@ -775,7 +822,15 @@
                                         <tr>
                                             <th>Ausencias</th>
                                             <template x-for="p in periodosDelAnio" :key="'aus-' + p.id">
-                                                <th class="num" x-text="p.etiqueta"></th>
+                                                <th class="num">
+                                                    <button type="button" class="notas-periodo-btn"
+                                                            :class="{ 'is-on': esAusenciaAbierta(p) }"
+                                                            :title="p.titulo"
+                                                            :aria-pressed="esAusenciaAbierta(p)"
+                                                            aria-haspopup="dialog"
+                                                            @click="abrirAusencias(p)"
+                                                            x-text="p.etiqueta"></button>
+                                                </th>
                                             </template>
                                         </tr>
                                     </thead>
@@ -826,6 +881,8 @@
                     </template>
                 </section>
             </div>
+            <div th:replace="~{notas/detalle-por-componente :: desglose}"></div>
+            <div th:replace="~{notas/detalle-ausencias :: detalle}"></div>
         </div>
 
         <script th:inline="javascript">
@@ -859,6 +916,10 @@
                     seccion: seccionInicial,
                     selectedId: iniciales[0] ? iniciales[0].id : null,
                     guardandoObs: null,
+                    desglosePeriodo: null,
+                    desgloseCtrl: null,
+                    ausenciaPeriodo: null,
+                    ausenciaCtrl: null,
                     anios: catalogo.anios || [],
                     periodos: catalogo.periodos || [],
                     filasAusencia: [
@@ -928,6 +989,111 @@
                     },
                     esConducta(m) {
                         return !!(m && m.id < 0);
+                    },
+                    elegirEstudiante(e) {
+                        if (this.selectedId !== e.id) this.cerrarDetalle();
+                        this.selectedId = e.id;
+                    },
+                    abrirDesglose(periodo) {
+                        if (!this.seleccionado || !periodo) return;
+                        this.cerrarAusencias();
+                        const estudianteId = this.seleccionado.id;
+                        const periodoId = periodo.id;
+                        this.desglosePeriodo = periodo;
+                        if (this.desgloseCtrl) this.desgloseCtrl.abort();
+                        const ctrl = new AbortController();
+                        this.desgloseCtrl = ctrl;
+                        const pintar = (html) => {
+                            if (this.desgloseCtrl !== ctrl) return;
+                            if (!this.seleccionado || this.seleccionado.id !== estudianteId || !this.esPeriodoAbierto(periodo)) return;
+                            const cuerpo = document.getElementById('notas-desglose-cuerpo');
+                            if (cuerpo) cuerpo.innerHTML = html;
+                        };
+                        const cargando = '<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="7">Cargando…</td></tr>';
+                        this.$nextTick(() => {
+                            pintar(cargando);
+                            fetch('/notas/desglose?estudianteId=' + estudianteId + '&periodoId=' + periodoId, { signal: ctrl.signal })
+                                .then((res) => {
+                                    if (res.redirected || !res.ok) throw new Error('respuesta');
+                                    return res.text();
+                                })
+                                .then((html) => pintar(html))
+                                .catch((e) => {
+                                    if (e && e.name === 'AbortError') return;
+                                    pintar('<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="7">No se pudo cargar el desglose.</td></tr>');
+                                });
+                        });
+                    },
+                    cerrarDesglose() {
+                        if (this.desgloseCtrl) this.desgloseCtrl.abort();
+                        this.desgloseCtrl = null;
+                        this.desglosePeriodo = null;
+                    },
+                    abrirAusencias(periodo) {
+                        if (!this.seleccionado || !periodo) return;
+                        this.cerrarDesglose();
+                        const estudianteId = this.seleccionado.id;
+                        const periodoId = periodo.id;
+                        this.ausenciaPeriodo = periodo;
+                        if (this.ausenciaCtrl) this.ausenciaCtrl.abort();
+                        const ctrl = new AbortController();
+                        this.ausenciaCtrl = ctrl;
+                        const pintar = (html) => {
+                            if (this.ausenciaCtrl !== ctrl) return;
+                            if (!this.seleccionado || this.seleccionado.id !== estudianteId || !this.esAusenciaAbierta(periodo)) return;
+                            const cuerpo = document.getElementById('notas-ausencias-cuerpo');
+                            if (cuerpo) cuerpo.innerHTML = html;
+                        };
+                        const cargando = '<p class="notas-aus-estado">Cargando…</p>';
+                        this.$nextTick(() => {
+                            pintar(cargando);
+                            fetch('/notas/ausencias?estudianteId=' + estudianteId + '&periodoId=' + periodoId, { signal: ctrl.signal })
+                                .then((res) => {
+                                    if (res.redirected || !res.ok) throw new Error('respuesta');
+                                    return res.text();
+                                })
+                                .then((html) => pintar(html))
+                                .catch((e) => {
+                                    if (e && e.name === 'AbortError') return;
+                                    pintar('<p class="notas-aus-estado">No se pudieron cargar las ausencias.</p>');
+                                });
+                        });
+                    },
+                    cerrarAusencias() {
+                        if (this.ausenciaCtrl) this.ausenciaCtrl.abort();
+                        this.ausenciaCtrl = null;
+                        this.ausenciaPeriodo = null;
+                    },
+                    cerrarDetalle() {
+                        this.cerrarDesglose();
+                        this.cerrarAusencias();
+                    },
+                    esAusenciaAbierta(periodo) {
+                        return !!(this.ausenciaPeriodo && periodo
+                            && String(this.ausenciaPeriodo.id) === String(periodo.id));
+                    },
+                    esPeriodoAbierto(periodo) {
+                        return !!(this.desglosePeriodo && periodo
+                            && String(this.desglosePeriodo.id) === String(periodo.id));
+                    },
+                    promedioPeriodo(est, periodo) {
+                        if (!est || !periodo) return null;
+                        const notas = this.materiasDe(est)
+                            .map((m) => this.pctDe(this.notaDe(m, periodo.id)))
+                            .filter((n) => n != null);
+                        if (!notas.length) return null;
+                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(1);
+                    },
+                    conteoPeriodo(est, periodo, umbral, aprobadas) {
+                        if (!est || !periodo) return 0;
+                        return this.materiasDe(est).filter((m) => {
+                            const n = this.pctDe(this.notaDe(m, periodo.id));
+                            if (n == null) return false;
+                            return aprobadas ? n >= umbral : n < umbral;
+                        }).length;
+                    },
+                    fmtPeriodo(n) {
+                        return n == null ? '—' : Number(n).toFixed(1);
                     },
                     etiquetaAnio() {
                         const n = this.periodosDelAnio.length;
@@ -1043,7 +1209,10 @@
                     },
                     asegurarSeleccion() {
                         const sigue = this.cohorte.some((e) => e.id === this.selectedId);
-                        if (!sigue) this.selectedId = this.cohorte[0] ? this.cohorte[0].id : null;
+                        if (!sigue) {
+                            this.cerrarDetalle();
+                            this.selectedId = this.cohorte[0] ? this.cohorte[0].id : null;
+                        }
                     },
                     limpiarFiltros() {
                         this.grado = '';
@@ -1086,7 +1255,7 @@
                         let i = list.findIndex((e) => e.id === this.selectedId);
                         if (i < 0) i = 0;
                         i = Math.max(0, Math.min(list.length - 1, i + dir));
-                        this.selectedId = list[i].id;
+                        this.elegirEstudiante(list[i]);
                     }
                 };
             }
