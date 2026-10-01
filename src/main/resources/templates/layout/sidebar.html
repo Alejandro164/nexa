@@ -212,7 +212,7 @@
         </a>
     </div>
 
-    <div class="nav-section" th:unless="${sinDireccionAdmin}" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_PADRE')">
+    <div class="nav-section" th:unless="${sinDireccionAdmin}" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DOCENTE', 'ROLE_PADRE')">
         <div class="nav-section-title">Comunicación y Enlaces</div>
         <a href="/comunicacion" class="nav-item" hx-get="/comunicacion" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
@@ -224,7 +224,7 @@
         </a>
 
         <a href="/agenda" class="nav-item" hx-get="/agenda" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
