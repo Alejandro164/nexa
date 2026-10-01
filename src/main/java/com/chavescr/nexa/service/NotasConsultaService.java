@@ -16,10 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.dto.NotasCatalogo;
 import com.chavescr.nexa.dto.NotasCatalogo.AnioOpcion;
+import com.chavescr.nexa.dto.NotasCatalogo.AusenciaPeriodo;
 import com.chavescr.nexa.dto.NotasCatalogo.EstudianteOpcion;
 import com.chavescr.nexa.dto.NotasCatalogo.MateriaNota;
 import com.chavescr.nexa.dto.NotasCatalogo.NivelOpcion;
 import com.chavescr.nexa.dto.NotasCatalogo.NotaPeriodo;
+import com.chavescr.nexa.dto.NotasCatalogo.ObservacionPeriodo;
 import com.chavescr.nexa.dto.NotasCatalogo.PeriodoOpcion;
 import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.ClaveComponente;
@@ -38,6 +40,7 @@ import com.chavescr.nexa.repository.DistribucionPorcentualRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.repository.IncidenteConductaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
+import com.chavescr.nexa.repository.ObservacionGuiaRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 import com.chavescr.nexa.repository.ResultadoComponenteRepository;
 import com.chavescr.nexa.repository.TipoComponenteRepository;
@@ -66,6 +69,7 @@ public class NotasConsultaService {
     private final AsistenciaEstudianteRepository asistenciaRepository;
     private final TipoComponenteRepository tipoComponenteRepository;
     private final IncidenteConductaRepository incidenteRepository;
+    private final ObservacionGuiaRepository observacionRepository;
 
     public NotasConsultaService(PeriodoAcademicoRepository periodoRepository,
             NivelAcademicoRepository nivelRepository, UsuarioRepository usuarioRepository,
@@ -74,7 +78,8 @@ public class NotasConsultaService {
             DistribucionPorcentualRepository distribucionRepository,
             AsistenciaEstudianteRepository asistenciaRepository,
             TipoComponenteRepository tipoComponenteRepository,
-            IncidenteConductaRepository incidenteRepository) {
+            IncidenteConductaRepository incidenteRepository,
+            ObservacionGuiaRepository observacionRepository) {
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
         this.usuarioRepository = usuarioRepository;
@@ -86,6 +91,7 @@ public class NotasConsultaService {
         this.asistenciaRepository = asistenciaRepository;
         this.tipoComponenteRepository = tipoComponenteRepository;
         this.incidenteRepository = incidenteRepository;
+        this.observacionRepository = observacionRepository;
     }
 
     /**
@@ -122,7 +128,8 @@ public class NotasConsultaService {
                         .filter(u -> u.getNivelAcademico() != null)
                         .toList();
 
-        Map<Long, List<MateriaNota>> materias = materiasPorEstudiante(direccionId, nivelIds, estudiantes, visibles);
+        NotasArmadas armadas = materiasPorEstudiante(direccionId, nivelIds, estudiantes, visibles);
+        Map<Long, List<ObservacionPeriodo>> observaciones = observacionesDe(direccionId, estudiantes, visibles);
 
         String aviso = null;
         if (periodos.isEmpty()) {
@@ -146,14 +153,17 @@ public class NotasConsultaService {
                 visibles.stream().map(this::periodo).toList(),
                 niveles.stream().map(this::nivel).toList(),
                 estudiantes.stream()
-                        .map(u -> estudiante(u, materias.getOrDefault(u.getId(), List.of())))
+                        .map(u -> estudiante(u,
+                                armadas.materias().getOrDefault(u.getId(), List.of()),
+                                armadas.ausencias().getOrDefault(u.getId(), List.of()),
+                                observaciones.getOrDefault(u.getId(), List.of())))
                         .toList());
     }
 
-    private Map<Long, List<MateriaNota>> materiasPorEstudiante(Long direccionId, List<Long> nivelIds,
+    private NotasArmadas materiasPorEstudiante(Long direccionId, List<Long> nivelIds,
             List<Usuario> estudiantes, List<PeriodoAcademico> periodos) {
         if (nivelIds.isEmpty() || periodos.isEmpty() || estudiantes.isEmpty()) {
-            return Map.of();
+            return new NotasArmadas(Map.of(), Map.of());
         }
         List<Long> periodoIds = periodos.stream().map(PeriodoAcademico::getId).toList();
         Map<Long, Long> ordenPeriodo = new HashMap<>();
@@ -188,7 +198,8 @@ public class NotasConsultaService {
         Map<PesoKey, Map<Long, Double>> pesos = pesosDe(
                 componenteRepository.findParaNotas(direccionId, nivelIds), periodoIds);
         Map<DistKey, int[]> distribuciones = distribucionesDe(direccionId, periodoIds);
-        Map<AsistKey, int[]> asistencia = asistenciaDe(direccionId, nivelIds, periodos);
+        AsistenciaCargada cargada = asistenciaDe(direccionId, nivelIds, periodos);
+        Map<AsistKey, int[]> asistencia = cargada.porMateria();
         Set<ClaveComponente> claves = clavesActivas(direccionId);
         Map<Long, Map<Long, Integer>> descuentosConducta = descuentosConducta(direccionId, periodoIds,
                 estudiantes.stream().map(Usuario::getId).toList());
@@ -219,7 +230,7 @@ public class NotasConsultaService {
                     descuentosConducta.getOrDefault(estudiante.getId(), Map.of())));
             porEstudiante.put(estudiante.getId(), notas);
         }
-        return porEstudiante;
+        return new NotasArmadas(porEstudiante, ausenciasDe(cargada.porEstudiante()));
     }
 
     /**
@@ -401,28 +412,61 @@ public class NotasConsultaService {
         return mapa;
     }
 
-    private Map<AsistKey, int[]> asistenciaDe(Long direccionId, List<Long> nivelIds, List<PeriodoAcademico> periodos) {
+    private AsistenciaCargada asistenciaDe(Long direccionId, List<Long> nivelIds, List<PeriodoAcademico> periodos) {
         LocalDate desde = periodos.stream().map(PeriodoAcademico::getFechaInicio).min(LocalDate::compareTo)
                 .orElseThrow();
         LocalDate hasta = periodos.stream().map(PeriodoAcademico::getFechaFin).max(LocalDate::compareTo)
                 .orElseThrow();
         Map<AsistKey, int[]> mapa = new HashMap<>();
+        Map<Long, Map<Long, int[]>> ausencias = new HashMap<>();
         for (Object[] fila : asistenciaRepository.findEstadosEntre(direccionId, nivelIds, desde, hasta)) {
             LocalDate fecha = (LocalDate) fila[2];
             EstadoAsistencia estado = (EstadoAsistencia) fila[3];
+            Long estudianteId = (Long) fila[0];
             for (PeriodoAcademico periodo : periodos) {
                 if (!periodo.contiene(fecha)) {
                     continue;
                 }
                 int[] contador = mapa.computeIfAbsent(
-                        new AsistKey((Long) fila[0], (Long) fila[1], periodo.getId()), k -> new int[2]);
+                        new AsistKey(estudianteId, (Long) fila[1], periodo.getId()), k -> new int[2]);
                 contador[1]++;
                 if (estado != null && estado.cuentaComoPresente()) {
                     contador[0]++;
                 }
+                acumularAusencia(ausencias, estudianteId, periodo.getId(), estado);
             }
         }
-        return mapa;
+        return new AsistenciaCargada(mapa, ausencias);
+    }
+
+    /** Cada lección cuenta una vez. Presente no entra en el cuadro de ausencias. */
+    private void acumularAusencia(Map<Long, Map<Long, int[]>> porEstudiante, Long estudianteId, Long periodoId,
+            EstadoAsistencia estado) {
+        if (estado == null || estado == EstadoAsistencia.PRESENTE) {
+            return;
+        }
+        int[] conteo = porEstudiante
+                .computeIfAbsent(estudianteId, k -> new HashMap<>())
+                .computeIfAbsent(periodoId, k -> new int[4]);
+        switch (estado) {
+            case JUSTIFICADA -> conteo[0]++;
+            case AUSENTE -> conteo[1]++;
+            case TARDIA_JUSTIFICADA -> conteo[2]++;
+            case TARDIA -> conteo[3]++;
+            default -> {
+            }
+        }
+    }
+
+    private Map<Long, List<AusenciaPeriodo>> ausenciasDe(Map<Long, Map<Long, int[]>> porEstudiante) {
+        Map<Long, List<AusenciaPeriodo>> resultado = new HashMap<>();
+        porEstudiante.forEach((estudianteId, porPeriodo) -> {
+            List<AusenciaPeriodo> filas = new ArrayList<>();
+            porPeriodo.forEach((periodoId, conteo) -> filas.add(new AusenciaPeriodo(
+                    periodoId, conteo[0], conteo[1], conteo[2], conteo[3])));
+            resultado.put(estudianteId, filas);
+        });
+        return resultado;
     }
 
     private Set<ClaveComponente> clavesActivas(Long direccionId) {
@@ -483,7 +527,23 @@ public class NotasConsultaService {
                 nivel.getGrado() + "-" + nivel.getSeccion());
     }
 
-    private EstudianteOpcion estudiante(Usuario usuario, List<MateriaNota> materias) {
+    private Map<Long, List<ObservacionPeriodo>> observacionesDe(Long direccionId, List<Usuario> estudiantes,
+            List<PeriodoAcademico> periodos) {
+        if (estudiantes.isEmpty() || periodos.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> estudianteIds = estudiantes.stream().map(Usuario::getId).toList();
+        List<Long> periodoIds = periodos.stream().map(PeriodoAcademico::getId).toList();
+        Map<Long, List<ObservacionPeriodo>> mapa = new HashMap<>();
+        for (Object[] fila : observacionRepository.findTextos(direccionId, estudianteIds, periodoIds)) {
+            mapa.computeIfAbsent((Long) fila[0], k -> new ArrayList<>())
+                    .add(new ObservacionPeriodo((Long) fila[1], (String) fila[2]));
+        }
+        return mapa;
+    }
+
+    private EstudianteOpcion estudiante(Usuario usuario, List<MateriaNota> materias,
+            List<AusenciaPeriodo> ausencias, List<ObservacionPeriodo> observaciones) {
         NivelAcademico nivel = usuario.getNivelAcademico();
         long id = usuario.getId();
         return new EstudianteOpcion(
@@ -495,7 +555,9 @@ public class NotasConsultaService {
                 nivel.getId(),
                 iniciales(usuario.getNombre()),
                 COLORES[(int) Math.floorMod(id, COLORES.length)],
-                materias);
+                materias,
+                ausencias,
+                observaciones);
     }
 
     private String iniciales(String nombre) {
@@ -531,5 +593,11 @@ public class NotasConsultaService {
     }
 
     private record AsistKey(long estudianteId, long materiaId, long periodoId) {
+    }
+
+    private record AsistenciaCargada(Map<AsistKey, int[]> porMateria, Map<Long, Map<Long, int[]>> porEstudiante) {
+    }
+
+    private record NotasArmadas(Map<Long, List<MateriaNota>> materias, Map<Long, List<AusenciaPeriodo>> ausencias) {
     }
 }

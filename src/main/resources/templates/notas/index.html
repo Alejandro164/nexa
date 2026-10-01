@@ -316,6 +316,26 @@
                 border-radius: 8px;
                 white-space: nowrap;
             }
+            .notas-detail-actions {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 0.45rem;
+                margin-left: auto;
+                align-self: flex-start;
+            }
+            .notas-enviar {
+                min-height: 34px;
+                padding: 0 0.95rem;
+                border: none;
+                border-radius: 8px;
+                background: var(--primary);
+                color: #fff;
+                font-size: 0.78rem;
+                font-weight: 700;
+                font-family: inherit;
+                cursor: pointer;
+            }
             .notas-kpis {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
@@ -483,6 +503,51 @@
                 text-align: left;
                 color: #334155;
             }
+            .notas-obs-editor {
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+            .notas-obs-input {
+                width: 100%;
+                min-height: 4.6rem;
+                resize: vertical;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 0.55rem 0.7rem;
+                font: inherit;
+                font-size: 0.84rem;
+                font-weight: 500;
+                line-height: 1.5;
+                color: #334155;
+                background: #fff;
+                box-sizing: border-box;
+            }
+            .notas-obs-input:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
+            }
+            .notas-obs-bar {
+                display: flex;
+                justify-content: flex-end;
+            }
+            .notas-obs-save {
+                min-height: 32px;
+                padding: 0 0.85rem;
+                border: none;
+                border-radius: 8px;
+                background: var(--primary);
+                color: #fff;
+                font-size: 0.75rem;
+                font-weight: 700;
+                font-family: inherit;
+                cursor: pointer;
+            }
+            .notas-obs-save:disabled {
+                opacity: 0.6;
+                cursor: default;
+            }
             .notas-legend {
                 display: flex;
                 flex-wrap: wrap;
@@ -626,7 +691,10 @@
                                               x-text="etiqueta(promedioDe(seleccionado))"></span>
                                     </div>
                                 </div>
-                                <span class="notas-period" x-text="etiquetaAnio()"></span>
+                                <div class="notas-detail-actions">
+                                    <button type="button" class="notas-enviar" @click="simularEnvio()">Enviar</button>
+                                    <span class="notas-period" x-text="etiquetaAnio()"></span>
+                                </div>
                             </div>
                             <div class="notas-empty" x-show="!tieneMaterias(seleccionado)" style="min-height: 220px;">
                                 <strong>Sin materias</strong>
@@ -715,8 +783,8 @@
                                         <template x-for="fila in filasAusencia" :key="fila.nombre">
                                             <tr>
                                                 <td x-text="fila.nombre"></td>
-                                                <template x-for="(p, i) in periodosDelAnio" :key="fila.nombre + '-' + p.id">
-                                                    <td class="num" x-text="valorAusencia(fila, i)"></td>
+                                                <template x-for="p in periodosDelAnio" :key="fila.nombre + '-' + p.id">
+                                                    <td class="num" x-text="valorAusencia(fila, p)"></td>
                                                 </template>
                                             </tr>
                                         </template>
@@ -731,10 +799,24 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template x-for="(p, i) in periodosDelAnio" :key="'obs-' + p.id">
+                                        <template x-for="p in periodosDelAnio" :key="'obs-' + seleccionado.id + '-' + p.id">
                                             <tr>
                                                 <td x-text="p.etiqueta"></td>
-                                                <td class="notas-obs-texto" x-text="textoObservacion(i)"></td>
+                                                <td>
+                                                    <div class="notas-obs-editor">
+                                                        <textarea class="notas-obs-input" rows="3" maxlength="1500"
+                                                                  placeholder="Sin observación registrada para este período."
+                                                                  :aria-label="'Observación de ' + p.etiqueta"
+                                                                  x-init="$el.value = textoObservacion(p)"
+                                                                  @input="fijarObservacion(p, $event.target.value)"></textarea>
+                                                        <div class="notas-obs-bar">
+                                                            <button type="button" class="notas-obs-save"
+                                                                    @click="guardarObservacion(p)"
+                                                                    :disabled="guardandoObs === p.id"
+                                                                    x-text="guardandoObs === p.id ? 'Guardando…' : 'Guardar'"></button>
+                                                        </div>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         </template>
                                     </tbody>
@@ -776,18 +858,14 @@
                     grado: gradoInicial,
                     seccion: seccionInicial,
                     selectedId: iniciales[0] ? iniciales[0].id : null,
+                    guardandoObs: null,
                     anios: catalogo.anios || [],
                     periodos: catalogo.periodos || [],
                     filasAusencia: [
-                        { nombre: 'Ausencias justificadas', valores: [0, 2, 0] },
-                        { nombre: 'Ausencias injustificadas', valores: [0, 0, 0] },
-                        { nombre: 'Tardías justificadas', valores: [0, 0, 0] },
-                        { nombre: 'Tardías injustificadas', valores: [0, 0, 0] }
-                    ],
-                    observacionesGuia: [
-                        'Durante este primer período ha demostrado esfuerzo, dedicación y compromiso en cada una de sus actividades. Cada tarea realizada y cada reto superado son muestra de su constancia y deseo de aprender.',
-                        'Ha realizado un buen trabajo durante este período, demostrando responsabilidad, interés y disposición para aprender. Continúe fortaleciendo sus habilidades y esforzándose cada día para alcanzar nuevas metas.',
-                        'Sigue avanzando con constancia. El trabajo realizado hasta ahora le acerca cada vez más a sus metas. Continúe esforzándose y creyendo en sus capacidades.'
+                        { nombre: 'Ausencias justificadas', clave: 'justificadas' },
+                        { nombre: 'Ausencias injustificadas', clave: 'injustificadas' },
+                        { nombre: 'Tardías justificadas', clave: 'tardiasJustificadas' },
+                        { nombre: 'Tardías injustificadas', clave: 'tardiasInjustificadas' }
                     ],
                     niveles: niveles,
                     estudiantes: estudiantes,
@@ -879,13 +957,74 @@
                         const pct = this.pctDe(n);
                         return pct == null ? '—' : pct.toFixed(1);
                     },
-                    valorAusencia(fila, indice) {
-                        const valor = fila && fila.valores ? fila.valores[indice] : null;
+                    valorAusencia(fila, periodo) {
+                        const lista = this.seleccionado && this.seleccionado.ausencias;
+                        if (!lista || !periodo || !fila) return 0;
+                        const item = lista.find(function (a) {
+                            return String(a.periodoId) === String(periodo.id);
+                        });
+                        const valor = item ? item[fila.clave] : 0;
                         return valor == null ? 0 : valor;
                     },
-                    textoObservacion(indice) {
-                        const texto = this.observacionesGuia[indice];
-                        return texto || 'Sin observación registrada para este período.';
+                    textoObservacion(periodo) {
+                        const lista = this.seleccionado && this.seleccionado.observaciones;
+                        if (!lista || !periodo) return '';
+                        const item = lista.find(function (o) {
+                            return String(o.periodoId) === String(periodo.id);
+                        });
+                        return item && item.texto ? item.texto : '';
+                    },
+                    fijarObservacion(periodo, texto) {
+                        if (!this.seleccionado || !periodo) return;
+                        if (!this.seleccionado.observaciones) this.seleccionado.observaciones = [];
+                        let item = this.seleccionado.observaciones.find(function (o) {
+                            return String(o.periodoId) === String(periodo.id);
+                        });
+                        if (!item) {
+                            item = { periodoId: periodo.id, texto: '' };
+                            this.seleccionado.observaciones.push(item);
+                        }
+                        item.texto = texto;
+                    },
+                    async guardarObservacion(periodo) {
+                        if (!this.seleccionado || !periodo || this.guardandoObs != null) return;
+                        this.guardandoObs = periodo.id;
+                        const params = new URLSearchParams();
+                        params.set('estudianteId', this.seleccionado.id);
+                        params.set('periodoId', periodo.id);
+                        params.set('texto', this.textoObservacion(periodo));
+                        const token = document.querySelector('meta[name="_csrf"]');
+                        const header = document.querySelector('meta[name="_csrf_header"]');
+                        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+                        if (token && header) headers[header.getAttribute('content')] = token.getAttribute('content');
+                        try {
+                            const res = await fetch('/notas/observacion', { method: 'POST', headers: headers, body: params });
+                            const html = await res.text();
+                            const nodo = new DOMParser().parseFromString(html, 'text/html').querySelector('#obs-resultado');
+                            const ok = nodo && nodo.getAttribute('data-ok') === 'true';
+                            const mensaje = nodo ? nodo.textContent.trim() : 'No se pudo guardar la observación.';
+                            if (!ok && nodo == null) {
+                                this.avisar(mensaje || 'No se pudo guardar la observación.', 'error');
+                                return;
+                            }
+                            if (ok && !this.textoObservacion(periodo)) {
+                                this.seleccionado.observaciones = (this.seleccionado.observaciones || []).filter(function (o) {
+                                    return String(o.periodoId) !== String(periodo.id);
+                                });
+                            }
+                            this.avisar(mensaje, ok ? 'success' : 'error');
+                        } catch (e) {
+                            this.avisar('No se pudo guardar la observación.', 'error');
+                        } finally {
+                            this.guardandoObs = null;
+                        }
+                    },
+                    simularEnvio() {
+                        const nombre = this.seleccionado ? this.seleccionado.nombre : 'el estudiante';
+                        this.avisar('Enviados a los padres de ' + nombre + '.', 'success');
+                    },
+                    avisar(message, type) {
+                        window.dispatchEvent(new CustomEvent('notify', { detail: { message: message, type: type } }));
                     },
                     barraDe(n) {
                         const pct = this.pctDe(n);

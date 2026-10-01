@@ -150,9 +150,12 @@ public class NotasCatalogo {
         private final String iniciales;
         private final String color;
         private final List<MateriaNota> materias;
+        private final List<AusenciaPeriodo> ausencias;
+        private final List<ObservacionPeriodo> observaciones;
 
         public EstudianteOpcion(Long id, String nombre, String cedula, Integer grado, String seccion,
-                Long nivelId, String iniciales, String color, List<MateriaNota> materias) {
+                Long nivelId, String iniciales, String color, List<MateriaNota> materias,
+                List<AusenciaPeriodo> ausencias, List<ObservacionPeriodo> observaciones) {
             this.id = id;
             this.nombre = nombre;
             this.cedula = cedula;
@@ -162,6 +165,8 @@ public class NotasCatalogo {
             this.iniciales = iniciales;
             this.color = color;
             this.materias = materias;
+            this.ausencias = ausencias;
+            this.observaciones = observaciones;
         }
 
         public Long getId() {
@@ -198,6 +203,75 @@ public class NotasCatalogo {
 
         public List<MateriaNota> getMaterias() {
             return materias;
+        }
+
+        public List<AusenciaPeriodo> getAusencias() {
+            return ausencias;
+        }
+
+        public List<ObservacionPeriodo> getObservaciones() {
+            return observaciones;
+        }
+    }
+
+    /** Comentario del docente guía para un período del estudiante. */
+    public static class ObservacionPeriodo {
+        private final Long periodoId;
+        private final String texto;
+
+        public ObservacionPeriodo(Long periodoId, String texto) {
+            this.periodoId = periodoId;
+            this.texto = texto;
+        }
+
+        public Long getPeriodoId() {
+            return periodoId;
+        }
+
+        public String getTexto() {
+            return texto;
+        }
+    }
+
+    /**
+     * Conteo de lecciones del estudiante en un período.
+     * Cada registro de asistencia es una lección: ausencia justificada, ausencia injustificada,
+     * tardía justificada o tardía injustificada.
+     */
+    public static class AusenciaPeriodo {
+        private final Long periodoId;
+        private final int justificadas;
+        private final int injustificadas;
+        private final int tardiasJustificadas;
+        private final int tardiasInjustificadas;
+
+        public AusenciaPeriodo(Long periodoId, int justificadas, int injustificadas,
+                int tardiasJustificadas, int tardiasInjustificadas) {
+            this.periodoId = periodoId;
+            this.justificadas = justificadas;
+            this.injustificadas = injustificadas;
+            this.tardiasJustificadas = tardiasJustificadas;
+            this.tardiasInjustificadas = tardiasInjustificadas;
+        }
+
+        public Long getPeriodoId() {
+            return periodoId;
+        }
+
+        public int getJustificadas() {
+            return justificadas;
+        }
+
+        public int getInjustificadas() {
+            return injustificadas;
+        }
+
+        public int getTardiasJustificadas() {
+            return tardiasJustificadas;
+        }
+
+        public int getTardiasInjustificadas() {
+            return tardiasInjustificadas;
         }
     }
 
