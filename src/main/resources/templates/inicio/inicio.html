@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{index}">
 
 <head>
@@ -13,6 +14,9 @@
     <p layout:fragment="page-subtitle">Resumen de tu dirección</p>
 
     <th:block th:fragment="htmx-content">
+    <!-- Al cambiar de dirección el selector del menú se actualiza en el mismo paso.
+         Si la institución nueva tiene una sola dirección, el hueco llega vacío: el botón no se pinta. -->
+    <th:block th:if="${sincronizarSwitcher}" th:insert="~{layout/aside :: switcher}"></th:block>
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Dashboard</h2>
@@ -114,10 +118,11 @@
                 </div>
             </div>
             <button class="btn-switch-inst"
+                    sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
                     hx-get="/inicio/direcciones-modal"
                     hx-target="#modal-container"
                     hx-swap="innerHTML"
-                    @click="document.getElementById('modal-container').classList.add('show')">
+                    onclick="document.getElementById('modal-container').classList.add('show')">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="17 1 21 5 17 9"></polyline>
                     <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>

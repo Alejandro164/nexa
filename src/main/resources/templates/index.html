@@ -42,6 +42,24 @@
             });
         }
         document.addEventListener('DOMContentLoaded', updateActiveSidebar);
+        document.addEventListener('htmx:afterSettle', function (evt) {
+            var path = evt.detail && evt.detail.pathInfo && evt.detail.pathInfo.requestPath;
+            if (path !== '/inicio/cambiar-direccion' || !window.Alpine) {
+                return;
+            }
+            var slot = document.getElementById('dir-switcher-slot');
+            if (slot) {
+                Alpine.initTree(slot);
+            }
+        });
+        document.addEventListener('direccionCambiada', function () {
+            var modal = document.getElementById('modal-container');
+            if (!modal) {
+                return;
+            }
+            modal.classList.remove('show');
+            modal.innerHTML = '';
+        });
         var bitacoraRutaCargada = null;
 
         document.addEventListener('htmx:afterSettle', function (evt) {

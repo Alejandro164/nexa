@@ -24,37 +24,54 @@
         <span class="sidebar-brand">Nexa</span>
     </div>
 
-    <div class="dir-switcher"
-         x-data="direccionSwitcher()"
-         @click.outside="open = false"
-         th:attr="data-actual=${session.SESSION_DIRECCION_NOMBRE != null ? session.SESSION_DIRECCION_NOMBRE : 'Sin dirección'}">
-        <button type="button" class="dir-switcher-btn" @click="open = !open" :title="actual">
-            <span class="dir-switcher-mark" x-text="inicial()">D</span>
-            <span class="dir-switcher-copy">
-                <span class="dir-switcher-kicker">Dirección activa</span>
-                <span class="dir-switcher-name" x-text="actual">Dirección</span>
-            </span>
-            <svg class="dir-switcher-chevron" :class="{ 'is-open': open }" xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-            </svg>
-        </button>
-        <div class="dir-switcher-menu" x-show="open" x-cloak x-transition.opacity.duration.150ms>
-            <div class="dir-switcher-menu-label">Misma institución</div>
-            <button type="button" class="dir-switcher-option" :class="{ 'is-active': actual === original }"
-                    @click="elegir(original)">
-                <span class="dir-switcher-mark" x-text="letra(original)">D</span>
-                <span class="dir-switcher-option-name" x-text="original">Dirección actual</span>
-                <span class="dir-switcher-badge" x-show="actual === original">Actual</span>
+    <div id="dir-switcher-slot" th:fragment="switcher"
+         th:attr="hx-swap-oob=${sincronizarSwitcher} ? 'outerHTML' : null">
+        <div class="dir-switcher"
+             sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
+             th:if="${menuDireccion != null and menuDireccion.visible}"
+             x-data="{ open: false }"
+             @click.outside="open = false"
+             th:with="nombreDir=${session.SESSION_DIRECCION_NOMBRE != null and !#strings.isEmpty(session.SESSION_DIRECCION_NOMBRE) ? session.SESSION_DIRECCION_NOMBRE : 'Dirección'}">
+            <button type="button" class="dir-switcher-btn" @click="open = !open"
+                    :aria-expanded="open ? 'true' : 'false'" aria-haspopup="true" th:title="${nombreDir}">
+                <span class="dir-switcher-mark" th:text="${#strings.substring(nombreDir, 0, 1)}">D</span>
+                <span class="dir-switcher-copy">
+                    <span class="dir-switcher-kicker">Dirección activa</span>
+                    <span class="dir-switcher-name" th:text="${nombreDir}">Dirección</span>
+                </span>
+                <svg class="dir-switcher-chevron" :class="{ 'is-open': open }" xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
             </button>
-            <button type="button" class="dir-switcher-option" :class="{ 'is-active': actual === otra() }"
-                    @click="elegir(otra())">
-                <span class="dir-switcher-mark dir-switcher-mark-alt" x-text="letra(otra())">S</span>
-                <span class="dir-switcher-option-name" x-text="otra()">Otra dirección</span>
-                <span class="dir-switcher-badge" x-show="actual === otra()">Actual</span>
-            </button>
-            <p class="dir-switcher-note">Vista previa. Todavía no cambia la sesión.</p>
+            <div class="dir-switcher-menu" x-show="open" x-cloak>
+                <div class="dir-switcher-opciones">
+                    <th:block th:each="op : ${menuDireccion.opciones}">
+                        <div th:if="${op.actual}" class="dir-switcher-option is-active" th:title="${op.titulo}">
+                            <span class="dir-switcher-mark" th:text="${#strings.substring(op.texto, 0, 1)}">D</span>
+                            <span class="dir-switcher-option-name" th:text="${op.texto}">Dirección</span>
+                            <span class="dir-switcher-badge">Actual</span>
+                        </div>
+                        <form th:unless="${op.actual}" class="dir-switcher-option-form" method="post"
+                              th:action="@{/inicio/cambiar-direccion}"
+                              hx-post="/inicio/cambiar-direccion"
+                              hx-target=".content-area"
+                              hx-swap="innerHTML"
+                              hx-push-url="/inicio"
+                              hx-disabled-elt="this"
+                              @submit="open = false">
+                            <input type="hidden" name="direccionId" th:value="${op.id}" />
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" class="dir-switcher-option" th:title="${op.titulo}">
+                                <span class="dir-switcher-mark dir-switcher-mark-alt"
+                                      th:text="${#strings.substring(op.texto, 0, 1)}">D</span>
+                                <span class="dir-switcher-option-name" th:text="${op.texto}">Dirección</span>
+                            </button>
+                        </form>
+                    </th:block>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -139,6 +156,9 @@
     </div>
 
     <style>
+        #dir-switcher-slot:empty {
+            display: none;
+        }
         .dir-switcher {
             position: relative;
             padding: 12px 12px 4px;
@@ -250,6 +270,7 @@
         }
         .dir-switcher-option.is-active {
             background: rgba(45, 90, 135, 0.08);
+            cursor: default;
         }
         .dir-switcher-option-name {
             flex: 1;
@@ -271,6 +292,13 @@
             font-size: 0.7rem;
             line-height: 1.35;
             color: #94a3b8;
+        }
+        .dir-switcher-opciones {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .dir-switcher-option-form {
+            margin: 0;
         }
         .sidebar.collapsed .dir-switcher-copy,
         .sidebar.collapsed .dir-switcher-chevron {
@@ -302,36 +330,6 @@
         }
     </style>
     <script>
-        function direccionSwitcher() {
-            return {
-                open: false,
-                actual: '',
-                original: '',
-                init: function () {
-                    this.original = this.$el.dataset.actual || 'Sin dirección';
-                    this.actual = this.original;
-                },
-                otra: function () {
-                    var nombre = this.original;
-                    if (nombre.indexOf('Primaria') !== -1) return nombre.replace('Primaria', 'Secundaria');
-                    if (nombre.indexOf('Secundaria') !== -1) return nombre.replace('Secundaria', 'Primaria');
-                    if (nombre.indexOf('Preescolar') !== -1) return nombre.replace('Preescolar', 'Primaria');
-                    if (!nombre || nombre === 'Sin dirección') return 'Segunda dirección';
-                    return nombre + ' · Secundaria';
-                },
-                letra: function (nombre) {
-                    return (nombre || 'D').charAt(0).toUpperCase();
-                },
-                inicial: function () {
-                    return this.letra(this.actual);
-                },
-                elegir: function (nombre) {
-                    this.actual = nombre;
-                    this.open = false;
-                }
-            };
-        }
-
         function modoMenu() {
             return {
                 open: false,

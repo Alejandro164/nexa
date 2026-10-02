@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
     layout:decorate="~{index}">
 
 <head>
@@ -149,7 +150,9 @@
                                 <span class="badge badge-success" th:if="${direccionActualId != null and direccionActualId == inst.id}">Activa</span>
                                 <span class="badge badge-secondary" th:unless="${direccionActualId != null and direccionActualId == inst.id}">Inactiva</span>
                             </div>
-                            <div style="padding:8px 12px 4px;" th:if="${not #lists.isEmpty(usuario.direcciones)}">
+                            <div style="padding:8px 12px 4px;"
+                                 sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
+                                 th:if="${not #lists.isEmpty(usuario.direcciones)}">
                                 <a href="#" style="display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;"
                                    hx-get="/inicio/direcciones-modal" hx-target="#modal-container" hx-swap="innerHTML"
                                    @click.prevent="document.getElementById('modal-container').classList.add('show')">

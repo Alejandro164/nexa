@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -113,6 +114,19 @@ public class UsuarioService {
                         .map(DireccionDTO::new)
                         .toList())
                 .orElse(Collections.emptyList());
+    }
+
+    /**
+     * Direcciones activas del usuario autenticado, con la institución inicializada.
+     * Lista vacía si no hay autenticación: el selector no debe fallar por una sesión a medias.
+     */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public List<Direccion> listarDireccionesActivasDelUsuarioActual() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null || auth.getName().isBlank()) {
+            return List.of();
+        }
+        return usuarioRepository.findDireccionesActivasByIdentifier(auth.getName());
     }
 
     /** La última dirección con la que trabajó el usuario autenticado, o null si nunca eligió una. */

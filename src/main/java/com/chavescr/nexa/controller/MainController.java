@@ -86,7 +86,13 @@ public class MainController {
 
     @GetMapping("/inicio/direcciones-modal")
     public String direccionesModal(@RequestParam(required = false) String origen, Model model,
-            HttpServletRequest request, HttpSession session) {
+            HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IOException {
+        // Quien no es admin ni director solo llega aquí al elegir dirección en el login,
+        // cuando todavía no hay una en la sesión.
+        if (!puedeCambiarDireccion(request) && session.getAttribute("SESSION_DIRECCION_ID") != null) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return null;
+        }
         if (request.isUserInRole("ROLE_ADMIN")) {
             model.addAttribute("direcciones", direccionService.obtenerTodasDTO());
         } else {
@@ -100,41 +106,35 @@ public class MainController {
     }
 
     @PostMapping("/inicio/cambiar-direccion")
-    public void cambiarDireccion(@RequestParam Long direccionId,
+    public String cambiarDireccion(@RequestParam Long direccionId,
             HttpServletRequest request,
             HttpServletResponse response,
-            HttpSession session) throws IOException {
+            HttpSession session,
+            Model model) throws IOException {
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-
-        if (request.isUserInRole("ROLE_ADMIN")) {
-            direccionService.findById(direccionId).ifPresent(inst -> {
-                session.setAttribute("SESSION_DIRECCION_ID", direccionId);
-                session.setAttribute("SESSION_DIRECCION_NOMBRE", inst.getPresentacion());
-                usuarioService.actualizarUltimaDireccion(usuarioId, inst);
-            });
-        } else {
-            usuarioService.obtenerDireccionesDelUsuarioActual().stream()
-                    .filter(inst -> inst.getId().equals(direccionId))
-                    .findFirst()
-                    .ifPresent(inst -> {
-                        session.setAttribute("SESSION_DIRECCION_ID", direccionId);
-                        session.setAttribute("SESSION_DIRECCION_NOMBRE", inst.getNombre());
-                        direccionService.findById(direccionId)
-                                .ifPresent(entidad -> usuarioService.actualizarUltimaDireccion(usuarioId, entidad));
-                    });
+        boolean esAdmin = request.isUserInRole("ROLE_ADMIN");
+        if (!puedeCambiarDireccion(request) && session.getAttribute("SESSION_DIRECCION_ID") != null) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return null;
         }
-
-        // Este endpoint se llama tanto por htmx (modal "Cambiar de Dirección", con hx-target
-        // apuntando al modal) como por un form normal (modal de selección tras login); en el caso
-        // htmx un "redirect:" de Spring solo recargaría el contenido DENTRO del modal, dejando el
-        // dashboard de fondo con los datos de la dirección anterior — por eso se fuerza una
-        // recarga completa del navegador vía HX-Redirect en vez de un redirect normal.
-        if ("true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
-            response.setHeader("HX-Redirect", "/inicio");
-            response.setStatus(HttpServletResponse.SC_OK);
-            return;
+        sesionDireccionService.cambiar(session, usuarioId, direccionId, esAdmin);
+        if (!"true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
+            response.sendRedirect("/inicio");
+            return null;
         }
-        response.sendRedirect("/inicio");
+        // Sin recarga del documento: el contenido y el selector cambian en el mismo paso.
+        // Si la institución tiene una sola dirección, el selector llega vacío y no aparece.
+        Object actual = session.getAttribute("SESSION_DIRECCION_ID");
+        Long actualId = actual instanceof Long id ? id : null;
+        model.addAttribute("menuDireccion", sesionDireccionService.menu(esAdmin, actualId));
+        model.addAttribute("sincronizarSwitcher", true);
+        cargarDashboard(model, session);
+        response.setHeader("Cache-Control", "no-store");
+        response.setHeader("HX-Retarget", ".content-area");
+        response.setHeader("HX-Reswap", "innerHTML");
+        response.setHeader("HX-Push-Url", "/inicio");
+        response.setHeader("HX-Trigger", "direccionCambiada");
+        return "inicio/inicio :: htmx-content";
     }
 
     @PostMapping("/inicio/salir-direccion")
@@ -147,18 +147,24 @@ public class MainController {
         }
 
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-        session.removeAttribute("SESSION_DIRECCION_ID");
-        session.removeAttribute("SESSION_DIRECCION_NOMBRE");
         // Se olvida también la dirección recordada: si no, el próximo login la auto-seleccionaría
         // de nuevo (seleccionarRecordada) y "salir" no tendría efecto duradero.
-        usuarioService.actualizarUltimaDireccion(usuarioId, null);
+        sesionDireccionService.salir(session, usuarioId);
+        redirigirAlInicio(request, response);
+    }
 
+    private void redirigirAlInicio(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setHeader("Cache-Control", "no-store");
         if ("true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
             response.setHeader("HX-Redirect", "/inicio");
             response.setStatus(HttpServletResponse.SC_OK);
             return;
         }
         response.sendRedirect("/inicio");
+    }
+
+    private static boolean puedeCambiarDireccion(HttpServletRequest request) {
+        return request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
     }
 
     private void cargarDashboard(Model model, HttpSession session) {

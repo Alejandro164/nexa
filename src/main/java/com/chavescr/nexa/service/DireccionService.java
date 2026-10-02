@@ -30,6 +30,23 @@ public class DireccionService {
         return direccionRepository.findById(id);
     }
 
+    /** Dirección con su institución, para calcular el nombre de presentación sin lazy load. */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public Optional<Direccion> findByIdConInstitucion(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return direccionRepository.findByIdWithInstitucion(id);
+    }
+
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public List<Direccion> listarActivasPorInstitucion(Long institucionId) {
+        if (institucionId == null) {
+            return List.of();
+        }
+        return direccionRepository.findActivasByInstitucionId(institucionId);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public Direccion save(Direccion direccion) {
         direccion.setCedula(textoONulo(direccion.getCedula()));
