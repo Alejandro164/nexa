@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.OfertaEducativa;
 import com.chavescr.nexa.service.InstitucionService;
@@ -63,10 +64,12 @@ public class DireccionController {
             @RequestParam(required = false) String email,
             @RequestParam(required = false) String activa,
             @RequestParam(required = false) List<String> ofertas,
+            @RequestParam(required = false) String principal,
             @RequestParam Map<String, String> codigos,
             Model model, HttpServletResponse response) {
         try {
-            institucionService.guardar(institucionId, cedula, nombre, direccion, telefono, email, activa != null, ofertas, codigos);
+            institucionService.guardar(institucionId, cedula, nombre, direccion, telefono, email, activa != null,
+                    ofertas, codigos, principal);
             model.addAttribute("instituciones", institucionService.listar());
             return "direcciones/lista :: tabla-direcciones";
         } catch (IllegalArgumentException e) {
@@ -84,6 +87,7 @@ public class DireccionController {
             model.addAttribute("ofertas", OfertaEducativa.values());
             model.addAttribute("codigos", codigos);
             model.addAttribute("elegidas", ofertas == null ? List.of() : ofertas);
+            model.addAttribute("principal", principal);
             return "direcciones/form :: form-content";
         }
     }
@@ -95,7 +99,7 @@ public class DireccionController {
         return "direcciones/lista :: tabla-direcciones";
     }
 
-    private void prepararFormulario(Model model, Institucion institucion, List<com.chavescr.nexa.entity.Direccion> direcciones) {
+    private void prepararFormulario(Model model, Institucion institucion, List<Direccion> direcciones) {
         model.addAttribute("institucion", institucion);
         model.addAttribute("ofertas", OfertaEducativa.values());
         model.addAttribute("elegidas", direcciones.stream()
@@ -109,5 +113,14 @@ public class DireccionController {
             }
         }
         model.addAttribute("codigos", codigos);
+        model.addAttribute("principal", ofertaEntrada(direcciones));
+    }
+
+    private static String ofertaEntrada(List<Direccion> direcciones) {
+        if (direcciones == null || direcciones.isEmpty()) {
+            return null;
+        }
+        Direccion entrada = Direccion.entrada(direcciones);
+        return entrada.getOferta() == null ? null : entrada.getOferta().name();
     }
 }

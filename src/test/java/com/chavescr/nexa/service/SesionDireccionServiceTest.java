@@ -10,8 +10,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,8 +20,11 @@ import org.springframework.mock.web.MockHttpSession;
 import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.OfertaEducativa;
+import com.chavescr.nexa.service.SesionDireccionService.Estado;
 import com.chavescr.nexa.service.SesionDireccionService.MenuCambioDireccion;
+import com.chavescr.nexa.service.SesionDireccionService.Navegacion;
 import com.chavescr.nexa.service.SesionDireccionService.OpcionDireccion;
+import com.chavescr.nexa.service.SesionDireccionService.OpcionInstitucion;
 
 @ExtendWith(MockitoExtension.class)
 class SesionDireccionServiceTest {
@@ -78,7 +79,7 @@ class SesionDireccionServiceTest {
         MenuCambioDireccion menu = service.menu(true, null);
 
         assertFalse(menu.isVisible());
-        verify(direccionService, never()).listarActivasPorInstitucion(any());
+        verify(direccionService, never()).listarActivasConInstitucion();
         verify(usuarioService, never()).listarDireccionesActivasDelUsuarioActual();
     }
 
@@ -87,8 +88,7 @@ class SesionDireccionServiceTest {
         Institucion liceo = institucion(1L, "Liceo");
         Direccion primaria = direccion(4L, liceo, OfertaEducativa.PRIMARIA);
         Direccion secundaria = direccion(5L, liceo, OfertaEducativa.SECUNDARIA);
-        when(direccionService.findByIdConInstitucion(4L)).thenReturn(Optional.of(primaria));
-        when(direccionService.listarActivasPorInstitucion(1L)).thenReturn(List.of(secundaria, primaria));
+        when(direccionService.listarActivasConInstitucion()).thenReturn(List.of(secundaria, primaria));
 
         MenuCambioDireccion menu = service.menu(true, 4L);
 
@@ -96,6 +96,7 @@ class SesionDireccionServiceTest {
         assertEquals(List.of("Primaria", "Secundaria"),
                 menu.opciones().stream().map(OpcionDireccion::texto).toList());
         verify(usuarioService, never()).listarDireccionesActivasDelUsuarioActual();
+        verify(direccionService).listarActivasConInstitucion();
     }
 
     @Test
@@ -122,6 +123,108 @@ class SesionDireccionServiceTest {
         assertNull(session.getAttribute("SESSION_DIRECCION_ID"));
         assertNull(session.getAttribute("SESSION_DIRECCION_NOMBRE"));
         verify(usuarioService).actualizarUltimaDireccion(7L, null);
+    }
+
+    @Test
+    void conUnaInstitucionElLoginAbreLaDireccionDeEntrada() {
+        Institucion central = institucion(10L, "Escuela Central");
+        Direccion primaria = direccion(1L, central, OfertaEducativa.PRIMARIA);
+        primaria.setPrincipal(true);
+        Direccion secundaria = direccion(2L, central, OfertaEducativa.SECUNDARIA);
+        when(usuarioService.listarDireccionesActivasDelUsuarioActual()).thenReturn(List.of(secundaria, primaria));
+
+        MockHttpSession session = new MockHttpSession();
+        var resultado = service.resolver(session, false);
+
+        assertEquals(Estado.RESUELTA, resultado.estado());
+        assertEquals(1L, session.getAttribute("SESSION_DIRECCION_ID"));
+        assertEquals("Escuela Central · Primaria", session.getAttribute("SESSION_DIRECCION_NOMBRE"));
+    }
+
+    @Test
+    void conVariasInstitucionesElLoginPideElegirInstitucion() {
+        when(usuarioService.listarDireccionesActivasDelUsuarioActual()).thenReturn(List.of(
+                direccion(1L, institucion(10L, "Escuela Central"), OfertaEducativa.PRIMARIA),
+                direccion(3L, institucion(20L, "Escuela Norte"), OfertaEducativa.PRIMARIA)));
+
+        MockHttpSession session = new MockHttpSession();
+        var resultado = service.resolver(session, false);
+
+        assertEquals(Estado.REQUIERE_SELECCION, resultado.estado());
+        assertNull(session.getAttribute("SESSION_DIRECCION_ID"));
+    }
+
+    @Test
+    void laDireccionRecordadaSeAbreAunqueNoSeaLaDeEntrada() {
+        Institucion central = institucion(10L, "Escuela Central");
+        Direccion primaria = direccion(1L, central, OfertaEducativa.PRIMARIA);
+        primaria.setPrincipal(true);
+        Direccion secundaria = direccion(2L, central, OfertaEducativa.SECUNDARIA);
+        when(usuarioService.listarDireccionesActivasDelUsuarioActual()).thenReturn(List.of(primaria, secundaria));
+        when(usuarioService.obtenerUltimaDireccionIdDelUsuarioActual()).thenReturn(2L);
+
+        MockHttpSession session = new MockHttpSession();
+        service.resolver(session, false);
+
+        assertEquals(2L, session.getAttribute("SESSION_DIRECCION_ID"));
+    }
+
+    @Test
+    void elSelectorDeInstitucionesApuntaALaEntradaYMarcaLaActual() {
+        Institucion central = institucion(10L, "Escuela Central");
+        Direccion primaria = direccion(1L, central, OfertaEducativa.PRIMARIA);
+        primaria.setPrincipal(true);
+        Direccion secundaria = direccion(2L, central, OfertaEducativa.SECUNDARIA);
+        Institucion norte = institucion(20L, "Escuela Norte");
+        Direccion norteSecundaria = direccion(3L, norte, OfertaEducativa.SECUNDARIA);
+        norteSecundaria.setPrincipal(true);
+        when(usuarioService.listarDireccionesActivasDelUsuarioActual())
+                .thenReturn(List.of(secundaria, primaria, norteSecundaria));
+
+        Navegacion nav = service.navegacion(false, 2L);
+
+        assertTrue(nav.puedeCambiarInstitucion());
+        assertEquals(List.of("Escuela Central", "Escuela Norte"),
+                nav.instituciones().stream().map(OpcionInstitucion::nombre).toList());
+        OpcionInstitucion actual = nav.instituciones().get(0);
+        assertTrue(actual.actual());
+        assertEquals(1L, actual.direccionEntradaId());
+        assertEquals("Primaria", actual.entrada());
+        assertEquals(3L, nav.instituciones().get(1).direccionEntradaId());
+        verify(usuarioService).listarDireccionesActivasDelUsuarioActual();
+    }
+
+    @Test
+    void siNoTieneLaDireccionDeEntradaAbreLaQueSiTiene() {
+        Institucion central = institucion(10L, "Escuela Central");
+        Direccion secundaria = direccion(2L, central, OfertaEducativa.SECUNDARIA);
+        when(usuarioService.listarDireccionesActivasDelUsuarioActual()).thenReturn(List.of(secundaria));
+
+        Navegacion nav = service.navegacion(false, 2L);
+
+        assertFalse(nav.puedeCambiarInstitucion());
+        assertEquals(2L, nav.instituciones().get(0).direccionEntradaId());
+        assertEquals("Secundaria", nav.instituciones().get(0).entrada());
+    }
+
+    @Test
+    void navegacionLeeLasDireccionesUnaSolaVez() {
+        Institucion central = institucion(10L, "Escuela Central");
+        Direccion primaria = direccion(1L, central, OfertaEducativa.PRIMARIA);
+        primaria.setPrincipal(true);
+        Direccion secundaria = direccion(2L, central, OfertaEducativa.SECUNDARIA);
+        Direccion otra = direccion(3L, institucion(20L, "Escuela Norte"), OfertaEducativa.PRIMARIA);
+        when(usuarioService.listarDireccionesActivasDelUsuarioActual())
+                .thenReturn(List.of(secundaria, primaria, otra));
+
+        Navegacion nav = service.navegacion(false, 1L);
+
+        verify(usuarioService).listarDireccionesActivasDelUsuarioActual();
+        verify(direccionService, never()).listarActivasPorInstitucion(any());
+        verify(direccionService, never()).listarActivasConInstitucion();
+        assertTrue(nav.menu().isVisible());
+        assertEquals(2, nav.instituciones().size());
+        assertEquals(1L, nav.instituciones().get(0).direccionEntradaId());
     }
 
     private static Institucion institucion(Long id, String nombre) {

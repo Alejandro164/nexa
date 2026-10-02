@@ -39,7 +39,11 @@ public class InstitucionService {
         if (direccionRepository.existsByInstitucionIsNull()) {
             asegurarInstituciones();
         }
-        return institucionRepository.findAllConDirecciones();
+        List<Institucion> instituciones = institucionRepository.findAllConDirecciones();
+        for (Institucion institucion : instituciones) {
+            asegurarEntrada(institucion);
+        }
+        return instituciones;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
@@ -71,7 +75,7 @@ public class InstitucionService {
 
     @Transactional(rollbackFor = Exception.class)
     public Institucion guardar(Long institucionId, String cedula, String nombre, String direccion, String telefono,
-            String email, boolean activa, List<String> ofertas, Map<String, String> codigos) {
+            String email, boolean activa, List<String> ofertas, Map<String, String> codigos, String principal) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre de la institución es obligatorio.");
         }
@@ -79,6 +83,7 @@ public class InstitucionService {
         if (elegidas.isEmpty()) {
             throw new IllegalArgumentException("Seleccione al menos una dirección: Preescolar, Primaria o Secundaria.");
         }
+        OfertaEducativa entrada = resolverEntrada(elegidas, principal);
 
         Institucion institucion = institucionId == null ? new Institucion() : obtener(institucionId);
         String cedulaNormalizada = texto(cedula);
@@ -122,6 +127,7 @@ public class InstitucionService {
             }
             validarCodigoLibre(codigo, registro.getId());
             copiarInstitucion(registro, institucion, oferta, codigo);
+            registro.setPrincipal(oferta == entrada);
             direccionRepository.save(registro);
             conservadas.add(registro.getId());
         }
@@ -150,6 +156,40 @@ public class InstitucionService {
             direccionRepository.delete(direccion);
         }
         institucionRepository.delete(institucion);
+    }
+
+    private void asegurarEntrada(Institucion institucion) {
+        if (institucion.getDirecciones() == null || institucion.getDirecciones().isEmpty()) {
+            return;
+        }
+        if (institucion.getDirecciones().stream().anyMatch(Direccion::isPrincipal)) {
+            return;
+        }
+        Direccion elegida = Direccion.entrada(institucion.getDirecciones());
+        elegida.setPrincipal(true);
+        direccionRepository.save(elegida);
+    }
+
+    private static OfertaEducativa resolverEntrada(LinkedHashSet<OfertaEducativa> elegidas, String principal) {
+        if (principal != null && !principal.isBlank()) {
+            OfertaEducativa oferta;
+            try {
+                oferta = OfertaEducativa.valueOf(principal.trim());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("La dirección de entrada no es válida.");
+            }
+            if (!elegidas.contains(oferta)) {
+                throw new IllegalArgumentException(
+                        "La dirección de entrada tiene que ser una de las direcciones marcadas.");
+            }
+            return oferta;
+        }
+        for (OfertaEducativa oferta : OfertaEducativa.values()) {
+            if (elegidas.contains(oferta)) {
+                return oferta;
+            }
+        }
+        throw new IllegalArgumentException("Seleccione al menos una dirección: Preescolar, Primaria o Secundaria.");
     }
 
     private void copiarInstitucion(Direccion direccion, Institucion institucion, OfertaEducativa oferta, String codigo) {

@@ -2,13 +2,16 @@ package com.chavescr.nexa.service;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.dto.DireccionDTO;
 import com.chavescr.nexa.entity.Direccion;
+import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.OfertaEducativa;
 
 import jakarta.servlet.http.HttpSession;
@@ -44,6 +47,20 @@ public class SesionDireccionService {
         }
     }
 
+    /** Una institución en el selector. Al elegirla se abre {@code direccionEntradaId}. */
+    public record OpcionInstitucion(Long direccionEntradaId, String nombre, String entrada, boolean actual) {
+    }
+
+    /**
+     * Menú de direcciones de la institución activa y listado de instituciones, armados con una
+     * sola consulta.
+     */
+    public record Navegacion(MenuCambioDireccion menu, List<OpcionInstitucion> instituciones) {
+        public boolean puedeCambiarInstitucion() {
+            return instituciones.size() > 1;
+        }
+    }
+
     private final UsuarioService usuarioService;
     private final DireccionService direccionService;
 
@@ -57,10 +74,12 @@ public class SesionDireccionService {
             return Resultado.resuelta();
         }
 
-        List<DireccionDTO> disponibles = esAdmin
-                ? direccionService.obtenerTodasDTO()
-                : usuarioService.obtenerDireccionesDelUsuarioActual();
-
+        List<Direccion> disponibles = cargar(esAdmin);
+        if (disponibles.isEmpty()) {
+            return esAdmin
+                    ? Resultado.resuelta()
+                    : new Resultado(Estado.SIN_DIRECCIONES, List.of());
+        }
         if (disponibles.size() == 1) {
             seleccionar(disponibles.get(0), session);
             return Resultado.resuelta();
@@ -72,10 +91,22 @@ public class SesionDireccionService {
             // ROLE_ADMIN puede operar sin dirección seleccionada (ve solo Inicio + Administración).
             return Resultado.resuelta();
         }
-        if (disponibles.isEmpty()) {
-            return new Resultado(Estado.SIN_DIRECCIONES, disponibles);
+        if (unaSolaInstitucion(disponibles)) {
+            seleccionar(Direccion.entrada(disponibles), session);
+            return Resultado.resuelta();
         }
-        return new Resultado(Estado.REQUIERE_SELECCION, disponibles);
+        return new Resultado(Estado.REQUIERE_SELECCION,
+                disponibles.stream().map(DireccionDTO::new).toList());
+    }
+
+    /**
+     * Direcciones de la institución activa y las instituciones que el usuario puede abrir.
+     * Una sola lectura: el menú lateral y el botón de cambiar institución salen del mismo listado.
+     */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public Navegacion navegacion(boolean esAdmin, Long actualId) {
+        List<Direccion> disponibles = cargar(esAdmin);
+        return new Navegacion(menuDe(disponibles, actualId, esAdmin), agrupar(disponibles, actualId));
     }
 
     /**
@@ -87,22 +118,33 @@ public class SesionDireccionService {
         if (actualId == null) {
             return oculto();
         }
-        List<Direccion> propias = esAdmin
-                ? List.of()
+        return navegacion(esAdmin, actualId).menu();
+    }
+
+    private List<Direccion> cargar(boolean esAdmin) {
+        return esAdmin
+                ? direccionService.listarActivasConInstitucion()
                 : usuarioService.listarDireccionesActivasDelUsuarioActual();
-        Direccion actual = esAdmin
-                ? direccionService.findByIdConInstitucion(actualId).orElse(null)
-                : propias.stream().filter(d -> actualId.equals(d.getId())).findFirst().orElse(null);
+    }
+
+    private MenuCambioDireccion menuDe(List<Direccion> disponibles, Long actualId, boolean esAdmin) {
+        if (actualId == null) {
+            return oculto();
+        }
+        Direccion actual = disponibles.stream()
+                .filter(d -> actualId.equals(d.getId()))
+                .findFirst()
+                .orElse(null);
+        if (actual == null && esAdmin) {
+            actual = direccionService.findByIdConInstitucion(actualId).orElse(null);
+        }
         if (actual == null || actual.getInstitucion() == null || actual.getInstitucion().getId() == null) {
             return oculto();
         }
         Long institucionId = actual.getInstitucion().getId();
-        List<Direccion> hermanas = new ArrayList<>(esAdmin
-                ? direccionService.listarActivasPorInstitucion(institucionId)
-                : propias.stream()
-                        .filter(d -> d.getInstitucion() != null
-                                && institucionId.equals(d.getInstitucion().getId()))
-                        .toList());
+        List<Direccion> hermanas = new ArrayList<>(disponibles.stream()
+                .filter(d -> d.getInstitucion() != null && institucionId.equals(d.getInstitucion().getId()))
+                .toList());
         if (hermanas.stream().noneMatch(d -> actualId.equals(d.getId()))) {
             hermanas.add(actual);
         }
@@ -111,6 +153,50 @@ public class SesionDireccionService {
         }
         ordenar(hermanas);
         return new MenuCambioDireccion(hermanas.stream().map(d -> opcion(d, actualId, true)).toList());
+    }
+
+    private static List<OpcionInstitucion> agrupar(List<Direccion> direcciones, Long direccionActualId) {
+        Map<Long, List<Direccion>> grupos = new LinkedHashMap<>();
+        Map<Long, String> nombres = new LinkedHashMap<>();
+        Long institucionActual = null;
+        for (Direccion direccion : direcciones) {
+            Institucion institucion = direccion.getInstitucion();
+            if (institucion == null || institucion.getId() == null || Boolean.FALSE.equals(institucion.getActiva())) {
+                continue;
+            }
+            grupos.computeIfAbsent(institucion.getId(), id -> new ArrayList<>()).add(direccion);
+            nombres.putIfAbsent(institucion.getId(),
+                    institucion.getNombre() == null || institucion.getNombre().isBlank()
+                            ? "Institución"
+                            : institucion.getNombre());
+            if (direccionActualId != null && direccionActualId.equals(direccion.getId())) {
+                institucionActual = institucion.getId();
+            }
+        }
+        List<OpcionInstitucion> opciones = new ArrayList<>();
+        for (Map.Entry<Long, List<Direccion>> entry : grupos.entrySet()) {
+            Direccion entrada = Direccion.entrada(entry.getValue());
+            String etiqueta = entrada.getOferta() == null ? "Dirección" : entrada.getOferta().getEtiqueta();
+            opciones.add(new OpcionInstitucion(entrada.getId(), nombres.get(entry.getKey()), etiqueta,
+                    entry.getKey().equals(institucionActual)));
+        }
+        opciones.sort(Comparator.comparing(OpcionInstitucion::nombre, String.CASE_INSENSITIVE_ORDER));
+        return List.copyOf(opciones);
+    }
+
+    private static boolean unaSolaInstitucion(List<Direccion> direcciones) {
+        Long id = null;
+        for (Direccion direccion : direcciones) {
+            if (direccion.getInstitucion() == null || direccion.getInstitucion().getId() == null) {
+                return false;
+            }
+            if (id == null) {
+                id = direccion.getInstitucion().getId();
+            } else if (!id.equals(direccion.getInstitucion().getId())) {
+                return false;
+            }
+        }
+        return id != null;
     }
 
     private static MenuCambioDireccion oculto() {
@@ -183,13 +269,13 @@ public class SesionDireccionService {
         return true;
     }
 
-    private boolean seleccionarRecordada(List<DireccionDTO> disponibles, HttpSession session) {
+    private boolean seleccionarRecordada(List<Direccion> disponibles, HttpSession session) {
         Long ultimaId = usuarioService.obtenerUltimaDireccionIdDelUsuarioActual();
         if (ultimaId == null) {
             return false;
         }
         return disponibles.stream()
-                .filter(inst -> inst.getId().equals(ultimaId))
+                .filter(inst -> ultimaId.equals(inst.getId()))
                 .findFirst()
                 .map(inst -> {
                     seleccionar(inst, session);
@@ -198,8 +284,8 @@ public class SesionDireccionService {
                 .orElse(false);
     }
 
-    private void seleccionar(DireccionDTO inst, HttpSession session) {
+    private void seleccionar(Direccion inst, HttpSession session) {
         session.setAttribute("SESSION_DIRECCION_ID", inst.getId());
-        session.setAttribute("SESSION_DIRECCION_NOMBRE", inst.getNombre());
+        session.setAttribute("SESSION_DIRECCION_NOMBRE", inst.getPresentacion());
     }
 }

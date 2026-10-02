@@ -152,11 +152,11 @@
                             </div>
                             <div style="padding:8px 12px 4px;"
                                  sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
-                                 th:if="${not #lists.isEmpty(usuario.direcciones)}">
+                                 th:if="${puedeCambiarInstitucion}">
                                 <a href="#" style="display:flex;align-items:center;gap:6px;font-size:0.82rem;font-weight:600;"
                                    hx-get="/inicio/direcciones-modal" hx-target="#modal-container" hx-swap="innerHTML"
                                    @click.prevent="document.getElementById('modal-container').classList.add('show')">
-                                    Cambiar cuenta
+                                    Cambiar institución
                                     <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                                 </a>
                             </div>

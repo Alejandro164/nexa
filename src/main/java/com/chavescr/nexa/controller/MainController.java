@@ -93,11 +93,8 @@ public class MainController {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return null;
         }
-        if (request.isUserInRole("ROLE_ADMIN")) {
-            model.addAttribute("direcciones", direccionService.obtenerTodasDTO());
-        } else {
-            model.addAttribute("direcciones", usuarioService.obtenerDireccionesDelUsuarioActual());
-        }
+        model.addAttribute("instituciones", sesionDireccionService
+                .navegacion(request.isUserInRole("ROLE_ADMIN"), direccionActual(session)).instituciones());
         model.addAttribute("direccionActualId", session.getAttribute("SESSION_DIRECCION_ID"));
         if ("login".equals(origen)) {
             return "auth/seleccionar-direccion-modal :: modal-content";
@@ -126,7 +123,10 @@ public class MainController {
         // Si la institución tiene una sola dirección, el selector llega vacío y no aparece.
         Object actual = session.getAttribute("SESSION_DIRECCION_ID");
         Long actualId = actual instanceof Long id ? id : null;
-        model.addAttribute("menuDireccion", sesionDireccionService.menu(esAdmin, actualId));
+        var nav = sesionDireccionService.navegacion(esAdmin, actualId);
+        model.addAttribute("menuDireccion", nav.menu());
+        model.addAttribute("puedeCambiarInstitucion", nav.puedeCambiarInstitucion());
+        session.setAttribute("SESSION_PUEDE_CAMBIAR_INSTITUCION", nav.puedeCambiarInstitucion());
         model.addAttribute("sincronizarSwitcher", true);
         cargarDashboard(model, session);
         response.setHeader("Cache-Control", "no-store");
@@ -161,6 +161,11 @@ public class MainController {
             return;
         }
         response.sendRedirect("/inicio");
+    }
+
+    private static Long direccionActual(HttpSession session) {
+        Object actual = session.getAttribute("SESSION_DIRECCION_ID");
+        return actual instanceof Long id ? id : null;
     }
 
     private static boolean puedeCambiarDireccion(HttpServletRequest request) {

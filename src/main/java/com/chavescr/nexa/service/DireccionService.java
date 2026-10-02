@@ -47,6 +47,12 @@ public class DireccionService {
         return direccionRepository.findActivasByInstitucionId(institucionId);
     }
 
+    /** Direcciones activas de instituciones activas, con la institución ya cargada. Una sola consulta. */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public List<Direccion> listarActivasConInstitucion() {
+        return direccionRepository.findActivasConInstitucion();
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public Direccion save(Direccion direccion) {
         direccion.setCedula(textoONulo(direccion.getCedula()));

@@ -1,13 +1,14 @@
 package com.chavescr.nexa.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 import com.chavescr.nexa.security.CustomUserDetails;
 import com.chavescr.nexa.service.NotificacionService;
 import com.chavescr.nexa.service.SesionDireccionService;
-import com.chavescr.nexa.service.SesionDireccionService.MenuCambioDireccion;
+import com.chavescr.nexa.service.SesionDireccionService.Navegacion;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -38,19 +39,30 @@ public class GlobalModelAttributesAdvice {
     }
 
     /**
-     * Solo en la página completa: el menú lateral no se vuelve a pintar en cada fragmento HTMX.
-     * Con una sola dirección el valor existe pero no es visible, y la plantilla no dibuja el selector.
+     * En la página completa se leen las direcciones una sola vez. En cada fragmento HTMX el menú
+     * no se vuelve a pintar; el botón de cambiar institución usa la marca guardada en la sesión
+     * para no repetir la consulta en cada navegación.
      */
-    @ModelAttribute("menuDireccion")
-    public MenuCambioDireccion menuDireccion(@AuthenticationPrincipal CustomUserDetails usuario,
-            HttpServletRequest request, HttpSession session) {
-        if (usuario == null || "true".equalsIgnoreCase(request.getHeader("HX-Request"))
-                || !puedeCambiarDireccion(usuario)) {
-            return null;
+    @ModelAttribute
+    public void navegacion(@AuthenticationPrincipal CustomUserDetails usuario, HttpServletRequest request,
+            HttpSession session, Model model) {
+        if (usuario == null || !puedeCambiarDireccion(usuario)) {
+            model.addAttribute("menuDireccion", null);
+            model.addAttribute("puedeCambiarInstitucion", false);
+            return;
+        }
+        if ("true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
+            model.addAttribute("menuDireccion", null);
+            model.addAttribute("puedeCambiarInstitucion",
+                    Boolean.TRUE.equals(session.getAttribute("SESSION_PUEDE_CAMBIAR_INSTITUCION")));
+            return;
         }
         Object actual = session.getAttribute("SESSION_DIRECCION_ID");
         Long actualId = actual instanceof Long id ? id : null;
-        return sesionDireccionService.menu(usuario.getRoles().contains("ROLE_ADMIN"), actualId);
+        Navegacion nav = sesionDireccionService.navegacion(usuario.getRoles().contains("ROLE_ADMIN"), actualId);
+        model.addAttribute("menuDireccion", nav.menu());
+        model.addAttribute("puedeCambiarInstitucion", nav.puedeCambiarInstitucion());
+        session.setAttribute("SESSION_PUEDE_CAMBIAR_INSTITUCION", nav.puedeCambiarInstitucion());
     }
 
     private static boolean puedeCambiarDireccion(CustomUserDetails usuario) {

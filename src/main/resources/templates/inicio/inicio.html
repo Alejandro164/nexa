@@ -119,6 +119,7 @@
             </div>
             <button class="btn-switch-inst"
                     sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
+                    th:if="${puedeCambiarInstitucion}"
                     hx-get="/inicio/direcciones-modal"
                     hx-target="#modal-container"
                     hx-swap="innerHTML"
@@ -129,7 +130,7 @@
                     <polyline points="7 23 3 19 7 15"></polyline>
                     <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                 </svg>
-                Cambiar Dirección
+                Cambiar institución
             </button>
         </div>
 

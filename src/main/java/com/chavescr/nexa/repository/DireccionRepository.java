@@ -27,6 +27,9 @@ public interface DireccionRepository extends JpaRepository<Direccion, Long> {
 
     List<Direccion> findByInstitucionId(Long institucionId);
 
+    @Query("SELECT d FROM Direccion d JOIN FETCH d.institucion i WHERE d.activa = true AND i.activa = true")
+    List<Direccion> findActivasConInstitucion();
+
     List<Direccion> findByInstitucionIsNull();
 
     boolean existsByInstitucionIsNull();
