@@ -24,6 +24,112 @@
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <script>
+        // El swap de htmx espera 20ms para “asentar”. En ese hueco Alpine ya vio el HTML nuevo
+        // y enlazó x-data antes de que corrieran los <script> de la vista (stores, notasModulo,
+        // jornadaLectiva…). El primer clic quedaba sin datos o sin clases; el segundo funcionaba
+        // porque la función ya existía. Asentar al instante y enlazar Alpine después de los scripts.
+        if (window.htmx) {
+            htmx.config.defaultSettleDelay = 0;
+        }
+
+        (function () {
+            var pausado = false;
+            var cierrePendiente = false;
+            var nodosViejos = [];
+
+            function pausarAlpine() {
+                if (!window.Alpine || typeof Alpine.stopObservingMutations !== 'function') return;
+                if (!pausado) {
+                    Alpine.stopObservingMutations();
+                    pausado = true;
+                }
+            }
+
+            function programarCierre() {
+                if (cierrePendiente) return;
+                cierrePendiente = true;
+                queueMicrotask(function () {
+                    cierrePendiente = false;
+                    var viejos = nodosViejos.splice(0);
+                    if (window.Alpine && typeof Alpine.destroyTree === 'function') {
+                        viejos.forEach(function (nodo) {
+                            if (!nodo || nodo.nodeType !== 1 || nodo.isConnected) return;
+                            Alpine.destroyTree(nodo);
+                        });
+                    }
+                    if (pausado && window.Alpine && typeof Alpine.startObservingMutations === 'function') {
+                        Alpine.startObservingMutations();
+                        pausado = false;
+                    }
+                });
+            }
+
+            // <style> que llega dentro del HTML de htmx se parsea en otro documento y Chrome no lo aplica.
+            function activarEstilos(raiz) {
+                if (!raiz || !raiz.querySelectorAll) return;
+                raiz.querySelectorAll('style').forEach(function (style) {
+                    if (style.getAttribute('data-nexa-estilo') === '1') return;
+                    var copia = document.createElement('style');
+                    copia.setAttribute('data-nexa-estilo', '1');
+                    copia.textContent = style.textContent;
+                    style.replaceWith(copia);
+                });
+            }
+
+            // Enlaza solo lo que el script de la vista todavía no enlazó, sin repetir initTree.
+            function montarAlpine(raiz) {
+                if (!raiz || raiz.nodeType !== 1 || !window.Alpine || typeof Alpine.initTree !== 'function') return;
+                if (raiz._x_dataStack) return;
+                var sacados = [];
+                raiz.querySelectorAll('[x-data]').forEach(function (el) {
+                    if (!el._x_dataStack) return;
+                    var padre = el.parentElement && el.parentElement.closest('[x-data]');
+                    if (padre && padre._x_dataStack) return;
+                    var marca = document.createComment('nexa-alpine');
+                    el.parentNode.insertBefore(marca, el);
+                    el.remove();
+                    sacados.push({ el: el, marca: marca });
+                });
+                Alpine.initTree(raiz);
+                sacados.forEach(function (item) {
+                    item.marca.parentNode.insertBefore(item.el, item.marca);
+                    item.marca.remove();
+                });
+            }
+
+            document.addEventListener('htmx:beforeSwap', function (evt) {
+                if (!evt.detail || evt.detail.shouldSwap === false) return;
+                pausarAlpine();
+                var target = evt.detail.target;
+                if (!target || target.nodeType !== 1 || target === document.body) return;
+                var swap = (evt.detail.elt && evt.detail.elt.getAttribute('hx-swap')) || '';
+                if (swap.replace(/\s+/g, '').indexOf('outerHTML') === 0) {
+                    nodosViejos.push(target);
+                    return;
+                }
+                Array.prototype.forEach.call(target.childNodes, function (nodo) {
+                    if (nodo.nodeType === 1) nodosViejos.push(nodo);
+                });
+            });
+
+            document.addEventListener('htmx:afterSwap', function (evt) {
+                activarEstilos(evt.target);
+            });
+
+            document.addEventListener('htmx:afterSettle', function (evt) {
+                try {
+                    montarAlpine(evt.target);
+                } finally {
+                    programarCierre();
+                }
+            });
+
+            document.addEventListener('htmx:swapError', programarCierre);
+            document.addEventListener('htmx:historyRestore', function () {
+                activarEstilos(document.body);
+            });
+        })();
+
         document.addEventListener('htmx:configRequest', function (evt) {
             var token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
             var header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
@@ -40,6 +146,22 @@
                     item.classList.remove('active');
                 }
             });
+        }
+
+        function sincronizarTituloPestana() {
+            var titulo = document.getElementById('topbar-page-title');
+            if (!titulo) return;
+            var texto = titulo.textContent
+                .replace(/\p{Extended_Pictographic}|\uFE0F|\u200D/gu, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (!texto) return;
+            if (texto.indexOf('Nexa') === -1) {
+                texto += ' — Nexa';
+            }
+            if (document.title !== texto) {
+                document.title = texto;
+            }
         }
         document.addEventListener('DOMContentLoaded', updateActiveSidebar);
         document.addEventListener('htmx:afterSettle', function (evt) {
@@ -64,6 +186,7 @@
 
         document.addEventListener('htmx:afterSettle', function (evt) {
             updateActiveSidebar();
+            sincronizarTituloPestana();
             var drawer = document.getElementById('bitacora-drawer');
             if (!drawer || !drawer.classList.contains('is-open')) {
                 return;
