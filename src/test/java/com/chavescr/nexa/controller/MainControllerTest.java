@@ -82,14 +82,14 @@ class MainControllerTest {
     }
 
     @Test
-    void adminPuedeCambiarACualquierDireccionExistenteSinPertenecerAElla() throws Exception {
+    void systemConfigPuedeCambiarACualquierDireccionExistenteSinPertenecerAElla() throws Exception {
         Direccion otra = new Direccion();
         otra.setId(5L);
         otra.setNombre("Otra Dirección");
         when(direccionService.findByIdConInstitucion(5L)).thenReturn(Optional.of(otra));
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addUserRole("ROLE_ADMIN");
+        request.addUserRole("ROLE_SYSTEM_CONFIG");
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("SESSION_USUARIO_ID", 7L);
 
@@ -124,7 +124,12 @@ class MainControllerTest {
     }
 
     @Test
-    void docenteNoPuedeCambiarLaDireccionQueYaTiene() throws Exception {
+    void docenteNoEntraAUnaDireccionQueNoEsSuya() throws Exception {
+        DireccionDTO propia = new DireccionDTO();
+        propia.setId(1L);
+        propia.setNombre("Primaria");
+        when(usuarioService.obtenerDireccionesDelUsuarioActual()).thenReturn(List.of(propia));
+
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addUserRole("ROLE_DOCENTE");
         MockHttpServletResponse response = new MockHttpServletResponse();

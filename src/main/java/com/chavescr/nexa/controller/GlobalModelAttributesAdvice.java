@@ -46,7 +46,7 @@ public class GlobalModelAttributesAdvice {
     @ModelAttribute
     public void navegacion(@AuthenticationPrincipal CustomUserDetails usuario, HttpServletRequest request,
             HttpSession session, Model model) {
-        if (usuario == null || !puedeCambiarDireccion(usuario)) {
+        if (usuario == null) {
             model.addAttribute("menuDireccion", null);
             model.addAttribute("puedeCambiarInstitucion", false);
             return;
@@ -59,13 +59,10 @@ public class GlobalModelAttributesAdvice {
         }
         Object actual = session.getAttribute("SESSION_DIRECCION_ID");
         Long actualId = actual instanceof Long id ? id : null;
-        Navegacion nav = sesionDireccionService.navegacion(usuario.getRoles().contains("ROLE_ADMIN"), actualId);
+        boolean veTodas = usuario.getRoles().contains("ROLE_SYSTEM_CONFIG");
+        Navegacion nav = sesionDireccionService.navegacion(veTodas, actualId);
         model.addAttribute("menuDireccion", nav.menu());
         model.addAttribute("puedeCambiarInstitucion", nav.puedeCambiarInstitucion());
         session.setAttribute("SESSION_PUEDE_CAMBIAR_INSTITUCION", nav.puedeCambiarInstitucion());
-    }
-
-    private static boolean puedeCambiarDireccion(CustomUserDetails usuario) {
-        return usuario.getRoles().contains("ROLE_ADMIN") || usuario.getRoles().contains("ROLE_DIRECTOR");
     }
 }

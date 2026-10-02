@@ -86,7 +86,6 @@
                     Mi Perfil
                 </button>
                 <button class="dropdown-item"
-                        sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
                         th:if="${puedeCambiarInstitucion}"
                         hx-get="/inicio/direcciones-modal"
                         hx-target="#modal-container"

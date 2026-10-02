@@ -56,7 +56,8 @@ public class MainController {
 
         session.setAttribute("SESSION_USUARIO_ID", usuario.getId());
 
-        var resultado = sesionDireccionService.resolver(session, request.isUserInRole("ROLE_ADMIN"));
+        var resultado = sesionDireccionService.resolver(session, request.isUserInRole("ROLE_ADMIN"),
+                request.isUserInRole("ROLE_SYSTEM_CONFIG"));
         if (resultado.estado() != SesionDireccionService.Estado.RESUELTA) {
             // La selección de dirección ahora se resuelve en el login (modal por AJAX); si se
             // llega aquí sin dirección resuelta (JS deshabilitado, navegación directa a /, etc.)
@@ -86,15 +87,9 @@ public class MainController {
 
     @GetMapping("/inicio/direcciones-modal")
     public String direccionesModal(@RequestParam(required = false) String origen, Model model,
-            HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IOException {
-        // Quien no es admin ni director solo llega aquí al elegir dirección en el login,
-        // cuando todavía no hay una en la sesión.
-        if (!puedeCambiarDireccion(request) && session.getAttribute("SESSION_DIRECCION_ID") != null) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return null;
-        }
+            HttpServletRequest request, HttpSession session) {
         model.addAttribute("instituciones", sesionDireccionService
-                .navegacion(request.isUserInRole("ROLE_ADMIN"), direccionActual(session)).instituciones());
+                .navegacion(veTodasLasInstituciones(request), direccionActual(session)).instituciones());
         if ("login".equals(origen)) {
             return "auth/seleccionar-direccion-modal :: modal-content";
         }
@@ -108,12 +103,11 @@ public class MainController {
             HttpSession session,
             Model model) throws IOException {
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-        boolean esAdmin = request.isUserInRole("ROLE_ADMIN");
-        if (!puedeCambiarDireccion(request) && session.getAttribute("SESSION_DIRECCION_ID") != null) {
+        boolean veTodas = veTodasLasInstituciones(request);
+        if (!sesionDireccionService.cambiar(session, usuarioId, direccionId, veTodas)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return null;
         }
-        sesionDireccionService.cambiar(session, usuarioId, direccionId, esAdmin);
         if (!"true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
             response.sendRedirect("/inicio");
             return null;
@@ -122,7 +116,7 @@ public class MainController {
         // Si la institución tiene una sola dirección, el selector llega vacío y no aparece.
         Object actual = session.getAttribute("SESSION_DIRECCION_ID");
         Long actualId = actual instanceof Long id ? id : null;
-        var nav = sesionDireccionService.navegacion(esAdmin, actualId);
+        var nav = sesionDireccionService.navegacion(veTodas, actualId);
         model.addAttribute("menuDireccion", nav.menu());
         model.addAttribute("puedeCambiarInstitucion", nav.puedeCambiarInstitucion());
         session.setAttribute("SESSION_PUEDE_CAMBIAR_INSTITUCION", nav.puedeCambiarInstitucion());
@@ -141,8 +135,8 @@ public class MainController {
         return actual instanceof Long id ? id : null;
     }
 
-    private static boolean puedeCambiarDireccion(HttpServletRequest request) {
-        return request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+    private static boolean veTodasLasInstituciones(HttpServletRequest request) {
+        return request.isUserInRole("ROLE_SYSTEM_CONFIG");
     }
 
     private void cargarDashboard(Model model, HttpSession session) {

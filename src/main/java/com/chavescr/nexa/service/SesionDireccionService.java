@@ -70,11 +70,19 @@ public class SesionDireccionService {
     }
 
     public Resultado resolver(HttpSession session, boolean esAdmin) {
+        return resolver(session, esAdmin, esAdmin);
+    }
+
+    /**
+     * {@code veTodasLasInstituciones} es solo System Config: el resto trabaja con las instituciones
+     * asignadas al usuario. {@code esAdmin} sigue permitiendo operar sin dirección elegida.
+     */
+    public Resultado resolver(HttpSession session, boolean esAdmin, boolean veTodasLasInstituciones) {
         if (session.getAttribute("SESSION_DIRECCION_ID") != null) {
             return Resultado.resuelta();
         }
 
-        List<Direccion> disponibles = cargar(esAdmin);
+        List<Direccion> disponibles = cargar(veTodasLasInstituciones);
         if (disponibles.isEmpty()) {
             return esAdmin
                     ? Resultado.resuelta()
@@ -104,9 +112,10 @@ public class SesionDireccionService {
      * Una sola lectura: el menú lateral y el botón de cambiar institución salen del mismo listado.
      */
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public Navegacion navegacion(boolean esAdmin, Long actualId) {
-        List<Direccion> disponibles = cargar(esAdmin);
-        return new Navegacion(menuDe(disponibles, actualId, esAdmin), agrupar(disponibles, actualId));
+    public Navegacion navegacion(boolean veTodasLasInstituciones, Long actualId) {
+        List<Direccion> disponibles = cargar(veTodasLasInstituciones);
+        return new Navegacion(menuDe(disponibles, actualId, veTodasLasInstituciones),
+                agrupar(disponibles, actualId));
     }
 
     /**
@@ -114,20 +123,20 @@ public class SesionDireccionService {
      * de institución se hace desde "Cambiar cuenta". Con una sola dirección el menú no se muestra.
      */
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public MenuCambioDireccion menu(boolean esAdmin, Long actualId) {
+    public MenuCambioDireccion menu(boolean veTodasLasInstituciones, Long actualId) {
         if (actualId == null) {
             return oculto();
         }
-        return navegacion(esAdmin, actualId).menu();
+        return navegacion(veTodasLasInstituciones, actualId).menu();
     }
 
-    private List<Direccion> cargar(boolean esAdmin) {
-        return esAdmin
+    private List<Direccion> cargar(boolean veTodasLasInstituciones) {
+        return veTodasLasInstituciones
                 ? direccionService.listarActivasConInstitucion()
                 : usuarioService.listarDireccionesActivasDelUsuarioActual();
     }
 
-    private MenuCambioDireccion menuDe(List<Direccion> disponibles, Long actualId, boolean esAdmin) {
+    private MenuCambioDireccion menuDe(List<Direccion> disponibles, Long actualId, boolean veTodasLasInstituciones) {
         if (actualId == null) {
             return oculto();
         }
@@ -135,7 +144,7 @@ public class SesionDireccionService {
                 .filter(d -> actualId.equals(d.getId()))
                 .findFirst()
                 .orElse(null);
-        if (actual == null && esAdmin) {
+        if (actual == null && veTodasLasInstituciones) {
             actual = direccionService.findByIdConInstitucion(actualId).orElse(null);
         }
         if (actual == null || actual.getInstitucion() == null || actual.getInstitucion().getId() == null) {
@@ -209,11 +218,11 @@ public class SesionDireccionService {
      * Devuelve false si la dirección no existe o no le pertenece: la sesión queda intacta.
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean cambiar(HttpSession session, Long usuarioId, Long direccionId, boolean esAdmin) {
+    public boolean cambiar(HttpSession session, Long usuarioId, Long direccionId, boolean veTodasLasInstituciones) {
         if (direccionId == null) {
             return false;
         }
-        if (esAdmin) {
+        if (veTodasLasInstituciones) {
             return direccionService.findByIdConInstitucion(direccionId)
                     .map(inst -> aplicar(session, usuarioId, inst))
                     .orElse(false);
