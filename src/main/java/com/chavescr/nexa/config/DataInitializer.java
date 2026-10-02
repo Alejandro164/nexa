@@ -255,14 +255,16 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     private Direccion crearDireccionSiNoExiste(String nombre, String codigo, String cedula, String direccion) {
-        Direccion registro = direccionRepository.findByCodigo(codigo).orElseGet(() -> {
-            Direccion inst = new Direccion(nombre, codigo);
-            inst.setCedula(cedula);
-            inst.setDireccion(direccion);
-            direccionRepository.save(inst);
-            log.info("  [DIRECCION creada] {}", nombre);
-            return inst;
-        });
+        Direccion registro = direccionRepository.findByCodigo(codigo)
+                .or(() -> direccionRepository.findByCedula(cedula))
+                .orElseGet(() -> {
+                    Direccion inst = new Direccion(nombre, codigo);
+                    inst.setCedula(cedula);
+                    inst.setDireccion(direccion);
+                    direccionRepository.save(inst);
+                    log.info("  [DIRECCION creada] {}", nombre);
+                    return inst;
+                });
         asegurarCedula(registro, cedula);
         return registro;
     }

@@ -103,6 +103,29 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
     List<HorarioLeccion> findByDireccionIdAndPeriodoIdAndDocenteIdOrderByDiaAscNumeroLeccionAsc(
             Long direccionId, Long periodoId, Long docenteId);
 
+    @Query("SELECT DISTINCT h.nivel FROM HorarioLeccion h "
+            + "WHERE h.direccion.id = :direccionId AND h.periodo.id = :periodoId "
+            + "AND h.docente.id = :docenteId ORDER BY h.nivel.grado, h.nivel.seccion")
+    List<NivelAcademico> findNivelesDistinctByDireccionIdAndPeriodoIdAndDocenteId(
+            @Param("direccionId") Long direccionId, @Param("periodoId") Long periodoId,
+            @Param("docenteId") Long docenteId);
+
+    @Query("SELECT h FROM HorarioLeccion h "
+            + "JOIN FETCH h.materia JOIN FETCH h.docente JOIN FETCH h.nivel JOIN FETCH h.aula "
+            + "WHERE h.direccion.id = :direccionId AND h.periodo.id = :periodoId AND h.docente.id = :docenteId "
+            + "ORDER BY h.numeroLeccion, h.dia, h.materia.nombre")
+    List<HorarioLeccion> findConsultaPorDocente(
+            @Param("direccionId") Long direccionId, @Param("periodoId") Long periodoId,
+            @Param("docenteId") Long docenteId);
+
+    @Query("SELECT h FROM HorarioLeccion h "
+            + "JOIN FETCH h.materia JOIN FETCH h.docente JOIN FETCH h.nivel JOIN FETCH h.aula "
+            + "WHERE h.direccion.id = :direccionId AND h.periodo.id = :periodoId AND h.nivel.id = :nivelId "
+            + "ORDER BY h.numeroLeccion, h.dia, h.materia.nombre")
+    List<HorarioLeccion> findConsultaPorNivel(
+            @Param("direccionId") Long direccionId, @Param("periodoId") Long periodoId,
+            @Param("nivelId") Long nivelId);
+
     @Query("SELECT h.docente.id, COUNT(h) FROM HorarioLeccion h "
             + "WHERE h.direccion.id = :direccionId AND h.periodo.id = :periodoId "
             + "GROUP BY h.docente.id")

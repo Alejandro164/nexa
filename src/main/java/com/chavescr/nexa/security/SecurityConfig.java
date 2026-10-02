@@ -136,6 +136,11 @@ public class SecurityConfig {
                         .requestMatchers("/classroom/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
 
+                        // ── Horario: consulta de la semana. El alcance (propio, sección o toda la
+                        //    dirección) lo aplica HorarioConsultaService ──
+                        .requestMatchers("/horario/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+
                         // ── Comunicación: visible para todos los roles (declarado explícito) ──
                         .requestMatchers("/comunicacion/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, PADRE, ESTUDIANTE)
