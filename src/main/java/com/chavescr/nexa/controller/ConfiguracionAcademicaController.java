@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.Aula;
-import com.chavescr.nexa.entity.BloqueoLeccion;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
@@ -211,17 +210,21 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("tipoBloqueoId", tipoBloqueoId);
         Long materiaId = leccion.getMateria() != null ? leccion.getMateria().getId() : null;
         Long docenteId = leccion.getDocente() != null ? leccion.getDocente().getId() : null;
-        BloqueoLeccion bloqueo = service.bloqueoDeCelda(direccionId, nivelId, dia, numeroLeccion);
-        boolean leccionCerrada = bloqueo != null && bloqueo.estaCerrada();
+        var tipoBloqueado = service.tipoBloqueado(direccionId, periodoId, nivelId, dia, numeroLeccion)
+                .orElse(null);
+        var materias = service.listarMateriasDisponibles(
+                direccionId, nivelId, periodoId, dia, numeroLeccion);
+        Long materiaActualId = materiaId;
+        if (materiaActualId != null && materias.stream().noneMatch(materia -> materia.getId().equals(materiaActualId))) {
+            materiaId = null;
+            docenteId = null;
+        } else if (materiaActualId == null && materias.size() == 1) {
+            materiaId = materias.get(0).getId();
+        }
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("docenteSeleccionadoId", docenteId);
-        model.addAttribute("leccionCerrada", leccionCerrada);
-        model.addAttribute("bloqueoMotivo", bloqueo != null ? bloqueo.getMotivo() : null);
-        model.addAttribute("bloqueoTipoNombre",
-                bloqueo != null && bloqueo.getTipoMateria() != null ? bloqueo.getTipoMateria().getNombre() : null);
-        model.addAttribute("materias", leccionCerrada
-                ? java.util.List.of()
-                : service.listarMateriasParaHorario(direccionId, nivelId, dia, numeroLeccion, materiaId));
+        model.addAttribute("tipoMateriaBloqueada", tipoBloqueado);
+        model.addAttribute("materias", materias);
         model.addAttribute("docentes", service.listarDocentesDisponibles(
                 direccionId, materiaId, docenteId, periodoId, dia, numeroLeccion, id));
         model.addAttribute("docentesAsociadosVacios",

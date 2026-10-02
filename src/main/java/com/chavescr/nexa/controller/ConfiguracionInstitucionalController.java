@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
-import com.chavescr.nexa.service.BloqueoLeccionService;
 import com.chavescr.nexa.service.ConfiguracionDireccionService;
 import com.chavescr.nexa.service.TipoComponenteService;
 
@@ -31,9 +30,6 @@ public class ConfiguracionInstitucionalController {
     private ConfiguracionDireccionService service;
 
     @Autowired
-    private BloqueoLeccionService bloqueoLeccionService;
-
-    @Autowired
     private TipoComponenteService tipoComponenteService;
 
     @GetMapping
@@ -41,7 +37,6 @@ public class ConfiguracionInstitucionalController {
         Long direccionId = requerirDireccion(session);
         cargarJornada(model, direccionId);
         cargarComponentes(model, direccionId);
-        cargarBloqueo(model, direccionId);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "configuracion-institucional/index :: htmx-content";
         }
@@ -129,28 +124,6 @@ public class ConfiguracionInstitucionalController {
         return "configuracion-institucional/componentes/componentes :: content";
     }
 
-    @GetMapping("/bloqueo-leccion")
-    public String bloqueoLeccion(Model model, HttpSession session) {
-        cargarBloqueo(model, requerirDireccion(session));
-        return "configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content";
-    }
-
-    @PostMapping("/bloqueo-leccion")
-    public String guardarBloqueo(@RequestParam String reglas,
-            Model model, HttpSession session, HttpServletResponse response) {
-        Long direccionId = requerirDireccion(session);
-        try {
-            bloqueoLeccionService.guardar(direccionId, reglas);
-            cargarBloqueo(model, direccionId);
-            response.setHeader("HX-Trigger",
-                    "{\"institucionalGuardado\":{\"mensaje\":\"Bloqueos de lección actualizados\"}}");
-        } catch (IllegalArgumentException e) {
-            cargarBloqueo(model, direccionId);
-            notificarError(response, e.getMessage());
-        }
-        return "configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content";
-    }
-
     private void cargarJornada(Model model, Long direccionId) {
         model.addAttribute("configJornada", service.obtener(direccionId));
         model.addAttribute("diasCatalogo", DiaLaboral.CATALOGO);
@@ -158,10 +131,6 @@ public class ConfiguracionInstitucionalController {
 
     private void cargarComponentes(Model model, Long direccionId) {
         model.addAttribute("tiposComponente", tipoComponenteService.listar(direccionId));
-    }
-
-    private void cargarBloqueo(Model model, Long direccionId) {
-        model.addAttribute("bloqueoEstadoJson", bloqueoLeccionService.estadoJson(direccionId));
     }
 
     private Long requerirDireccion(HttpSession session) {

@@ -391,10 +391,6 @@
                             @click="activeTab = 'escala-notas'">
                         Escala notas
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'bloqueo-leccion' }"
-                            @click="activeTab = 'bloqueo-leccion'">
-                        Bloqueo lección
-                    </button>
                 </div>
             </div>
 
@@ -406,9 +402,6 @@
             </div>
             <div x-show="activeTab === 'escala-notas'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-institucional/escala-notas/escala-notas :: content}"></div>
-            </div>
-            <div x-show="activeTab === 'bloqueo-leccion'" class="tab-pane" x-cloak>
-                <div th:replace="~{configuracion-institucional/bloqueo-leccion/bloqueo-leccion :: content}"></div>
             </div>
         </div>
 
@@ -811,7 +804,6 @@
             }
             activarPanelInstitucional('institucional-jornada-panel', 'pintarBloques');
             activarPanelInstitucional('institucional-escala-notas-panel', 'guardar');
-            activarPanelInstitucional('institucional-bloqueo-leccion-panel', 'aplicar');
         </script>
     </main>
     </th:block>
