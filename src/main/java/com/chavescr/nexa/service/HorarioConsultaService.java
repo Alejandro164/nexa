@@ -51,17 +51,24 @@ public class HorarioConsultaService {
             throw new AccessDeniedException("No tienes permiso para consultar el horario");
         }
 
-        boolean puedeVerDocentes = gestion || docente;
-        boolean puedeVerEstudiantes = true;
-        String vista = ConsultaHorario.VISTA_ESTUDIANTES.equals(vistaPedida)
-                ? ConsultaHorario.VISTA_ESTUDIANTES
-                : ConsultaHorario.VISTA_DOCENTES;
-        if (!puedeVerDocentes) {
+        boolean puedeVerDocentes = gestion;
+        boolean puedeVerEstudiantes = gestion;
+        String vista;
+        if (docente) {
+            vista = ConsultaHorario.VISTA_DOCENTES;
+        } else if (!gestion) {
             vista = ConsultaHorario.VISTA_ESTUDIANTES;
+        } else if (ConsultaHorario.VISTA_ESTUDIANTES.equals(vistaPedida)) {
+            vista = ConsultaHorario.VISTA_ESTUDIANTES;
+        } else {
+            vista = ConsultaHorario.VISTA_DOCENTES;
         }
 
         List<PeriodoAcademico> periodos = configuracionAcademicaService.listarPeriodosActivos(direccionId);
-        PeriodoAcademico periodo = elegir(periodos, periodoId, PeriodoAcademico::getId);
+        List<PeriodoAcademico> periodosUi = docente ? List.of() : periodos;
+        PeriodoAcademico periodo = docente
+                ? periodoVigente(periodos)
+                : elegir(periodos, periodoId, PeriodoAcademico::getId);
         ConfiguracionDireccion config = configuracionAcademicaService.obtenerConfiguracion(direccionId);
         String diaHoy = diaDeHoy();
 
@@ -69,26 +76,30 @@ public class HorarioConsultaService {
             return armar(vista, puedeVerDocentes, puedeVerEstudiantes, false, "Horario",
                     "Consulta semanal", ayuda(vista),
                     "No hay un período activo. Cuando exista, el horario de la semana aparece aquí.",
-                    periodos, null, List.of(), null, config, Map.of(), diaHoy);
+                    periodosUi, null, List.of(), null, config, Map.of(), diaHoy);
         }
         if (config.getDias().isEmpty() || config.getLecciones().isEmpty()) {
             return armar(vista, puedeVerDocentes, puedeVerEstudiantes, false, "Horario",
                     null, ayuda(vista),
                     "La jornada de esta dirección todavía no tiene días ni lecciones.",
-                    periodos, periodo, List.of(), null, config, Map.of(), diaHoy);
+                    periodosUi, periodo, List.of(), null, config, Map.of(), diaHoy);
         }
 
         if (ConsultaHorario.VISTA_DOCENTES.equals(vista)) {
             return consultarDocente(direccionId, usuarioId, gestion, puedeVerDocentes, puedeVerEstudiantes,
-                    periodos, periodo, personaId, config, diaHoy);
+                    periodosUi, periodo, personaId, config, diaHoy);
         }
         return consultarEstudiantes(direccionId, usuarioId, gestion, docente, puedeVerDocentes, puedeVerEstudiantes,
-                periodos, periodo, personaId, config, diaHoy);
+                periodosUi, periodo, personaId, config, diaHoy);
     }
 
     private ConsultaHorario consultarDocente(Long direccionId, Long usuarioId, boolean gestion,
             boolean puedeVerDocentes, boolean puedeVerEstudiantes, List<PeriodoAcademico> periodos,
             PeriodoAcademico periodo, Long personaId, ConfiguracionDireccion config, String diaHoy) {
+        if (!gestion) {
+            return consultarDocentePropio(direccionId, usuarioId, puedeVerDocentes, puedeVerEstudiantes,
+                    periodos, periodo, config, diaHoy);
+        }
         List<Usuario> docentes = configuracionAcademicaService.listarDocentes(direccionId);
         if (docentes.isEmpty()) {
             return armar(ConsultaHorario.VISTA_DOCENTES, puedeVerDocentes, puedeVerEstudiantes, false,
@@ -100,12 +111,26 @@ public class HorarioConsultaService {
         Usuario elegido = elegir(docentes, personaId != null ? personaId : usuarioId, Usuario::getId);
         Map<String, List<HorarioLeccion>> horario = agrupar(horarioRepository.findConsultaPorDocente(
                 direccionId, periodo.getId(), elegido.getId()));
-        boolean propio = !gestion && elegido.getId().equals(usuarioId);
-        String titular = propio ? "Tu horario" : elegido.getNombre();
-        String detalle = propio ? elegido.getNombre() : null;
         return armar(ConsultaHorario.VISTA_DOCENTES, puedeVerDocentes, puedeVerEstudiantes, true,
-                titular, detalle, ayuda(ConsultaHorario.VISTA_DOCENTES), null,
+                elegido.getNombre(), null, ayuda(ConsultaHorario.VISTA_DOCENTES), null,
                 periodos, periodo, docentes, elegido.getId(), config, horario, diaHoy);
+    }
+
+    private ConsultaHorario consultarDocentePropio(Long direccionId, Long usuarioId, boolean puedeVerDocentes,
+            boolean puedeVerEstudiantes, List<PeriodoAcademico> periodos, PeriodoAcademico periodo,
+            ConfiguracionDireccion config, String diaHoy) {
+        Usuario docente = usuarioRepository.findActivoByIdAndDireccionId(usuarioId, direccionId).orElse(null);
+        if (docente == null) {
+            return armar(ConsultaHorario.VISTA_DOCENTES, puedeVerDocentes, puedeVerEstudiantes, false,
+                    "Tu horario", null, ayuda(ConsultaHorario.VISTA_DOCENTES),
+                    "No encontramos tu usuario en esta dirección.",
+                    periodos, periodo, List.of(), null, config, Map.of(), diaHoy);
+        }
+        Map<String, List<HorarioLeccion>> horario = agrupar(horarioRepository.findConsultaPorDocente(
+                direccionId, periodo.getId(), docente.getId()));
+        return armar(ConsultaHorario.VISTA_DOCENTES, puedeVerDocentes, puedeVerEstudiantes, false,
+                "Tu horario", docente.getNombre(), ayuda(ConsultaHorario.VISTA_DOCENTES), null,
+                periodos, periodo, List.of(), docente.getId(), config, horario, diaHoy);
     }
 
     private ConsultaHorario consultarEstudiantes(Long direccionId, Long usuarioId, boolean gestion, boolean docente,
@@ -190,6 +215,16 @@ public class HorarioConsultaService {
                     k -> new ArrayList<>()).add(leccion);
         }
         return horario;
+    }
+
+    private static PeriodoAcademico periodoVigente(List<PeriodoAcademico> activos) {
+        LocalDate hoy = LocalDate.now();
+        for (PeriodoAcademico periodo : activos) {
+            if (periodo.contiene(hoy)) {
+                return periodo;
+            }
+        }
+        return activos.isEmpty() ? null : activos.get(0);
     }
 
     private static <T> T elegir(List<T> lista, Long pedido, Function<T, Long> id) {
