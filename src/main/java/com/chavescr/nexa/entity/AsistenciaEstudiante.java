@@ -50,11 +50,17 @@ public class AsistenciaEstudiante {
     private LocalDate fecha;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 15)
+    @Column(length = 20)
     private EstadoAsistencia estado;
 
     @Column(length = 300)
     private String observaciones;
+
+    @Column(length = 500)
+    private String documentoRuta;
+
+    @Column(length = 255)
+    private String documentoNombre;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "registrado_por_id")
@@ -63,7 +69,25 @@ public class AsistenciaEstudiante {
     private LocalDateTime actualizadoEn;
 
     public enum EstadoAsistencia {
-        PRESENTE, AUSENTE, TARDIA, JUSTIFICADA
+        PRESENTE, AUSENTE, TARDIA, JUSTIFICADA, TARDIA_JUSTIFICADA;
+
+        /** Ausencia injustificada o justificada: el estudiante no estuvo presente. */
+        public boolean esAusencia() {
+            return this == AUSENTE || this == JUSTIFICADA;
+        }
+
+        public boolean esTardia() {
+            return this == TARDIA || this == TARDIA_JUSTIFICADA;
+        }
+
+        public boolean esJustificada() {
+            return this == JUSTIFICADA || this == TARDIA_JUSTIFICADA;
+        }
+
+        /** Presente o tardía, justificada o no: el estudiante sí asistió. */
+        public boolean cuentaComoPresente() {
+            return this == PRESENTE || esTardia();
+        }
     }
 
     public Long getId() {
@@ -136,6 +160,22 @@ public class AsistenciaEstudiante {
 
     public void setObservaciones(String observaciones) {
         this.observaciones = observaciones;
+    }
+
+    public String getDocumentoRuta() {
+        return documentoRuta;
+    }
+
+    public void setDocumentoRuta(String documentoRuta) {
+        this.documentoRuta = documentoRuta;
+    }
+
+    public String getDocumentoNombre() {
+        return documentoNombre;
+    }
+
+    public void setDocumentoNombre(String documentoNombre) {
+        this.documentoNombre = documentoNombre;
     }
 
     public Usuario getRegistradoPor() {

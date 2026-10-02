@@ -1,0 +1,263 @@
+<div th:fragment="launcher" xmlns:th="http://www.thymeleaf.org" class="asist-pasar-wrap"
+     th:with="sinClasificar=${filas != null ? filas.?[estado == null] : null}">
+    <input type="checkbox" id="pasar-lista-abrir" class="asist-pasar-check" th:checked="${pasarListaAbierta}">
+    <label class="asist-pasar" for="pasar-lista-abrir">Pasar lista</label>
+
+    <div class="pasar-lista" role="dialog" aria-modal="true" aria-labelledby="pasar-lista-nombre">
+        <label class="pasar-lista-backdrop" for="pasar-lista-abrir" aria-label="Cerrar"></label>
+        <div class="pasar-lista-stage">
+            <div class="pasar-lista-mazo" aria-hidden="true"
+                 th:if="${sinClasificar != null and #lists.size(sinClasificar) > 1}"></div>
+            <div class="pasar-lista-mazo pasar-lista-mazo-2" aria-hidden="true"
+                 th:if="${sinClasificar != null and #lists.size(sinClasificar) > 2}"></div>
+
+            <article class="pasar-lista-card" th:if="${sinClasificar != null and !sinClasificar.empty}"
+                     th:with="actual=${sinClasificar[0]},
+                              quedan=${#lists.size(sinClasificar)}">
+                <label class="pasar-lista-cerrar" for="pasar-lista-abrir" aria-label="Cerrar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                </label>
+                <div class="pasar-lista-foto"
+                     th:style="|background: linear-gradient(165deg, hsl(${(actual.estudiante.id * 47) % 360}, 42%, 62%) 0%, hsl(${(actual.estudiante.id * 47) % 360}, 35%, 28%) 100%)|">
+                    <span class="pasar-lista-inicial" aria-hidden="true"
+                          th:text="${actual.estudiante.nombre != null and !actual.estudiante.nombre.isEmpty() ? #strings.toUpperCase(#strings.substring(actual.estudiante.nombre, 0, 1)) : '?'}">A</span>
+                    <div class="pasar-lista-foto-sombra"></div>
+                    <div class="pasar-lista-identidad">
+                        <p class="pasar-lista-kicker"
+                           th:text="${quedan == 1 ? 'Queda 1 sin clasificar' : 'Quedan ' + quedan + ' sin clasificar'}">Quedan sin clasificar</p>
+                        <h3 id="pasar-lista-nombre" th:text="${actual.estudiante.nombre}">Nombre del estudiante</h3>
+                    </div>
+                </div>
+                <div class="pasar-lista-acciones">
+                    <button type="button" class="pasar-lista-accion is-ausente"
+                            hx-post="/gestion-academica/asistencia/registrar"
+                            hx-target="#asistencia-panel" hx-swap="innerHTML" hx-indicator="#asistencia-loading"
+                            hx-disabled-elt="closest .pasar-lista-acciones button"
+                            th:attr="hx-vals=|js:{estudianteId: ${actual.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: 'AUSENTE', pasarLista: true}|">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+                        Ausente
+                    </button>
+                    <button type="button" class="pasar-lista-accion is-presente"
+                            hx-post="/gestion-academica/asistencia/registrar"
+                            hx-target="#asistencia-panel" hx-swap="innerHTML" hx-indicator="#asistencia-loading"
+                            hx-disabled-elt="closest .pasar-lista-acciones button"
+                            th:attr="hx-vals=|js:{estudianteId: ${actual.estudiante.id}, nivelId: ${nivelId}, materiaId: ${materiaId}, numeroLeccion: ${numeroLeccion}, fecha: '${fecha}', estado: 'PRESENTE', pasarLista: true}|">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Presente
+                    </button>
+                </div>
+            </article>
+
+            <article class="pasar-lista-card" th:if="${sinClasificar == null or sinClasificar.empty}">
+                <label class="pasar-lista-cerrar" for="pasar-lista-abrir" aria-label="Cerrar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                </label>
+                <div class="pasar-lista-foto">
+                    <svg class="pasar-lista-silueta" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12.5l4.2 4.2L19 7.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div class="pasar-lista-foto-sombra"></div>
+                    <div class="pasar-lista-identidad">
+                        <p class="pasar-lista-kicker">Asistencia</p>
+                        <h3 id="pasar-lista-nombre"
+                            th:text="${filas != null and !filas.empty ? 'Ya todos tienen asistencia' : 'No hay estudiantes en esta lección'}">Ya todos tienen asistencia</h3>
+                    </div>
+                </div>
+                <label class="pasar-lista-cerrar-barra" for="pasar-lista-abrir">Cerrar</label>
+            </article>
+        </div>
+    </div>
+
+    <style>
+        .asist-pasar-wrap { position: relative; display: inline-flex; }
+        .asist-pasar-check {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .asist-pasar {
+            display: inline-flex;
+            align-items: center;
+            height: 34px;
+            padding: 0 0.95rem;
+            border-radius: 999px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .asist-pasar:hover { background: var(--primary-hover); }
+        .asist-pasar-check:focus-visible + .asist-pasar {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .pasar-lista {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+        }
+        .asist-pasar-check:checked ~ .pasar-lista { display: flex; }
+        html:has(.asist-pasar-check:checked) { overflow: hidden; }
+
+        .pasar-lista-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(6px);
+            cursor: pointer;
+        }
+        .pasar-lista-stage {
+            position: relative;
+            z-index: 1;
+            width: min(400px, 100%);
+        }
+        .pasar-lista-mazo {
+            position: absolute;
+            left: 16px;
+            right: 16px;
+            top: 14px;
+            bottom: -8px;
+            border-radius: 28px;
+            background: #fff;
+            opacity: 0.5;
+            transform: scale(0.96);
+        }
+        .pasar-lista-mazo-2 {
+            left: 30px;
+            right: 30px;
+            top: 26px;
+            bottom: -14px;
+            opacity: 0.28;
+            transform: scale(0.92);
+        }
+        .pasar-lista-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border-radius: 28px;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+            animation: pasarListaIn 0.28s cubic-bezier(.22, 1, .36, 1);
+        }
+        @keyframes pasarListaIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.96); }
+            to { opacity: 1; transform: none; }
+        }
+        .pasar-lista-cerrar {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 2;
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.45);
+            color: #fff;
+            cursor: pointer;
+        }
+        .pasar-lista-cerrar svg { width: 16px; height: 16px; }
+        .pasar-lista-foto {
+            position: relative;
+            height: min(62vh, 460px);
+            background:
+                radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.28), transparent 42%),
+                linear-gradient(165deg, #7c93ab 0%, #334155 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pasar-lista-silueta {
+            width: 46%;
+            height: auto;
+            margin-bottom: 18%;
+            color: rgba(255, 255, 255, 0.88);
+            fill: none;
+        }
+        .pasar-lista-inicial {
+            margin-bottom: 16%;
+            font-size: 7.5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #fff;
+        }
+        .pasar-lista-foto-sombra {
+            position: absolute;
+            inset: auto 0 0 0;
+            height: 46%;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.88), transparent);
+        }
+        .pasar-lista-identidad {
+            position: absolute;
+            left: 1.35rem;
+            right: 1.35rem;
+            bottom: 1.15rem;
+            color: #fff;
+        }
+        .pasar-lista-kicker {
+            margin: 0 0 0.15rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.75);
+        }
+        .pasar-lista-identidad h3 {
+            margin: 0;
+            font-size: 1.7rem;
+            line-height: 1.15;
+            font-weight: 700;
+        }
+        .pasar-lista-acciones {
+            display: flex;
+            min-height: 112px;
+        }
+        .pasar-lista-accion {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            margin: 0;
+            padding: 1.15rem 0.75rem;
+            border: 0;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+        }
+        .pasar-lista-accion svg { width: 28px; height: 28px; }
+        .pasar-lista-accion.is-ausente { background: var(--danger); }
+        .pasar-lista-accion.is-presente { background: var(--success); }
+        .pasar-lista-accion.is-ausente:hover { background: #b91c1c; }
+        .pasar-lista-accion.is-presente:hover { background: #16a34a; }
+        .pasar-lista-accion:disabled { opacity: 0.6; cursor: wait; }
+        .pasar-lista-cerrar-barra {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 112px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .pasar-lista-cerrar-barra:hover { background: var(--primary-hover); }
+    </style>
+</div>

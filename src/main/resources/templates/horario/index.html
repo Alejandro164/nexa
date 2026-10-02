@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Horario</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Horario</h2>
+    <p layout:fragment="page-subtitle">Semana de clases de docentes y de las secciones de estudiantes</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">Horario</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Semana de clases de docentes y de las secciones de estudiantes</p>
+    <main layout:fragment="content">
+        <style>
+            .hr-page { position: relative; }
+
+            .hr-card {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                box-shadow: var(--shadow-sm);
+                overflow: hidden;
+            }
+
+            .hr-head {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 1rem 1.5rem;
+                padding: 1.15rem 1.35rem 1rem;
+                border-bottom: 1px solid var(--border);
+            }
+            .hr-head h3 {
+                margin: 0;
+                font-size: 1.2rem;
+                font-weight: 700;
+                letter-spacing: -0.01em;
+                color: #0f172a;
+            }
+            .hr-head p { margin: 0.2rem 0 0; font-size: 0.84rem; color: var(--text-secondary); }
+
+            .hr-head-side {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                gap: 0.65rem;
+                flex-shrink: 0;
+            }
+            .hr-vistas {
+                display: inline-flex;
+                padding: 3px;
+                background: #f1f5f9;
+                border-radius: 10px;
+                gap: 2px;
+            }
+            .hr-vistas a {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.38rem 0.8rem;
+                border-radius: 8px;
+                font-size: 0.78rem;
+                font-weight: 650;
+                color: #64748b;
+                text-decoration: none;
+                line-height: 1.2;
+            }
+            .hr-vistas a:hover { color: #0f172a; }
+            .hr-vistas a.is-on {
+                background: #fff;
+                color: #0f172a;
+                box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+            }
+            .hr-count {
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: var(--primary);
+                background: rgba(45, 90, 135, 0.1);
+                padding: 0.4rem 0.7rem;
+                border-radius: 999px;
+                white-space: nowrap;
+            }
+
+            .hr-filters {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 1rem;
+                padding: 1rem 1.35rem;
+                background: var(--input-bg);
+                border-bottom: 1px solid var(--border);
+            }
+            .hr-filters .form-group { margin: 0; }
+            .hr-filters select.form-input {
+                padding: 0.55rem 0.75rem;
+                background-color: #fff;
+                min-height: 40px;
+            }
+
+            .hr-empty {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.55rem;
+                margin: 1.35rem;
+                padding: 2.75rem 1.25rem;
+                border-radius: 10px;
+                font-size: 0.85rem;
+                background: #fff;
+                border: 1px dashed #cbd5e1;
+                color: var(--text-secondary);
+                text-align: center;
+            }
+            .hr-empty svg { color: #94a3b8; }
+            .hr-empty strong { color: #334155; font-size: 0.95rem; }
+            .hr-empty span { max-width: 36rem; line-height: 1.45; }
+
+            .hr-scroll {
+                overflow: auto;
+                max-height: calc(100dvh - 15.5rem);
+            }
+            .hr-grid {
+                display: grid;
+                grid-template-columns: 112px repeat(var(--hr-days, 5), minmax(158px, 1fr));
+                min-width: 920px;
+                border-top: 1px solid var(--border);
+                border-left: 1px solid var(--border);
+            }
+            .hr-day, .hr-hour, .hr-cell {
+                border-right: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+            }
+            .hr-day, .hr-hour.hr-corner {
+                position: sticky;
+                top: 0;
+                z-index: 3;
+                background: #f1f5f9;
+                text-align: center;
+                font-size: 0.82rem;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .hr-day {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                padding: 0.7rem 0.45rem;
+            }
+            .hr-day small {
+                font-size: 0.62rem;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--primary);
+            }
+            .hr-day.is-hoy {
+                background: #e7f0f8;
+                box-shadow: inset 0 -2px 0 var(--primary);
+            }
+            .hr-hour {
+                position: sticky;
+                left: 0;
+                z-index: 2;
+                min-height: 92px;
+                padding: 0.7rem 0.45rem;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0.15rem;
+                text-align: center;
+                background: #f8fafc;
+                color: var(--text-secondary);
+                font-size: 0.75rem;
+            }
+            .hr-hour.hr-corner {
+                z-index: 4;
+                min-height: auto;
+            }
+            .hr-hour strong {
+                color: #334155;
+                font-size: 0.78rem;
+                font-weight: 700;
+            }
+            .hr-hour small {
+                font-size: 0.68rem;
+                font-weight: 600;
+                font-variant-numeric: tabular-nums;
+                color: #94a3b8;
+            }
+
+            .hr-cell {
+                min-height: 92px;
+                background: #fff;
+            }
+            .hr-cell.is-empty { background: #fcfdfe; }
+            .hr-cell.is-hoy { background: #f7fafc; }
+            .hr-cell.is-hoy.is-empty { background: #f3f7fb; }
+
+            .hr-stack {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                height: 100%;
+                min-height: 92px;
+                padding: 4px;
+            }
+            .hr-item {
+                --hr-color: #2d5a87;
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 1px;
+                padding: 6px 8px 6px 10px;
+                border-radius: 8px;
+                border-left: 3px solid var(--hr-color);
+                background: color-mix(in srgb, var(--hr-color) 12%, white);
+            }
+            .hr-stack:has(.hr-item:only-child) .hr-item {
+                padding: 8px 10px 8px 12px;
+            }
+            .hr-item strong, .hr-item span {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .hr-item strong {
+                font-size: 0.78rem;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .hr-stack:has(.hr-item:only-child) .hr-item strong { font-size: 0.84rem; }
+            .hr-item span { font-size: 0.68rem; color: #475569; }
+            .hr-item .hr-aula { color: #64748b; }
+
+            .hr-break {
+                grid-column: 1 / -1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                min-height: 30px;
+                padding: 0 14px;
+                background: #cfe0ef;
+                border-right: 1px solid var(--border);
+                border-bottom: 1px solid #b4cce0;
+                color: #2d5a87;
+                font-size: 0.7rem;
+                font-weight: 700;
+            }
+            .hr-break svg { flex: 0 0 auto; }
+            .hr-break-copy {
+                display: flex;
+                align-items: baseline;
+                gap: 0.55rem;
+                min-width: 0;
+            }
+            .hr-break-name {
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+            }
+            .hr-break-time {
+                font-variant-numeric: tabular-nums;
+                font-weight: 700;
+                letter-spacing: 0;
+            }
+            .hr-break-mins {
+                font-size: 0.68rem;
+                font-weight: 600;
+                opacity: 0.72;
+            }
+            .hr-break-mins::before {
+                content: '·';
+                margin-right: 0.4rem;
+                opacity: 0.55;
+            }
+            .hr-lunch {
+                background: #fff7ed;
+                color: #c2410c;
+                border-bottom-color: #fed7aa;
+            }
+
+            @media (max-width: 720px) {
+                .hr-head { flex-direction: column; }
+                .hr-head-side { justify-content: flex-start; }
+                .hr-scroll { max-height: calc(100dvh - 12rem); }
+            }
+        </style>
+
+        <div class="hr-page">
+            <div id="horario-loading" class="htmx-indicator panel-loading-overlay">
+                <div class="spinner"></div>
+                <span>Cargando horario...</span>
+            </div>
+
+            <section class="hr-card">
+                <header class="hr-head">
+                    <div>
+                        <h3 th:text="${consulta.titular}">Tu horario</h3>
+                        <p th:if="${consulta.detalle != null and !#strings.isEmpty(consulta.detalle)}"
+                           th:text="${consulta.detalle}">Sección 7 - A</p>
+                    </div>
+                    <div class="hr-head-side">
+                        <nav class="hr-vistas" th:if="${consulta.puedeVerDocentes and consulta.puedeVerEstudiantes}"
+                             hx-boost="true" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true"
+                             hx-indicator="#horario-loading">
+                            <a class="hr-vista"
+                               th:href="@{/horario(vista='docentes', periodoId=${consulta.periodoId})}"
+                               th:classappend="${consulta.vistaDocentes} ? 'is-on'">Docentes</a>
+                            <a class="hr-vista"
+                               th:href="@{/horario(vista='estudiantes', periodoId=${consulta.periodoId})}"
+                               th:classappend="${!consulta.vistaDocentes} ? 'is-on'">Estudiantes</a>
+                        </nav>
+                        <span class="hr-count" th:if="${consulta.mensaje == null}"
+                              th:text="${consulta.totalLecciones == 1} ? '1 lección' : |${consulta.totalLecciones} lecciones|">0 lecciones</span>
+                    </div>
+                </header>
+
+                <form class="hr-filters"
+                      th:if="${consulta.periodos.size() > 1 or consulta.puedeElegirUsuario}"
+                      hx-get="/horario" hx-trigger="change" hx-target=".content-area" hx-swap="innerHTML"
+                      hx-push-url="true" hx-indicator="#horario-loading">
+                    <input type="hidden" name="vista" th:value="${consulta.vista}">
+                    <div class="form-group" th:if="${consulta.periodos.size() > 1}">
+                        <label class="form-label" for="horario-periodo">Período</label>
+                        <select class="form-input" id="horario-periodo" name="periodoId">
+                            <option th:each="periodo : ${consulta.periodos}" th:value="${periodo.id}"
+                                    th:selected="${periodo.id == consulta.periodoId}"
+                                    th:text="|${periodo.codigo} - ${periodo.descripcion}|">2026-I</option>
+                        </select>
+                    </div>
+                    <div class="form-group" th:if="${consulta.puedeElegirUsuario}">
+                        <label class="form-label" for="horario-usuario" th:text="${consulta.etiquetaUsuario}">Docente</label>
+                        <select class="form-input" id="horario-usuario" name="usuarioId" data-search
+                                th:attr="data-search-placeholder=${consulta.vistaDocentes ? 'Buscar por nombre o cédula...' : 'Buscar por nombre, cédula o sección...'}">
+                            <option th:each="persona : ${consulta.usuarios}" th:value="${persona.id}"
+                                    th:selected="${persona.id == consulta.usuarioId}"
+                                    th:attr="data-search=${persona.cedula}"
+                                    th:text="${!consulta.vistaDocentes and persona.nivelAcademico != null
+                                        ? persona.nombre + ' · ' + persona.nivelAcademico.nombreCompleto
+                                        : (!consulta.vistaDocentes ? persona.nombre + ' · sin sección' : persona.nombre)}">Docente</option>
+                        </select>
+                    </div>
+                </form>
+
+                <div class="hr-empty" th:if="${consulta.mensaje != null}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <strong>Sin horario para mostrar</strong>
+                    <span th:text="${consulta.mensaje}">No hay un período activo.</span>
+                </div>
+
+                <div class="hr-scroll" th:if="${consulta.mensaje == null}">
+                    <div class="hr-grid" th:style="|--hr-days:${#lists.size(consulta.dias)}|">
+                        <div class="hr-hour hr-corner">Lección</div>
+                        <div class="hr-day" th:each="dia : ${consulta.dias}"
+                             th:classappend="${dia == consulta.diaHoy} ? ' is-hoy' : ''">
+                            <span th:text="${T(com.chavescr.nexa.entity.DiaLaboral).etiqueta(dia)}">Lunes</span>
+                            <small th:if="${dia == consulta.diaHoy}">Hoy</small>
+                        </div>
+
+                        <th:block th:each="numero : ${consulta.lecciones}">
+                            <div class="hr-hour">
+                                <strong th:text="|Lección ${numero}|">Lección 1</strong>
+                                <small th:text="|${#temporals.format(consulta.franjas.get(numero).inicio, 'HH:mm')} – ${#temporals.format(consulta.franjas.get(numero).fin, 'HH:mm')}|">07:00 – 07:40</small>
+                            </div>
+                            <th:block th:each="dia : ${consulta.dias}"
+                                      th:with="items=${consulta.horario.get(numero + '-' + dia)}">
+                                <div th:if="${items == null or items.empty}" class="hr-cell is-empty"
+                                     th:classappend="${dia == consulta.diaHoy} ? ' is-hoy' : ''"></div>
+                                <div th:if="${items != null and !items.empty}" class="hr-cell"
+                                     th:classappend="${dia == consulta.diaHoy} ? ' is-hoy' : ''">
+                                    <div class="hr-stack">
+                                        <div class="hr-item" th:each="item : ${items}"
+                                             th:with="color=${item.materia.color != null and item.materia.color.matches('^#[0-9A-Fa-f]{6}$') ? item.materia.color : '#2d5a87'}"
+                                             th:style="|--hr-color:${color}|"
+                                             th:title="${consulta.vistaDocentes
+                                                ? item.materia.nombre + ' · ' + item.nivel.nombreCompleto + ' · ' + item.aula.nombre
+                                                : item.materia.nombre + ' · ' + item.docente.nombre + ' · ' + item.aula.nombre}">
+                                            <strong th:text="${item.materia.nombre}">Matemáticas</strong>
+                                            <span th:if="${consulta.vistaDocentes}" th:text="${item.nivel.nombreCompleto}">7 - A</span>
+                                            <span th:unless="${consulta.vistaDocentes}" th:text="${item.docente.nombre}">Docente</span>
+                                            <span class="hr-aula" th:text="${item.aula.nombre}">Aula 1</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </th:block>
+
+                            <div th:if="${consulta.almuerzos != null and consulta.almuerzos.containsKey(numero)}"
+                                 class="hr-break hr-lunch"
+                                 th:with="franja=${consulta.almuerzos.get(numero)}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2.5"
+                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                                    <path d="M7 2v20"/>
+                                    <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+                                </svg>
+                                <span class="hr-break-copy">
+                                    <span class="hr-break-name">Almuerzo</span>
+                                    <span class="hr-break-time"
+                                          th:text="|${#temporals.format(franja.inicio, 'HH:mm')} – ${#temporals.format(franja.fin, 'HH:mm')}|">11:20 – 12:00</span>
+                                    <span class="hr-break-mins" th:text="|${franja.minutos} min|">40 min</span>
+                                </span>
+                            </div>
+                            <div th:if="${consulta.recreos != null and consulta.recreos.containsKey(numero)}"
+                                 class="hr-break"
+                                 th:with="franja=${consulta.recreos.get(numero)}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2.5"
+                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                                    <line x1="6" y1="1" x2="6" y2="4"/>
+                                    <line x1="10" y1="1" x2="10" y2="4"/>
+                                    <line x1="14" y1="1" x2="14" y2="4"/>
+                                </svg>
+                                <span class="hr-break-copy">
+                                    <span class="hr-break-name">Receso</span>
+                                    <span class="hr-break-time"
+                                          th:text="|${#temporals.format(franja.inicio, 'HH:mm')} – ${#temporals.format(franja.fin, 'HH:mm')}|">09:20 – 09:35</span>
+                                    <span class="hr-break-mins" th:text="|${franja.minutos} min|">15 min</span>
+                                </span>
+                            </div>
+                        </th:block>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    </th:block>
+
+</body>
+</html>

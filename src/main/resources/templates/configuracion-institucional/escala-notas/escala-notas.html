@@ -1,0 +1,821 @@
+<div th:fragment="content" id="institucional-escala-notas-panel" xmlns:th="http://www.thymeleaf.org"
+     x-data="escalaNotas()">
+    <style>
+        .escala-card { position: relative; overflow: visible; }
+        .escala-body {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+            align-items: start;
+        }
+        .escala-form {
+            padding: 1.35rem 1.5rem 1.6rem;
+            border-right: 1px solid var(--border);
+        }
+        .escala-form .form-input,
+        .escala-form .form-select,
+        .escala-preview .form-input {
+            padding-left: 0.75rem;
+        }
+        .escala-section + .escala-section { margin-top: 1.6rem; }
+        .escala-section-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.9rem;
+        }
+        .escala-section-head h4 {
+            margin: 0;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .escala-section-head p {
+            margin: 0.25rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+        .escala-fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+        .escala-tramos { display: grid; gap: 0.75rem; }
+        .escala-tramo {
+            display: grid;
+            grid-template-columns: 6px minmax(0, 1fr);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .escala-tramo-tono { background: #cbd5e1; }
+        .escala-tramo-tono.is-excelente { background: #16a34a; }
+        .escala-tramo-tono.is-bueno { background: #2563eb; }
+        .escala-tramo-tono.is-regular { background: #d97706; }
+        .escala-tramo-tono.is-aplazado { background: #dc2626; }
+        .escala-tramo-body { padding: 0.85rem 0.95rem 0.95rem; }
+        .escala-tramo-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .escala-tramo-nombre { max-width: 280px; font-weight: 700; }
+        .escala-tramo-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 0.75rem 1rem;
+            margin-top: 0.75rem;
+        }
+        .escala-desde { width: 110px; margin: 0; }
+        .escala-hasta {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+            padding-bottom: 0.45rem;
+        }
+        .escala-chip {
+            display: inline-flex;
+            align-items: center;
+            margin-left: auto;
+            padding: 0.18rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .escala-chip.is-aprueba { color: #166534; background: #dcfce7; }
+        .escala-chip.is-aplaza { color: #991b1b; background: #fee2e2; }
+        .escala-chip.is-corte { color: #92400e; background: #fef3c7; }
+        .escala-chip.is-excelente { color: #166534; background: #dcfce7; }
+        .escala-chip.is-bueno { color: #1e40af; background: #dbeafe; }
+        .escala-chip.is-regular { color: #92400e; background: #fef3c7; }
+        .escala-chip.is-aplazado { color: #991b1b; background: #fee2e2; }
+        .escala-avisos { display: grid; gap: 0.4rem; margin-top: 0.85rem; }
+        .escala-aviso {
+            margin: 0;
+            padding: 0.55rem 0.75rem;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .escala-aviso.is-error { color: #991b1b; background: #fef2f2; }
+        .escala-aviso.is-warn { color: #92400e; background: #fffbeb; }
+        .escala-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            min-height: 0;
+            padding: 1.35rem 1.35rem 1.6rem;
+            background: #f8fafc;
+            position: sticky;
+            top: calc(var(--topbar-height) + 12px);
+            z-index: 4;
+            max-height: calc(100vh - var(--topbar-height) - 24px);
+            overflow: auto;
+            border-bottom-right-radius: var(--radius);
+        }
+        .escala-preview-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin: -1.35rem -1.35rem 0;
+            padding: 0.95rem 1.35rem 0.85rem;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+        }
+        .escala-preview-head h4 {
+            margin: 0;
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+        .escala-preview-head span {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+        .escala-regla-wrap { position: relative; padding-top: 1.35rem; }
+        .escala-regla {
+            display: flex;
+            height: 22px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: #fff;
+        }
+        .escala-seg { height: 100%; min-width: 2px; }
+        .escala-seg.is-excelente { background: #16a34a; }
+        .escala-seg.is-bueno { background: #2563eb; }
+        .escala-seg.is-regular { background: #d97706; }
+        .escala-seg.is-aplazado { background: #dc2626; }
+        .escala-marca {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            border-left: 2px solid #0f172a;
+            transform: translateX(-1px);
+            pointer-events: none;
+        }
+        .escala-marca span {
+            position: absolute;
+            top: 0;
+            left: 6px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            line-height: 1;
+            text-transform: uppercase;
+            color: #0f172a;
+            white-space: nowrap;
+        }
+        .escala-marca.is-end span {
+            left: auto;
+            right: 4px;
+        }
+        .escala-leyenda { display: grid; gap: 0.35rem; }
+        .escala-leyenda-item {
+            display: grid;
+            grid-template-columns: 10px minmax(0, 1fr) auto;
+            gap: 0.5rem;
+            align-items: center;
+            font-size: 0.78rem;
+        }
+        .escala-leyenda-item strong { font-weight: 700; }
+        .escala-leyenda-item span {
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+        .escala-punto {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+        .escala-punto.is-excelente { background: #16a34a; }
+        .escala-punto.is-bueno { background: #2563eb; }
+        .escala-punto.is-regular { background: #d97706; }
+        .escala-punto.is-aplazado { background: #dc2626; }
+        .escala-probar {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            padding: 0.9rem 1rem 1rem;
+        }
+        .escala-probar-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.65rem;
+        }
+        .escala-probar-head h5 {
+            margin: 0;
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+        .escala-probar-head span {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        .escala-prueba-num {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            margin: 0.85rem 0 0.45rem;
+        }
+        .escala-prueba-num.is-excelente { color: #166534; }
+        .escala-prueba-num.is-bueno { color: #1e40af; }
+        .escala-prueba-num.is-regular { color: #92400e; }
+        .escala-prueba-num.is-aplazado { color: #991b1b; }
+        .escala-prueba-pie {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 0.35rem;
+        }
+        .escala-prueba-pie em {
+            font-style: normal;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .escala-muestras {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 0.75rem;
+        }
+        .escala-muestras button {
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text-secondary);
+            border-radius: 9px;
+            padding: 0.32rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            cursor: pointer;
+        }
+        .escala-muestras button:hover { border-color: #cbd5e1; }
+        .escala-muestras button.is-on {
+            color: #fff;
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .escala-rango {
+            width: 100%;
+            accent-color: var(--primary);
+            margin-top: 0.35rem;
+        }
+        @media (max-width: 900px) {
+            .escala-body { grid-template-columns: 1fr; }
+            .escala-form { border-right: 0; border-bottom: 1px solid var(--border); }
+            .escala-preview {
+                position: static;
+                max-height: none;
+                border-bottom-left-radius: var(--radius);
+            }
+        }
+        @media (max-width: 640px) {
+            .escala-fields { grid-template-columns: 1fr; }
+            .escala-tramo-top { flex-direction: column; }
+            .escala-chip { margin-left: 0; }
+        }
+    </style>
+
+    <form class="escala-form-raiz" @submit.prevent="guardar()">
+        <input type="hidden" name="tramos" :value="tramosJson">
+        <div class="card escala-card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Escala de notas</h3>
+                    <p class="academic-help">La consulta de notas etiqueta cada promedio con estos tramos. La nota para aprobar separa lo que aprueba de lo aplazado.</p>
+                </div>
+            </div>
+            <div class="escala-body">
+                <div class="escala-form">
+                    <section class="escala-section">
+                        <div class="escala-section-head">
+                            <div>
+                                <h4>Rango y aprobación</h4>
+                                <p>El promedio se muestra con los decimales elegidos. La escala de la consulta va de 0 a 100.</p>
+                            </div>
+                        </div>
+                        <div class="escala-fields">
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" for="escala-minima">Nota mínima</label>
+                                <input class="form-input" id="escala-minima" type="number" name="notaMinima"
+                                       min="0" max="99" step="1" required
+                                       x-model.number="notaMinima" @change="alCambiarRango()">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" for="escala-maxima">Nota máxima</label>
+                                <input class="form-input" id="escala-maxima" type="number" name="notaMaxima"
+                                       min="1" max="100" step="1" required
+                                       x-model.number="notaMaxima" @change="alCambiarRango()">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" for="escala-decimales">Decimales del promedio</label>
+                                <select class="form-select" id="escala-decimales" name="decimales"
+                                        x-model.number="decimales" @change="alCambiarRango()">
+                                    <option value="1">Un decimal</option>
+                                    <option value="0">Entero</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" for="escala-aprobacion">Nota para aprobar</label>
+                                <input class="form-input" id="escala-aprobacion" type="number" name="notaAprobacion"
+                                       :min="notaMinima" :max="notaMaxima" :step="paso" required
+                                       x-model.number="notaAprobacion" @change="alCambiarRango()">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="escala-section">
+                        <div class="escala-section-head">
+                            <div>
+                                <h4>Tramos</h4>
+                                <p>Del más alto al más bajo. El tope de cada tramo es el inicio del que está arriba. El de abajo cubre hasta la nota mínima.</p>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" @click="agregarTramo()"
+                                    :disabled="!puedeAgregar">Agregar tramo</button>
+                        </div>
+                        <div class="escala-tramos">
+                            <template x-for="(tramo, i) in tramos" :key="tramo.id">
+                                <article class="escala-tramo">
+                                    <div class="escala-tramo-tono" :class="'is-' + tonoDe(i, tramos.length)"></div>
+                                    <div class="escala-tramo-body">
+                                        <div class="escala-tramo-top">
+                                            <input class="form-input escala-tramo-nombre" type="text" maxlength="24" required
+                                                   x-model="tramo.nombre" :aria-label="'Nombre del tramo ' + (i + 1)">
+                                            <span class="escala-chip"
+                                                  :class="estadoDe(i) === 'corte' ? 'is-corte' : (estadoDe(i) === 'aprueba' ? 'is-aprueba' : 'is-aplaza')"
+                                                  x-text="estadoDe(i) === 'corte' ? 'Con corte' : (estadoDe(i) === 'aprueba' ? 'Aprueba' : 'Aplaza')"></span>
+                                        </div>
+                                        <div class="escala-tramo-meta">
+                                            <div class="form-group escala-desde">
+                                                <label class="form-label">Desde</label>
+                                                <input class="form-input" type="number" :step="paso"
+                                                       :min="notaMinima" :max="notaMaxima"
+                                                       x-model.number="tramo.desde"
+                                                       :disabled="esPiso(i)"
+                                                       @change="normalizarDesde(tramo)">
+                                            </div>
+                                            <p class="escala-hasta" x-text="'hasta ' + fmt(hastaDe(i)) + ' · ' + fmt(puntosDe(i)) + ' pts'"></p>
+                                            <button type="button" class="btn btn-ghost btn-sm"
+                                                    x-show="!esPiso(i) && tramos.length > 2"
+                                                    @click="quitarTramo(tramo.id)">Quitar</button>
+                                        </div>
+                                    </div>
+                                </article>
+                            </template>
+                        </div>
+                        <div class="escala-avisos" x-show="errores.length || advertencias.length">
+                            <template x-for="error in errores" :key="error">
+                                <p class="escala-aviso is-error" x-text="error"></p>
+                            </template>
+                            <template x-for="aviso in advertencias" :key="aviso">
+                                <p class="escala-aviso is-warn" x-text="aviso"></p>
+                            </template>
+                        </div>
+                    </section>
+
+                    <div class="institucional-actions">
+                        <button type="button" class="btn btn-ghost" @click="restablecer()">Restablecer</button>
+                        <button type="submit" class="btn btn-primary">Guardar escala</button>
+                    </div>
+                </div>
+
+                <aside class="escala-preview">
+                    <div class="escala-preview-head">
+                        <h4>Vista previa</h4>
+                        <span x-text="fmt(notaMinima) + ' – ' + fmt(notaMaxima)"></span>
+                    </div>
+                    <div class="escala-regla-wrap">
+                        <div class="escala-marca" x-show="marcaAprobacion != null"
+                             :class="marcaAprobacion > 78 ? 'is-end' : ''"
+                             :style="'left:' + marcaAprobacion + '%'">
+                            <span>Aprueba</span>
+                        </div>
+                        <div class="escala-regla" aria-hidden="true">
+                            <template x-for="seg in barra" :key="seg.id">
+                                <div class="escala-seg" :class="'is-' + seg.tono" :style="'width:' + seg.ancho + '%'"></div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="escala-leyenda">
+                        <template x-for="tramo in detalle" :key="'leyenda-' + tramo.id">
+                            <div class="escala-leyenda-item">
+                                <i class="escala-punto" :class="'is-' + tramo.tono"></i>
+                                <strong x-text="tramo.nombre || 'Sin nombre'"></strong>
+                                <span x-text="fmt(tramo.desde) + ' – ' + fmt(tramo.hasta)"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="escala-probar">
+                        <div class="escala-probar-head">
+                            <h5>Probar una nota</h5>
+                            <span x-text="decimales === 0 ? 'Se muestra entera' : 'Se muestra con un decimal'"></span>
+                        </div>
+                        <input class="form-input" type="number" :min="notaMinima" :max="notaMaxima" :step="paso"
+                               x-model.number="prueba" @change="ajustarPrueba()" aria-label="Nota de prueba">
+                        <input class="escala-rango" type="range" :min="notaMinima" :max="notaMaxima" :step="paso"
+                               x-model.number="prueba" aria-label="Recorrer la escala">
+                        <template x-if="resultado && !resultado.fuera">
+                            <div>
+                                <p class="escala-prueba-num" :class="'is-' + resultado.tono" x-text="resultado.nota"></p>
+                                <div class="escala-prueba-pie">
+                                    <span class="escala-chip" :class="'is-' + resultado.tono" x-text="resultado.nombre"></span>
+                                    <span class="escala-chip" :class="resultado.aprueba ? 'is-aprueba' : 'is-aplaza'"
+                                          x-text="resultado.aprueba ? 'Aprueba' : 'No aprueba'"></span>
+                                    <em x-text="'Tramo ' + resultado.rango"></em>
+                                </div>
+                            </div>
+                        </template>
+                        <p class="escala-aviso is-warn" x-show="resultado && resultado.fuera" style="margin-top: 0.75rem;">
+                            Esa nota queda fuera de la escala.
+                        </p>
+                        <div class="escala-muestras">
+                            <template x-for="muestra in muestras" :key="muestra">
+                                <button type="button"
+                                        :class="notaMostrada(prueba) === muestra ? 'is-on' : ''"
+                                        @click="prueba = muestra"
+                                        x-text="fmt(muestra)"></button>
+                            </template>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        window.escalaNotas = function escalaNotas() {
+            function base() {
+                return {
+                    notaMinima: 0,
+                    notaMaxima: 100,
+                    decimales: 1,
+                    notaAprobacion: 70,
+                    prueba: 85,
+                    siguienteId: 5,
+                    tramos: [
+                        { id: 1, nombre: 'Excelente', desde: 90 },
+                        { id: 2, nombre: 'Bueno', desde: 80 },
+                        { id: 3, nombre: 'Regular', desde: 70 },
+                        { id: 4, nombre: 'Aplazado', desde: 0 }
+                    ]
+                };
+            }
+
+            var inicial = base();
+            return {
+                notaMinima: inicial.notaMinima,
+                notaMaxima: inicial.notaMaxima,
+                decimales: inicial.decimales,
+                notaAprobacion: inicial.notaAprobacion,
+                prueba: inicial.prueba,
+                siguienteId: inicial.siguienteId,
+                tramos: inicial.tramos,
+                get paso() {
+                    return Number(this.decimales) === 0 ? 1 : 0.1;
+                },
+                fmt: function (valor) {
+                    var n = Number(valor);
+                    if (!Number.isFinite(n)) {
+                        return '—';
+                    }
+                    return n.toFixed(Number(this.decimales) === 0 ? 0 : 1);
+                },
+                redondear: function (valor) {
+                    var factor = Number(this.decimales) === 0 ? 1 : 10;
+                    return Math.round(Number(valor) * factor) / factor;
+                },
+                tonoDe: function (indice, total) {
+                    if (indice === 0) {
+                        return 'excelente';
+                    }
+                    if (indice === total - 1) {
+                        return 'aplazado';
+                    }
+                    return indice <= Math.floor((total - 1) / 2) ? 'bueno' : 'regular';
+                },
+                esPiso: function (indice) {
+                    return indice === this.tramos.length - 1;
+                },
+                hastaDe: function (indice) {
+                    if (indice === 0) {
+                        return Number(this.notaMaxima);
+                    }
+                    var arriba = Number(this.tramos[indice - 1].desde);
+                    return this.redondear(arriba - this.paso);
+                },
+                puntosDe: function (indice) {
+                    var techo = indice === 0
+                        ? Number(this.notaMaxima)
+                        : Number(this.tramos[indice - 1].desde);
+                    return Math.max(0, this.redondear(techo - Number(this.tramos[indice].desde)));
+                },
+                estadoDe: function (indice) {
+                    var desde = Number(this.tramos[indice].desde);
+                    var hasta = this.hastaDe(indice);
+                    var aprobacion = Number(this.notaAprobacion);
+                    if (desde < aprobacion && hasta + 1e-9 >= aprobacion) {
+                        return 'corte';
+                    }
+                    if (desde + 1e-9 >= aprobacion) {
+                        return 'aprueba';
+                    }
+                    return 'aplaza';
+                },
+                ordenar: function () {
+                    this.tramos.sort(function (a, b) {
+                        return Number(b.desde) - Number(a.desde);
+                    });
+                },
+                get ordenados() {
+                    return this.tramos.slice().sort(function (a, b) {
+                        return Number(b.desde) - Number(a.desde);
+                    });
+                },
+                get detalle() {
+                    var self = this;
+                    var lista = this.tramos;
+                    var max = Number(this.notaMaxima);
+                    var min = Number(this.notaMinima);
+                    return lista.map(function (tramo, i) {
+                        var desde = Number(tramo.desde);
+                        var techo = i === 0 ? max : Number(lista[i - 1].desde);
+                        var hasta = self.hastaDe(i);
+                        var ancho = max > min ? Math.max(0, (techo - desde) / (max - min) * 100) : 0;
+                        var estado = self.estadoDe(i);
+                        return {
+                            id: tramo.id,
+                            nombre: tramo.nombre,
+                            desde: desde,
+                            hasta: hasta,
+                            ancho: ancho,
+                            tono: self.tonoDe(i, lista.length),
+                            aprueba: estado === 'aprueba',
+                            corte: estado === 'corte'
+                        };
+                    });
+                },
+                get barra() {
+                    return this.detalle.slice().reverse();
+                },
+                get marcaAprobacion() {
+                    var min = Number(this.notaMinima);
+                    var max = Number(this.notaMaxima);
+                    var nota = Number(this.notaAprobacion);
+                    if (!(max > min) || !Number.isFinite(nota)) {
+                        return null;
+                    }
+                    return Math.max(0, Math.min(100, (nota - min) / (max - min) * 100));
+                },
+                get errores() {
+                    var self = this;
+                    var out = [];
+                    var min = Number(this.notaMinima);
+                    var max = Number(this.notaMaxima);
+                    var aprobacion = Number(this.notaAprobacion);
+                    if (!Number.isFinite(min) || !Number.isFinite(max) || min >= max) {
+                        out.push('La nota mínima tiene que ser menor que la máxima.');
+                    }
+                    if (!Number.isFinite(aprobacion) || aprobacion < min || aprobacion > max) {
+                        out.push('La nota para aprobar tiene que estar entre la mínima y la máxima.');
+                    }
+                    if (this.tramos.length < 2) {
+                        out.push('Hacen falta al menos dos tramos.');
+                    }
+                    var nombres = {};
+                    this.tramos.forEach(function (tramo) {
+                        var nombre = String(tramo.nombre || '').trim();
+                        if (!nombre) {
+                            out.push('Cada tramo necesita un nombre.');
+                            return;
+                        }
+                        var clave = nombre.toLocaleLowerCase('es');
+                        if (nombres[clave]) {
+                            out.push('Los nombres de los tramos no se pueden repetir.');
+                        }
+                        nombres[clave] = true;
+                    });
+                    var previos = null;
+                    this.ordenados.forEach(function (tramo, i) {
+                        var desde = Number(tramo.desde);
+                        var esPiso = i === self.ordenados.length - 1;
+                        if (!Number.isFinite(desde)) {
+                            out.push('Cada tramo necesita un inicio numérico.');
+                            return;
+                        }
+                        if (esPiso && Math.abs(desde - min) > 1e-9) {
+                            out.push('El tramo más bajo tiene que empezar en la nota mínima.');
+                        }
+                        if (!esPiso && (desde <= min || desde >= max)) {
+                            out.push('El inicio de «' + (tramo.nombre || 'un tramo') + '» tiene que quedar dentro de la escala.');
+                        }
+                        if (previos != null && desde >= previos) {
+                            out.push('El inicio de cada tramo tiene que ser menor que el del tramo de arriba.');
+                        }
+                        previos = desde;
+                    });
+                    return Array.from(new Set(out));
+                },
+                get advertencias() {
+                    if (this.errores.length) {
+                        return [];
+                    }
+                    var aprobacion = Number(this.notaAprobacion);
+                    var alineada = this.detalle.some(function (tramo) {
+                        return Math.abs(tramo.desde - aprobacion) < 1e-9;
+                    }) || Math.abs(aprobacion - Number(this.notaMaxima)) < 1e-9;
+                    if (alineada) {
+                        return [];
+                    }
+                    return ['La nota para aprobar queda en medio de un tramo. Ese tramo mezcla notas que aprueban y notas aplazadas.'];
+                },
+                get puedeAgregar() {
+                    if (this.tramos.length >= 6 || this.errores.length) {
+                        return false;
+                    }
+                    var lista = this.ordenados;
+                    if (lista.length < 2) {
+                        return false;
+                    }
+                    var piso = Number(lista[lista.length - 1].desde);
+                    var encima = Number(lista[lista.length - 2].desde);
+                    return encima - piso >= this.paso * 2;
+                },
+                get muestras() {
+                    var self = this;
+                    var candidatos = [this.notaMaxima, 90, 85, this.notaAprobacion, 65, this.notaMinima];
+                    var vistos = {};
+                    return candidatos.filter(function (n) {
+                        n = self.redondear(n);
+                        if (!Number.isFinite(n) || n < Number(self.notaMinima) || n > Number(self.notaMaxima) || vistos[n]) {
+                            return false;
+                        }
+                        vistos[n] = true;
+                        return true;
+                    });
+                },
+                notaMostrada: function (valor) {
+                    return this.redondear(valor);
+                },
+                get resultado() {
+                    var n = this.notaMostrada(this.prueba);
+                    if (!Number.isFinite(n) || n < Number(this.notaMinima) || n > Number(this.notaMaxima)) {
+                        return { fuera: true };
+                    }
+                    var hit = null;
+                    this.detalle.forEach(function (tramo) {
+                        if (n + 1e-9 >= tramo.desde && n <= tramo.hasta + 1e-9) {
+                            hit = tramo;
+                        }
+                    });
+                    if (!hit) {
+                        return { fuera: true };
+                    }
+                    return {
+                        fuera: false,
+                        nota: this.fmt(n),
+                        nombre: hit.nombre || 'Sin nombre',
+                        tono: hit.tono,
+                        aprueba: n + 1e-9 >= Number(this.notaAprobacion),
+                        rango: this.fmt(hit.desde) + ' – ' + this.fmt(hit.hasta)
+                    };
+                },
+                get tramosJson() {
+                    return JSON.stringify(this.detalle.map(function (tramo) {
+                        return {
+                            nombre: String(tramo.nombre || '').trim(),
+                            desde: tramo.desde,
+                            hasta: tramo.hasta,
+                            aprueba: tramo.aprueba
+                        };
+                    }));
+                },
+                anclarPiso: function () {
+                    this.ordenar();
+                    if (!this.tramos.length) {
+                        return;
+                    }
+                    this.tramos[this.tramos.length - 1].desde = Number(this.notaMinima);
+                },
+                alCambiarRango: function () {
+                    var min = Number(this.notaMinima);
+                    var max = Number(this.notaMaxima);
+                    if (!Number.isFinite(min)) {
+                        min = 0;
+                    }
+                    if (!Number.isFinite(max)) {
+                        max = 100;
+                    }
+                    min = Math.max(0, Math.min(99, Math.round(min)));
+                    max = Math.max(1, Math.min(100, Math.round(max)));
+                    if (min >= max) {
+                        max = Math.min(100, min + 1);
+                    }
+                    this.notaMinima = min;
+                    this.notaMaxima = max;
+                    this.decimales = Number(this.decimales) === 0 ? 0 : 1;
+                    var self = this;
+                    this.tramos.forEach(function (tramo) {
+                        if (Number.isFinite(Number(tramo.desde))) {
+                            tramo.desde = self.redondear(tramo.desde);
+                        }
+                    });
+                    this.anclarPiso();
+                    var aprobacion = Number(this.notaAprobacion);
+                    if (!Number.isFinite(aprobacion)) {
+                        aprobacion = min;
+                    }
+                    this.notaAprobacion = this.redondear(Math.min(max, Math.max(min, aprobacion)));
+                    this.ajustarPrueba();
+                },
+                ajustarPrueba: function () {
+                    var n = Number(this.prueba);
+                    if (!Number.isFinite(n)) {
+                        n = Number(this.notaMinima);
+                    }
+                    this.prueba = this.redondear(Math.min(Number(this.notaMaxima), Math.max(Number(this.notaMinima), n)));
+                },
+                normalizarDesde: function (tramo) {
+                    var n = Number(tramo.desde);
+                    if (!Number.isFinite(n)) {
+                        return;
+                    }
+                    var tope = this.redondear(Number(this.notaMaxima) - this.paso);
+                    var piso = this.redondear(Number(this.notaMinima) + this.paso);
+                    tramo.desde = Math.min(tope, Math.max(piso, this.redondear(n)));
+                    this.anclarPiso();
+                },
+                agregarTramo: function () {
+                    if (!this.puedeAgregar) {
+                        return;
+                    }
+                    var lista = this.ordenados;
+                    var piso = Number(lista[lista.length - 1].desde);
+                    var encima = Number(lista[lista.length - 2].desde);
+                    var desde = this.redondear((piso + encima) / 2);
+                    if (desde <= piso || desde >= encima) {
+                        desde = this.redondear(piso + this.paso);
+                    }
+                    this.tramos.push({
+                        id: this.siguienteId++,
+                        nombre: 'Nuevo tramo',
+                        desde: desde
+                    });
+                    this.ordenar();
+                },
+                quitarTramo: function (id) {
+                    if (this.tramos.length <= 2) {
+                        return;
+                    }
+                    var piso = this.ordenados[this.ordenados.length - 1];
+                    if (piso.id === id) {
+                        return;
+                    }
+                    this.tramos = this.tramos.filter(function (tramo) {
+                        return tramo.id !== id;
+                    });
+                    this.anclarPiso();
+                },
+                restablecer: function () {
+                    var limpio = base();
+                    this.notaMinima = limpio.notaMinima;
+                    this.notaMaxima = limpio.notaMaxima;
+                    this.decimales = limpio.decimales;
+                    this.notaAprobacion = limpio.notaAprobacion;
+                    this.prueba = limpio.prueba;
+                    this.siguienteId = limpio.siguienteId;
+                    this.tramos = limpio.tramos;
+                },
+                guardar: function () {
+                    this.alCambiarRango();
+                    if (this.errores.length) {
+                        document.dispatchEvent(new CustomEvent('institucionalError', {
+                            detail: { mensaje: this.errores[0] }
+                        }));
+                        return;
+                    }
+                    document.dispatchEvent(new CustomEvent('institucionalGuardado', {
+                        detail: { mensaje: 'Escala de notas revisada.' }
+                    }));
+                }
+            };
+        };
+    </script>
+</div>
