@@ -233,15 +233,6 @@ public class SesionDireccionService {
                 .orElse(false);
     }
 
-    /** Quita la dirección activa. Solo debe llamarse tras comprobar ROLE_ADMIN. */
-    public void salir(HttpSession session, Long usuarioId) {
-        session.removeAttribute("SESSION_DIRECCION_ID");
-        session.removeAttribute("SESSION_DIRECCION_NOMBRE");
-        if (usuarioId != null) {
-            usuarioService.actualizarUltimaDireccion(usuarioId, null);
-        }
-    }
-
     private static void ordenar(List<Direccion> direcciones) {
         direcciones.sort(Comparator
                 .comparingInt((Direccion d) -> d.getOferta() == null ? Integer.MAX_VALUE : d.getOferta().ordinal())

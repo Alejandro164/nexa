@@ -98,6 +98,7 @@ public class DataInitializer implements ApplicationRunner {
         Rol rolDocente = crearRolSiNoExiste("ROLE_DOCENTE");
         Rol rolPadre = crearRolSiNoExiste("ROLE_PADRE");
         Rol rolEstudiante = crearRolSiNoExiste("ROLE_ESTUDIANTE");
+        Rol rolSystemConfig = crearRolSiNoExiste("ROLE_SYSTEM_CONFIG");
 
         // ── 2. Direcciones ──────────────────────────────────────────────────
         // El código (presupuestario) es la llave de idempotencia; la cédula jurídica es la
@@ -110,10 +111,11 @@ public class DataInitializer implements ApplicationRunner {
                 "Zona Industrial 300");
 
         // ── 3. Usuarios ───────────────────────────────────────────────────────
-        crearUsuarioSiNoExiste(
+        Usuario admin = crearUsuarioSiNoExiste(
                 "Alejandro Chaves", "admin@empresa.com", "admin",
                 "1-2345-6789", "admin", true,
-                Set.of(rolAdmin), Set.of(instAlpha, instBeta, instGamma));
+                Set.of(rolAdmin, rolSystemConfig), Set.of(instAlpha, instBeta, instGamma));
+        asegurarRol(admin, rolSystemConfig);
 
         Usuario usuarioDirector = crearUsuarioSiNoExiste(
                 "María González", "maria@empresa.com", "director",
@@ -313,6 +315,16 @@ public class DataInitializer implements ApplicationRunner {
         usuarioRepository.save(u);
         log.info("  [USUARIO creado] {} / {} ({})", email, usuario, activo ? "activo" : "inactivo");
         return u;
+    }
+
+    /** El usuario ya creado no recibe roles nuevos; este paso los agrega sin quitar los que tiene. */
+    private void asegurarRol(Usuario usuario, Rol rol) {
+        if (usuario.getRoles().stream().anyMatch(r -> rol.getNombre().equals(r.getNombre()))) {
+            return;
+        }
+        usuario.getRoles().add(rol);
+        usuarioRepository.save(usuario);
+        log.info("  [ROL asignado] {} -> {}", usuario.getEmail(), rol.getNombre());
     }
 
     private void actualizarCredenciales(Usuario usuario, String handle, String rawPassword) {

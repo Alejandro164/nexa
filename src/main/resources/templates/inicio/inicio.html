@@ -468,7 +468,7 @@
             </div>
             <div class="dash-card-body">
                 <div class="dash-quick-actions">
-                    <a href="/usuarios" class="dash-action-btn"
+                    <a href="/usuarios" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
                        hx-get="/usuarios" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2d5a87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -476,21 +476,21 @@
                         </svg>
                         Gestionar Usuarios
                     </a>
-                    <a href="/direcciones" class="dash-action-btn"
+                    <a href="/direcciones" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
                        hx-get="/direcciones" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                         </svg>
                         Gestionar Instituciones
                     </a>
-                    <a href="/seguridad" class="dash-action-btn"
+                    <a href="/seguridad" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
                        hx-get="/seguridad" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/>
                         </svg>
                         Seguridad
                     </a>
-                    <a href="/configuracion" class="dash-action-btn"
+                    <a href="/configuracion" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
                        hx-get="/configuracion" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"/>

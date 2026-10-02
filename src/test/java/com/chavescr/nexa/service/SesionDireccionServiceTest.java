@@ -113,19 +113,6 @@ class SesionDireccionServiceTest {
     }
 
     @Test
-    void salirQuitaLaDireccionYOlvidaLaRecordada() {
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute("SESSION_DIRECCION_ID", 1L);
-        session.setAttribute("SESSION_DIRECCION_NOMBRE", "Primaria");
-
-        service.salir(session, 7L);
-
-        assertNull(session.getAttribute("SESSION_DIRECCION_ID"));
-        assertNull(session.getAttribute("SESSION_DIRECCION_NOMBRE"));
-        verify(usuarioService).actualizarUltimaDireccion(7L, null);
-    }
-
-    @Test
     void conUnaInstitucionElLoginAbreLaDireccionDeEntrada() {
         Institucion central = institucion(10L, "Escuela Central");
         Direccion primaria = direccion(1L, central, OfertaEducativa.PRIMARIA);

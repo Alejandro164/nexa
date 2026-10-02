@@ -95,7 +95,6 @@ public class MainController {
         }
         model.addAttribute("instituciones", sesionDireccionService
                 .navegacion(request.isUserInRole("ROLE_ADMIN"), direccionActual(session)).instituciones());
-        model.addAttribute("direccionActualId", session.getAttribute("SESSION_DIRECCION_ID"));
         if ("login".equals(origen)) {
             return "auth/seleccionar-direccion-modal :: modal-content";
         }
@@ -135,32 +134,6 @@ public class MainController {
         response.setHeader("HX-Push-Url", "/inicio");
         response.setHeader("HX-Trigger", "direccionCambiada");
         return "inicio/inicio :: htmx-content";
-    }
-
-    @PostMapping("/inicio/salir-direccion")
-    public void salirDireccion(HttpServletRequest request, HttpServletResponse response, HttpSession session)
-            throws IOException {
-        // Solo ROLE_ADMIN puede operar sin dirección seleccionada (ver SesionDireccionService.resolver).
-        if (!request.isUserInRole("ROLE_ADMIN")) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return;
-        }
-
-        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-        // Se olvida también la dirección recordada: si no, el próximo login la auto-seleccionaría
-        // de nuevo (seleccionarRecordada) y "salir" no tendría efecto duradero.
-        sesionDireccionService.salir(session, usuarioId);
-        redirigirAlInicio(request, response);
-    }
-
-    private void redirigirAlInicio(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.setHeader("Cache-Control", "no-store");
-        if ("true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
-            response.setHeader("HX-Redirect", "/inicio");
-            response.setStatus(HttpServletResponse.SC_OK);
-            return;
-        }
-        response.sendRedirect("/inicio");
     }
 
     private static Long direccionActual(HttpSession session) {

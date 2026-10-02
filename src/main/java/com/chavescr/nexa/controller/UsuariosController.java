@@ -22,7 +22,7 @@ import com.chavescr.nexa.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-/** CRUD global de usuarios (todas las direcciones) — solo accesible para ROLE_ADMIN sin dirección seleccionada. */
+/** CRUD global de usuarios (todas las direcciones). Solo ROLE_SYSTEM_CONFIG. */
 @Controller
 @RequestMapping("/usuarios")
 public class UsuariosController {

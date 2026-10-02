@@ -3,7 +3,7 @@
        xmlns:th="http://www.thymeleaf.org"
        xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
        x-data="modoMenu()"
-       th:attr="data-admin=${#authorization.expression('hasAuthority(''ROLE_ADMIN'')')}"
+       th:attr="data-admin=${#authorization.expression('hasAuthority(''ROLE_ADMIN'')')},data-system=${#authorization.expression('hasAuthority(''ROLE_SYSTEM_CONFIG'')')}"
        x-bind:class="{ 'collapsed': sidebarCollapsed, 'mobile-open': mobileMenuOpen }">
 
     <button class="sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
@@ -25,7 +25,8 @@
     </div>
 
     <div id="dir-switcher-slot" th:fragment="switcher"
-         th:attr="hx-swap-oob=${sincronizarSwitcher} ? 'outerHTML' : null">
+         th:attr="hx-swap-oob=${sincronizarSwitcher} ? 'outerHTML' : null"
+         x-show="modo !== 'system'">
         <div class="dir-switcher"
              sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
              th:if="${menuDireccion != null and menuDireccion.visible}"
@@ -75,7 +76,7 @@
         </div>
     </div>
 
-    <div class="dir-switcher modo-switcher" sec:authorize="hasAuthority('ROLE_ADMIN')"
+    <div class="dir-switcher modo-switcher" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
          @click.outside="open = false">
         <button type="button" class="dir-switcher-btn" @click="open = !open" :title="nombre()">
             <span class="dir-switcher-mark" :class="{ 'dir-switcher-mark-alt': modo !== 'admin' }" x-text="inicial()">A</span>
@@ -113,7 +114,7 @@
             <div class="sidebar-user-info">
                 <div class="sidebar-user-name" th:text="${#authentication.principal.nombre}">Usuario</div>
                 <div class="sidebar-user-role"
-                    th:text="${#authentication.principal.authorities[0].authority.replace('ROLE_', '')}">Admin</div>
+                    th:text="${#authorization.expression('hasAuthority(''ROLE_ADMIN'')') ? 'ADMIN' : (#authorization.expression('hasAuthority(''ROLE_SYSTEM_CONFIG'')') ? 'SYSTEM_CONFIG' : #authentication.principal.authorities[0].authority.replace('ROLE_', ''))}">Admin</div>
             </div>
 
             <div class="user-dropdown-menu" x-show="userMenuOpen" @click.outside="userMenuOpen = false"
@@ -129,8 +130,9 @@
                     Mi perfil
                 </button>
                 <button class="user-dropdown-item"
-                        hx-get="/configuracion-cuenta" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true"
-                        @click="userMenuOpen = false">
+                        sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
+                        hx-get="/configuracion" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true"
+                        @click="userMenuOpen = false; elegir('system', false)">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3" />
@@ -335,6 +337,7 @@
                 open: false,
                 modo: 'admin',
                 esAdmin: false,
+                esSystem: false,
                 modos: [
                     { id: 'admin', nombre: 'Administrador', letra: 'A' },
                     { id: 'director', nombre: 'Director', letra: 'D' },
@@ -356,35 +359,100 @@
                 },
                 init: function () {
                     this.esAdmin = this.$el.dataset.admin === 'true';
-                    if (!this.esAdmin) {
+                    this.esSystem = this.$el.dataset.system === 'true';
+                    if (this.esSystem) {
+                        this.modos.splice(1, 0, { id: 'system', nombre: 'System Config', letra: 'S' });
+                    }
+                    var self = this;
+                    window.addEventListener('nexa-modo', function (event) {
+                        if (event.detail) {
+                            self.elegir(event.detail, false);
+                        }
+                    });
+                    document.addEventListener('direccionCambiada', function () {
+                        if (self.esAdmin && self.modo === 'system') {
+                            self.elegir('admin', false);
+                        }
+                    });
+                    if (!this.esAdmin && !this.esSystem) {
                         return;
+                    }
+                    if (!this.esAdmin) {
+                        this.modo = 'system';
                     }
                     var guardado = sessionStorage.getItem('nexa-modo-menu');
                     if (guardado && this.modos.some(function (item) { return item.id === guardado; })) {
                         this.modo = guardado;
                     }
+                    this.pintarRol();
                 },
                 ve: function (roles) {
-                    if (!this.esAdmin || this.modo === 'admin' || (this.modo !== 'director' && this.modo !== 'docente')) {
+                    if (!this.esAdmin && !this.esSystem) {
+                        return true;
+                    }
+                    if (this.modo === 'estudiante' || this.modo === 'padre' || this.modo === 'auxiliar' || this.modo === 'guarda') {
                         return true;
                     }
                     return (' ' + roles + ' ').indexOf(' ' + this.modo + ' ') !== -1;
                 },
+                rutaSystem: function () {
+                    var path = window.location.pathname;
+                    return path === '/configuracion' || path.indexOf('/configuracion/') === 0
+                        || path === '/usuarios' || path.indexOf('/usuarios/') === 0
+                        || path === '/seguridad' || path.indexOf('/seguridad/') === 0
+                        || path === '/direcciones' || path.indexOf('/direcciones/') === 0;
+                },
+                pintarRol: function () {
+                    var texto = this.modo === 'system' ? 'SYSTEM_CONFIG'
+                        : this.modo === 'admin' ? 'ADMIN'
+                        : this.modo === 'director' ? 'DIRECTOR'
+                        : this.modo === 'docente' ? 'DOCENTE'
+                        : this.modo === 'estudiante' ? 'ESTUDIANTE'
+                        : this.modo === 'padre' ? 'PADRE'
+                        : this.nombre().toUpperCase();
+                    document.querySelectorAll('.dropdown-user-role, .sidebar-user-role').forEach(function (el) {
+                        el.textContent = texto;
+                    });
+                },
                 nota: function () {
+                    if (this.modo === 'system') {
+                        return 'Solo las opciones de System Config.';
+                    }
+                    if (this.modo === 'admin') {
+                        return 'Solo las opciones de administrador.';
+                    }
                     if (this.modo === 'director' || this.modo === 'docente') {
                         return 'El menú muestra ese rol. Seguís siendo administrador.';
                     }
-                    if (this.modo === 'admin') {
-                        return 'Menú completo de administrador.';
-                    }
                     return 'Este modo todavía no cambia el menú.';
                 },
-                elegir: function (id) {
+                elegir: function (id, navegar) {
+                    if (!this.modos.some(function (item) { return item.id === id; })) {
+                        return;
+                    }
                     this.modo = id;
                     this.open = false;
-                    if (this.esAdmin) {
+                    if (this.esAdmin || this.esSystem) {
                         sessionStorage.setItem('nexa-modo-menu', id);
                     }
+                    this.pintarRol();
+                    if (navegar === false) {
+                        return;
+                    }
+                    var self = this;
+                    this.$nextTick(function () {
+                        if (id === 'system' && !self.rutaSystem()) {
+                            var config = document.querySelector('.sidebar-nav a[href="/configuracion"]');
+                            if (config) {
+                                config.click();
+                            }
+                        } else if (id !== 'system' && self.rutaSystem()) {
+                            var inicio = document.querySelector('.sidebar-nav a[href="/inicio"]');
+                            if (inicio) {
+                                inicio.click();
+                            }
+                        }
+                    });
                 }
             };
         }
