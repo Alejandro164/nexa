@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
+import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.NotasConsultaService;
 import com.chavescr.nexa.service.TipoComponenteService;
 
@@ -17,10 +18,13 @@ public class MenuController {
 
     private final TipoComponenteService tipoComponenteService;
     private final NotasConsultaService notasConsultaService;
+    private final EscalaNotasService escalaNotasService;
 
-    public MenuController(TipoComponenteService tipoComponenteService, NotasConsultaService notasConsultaService) {
+    public MenuController(TipoComponenteService tipoComponenteService, NotasConsultaService notasConsultaService,
+            EscalaNotasService escalaNotasService) {
         this.tipoComponenteService = tipoComponenteService;
         this.notasConsultaService = notasConsultaService;
+        this.escalaNotasService = escalaNotasService;
     }
 
     @GetMapping("/estudiantes")
@@ -71,6 +75,7 @@ public class MenuController {
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         model.addAttribute("notasCatalogo", notasConsultaService.consultar(
                 direccionId, usuarioId, supervision, supervision));
+        model.addAttribute("escala", escalaNotasService.vista(direccionId));
         return htmxRequest ? "notas/index :: htmx-content" : "notas/index";
     }
 

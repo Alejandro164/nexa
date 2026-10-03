@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
+import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.NotasConsultaService;
 import com.chavescr.nexa.service.ObservacionGuiaService;
 
@@ -20,11 +21,13 @@ public class NotasController {
 
     private final ObservacionGuiaService observacionGuiaService;
     private final NotasConsultaService notasConsultaService;
+    private final EscalaNotasService escalaNotasService;
 
     public NotasController(ObservacionGuiaService observacionGuiaService,
-            NotasConsultaService notasConsultaService) {
+            NotasConsultaService notasConsultaService, EscalaNotasService escalaNotasService) {
         this.observacionGuiaService = observacionGuiaService;
         this.notasConsultaService = notasConsultaService;
+        this.escalaNotasService = escalaNotasService;
     }
 
     @GetMapping("/desglose")
@@ -36,6 +39,7 @@ public class NotasController {
         }
         boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        model.addAttribute("escala", escalaNotasService.vista(direccionId));
         try {
             model.addAttribute("filas", notasConsultaService.desglose(
                     direccionId, usuarioId, supervision, estudianteId, periodoId));

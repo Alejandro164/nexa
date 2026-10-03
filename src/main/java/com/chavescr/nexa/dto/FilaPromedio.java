@@ -8,11 +8,11 @@ public class FilaPromedio {
 
     private final Usuario estudiante;
     /** Una nota por tipo activo, en el mismo orden que la lista de columnas. */
-    private final List<Integer> notas;
+    private final List<Double> notas;
     private final Integer asistencia;
     private final Double promedioFinal;
 
-    public FilaPromedio(Usuario estudiante, List<Integer> notas, Integer asistencia, Double promedioFinal) {
+    public FilaPromedio(Usuario estudiante, List<Double> notas, Integer asistencia, Double promedioFinal) {
         this.estudiante = estudiante;
         this.notas = notas;
         this.asistencia = asistencia;
@@ -23,7 +23,7 @@ public class FilaPromedio {
         return estudiante;
     }
 
-    public List<Integer> getNotas() {
+    public List<Double> getNotas() {
         return notas;
     }
 

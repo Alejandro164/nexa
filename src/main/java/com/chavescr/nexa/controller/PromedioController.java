@@ -15,6 +15,7 @@ import com.chavescr.nexa.dto.FilaPromedio;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.EnvioNotasDocenteService;
+import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.PromedioService;
 import com.chavescr.nexa.service.TipoComponenteService;
 
@@ -30,13 +31,16 @@ public class PromedioController {
     private final AlcanceDocenteService alcanceDocenteService;
     private final EnvioNotasDocenteService envioNotasDocenteService;
     private final TipoComponenteService tipoComponenteService;
+    private final EscalaNotasService escalaNotasService;
 
     public PromedioController(PromedioService service, AlcanceDocenteService alcanceDocenteService,
-            EnvioNotasDocenteService envioNotasDocenteService, TipoComponenteService tipoComponenteService) {
+            EnvioNotasDocenteService envioNotasDocenteService, TipoComponenteService tipoComponenteService,
+            EscalaNotasService escalaNotasService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
         this.envioNotasDocenteService = envioNotasDocenteService;
         this.tipoComponenteService = tipoComponenteService;
+        this.escalaNotasService = escalaNotasService;
     }
 
     @GetMapping
@@ -61,6 +65,7 @@ public class PromedioController {
                 .map(FilaPromedio::getPromedioFinal)
                 .filter(p -> p != null)
                 .toList();
+        double promedioGrupo = promedios.stream().mapToDouble(Double::doubleValue).average().orElse(0);
 
         PeriodoAcademico periodoActual = service.periodoActual(direccionId);
         boolean notasEnviadas = docenteId != null && periodoActual != null && nivelId != null && materiaId != null
@@ -74,11 +79,12 @@ public class PromedioController {
         model.addAttribute("columnasPromedio", tipos.size() + 3);
         model.addAttribute("filas", filas);
         model.addAttribute("estudiantesEvaluados", promedios.size());
-        model.addAttribute("promedioGrupo", promedios.stream().mapToDouble(Double::doubleValue).average().orElse(0));
+        model.addAttribute("promedioGrupo", Math.round(promedioGrupo * 10) / 10.0);
         model.addAttribute("notaMasAlta", promedios.stream().mapToDouble(Double::doubleValue).max().orElse(0));
         model.addAttribute("notaMasBaja", promedios.stream().mapToDouble(Double::doubleValue).min().orElse(0));
         model.addAttribute("esDocente", docenteId != null);
         model.addAttribute("notasEnviadas", notasEnviadas);
+        model.addAttribute("escala", escalaNotasService.vista(direccionId));
         return "gestion-academica/promedio/promedio :: content";
     }
 
