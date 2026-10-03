@@ -61,20 +61,4 @@ public class NotasDesgloseFila {
     public String getPromedioTexto() {
         return promedio == null ? null : String.format(Locale.US, "%.1f", promedio);
     }
-
-    public String getNivel() {
-        if (promedio == null) {
-            return "";
-        }
-        if (promedio >= 90) {
-            return "excelente";
-        }
-        if (promedio >= 80) {
-            return "bueno";
-        }
-        if (promedio >= 70) {
-            return "regular";
-        }
-        return "deficiente";
-    }
 }

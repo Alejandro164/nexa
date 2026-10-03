@@ -246,6 +246,7 @@ public class ConductaController {
         model.addAttribute("grado", panel.getGrado());
         model.addAttribute("nivelId", panel.getNivelId());
         model.addAttribute("avisoPeriodo", panel.getAvisoPeriodo());
+        model.addAttribute("escala", panel.getEscala());
     }
 
     private void cargarIncidentes(Model model, TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,

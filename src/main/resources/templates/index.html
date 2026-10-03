@@ -118,6 +118,13 @@
 
             document.addEventListener('htmx:afterSettle', function (evt) {
                 try {
+                    var detalle = evt.detail || {};
+                    var nodos = [detalle.elt, detalle.target, evt.target];
+                    var sinCambio = nodos.some(function (nodo) {
+                        var swap = nodo && nodo.getAttribute && nodo.getAttribute('hx-swap');
+                        return !!swap && swap.replace(/\s+/g, '').indexOf('none') === 0;
+                    });
+                    if (sinCambio) return;
                     montarAlpine(evt.target);
                 } finally {
                     programarCierre();

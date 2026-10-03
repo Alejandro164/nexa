@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.ConfiguracionDireccionService;
+import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.TipoComponenteService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,11 +33,15 @@ public class ConfiguracionInstitucionalController {
     @Autowired
     private TipoComponenteService tipoComponenteService;
 
+    @Autowired
+    private EscalaNotasService escalaNotasService;
+
     @GetMapping
     public String index(Model model, HttpServletRequest request, HttpSession session) {
         Long direccionId = requerirDireccion(session);
         cargarJornada(model, direccionId);
         cargarComponentes(model, direccionId);
+        cargarEscala(model, direccionId);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "configuracion-institucional/index :: htmx-content";
         }
@@ -124,6 +129,32 @@ public class ConfiguracionInstitucionalController {
         return "configuracion-institucional/componentes/componentes :: content";
     }
 
+    @GetMapping("/escala-notas")
+    public String escalaNotas(Model model, HttpSession session) {
+        cargarEscala(model, requerirDireccion(session));
+        return "configuracion-institucional/escala-notas/escala-notas :: content";
+    }
+
+    @PostMapping("/escala-notas")
+    public String guardarEscala(
+            @RequestParam Integer notaMinima,
+            @RequestParam Integer notaMaxima,
+            @RequestParam Integer decimales,
+            @RequestParam Integer notaAprobacion,
+            @RequestParam String tramos,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            escalaNotasService.guardar(direccionId, notaMinima, notaMaxima, decimales, notaAprobacion, tramos);
+            response.setHeader("HX-Trigger",
+                    "{\"institucionalGuardado\":{\"mensaje\":\"Escala de notas actualizada\"}}");
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
+        }
+        cargarEscala(model, direccionId);
+        return "configuracion-institucional/escala-notas/escala-notas :: content";
+    }
+
     private void cargarJornada(Model model, Long direccionId) {
         model.addAttribute("configJornada", service.obtener(direccionId));
         model.addAttribute("diasCatalogo", DiaLaboral.CATALOGO);
@@ -131,6 +162,10 @@ public class ConfiguracionInstitucionalController {
 
     private void cargarComponentes(Model model, Long direccionId) {
         model.addAttribute("tiposComponente", tipoComponenteService.listar(direccionId));
+    }
+
+    private void cargarEscala(Model model, Long direccionId) {
+        model.addAttribute("escalaNotas", escalaNotasService.obtener(direccionId));
     }
 
     private Long requerirDireccion(HttpSession session) {

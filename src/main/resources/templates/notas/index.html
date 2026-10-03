@@ -234,6 +234,13 @@
             .notas-pill.bueno { background: #dbeafe; color: #1e40af; }
             .notas-pill.regular { background: #fef3c7; color: #92400e; }
             .notas-pill.deficiente { background: #fee2e2; color: #991b1b; }
+            .notas-pill.aplazado { background: #fee2e2; color: #991b1b; }
+            .notas-escala {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+                margin: 0 0 1rem;
+            }
 
             .notas-empty {
                 flex: 1;
@@ -289,7 +296,7 @@
                 width: 72px;
                 height: 72px;
                 border-radius: 50%;
-                background: conic-gradient(#2d5a87 calc(var(--pct) * 1%), #e8eef4 0);
+                background: conic-gradient(var(--tono, #2d5a87) calc(var(--pct) * 1%), #e8eef4 0);
                 display: grid;
                 place-items: center;
                 flex-shrink: 0;
@@ -379,6 +386,10 @@
             }
             .notas-kpi-value.is-risk { color: #dc2626; }
             .notas-kpi-value.is-ok { color: #15803d; }
+            .notas-kpi-value.excelente, .notas-ring-inner.excelente { color: #166534; }
+            .notas-kpi-value.bueno, .notas-ring-inner.bueno { color: #1e40af; }
+            .notas-kpi-value.regular, .notas-ring-inner.regular { color: #92400e; }
+            .notas-kpi-value.aplazado, .notas-ring-inner.aplazado { color: #991b1b; }
 
             .notas-table-wrap {
                 overflow: visible;
@@ -481,6 +492,7 @@
             .notas-final.bueno { color: #1e40af; }
             .notas-final.regular { color: #92400e; }
             .notas-final.deficiente { color: #991b1b; }
+            .notas-final.aplazado { color: #991b1b; }
             .notas-bar {
                 height: 4px;
                 border-radius: 99px;
@@ -676,6 +688,11 @@
                         @click="limpiarFiltros()">Limpiar</button>
                 <span class="notas-count" x-text="cohorte.length + (cohorte.length === 1 ? ' estudiante' : ' estudiantes')"></span>
             </div>
+            <div class="notas-escala" x-show="escala.length" x-cloak>
+                <template x-for="t in escala" :key="t.desde">
+                    <span class="notas-pill" :class="t.tono" x-text="t.nombre + ' · ' + t.desde"></span>
+                </template>
+            </div>
             <div class="notas-split">
                 <section class="notas-pane notas-pane--list" aria-label="Estudiantes">
                     <div class="notas-pane-head">
@@ -738,8 +755,8 @@
                     <template x-if="seleccionado">
                         <div class="notas-detail">
                             <div class="notas-detail-head">
-                                <div class="notas-ring" :style="'--pct:' + (promedioDe(seleccionado) == null ? 0 : promedioDe(seleccionado))">
-                                    <div class="notas-ring-inner"
+                                <div class="notas-ring" :style="anilloDe(promedioDe(seleccionado))">
+                                    <div class="notas-ring-inner" :class="nivel(promedioDe(seleccionado))"
                                          x-text="promedioDe(seleccionado) == null ? '—' : promedioDe(seleccionado)"></div>
                                 </div>
                                 <div class="notas-detail-id">
@@ -765,7 +782,8 @@
                             <div class="notas-kpis" x-show="tieneMaterias(seleccionado)">
                                 <div class="notas-kpi">
                                     <div class="notas-kpi-label">Promedio</div>
-                                    <div class="notas-kpi-value" x-text="promedioDe(seleccionado) == null ? '—' : promedioDe(seleccionado)"></div>
+                                    <div class="notas-kpi-value" :class="nivel(promedioDe(seleccionado))"
+                                         x-text="promedioDe(seleccionado) == null ? '—' : promedioDe(seleccionado)"></div>
                                 </div>
                                 <div class="notas-kpi">
                                     <div class="notas-kpi-label">Materias</div>
@@ -773,12 +791,12 @@
                                 </div>
                                 <div class="notas-kpi">
                                     <div class="notas-kpi-label">Aprobadas</div>
-                                    <div class="notas-kpi-value is-ok" x-text="conteo(seleccionado, 70, true)"></div>
+                                    <div class="notas-kpi-value is-ok" x-text="conteo(seleccionado, true)"></div>
                                 </div>
                                 <div class="notas-kpi">
                                     <div class="notas-kpi-label">En riesgo</div>
-                                    <div class="notas-kpi-value" :class="{ 'is-risk': conteo(seleccionado, 70, false) > 0 }"
-                                         x-text="conteo(seleccionado, 70, false)"></div>
+                                    <div class="notas-kpi-value" :class="{ 'is-risk': conteo(seleccionado, false) > 0 }"
+                                         x-text="conteo(seleccionado, false)"></div>
                                 </div>
                             </div>
                             <div class="notas-table-wrap" x-show="tieneMaterias(seleccionado)">
@@ -911,6 +929,7 @@
 
         <script th:inline="javascript">
             var NOTAS_CATALOGO = /*[[${notasCatalogo}]]*/ {};
+            var NOTAS_ESCALA = /*[[${escala.tramos}]]*/ [];
 
             function notasModulo() {
                 const catalogo = NOTAS_CATALOGO || {};
@@ -954,6 +973,7 @@
                     ],
                     niveles: niveles,
                     estudiantes: estudiantes,
+                    escala: Array.isArray(NOTAS_ESCALA) ? NOTAS_ESCALA : [],
                     get periodosDelAnio() {
                         const anio = String(this.anio);
                         return this.periodos.filter(function (p) { return String(p.anio) === anio; });
@@ -1108,14 +1128,6 @@
                         if (!notas.length) return null;
                         return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(1);
                     },
-                    conteoPeriodo(est, periodo, umbral, aprobadas) {
-                        if (!est || !periodo) return 0;
-                        return this.materiasDe(est).filter((m) => {
-                            const n = this.pctDe(this.notaDe(m, periodo.id));
-                            if (n == null) return false;
-                            return aprobadas ? n >= umbral : n < umbral;
-                        }).length;
-                    },
                     fmtPeriodo(n) {
                         return n == null ? '—' : Number(n).toFixed(1);
                     },
@@ -1251,27 +1263,56 @@
                         if (!notas.length) return null;
                         return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(1);
                     },
-                    conteo(est, umbral, aprobadas) {
+                    conteo(est, aprobadas) {
+                        const umbral = this.corte();
                         return this.materiasDe(est).filter((m) => {
                             const n = this.pctDe(this.resumenDe(m));
                             if (n == null) return false;
                             return aprobadas ? n >= umbral : n < umbral;
                         }).length;
                     },
+                    conteoPeriodo(est, periodo, aprobadas) {
+                        if (!est || !periodo) return 0;
+                        const umbral = this.corte();
+                        return this.materiasDe(est).filter((m) => {
+                            const n = this.pctDe(this.notaDe(m, periodo.id));
+                            if (n == null) return false;
+                            return aprobadas ? n >= umbral : n < umbral;
+                        }).length;
+                    },
+                    tramoDe(n) {
+                        if (n == null || !this.escala.length) return null;
+                        const nota = Number(n);
+                        for (let i = 0; i < this.escala.length; i++) {
+                            if (nota >= this.escala[i].desde) return this.escala[i];
+                        }
+                        return this.escala[this.escala.length - 1];
+                    },
+                    corte() {
+                        const pasan = this.escala.filter(function (t) { return t.tono !== 'aplazado'; });
+                        return pasan.length ? pasan[pasan.length - 1].desde : 0;
+                    },
                     nivel(n) {
-                        if (n == null) return '';
-                        if (n >= 90) return 'excelente';
-                        if (n >= 80) return 'bueno';
-                        if (n >= 70) return 'regular';
-                        return 'deficiente';
+                        const tramo = this.tramoDe(n);
+                        return tramo ? tramo.tono : '';
                     },
                     etiqueta(n) {
-                        const map = { excelente: 'Excelente', bueno: 'Bueno', regular: 'Regular', deficiente: 'Aplazado' };
-                        return map[this.nivel(n)];
+                        const tramo = this.tramoDe(n);
+                        return tramo ? tramo.nombre : '';
                     },
                     colorDe(n) {
-                        const map = { excelente: '#16a34a', bueno: '#2563eb', regular: '#d97706', deficiente: '#dc2626' };
-                        return map[this.nivel(n)];
+                        const map = {
+                            excelente: '#166534',
+                            bueno: '#1e40af',
+                            regular: '#92400e',
+                            aplazado: '#991b1b'
+                        };
+                        return map[this.nivel(n)] || '#94a3b8';
+                    },
+                    anilloDe(n) {
+                        const pct = n == null ? 0 : n;
+                        const tono = n == null ? '#2d5a87' : this.colorDe(n);
+                        return '--pct:' + pct + ';--tono:' + tono;
                     },
                     mover(dir) {
                         const list = this.filtrados;
