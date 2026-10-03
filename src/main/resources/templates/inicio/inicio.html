@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{index}">
 
 <head>
@@ -13,6 +14,9 @@
     <p layout:fragment="page-subtitle">Resumen de tu dirección</p>
 
     <th:block th:fragment="htmx-content">
+    <!-- Al cambiar de dirección el selector del menú se actualiza en el mismo paso.
+         Si la institución nueva tiene una sola dirección, el hueco llega vacío: el botón no se pinta. -->
+    <th:block th:if="${sincronizarSwitcher}" th:insert="~{layout/aside :: switcher}"></th:block>
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Dashboard</h2>
@@ -114,17 +118,18 @@
                 </div>
             </div>
             <button class="btn-switch-inst"
+                    th:if="${puedeCambiarInstitucion}"
                     hx-get="/inicio/direcciones-modal"
                     hx-target="#modal-container"
                     hx-swap="innerHTML"
-                    @click="document.getElementById('modal-container').classList.add('show')">
+                    onclick="document.getElementById('modal-container').classList.add('show')">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="17 1 21 5 17 9"></polyline>
                     <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
                     <polyline points="7 23 3 19 7 15"></polyline>
                     <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                 </svg>
-                Cambiar Dirección
+                Cambiar institución
             </button>
         </div>
 
@@ -462,7 +467,7 @@
             </div>
             <div class="dash-card-body">
                 <div class="dash-quick-actions">
-                    <a href="/usuarios" class="dash-action-btn"
+                    <a href="/usuarios" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
                        hx-get="/usuarios" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2d5a87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -470,21 +475,21 @@
                         </svg>
                         Gestionar Usuarios
                     </a>
-                    <a href="/direcciones" class="dash-action-btn"
+                    <a href="/direcciones" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
                        hx-get="/direcciones" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                         </svg>
                         Gestionar Instituciones
                     </a>
-                    <a href="/seguridad" class="dash-action-btn"
+                    <a href="/seguridad" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
                        hx-get="/seguridad" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/>
                         </svg>
                         Seguridad
                     </a>
-                    <a href="/configuracion" class="dash-action-btn"
+                    <a href="/configuracion" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
                        hx-get="/configuracion" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"/>

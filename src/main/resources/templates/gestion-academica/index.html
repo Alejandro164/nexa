@@ -129,15 +129,24 @@
                     </button>
                     <button th:each="tipo : ${tiposComponente}" type="button" class="config-tab-btn"
                         th:data-tab="${'tipo-' + tipo.id}"
+                        th:with="ruta=${tipo.clave == null ? '' : (tipo.clave.name() == 'COTIDIANO' ? '/gestion-academica/cotidiano/indicadores' : (tipo.clave.name() == 'TAREA' ? '/gestion-academica/tareas/definiciones' : (tipo.clave.name() == 'PROYECTO' ? '/gestion-academica/proyectos' : (tipo.clave.name() == 'EXAMEN' ? '/gestion-academica/examenes' : ''))))}, destino=${tipo.clave == null ? '' : (tipo.clave.name() == 'COTIDIANO' ? '#indicadores-panel' : (tipo.clave.name() == 'TAREA' ? '#tareas-definiciones-panel' : (tipo.clave.name() == 'PROYECTO' ? '#proyectos-panel' : (tipo.clave.name() == 'EXAMEN' ? '#examenes-panel' : ''))))}"
+                        th:hx-get="${ruta != '' ? ruta : null}"
+                        th:hx-target="${destino != '' ? destino : null}"
+                        th:hx-trigger="${ruta != '' ? 'click once' : null}"
+                        hx-swap="innerHTML"
                         @click="activeTab = $el.dataset.tab"
                         :class="{ 'active': activeTab === $el.dataset.tab }"
                         th:text="${(tipo.emoji != null and !#strings.isEmpty(tipo.emoji) ? tipo.emoji + ' ' : '') + tipo.nombre}">Componente</button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'promedio' }"
-                        @click="activeTab = 'promedio'">
+                        @click="activeTab = 'promedio'"
+                        hx-get="/gestion-academica/promedio" hx-trigger="click once"
+                        hx-target="#promedio-panel" hx-swap="innerHTML">
                         ✅ Promedio
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'componentes' }"
-                        @click="activeTab = 'componentes'">
+                        @click="activeTab = 'componentes'"
+                        hx-get="/gestion-academica/distribucion" hx-trigger="click once"
+                        hx-target="#distribucion-panel" hx-swap="innerHTML">
                         ⚖️ Distribución Porcentual
                     </button>
                 </div>
@@ -155,20 +164,16 @@
             <div th:each="tipo : ${tiposComponente}" class="tab-pane" x-cloak
                  th:data-tab="${'tipo-' + tipo.id}"
                  x-show="activeTab === $el.dataset.tab">
-                <div th:if="${tipo.clave != null and tipo.clave.name() == 'COTIDIANO'}"
-                     id="indicadores-panel" hx-get="/gestion-academica/cotidiano/indicadores" hx-trigger="load" hx-swap="innerHTML">
+                <div th:if="${tipo.clave != null and tipo.clave.name() == 'COTIDIANO'}" id="indicadores-panel">
                     <div class="card"><div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando…</div></div>
                 </div>
-                <div th:if="${tipo.clave != null and tipo.clave.name() == 'TAREA'}"
-                     id="tareas-definiciones-panel" hx-get="/gestion-academica/tareas/definiciones" hx-trigger="load" hx-swap="innerHTML">
+                <div th:if="${tipo.clave != null and tipo.clave.name() == 'TAREA'}" id="tareas-definiciones-panel">
                     <div class="card"><div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando…</div></div>
                 </div>
-                <div th:if="${tipo.clave != null and tipo.clave.name() == 'PROYECTO'}"
-                     id="proyectos-panel" hx-get="/gestion-academica/proyectos" hx-trigger="load" hx-swap="innerHTML">
+                <div th:if="${tipo.clave != null and tipo.clave.name() == 'PROYECTO'}" id="proyectos-panel">
                     <div class="card"><div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando…</div></div>
                 </div>
-                <div th:if="${tipo.clave != null and tipo.clave.name() == 'EXAMEN'}"
-                     id="examenes-panel" hx-get="/gestion-academica/examenes" hx-trigger="load" hx-swap="innerHTML">
+                <div th:if="${tipo.clave != null and tipo.clave.name() == 'EXAMEN'}" id="examenes-panel">
                     <div class="card"><div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando…</div></div>
                 </div>
                 <div th:if="${tipo.clave == null}" class="card">
@@ -185,7 +190,7 @@
 
             <!-- Promedio -->
             <div x-show="activeTab === 'promedio'" class="tab-pane" x-cloak>
-                <div id="promedio-panel" hx-get="/gestion-academica/promedio" hx-trigger="load" hx-swap="innerHTML">
+                <div id="promedio-panel">
                     <div class="card">
                         <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando promedios…</div>
                     </div>
@@ -194,7 +199,7 @@
 
             <!-- Componentes de Calificación / Distribución Porcentual -->
             <div x-show="activeTab === 'componentes'" class="tab-pane" x-cloak>
-                <div id="distribucion-panel" hx-get="/gestion-academica/distribucion" hx-trigger="load" hx-swap="innerHTML">
+                <div id="distribucion-panel">
                     <div class="card">
                         <div style="padding: 2rem; text-align:center; color: var(--text-secondary);">Cargando distribución…</div>
                     </div>

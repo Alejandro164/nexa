@@ -33,6 +33,7 @@ public class SecurityConfig {
     private static final String DOCENTE = "ROLE_DOCENTE";
     private static final String PADRE = "ROLE_PADRE";
     private static final String ESTUDIANTE = "ROLE_ESTUDIANTE";
+    private static final String SYSTEM_CONFIG = "ROLE_SYSTEM_CONFIG";
 
     private final UserDetailsServiceImpl userDetailsService;
     private final LoginSuccessHandler loginSuccessHandler;
@@ -94,11 +95,14 @@ public class SecurityConfig {
                         // Recursos públicos
                         .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
 
-                        // ── Administración: solo ADMIN, salvo Config. Académica e Institucional (también DIRECTOR) ──
+                        // ── Administración: Config. Académica e Institucional para ADMIN y DIRECTOR.
+                        //    Configuración, Usuarios, Seguridad e Instituciones solo para System Config. ──
                         .requestMatchers("/configuracion-academica/**", "/configuracion-institucional/**")
                                 .hasAnyAuthority(ADMIN, DIRECTOR)
-                        .requestMatchers("/configuracion/**", "/usuarios/**", "/seguridad", "/direcciones/**",
-                                "/componentes").hasAuthority(ADMIN)
+                        .requestMatchers("/configuracion", "/configuracion/**", "/usuarios", "/usuarios/**",
+                                "/seguridad", "/seguridad/**", "/direcciones", "/direcciones/**")
+                                .hasAuthority(SYSTEM_CONFIG)
+                        .requestMatchers("/componentes").hasAuthority(ADMIN)
 
                         // ── Personal: Solicitudes de Padres también la ve DOCENTE; el resto no ──
                         .requestMatchers("/personal/solicitudes/**").hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
@@ -145,7 +149,11 @@ public class SecurityConfig {
                         .requestMatchers("/comunicacion/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, PADRE, ESTUDIANTE)
 
-                        // Todo lo demás (inicio, perfil, configuración de cuenta, login, logout, etc.)
+                        // Preferencias de la cuenta: solo quien tiene System Config.
+                        .requestMatchers("/configuracion-cuenta", "/configuracion-cuenta/**")
+                        .hasAuthority(SYSTEM_CONFIG)
+
+                        // Todo lo demás (inicio, perfil, login, logout, etc.)
                         // requiere solo estar autenticado, sin distinción de rol
                         .anyRequest().authenticated())
                 .formLogin(form -> form

@@ -769,7 +769,11 @@
 
             <!-- Contenido Visual de Horario -->
             <div x-show="$store.academico.activeTab === 'horario'" class="tab-pane" x-cloak>
-                <div th:replace="~{configuracion-academica/horario/horario :: content}"></div>
+                <div id="horario-panel">
+                    <div class="vista-espera-caja" style="position:static;padding:2.5rem 0;">
+                        <span>El horario se carga al abrir esta pestaña.</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Contenido Visual de Subgrupos -->

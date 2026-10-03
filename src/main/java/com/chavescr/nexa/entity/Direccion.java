@@ -1,5 +1,7 @@
 package com.chavescr.nexa.entity;
 
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Set;
 
 import jakarta.persistence.Column;
@@ -43,6 +45,9 @@ public class Direccion {
 
     @Column(nullable = false)
     private Boolean activa = true;
+
+    /** La que se abre al elegir la institución. Solo una por institución. */
+    private Boolean principal = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "institucion_id")
@@ -127,6 +132,14 @@ public class Direccion {
         this.activa = activa;
     }
 
+    public boolean isPrincipal() {
+        return Boolean.TRUE.equals(principal);
+    }
+
+    public void setPrincipal(boolean principal) {
+        this.principal = principal;
+    }
+
     public Institucion getInstitucion() {
         return institucion;
     }
@@ -149,5 +162,22 @@ public class Direccion {
             return base;
         }
         return base + " · " + oferta.getEtiqueta();
+    }
+
+    /** Preescolar, luego Primaria, luego Secundaria. El id desempata. */
+    public static final Comparator<Direccion> POR_OFERTA = Comparator
+            .comparingInt((Direccion d) -> d.getOferta() == null ? Integer.MAX_VALUE : d.getOferta().ordinal())
+            .thenComparing(d -> d.getId() == null ? Long.MAX_VALUE : d.getId());
+
+    /**
+     * Dirección que se abre al elegir la institución. Si ninguna está marcada, la primera
+     * por oferta: así el selector funciona antes de que alguien la configure.
+     */
+    public static Direccion entrada(Collection<Direccion> grupo) {
+        if (grupo == null || grupo.isEmpty()) {
+            throw new IllegalArgumentException("La institución no tiene direcciones.");
+        }
+        return grupo.stream().filter(Direccion::isPrincipal).min(POR_OFERTA)
+                .orElseGet(() -> grupo.stream().min(POR_OFERTA).orElseThrow());
     }
 }

@@ -31,9 +31,13 @@
                                 th:text="${institucion.cedula != null ? institucion.cedula : institucion.email}">cédula</div>
                         </td>
                         <td>
-                            <span th:each="inst : ${institucion.direcciones}" class="badge-xs badge-activo"
-                                  style="margin-right:4px;"
-                                  th:text="${inst.oferta != null ? inst.oferta.etiqueta : 'Sin clasificar'}">Primaria</span>
+                            <span th:each="inst : ${institucion.direcciones}"
+                                  style="display:inline-flex; align-items:center; gap:4px; margin:2px 8px 2px 0;">
+                                <span class="badge-xs badge-activo"
+                                      th:text="${inst.oferta != null ? inst.oferta.etiqueta : 'Sin clasificar'}">Primaria</span>
+                                <span th:if="${inst.principal}" class="badge-xs"
+                                      style="background:rgba(45,90,135,0.12); color:#2d5a87;">Entrada</span>
+                            </span>
                         </td>
                         <td th:text="${institucion.direccion}" style="color:#64748b;">Dirección</td>
                         <td>

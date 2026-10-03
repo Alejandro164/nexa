@@ -1,7 +1,9 @@
 package com.chavescr.nexa.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -16,10 +18,12 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.ui.ExtendedModelMap;
 
 import com.chavescr.nexa.dto.DireccionDTO;
 import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.service.DireccionService;
+import com.chavescr.nexa.service.SesionDireccionService;
 import com.chavescr.nexa.service.UsuarioService;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,22 +42,23 @@ class MainControllerTest {
         controller = new MainController();
         ReflectionTestUtils.setField(controller, "usuarioService", usuarioService);
         ReflectionTestUtils.setField(controller, "direccionService", direccionService);
+        ReflectionTestUtils.setField(controller, "sesionDireccionService",
+                new SesionDireccionService(usuarioService, direccionService));
     }
 
     @Test
-    void noPermiteCambiarAUnaDireccionALaQueElUsuarioNoPertenece() throws Exception {
-        DireccionDTO propia = new DireccionDTO();
-        propia.setId(1L);
-        propia.setNombre("Dirección Propia");
-        when(usuarioService.obtenerDireccionesDelUsuarioActual()).thenReturn(List.of(propia));
-
+    void quienNoEsAdminNiDirectorNoCambiaLaDireccionActiva() throws Exception {
         MockHttpSession session = new MockHttpSession();
+        session.setAttribute("SESSION_DIRECCION_ID", 1L);
+        session.setAttribute("SESSION_DIRECCION_NOMBRE", "Dirección Propia");
+        session.setAttribute("SESSION_USUARIO_ID", 7L);
 
         controller.cambiarDireccion(99L, new MockHttpServletRequest(), new MockHttpServletResponse(),
-                session);
+                session, new ExtendedModelMap());
 
-        assertNull(session.getAttribute("SESSION_DIRECCION_ID"));
-        assertNull(session.getAttribute("SESSION_DIRECCION_NOMBRE"));
+        assertEquals(1L, session.getAttribute("SESSION_DIRECCION_ID"));
+        assertEquals("Dirección Propia", session.getAttribute("SESSION_DIRECCION_NOMBRE"));
+        verify(usuarioService, never()).actualizarUltimaDireccion(any(), any());
     }
 
     @Test
@@ -69,26 +74,74 @@ class MainControllerTest {
         MockHttpSession session = new MockHttpSession();
 
         controller.cambiarDireccion(2L, new MockHttpServletRequest(), new MockHttpServletResponse(),
-                session);
+                session, new ExtendedModelMap());
 
         assertEquals(2L, session.getAttribute("SESSION_DIRECCION_ID"));
         assertEquals("Segunda Dirección", session.getAttribute("SESSION_DIRECCION_NOMBRE"));
+        verify(usuarioService, never()).actualizarUltimaDireccion(any(), any());
     }
 
     @Test
-    void adminPuedeCambiarACualquierDireccionExistenteSinPertenecerAElla() throws Exception {
+    void systemConfigPuedeCambiarACualquierDireccionExistenteSinPertenecerAElla() throws Exception {
         Direccion otra = new Direccion();
         otra.setId(5L);
         otra.setNombre("Otra Dirección");
-        when(direccionService.findById(5L)).thenReturn(Optional.of(otra));
+        when(direccionService.findByIdConInstitucion(5L)).thenReturn(Optional.of(otra));
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addUserRole("ROLE_ADMIN");
+        request.addUserRole("ROLE_SYSTEM_CONFIG");
         MockHttpSession session = new MockHttpSession();
+        session.setAttribute("SESSION_USUARIO_ID", 7L);
 
-        controller.cambiarDireccion(5L, request, new MockHttpServletResponse(), session);
+        controller.cambiarDireccion(5L, request, new MockHttpServletResponse(), session, new ExtendedModelMap());
+
+        verify(usuarioService).actualizarUltimaDireccion(7L, otra);
 
         assertEquals(5L, session.getAttribute("SESSION_DIRECCION_ID"));
         assertEquals("Otra Dirección", session.getAttribute("SESSION_DIRECCION_NOMBRE"));
+    }
+
+    @Test
+    void directorPuedeCambiarDeDireccion() throws Exception {
+        DireccionDTO actual = new DireccionDTO();
+        actual.setId(1L);
+        actual.setNombre("Primaria");
+        DireccionDTO otra = new DireccionDTO();
+        otra.setId(2L);
+        otra.setNombre("Secundaria");
+        when(usuarioService.obtenerDireccionesDelUsuarioActual()).thenReturn(List.of(actual, otra));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addUserRole("ROLE_DIRECTOR");
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("SESSION_DIRECCION_ID", 1L);
+        session.setAttribute("SESSION_DIRECCION_NOMBRE", "Primaria");
+
+        controller.cambiarDireccion(2L, request, new MockHttpServletResponse(), session, new ExtendedModelMap());
+
+        assertEquals(2L, session.getAttribute("SESSION_DIRECCION_ID"));
+        assertEquals("Secundaria", session.getAttribute("SESSION_DIRECCION_NOMBRE"));
+    }
+
+    @Test
+    void docenteNoEntraAUnaDireccionQueNoEsSuya() throws Exception {
+        DireccionDTO propia = new DireccionDTO();
+        propia.setId(1L);
+        propia.setNombre("Primaria");
+        when(usuarioService.obtenerDireccionesDelUsuarioActual()).thenReturn(List.of(propia));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addUserRole("ROLE_DOCENTE");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("SESSION_DIRECCION_ID", 1L);
+        session.setAttribute("SESSION_DIRECCION_NOMBRE", "Primaria");
+
+        controller.cambiarDireccion(2L, request, response, session, new ExtendedModelMap());
+
+        assertEquals(403, response.getStatus());
+        assertEquals(1L, session.getAttribute("SESSION_DIRECCION_ID"));
+        assertEquals("Primaria", session.getAttribute("SESSION_DIRECCION_NOMBRE"));
+        verify(usuarioService, never()).actualizarUltimaDireccion(any(), any());
     }
 }

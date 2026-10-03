@@ -309,13 +309,18 @@
                     </div>
                     <div class="hr-head-side">
                         <nav class="hr-vistas" th:if="${consulta.puedeVerDocentes and consulta.puedeVerEstudiantes}"
-                             hx-boost="true" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true"
                              hx-indicator="#horario-loading">
                             <a class="hr-vista"
                                th:href="@{/horario(vista='docentes', periodoId=${consulta.periodoId})}"
+                               th:hx-get="@{/horario(vista='docentes', periodoId=${consulta.periodoId})}"
+                               hx-target=".content-area" hx-swap="innerHTML show:none focus-scroll:false"
+                               hx-push-url="true"
                                th:classappend="${consulta.vistaDocentes} ? 'is-on'">Docentes</a>
                             <a class="hr-vista"
                                th:href="@{/horario(vista='estudiantes', periodoId=${consulta.periodoId})}"
+                               th:hx-get="@{/horario(vista='estudiantes', periodoId=${consulta.periodoId})}"
+                               hx-target=".content-area" hx-swap="innerHTML show:none focus-scroll:false"
+                               hx-push-url="true"
                                th:classappend="${!consulta.vistaDocentes} ? 'is-on'">Estudiantes</a>
                         </nav>
                         <span class="hr-count" th:if="${consulta.mensaje == null}"
@@ -439,6 +444,38 @@
                 </div>
             </section>
         </div>
+        <script>
+            (function () {
+                if (window.__horarioVistaScroll) return;
+                window.__horarioVistaScroll = true;
+                var pending = null;
+                document.body.addEventListener('htmx:beforeRequest', function (event) {
+                    var elt = event.detail && event.detail.elt;
+                    if (!elt || !elt.closest || !elt.closest('.hr-vistas')) return;
+                    var grid = document.querySelector('.hr-scroll');
+                    pending = {
+                        x: window.scrollX,
+                        y: window.scrollY,
+                        gridX: grid ? grid.scrollLeft : 0,
+                        gridY: grid ? grid.scrollTop : 0
+                    };
+                });
+                document.body.addEventListener('htmx:afterSettle', function (event) {
+                    if (!pending) return;
+                    var target = event.detail && event.detail.target;
+                    if (!target || !target.classList || !target.classList.contains('content-area')) return;
+                    var state = pending;
+                    pending = null;
+                    requestAnimationFrame(function () {
+                        window.scrollTo(state.x, state.y);
+                        var grid = document.querySelector('.hr-scroll');
+                        if (!grid) return;
+                        grid.scrollLeft = state.gridX;
+                        grid.scrollTop = state.gridY;
+                    });
+                });
+            })();
+        </script>
     </main>
     </th:block>
 

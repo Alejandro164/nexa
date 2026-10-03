@@ -15,6 +15,9 @@ public interface MateriaRepository extends JpaRepository<Materia, Long> {
     @EntityGraph(attributePaths = "tipoMateria")
     List<Materia> findByDireccionIdAndActivoTrueOrderByNombreAsc(Long direccionId);
 
+    List<Materia> findByDireccionIdAndActivoTrueAndTipoMateriaIdOrderByNombreAsc(
+            Long direccionId, Long tipoMateriaId);
+
     @EntityGraph(attributePaths = "tipoMateria")
     Optional<Materia> findByIdAndDireccionId(Long id, Long direccionId);
 

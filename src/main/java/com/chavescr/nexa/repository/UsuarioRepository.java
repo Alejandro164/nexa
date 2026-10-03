@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Usuario;
 
 @Repository
@@ -60,6 +61,16 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
                      "LOWER(u.usuario) = LOWER(:identifier) OR " +
                      "u.cedula         = :identifier")
        Optional<Usuario> findByIdentifierWithDirecciones(@Param("identifier") String identifier);
+
+       /**
+        * Direcciones activas del usuario, con la institución ya cargada, para armar el
+        * selector de dirección sin un lazy load fuera de la transacción.
+        */
+       @Query("SELECT DISTINCT d FROM Usuario u JOIN u.direcciones d LEFT JOIN FETCH d.institucion WHERE " +
+                     "(LOWER(u.email) = LOWER(:identifier) OR LOWER(u.usuario) = LOWER(:identifier) OR u.cedula = :identifier) "
+                     +
+                     "AND d.activa = true")
+       List<Direccion> findDireccionesActivasByIdentifier(@Param("identifier") String identifier);
 
        @Query("SELECT DISTINCT u FROM Usuario u JOIN u.direcciones i " +
                      "WHERE i.id = :direccionId AND u.activo = true ORDER BY u.nombre")

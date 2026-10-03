@@ -4,7 +4,7 @@
 <body>
     <div th:fragment="form-content">
         <div class="modal-backdrop">
-            <div class="modal-dialog">
+            <div class="modal-dialog" style="max-width: 720px;">
                 <div class="modal-header">
                     <h3 class="modal-title"
                         th:text="${institucion.id == null ? 'Nueva institución' : 'Editar institución'}">Institución</h3>
@@ -47,11 +47,15 @@
                             <label class="form-label"
                                 style="display:block; margin-bottom:0.5rem; font-size:0.875rem; font-weight:500;">Direcciones</label>
                             <p style="margin:0 0 0.75rem; font-size:0.8rem; color:var(--text-secondary);">
-                                Marque las que tiene la institución. Cada una lleva su código presupuestario y queda aislada:
-                                estudiantes, docentes y secciones no se copian a las demás.
+                                Marque las que tiene la institución. Cada una queda aislada: estudiantes, docentes y
+                                secciones no se copian. La marcada como entrada es la que se abre al elegir la institución.
                             </p>
-                            <div th:each="oferta : ${ofertas}"
-                                style="display:grid; grid-template-columns: 180px 1fr; gap:0.75rem; align-items:center; margin-bottom:0.75rem;">
+                            <div class="entrada-head">
+                                <span>Dirección</span>
+                                <span>Código presupuestario</span>
+                                <span>Entrada</span>
+                            </div>
+                            <div th:each="oferta : ${ofertas}" class="entrada-fila" data-oferta-fila>
                                 <label class="checkbox-label">
                                     <input type="checkbox" class="custom-checkbox" name="ofertas"
                                         th:value="${oferta.name()}"
@@ -66,6 +70,12 @@
                                 <input type="text" class="form-input" th:name="${oferta.name()}"
                                     th:value="${codigos != null ? codigos.get(oferta.name()) : ''}"
                                     placeholder="Código presupuestario" style="padding-left:14px;" />
+                                <label class="radio-label" title="Se abre al elegir esta institución">
+                                    <input type="radio" class="custom-radio" name="principal"
+                                        th:value="${oferta.name()}"
+                                        th:checked="${principal != null and principal.equals(oferta.name())}" />
+                                    <span>Entrada</span>
+                                </label>
                             </div>
                         </div>
 
@@ -119,6 +129,43 @@
             </div>
         </div>
         <script>
+            (function () {
+                var filas = document.querySelectorAll('[data-oferta-fila]');
+                function sincronizar() {
+                    var marcada = null;
+                    filas.forEach(function (fila) {
+                        var check = fila.querySelector('input[name="ofertas"]');
+                        var radio = fila.querySelector('input[name="principal"]');
+                        if (!check.checked) {
+                            radio.checked = false;
+                        }
+                        radio.disabled = !check.checked;
+                        fila.classList.toggle('is-off', !check.checked);
+                        if (check.checked && radio.checked) {
+                            marcada = radio;
+                        }
+                    });
+                    if (!marcada) {
+                        filas.forEach(function (fila) {
+                            var check = fila.querySelector('input[name="ofertas"]');
+                            var radio = fila.querySelector('input[name="principal"]');
+                            if (!marcada && check.checked) {
+                                radio.checked = true;
+                                marcada = radio;
+                            }
+                        });
+                    }
+                }
+                filas.forEach(function (fila) {
+                    fila.querySelector('input[name="ofertas"]').addEventListener('change', sincronizar);
+                    fila.querySelector('input[name="principal"]').addEventListener('change', function () {
+                        fila.querySelector('input[name="ofertas"]').checked = true;
+                        sincronizar();
+                    });
+                });
+                sincronizar();
+            })();
+
             function normalizarIdentificacionHacienda(cedula) {
                 var digits = (cedula || '').replace(/\D/g, '');
                 if (digits.length < 9 || digits.length > 12) {
@@ -180,6 +227,32 @@
                 });
             };
         </script>
+        <style>
+            .entrada-head,
+            .entrada-fila {
+                display: grid;
+                grid-template-columns: 168px minmax(0, 1fr) 108px;
+                gap: 0.75rem;
+                align-items: center;
+            }
+            .entrada-head {
+                margin-bottom: 0.35rem;
+                font-size: 0.72rem;
+                font-weight: 600;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: #94a3b8;
+            }
+            .entrada-fila {
+                margin-bottom: 0.65rem;
+            }
+            .entrada-fila.is-off .radio-label {
+                opacity: 0.45;
+            }
+            .entrada-fila .radio-label {
+                justify-content: flex-end;
+            }
+        </style>
     </div>
 </body>
 

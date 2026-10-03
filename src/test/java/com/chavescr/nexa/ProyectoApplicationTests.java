@@ -133,7 +133,7 @@ class ProyectoApplicationTests {
 		context.setVariable("bloqueosSeccion", Map.of());
 		context.setVariable("tiposMateria", List.of());
 		context.setVariable("totalLecciones", 1);
-		context.setVariable("leccionCerrada", false);
+		context.setVariable("tipoMateriaBloqueada", null);
 		context.setVariable("docentesAsociadosVacios", false);
 		context.setVariable("leccion", leccion);
 		context.setVariable("periodoId", 1L);

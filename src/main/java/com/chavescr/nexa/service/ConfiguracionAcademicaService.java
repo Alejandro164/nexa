@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Aula;
-import com.chavescr.nexa.entity.BloqueoLeccion;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Direccion;
@@ -50,7 +49,6 @@ public class ConfiguracionAcademicaService {
     private final DocenteMateriaService docenteMateriaService;
     private final DocenteGuiaService docenteGuiaService;
     private final DocenteBloqueoService docenteBloqueoService;
-    private final BloqueoLeccionService bloqueoLeccionService;
     private final SeccionBloqueoService seccionBloqueoService;
     private final EnvioNotasDocenteService envioNotasDocenteService;
     private final ConfiguracionDireccionService configuracionDireccionService;
@@ -67,7 +65,6 @@ public class ConfiguracionAcademicaService {
             DocenteMateriaService docenteMateriaService,
             DocenteGuiaService docenteGuiaService,
             DocenteBloqueoService docenteBloqueoService,
-            BloqueoLeccionService bloqueoLeccionService,
             SeccionBloqueoService seccionBloqueoService,
             EnvioNotasDocenteService envioNotasDocenteService,
             ConfiguracionDireccionService configuracionDireccionService) {
@@ -83,7 +80,6 @@ public class ConfiguracionAcademicaService {
         this.docenteMateriaService = docenteMateriaService;
         this.docenteGuiaService = docenteGuiaService;
         this.docenteBloqueoService = docenteBloqueoService;
-        this.bloqueoLeccionService = bloqueoLeccionService;
         this.seccionBloqueoService = seccionBloqueoService;
         this.envioNotasDocenteService = envioNotasDocenteService;
 
@@ -194,20 +190,6 @@ public class ConfiguracionAcademicaService {
     @Transactional(readOnly = true)
     public List<Materia> listarMateriasActivas(Long direccionId) {
         return materiaRepository.findByDireccionIdAndActivoTrueOrderByNombreAsc(direccionId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Materia> listarMateriasParaHorario(Long direccionId, Long nivelId, String dia,
-            Integer numeroLeccion, Long materiaActualId) {
-        NivelAcademico nivel = obtenerNivel(direccionId, nivelId);
-        return bloqueoLeccionService.filtrarMaterias(direccionId, nivel.getGrado(), dia, numeroLeccion,
-                listarMateriasActivas(direccionId), materiaActualId);
-    }
-
-    @Transactional(readOnly = true)
-    public BloqueoLeccion bloqueoDeCelda(Long direccionId, Long nivelId, String dia, Integer numeroLeccion) {
-        NivelAcademico nivel = obtenerNivel(direccionId, nivelId);
-        return bloqueoLeccionService.vigente(direccionId, nivel.getGrado(), dia, numeroLeccion);
     }
 
     @Transactional(readOnly = true)
@@ -417,7 +399,6 @@ public class ConfiguracionAcademicaService {
             throw new IllegalArgumentException("El docente no está disponible en esta lección");
         }
         NivelAcademico nivel = obtenerNivel(direccionId, nivelId);
-        bloqueoLeccionService.validarAsignacion(direccionId, nivel.getGrado(), dia, numeroLeccion, materia);
 
         HorarioLeccion leccion;
         if (id != null) {
@@ -462,21 +443,25 @@ public class ConfiguracionAcademicaService {
         return seccionBloqueoService.mapa(direccionId, periodoId, nivelId);
     }
 
-    /** Materias activas, acotadas al tipo bloqueado en ese slot (si lo hay). */
+    @Transactional(readOnly = true)
+    public Optional<TipoMateria> tipoBloqueado(Long direccionId, Long periodoId, Long nivelId, String dia,
+            Integer numeroLeccion) {
+        return seccionBloqueoService.tipoBloqueado(direccionId, periodoId, nivelId, dia, numeroLeccion);
+    }
+
+    /**
+     * Materias activas del horario. Si la lección está bloqueada, solo las del tipo bloqueado.
+     */
     @Transactional(readOnly = true)
     public List<Materia> listarMateriasDisponibles(Long direccionId, Long nivelId, Long periodoId, String dia,
-            Integer numeroLeccion, Long materiaSeleccionadaId) {
-        List<Materia> materias = listarMateriasActivas(direccionId);
+            Integer numeroLeccion) {
         Optional<TipoMateria> tipoBloqueado = seccionBloqueoService.tipoBloqueado(
                 direccionId, periodoId, nivelId, dia, numeroLeccion);
         if (tipoBloqueado.isEmpty()) {
-            return materias;
+            return listarMateriasActivas(direccionId);
         }
-        Long tipoId = tipoBloqueado.get().getId();
-        return materias.stream()
-                .filter(m -> Objects.equals(m.getId(), materiaSeleccionadaId)
-                        || (m.getTipoMateria() != null && m.getTipoMateria().getId().equals(tipoId)))
-                .toList();
+        return materiaRepository.findByDireccionIdAndActivoTrueAndTipoMateriaIdOrderByNombreAsc(
+                direccionId, tipoBloqueado.get().getId());
     }
 
     public void alternarBloqueoSeccion(Long direccionId, Long periodoId, Long nivelId, String dia,

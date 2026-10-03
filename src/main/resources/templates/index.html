@@ -24,6 +24,155 @@
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <script>
+        // El swap de htmx espera 20ms para “asentar”. En ese hueco Alpine ya vio el HTML nuevo
+        // y enlazó x-data antes de que corrieran los <script> de la vista (stores, notasModulo,
+        // jornadaLectiva…). El primer clic quedaba sin datos o sin clases; el segundo funcionaba
+        // porque la función ya existía. Asentar al instante y enlazar Alpine después de los scripts.
+        if (window.htmx) {
+            htmx.config.defaultSettleDelay = 0;
+        }
+
+        (function () {
+            var pausado = false;
+            var cierrePendiente = false;
+            var nodosViejos = [];
+
+            function pausarAlpine() {
+                if (!window.Alpine || typeof Alpine.stopObservingMutations !== 'function') return;
+                if (!pausado) {
+                    Alpine.stopObservingMutations();
+                    pausado = true;
+                }
+            }
+
+            function programarCierre() {
+                if (cierrePendiente) return;
+                cierrePendiente = true;
+                queueMicrotask(function () {
+                    cierrePendiente = false;
+                    var viejos = nodosViejos.splice(0);
+                    if (window.Alpine && typeof Alpine.destroyTree === 'function') {
+                        viejos.forEach(function (nodo) {
+                            if (!nodo || nodo.nodeType !== 1 || nodo.isConnected) return;
+                            Alpine.destroyTree(nodo);
+                        });
+                    }
+                    if (pausado && window.Alpine && typeof Alpine.startObservingMutations === 'function') {
+                        Alpine.startObservingMutations();
+                        pausado = false;
+                    }
+                });
+            }
+
+            // <style> que llega dentro del HTML de htmx se parsea en otro documento y Chrome no lo aplica.
+            function activarEstilos(raiz) {
+                if (!raiz || !raiz.querySelectorAll) return;
+                raiz.querySelectorAll('style').forEach(function (style) {
+                    if (style.getAttribute('data-nexa-estilo') === '1') return;
+                    var copia = document.createElement('style');
+                    copia.setAttribute('data-nexa-estilo', '1');
+                    copia.textContent = style.textContent;
+                    style.replaceWith(copia);
+                });
+            }
+
+            // Enlaza solo lo que el script de la vista todavía no enlazó, sin repetir initTree.
+            function montarAlpine(raiz) {
+                if (!raiz || raiz.nodeType !== 1 || !window.Alpine || typeof Alpine.initTree !== 'function') return;
+                if (raiz._x_dataStack) return;
+                var sacados = [];
+                raiz.querySelectorAll('[x-data]').forEach(function (el) {
+                    if (!el._x_dataStack) return;
+                    var padre = el.parentElement && el.parentElement.closest('[x-data]');
+                    if (padre && padre._x_dataStack) return;
+                    var marca = document.createComment('nexa-alpine');
+                    el.parentNode.insertBefore(marca, el);
+                    el.remove();
+                    sacados.push({ el: el, marca: marca });
+                });
+                Alpine.initTree(raiz);
+                sacados.forEach(function (item) {
+                    item.marca.parentNode.insertBefore(item.el, item.marca);
+                    item.marca.remove();
+                });
+            }
+
+            document.addEventListener('htmx:beforeSwap', function (evt) {
+                if (!evt.detail || evt.detail.shouldSwap === false) return;
+                pausarAlpine();
+                var target = evt.detail.target;
+                if (!target || target.nodeType !== 1 || target === document.body) return;
+                var swap = (evt.detail.elt && evt.detail.elt.getAttribute('hx-swap')) || '';
+                if (swap.replace(/\s+/g, '').indexOf('outerHTML') === 0) {
+                    nodosViejos.push(target);
+                    return;
+                }
+                Array.prototype.forEach.call(target.childNodes, function (nodo) {
+                    if (nodo.nodeType === 1) nodosViejos.push(nodo);
+                });
+            });
+
+            document.addEventListener('htmx:afterSwap', function (evt) {
+                activarEstilos(evt.target);
+            });
+
+            document.addEventListener('htmx:afterSettle', function (evt) {
+                try {
+                    montarAlpine(evt.target);
+                } finally {
+                    programarCierre();
+                }
+            });
+
+            document.addEventListener('htmx:swapError', programarCierre);
+            document.addEventListener('htmx:historyRestore', function () {
+                activarEstilos(document.body);
+            });
+
+            function mostrarEspera(enlace) {
+                var area = document.querySelector('.content-area');
+                if (!area) return;
+                quitarEspera();
+                var capa = document.createElement('div');
+                capa.id = 'vista-espera';
+                capa.className = 'vista-espera';
+                var caja = document.createElement('div');
+                caja.className = 'vista-espera-caja';
+                var giro = document.createElement('div');
+                giro.className = 'spinner';
+                var texto = document.createElement('span');
+                var etiqueta = enlace.querySelector('.nav-item-text');
+                texto.textContent = etiqueta ? etiqueta.textContent.trim() : 'Cargando';
+                caja.append(giro, texto);
+                capa.appendChild(caja);
+                area.appendChild(capa);
+            }
+
+            function quitarEspera() {
+                var capa = document.getElementById('vista-espera');
+                if (capa) capa.remove();
+            }
+
+            document.addEventListener('htmx:beforeRequest', function (evt) {
+                var enlace = evt.detail && evt.detail.elt;
+                if (!enlace || !enlace.closest || !enlace.classList.contains('nav-item')) return;
+                if (!enlace.closest('.sidebar-nav')) return;
+                if (enlace.getAttribute('hx-target') !== '.content-area') return;
+                mostrarEspera(enlace);
+            });
+
+            document.addEventListener('htmx:beforeSwap', function (evt) {
+                var target = evt.detail && evt.detail.target;
+                if (target && target.classList && target.classList.contains('content-area')) {
+                    quitarEspera();
+                }
+            });
+
+            document.addEventListener('htmx:responseError', quitarEspera);
+            document.addEventListener('htmx:sendError', quitarEspera);
+            document.addEventListener('htmx:timeout', quitarEspera);
+        })();
+
         document.addEventListener('htmx:configRequest', function (evt) {
             var token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
             var header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
@@ -41,11 +190,46 @@
                 }
             });
         }
+
+        function sincronizarTituloPestana() {
+            var titulo = document.getElementById('topbar-page-title');
+            if (!titulo) return;
+            var texto = titulo.textContent
+                .replace(/\p{Extended_Pictographic}|\uFE0F|\u200D/gu, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (!texto) return;
+            if (texto.indexOf('Nexa') === -1) {
+                texto += ' — Nexa';
+            }
+            if (document.title !== texto) {
+                document.title = texto;
+            }
+        }
         document.addEventListener('DOMContentLoaded', updateActiveSidebar);
+        document.addEventListener('htmx:afterSettle', function (evt) {
+            var path = evt.detail && evt.detail.pathInfo && evt.detail.pathInfo.requestPath;
+            if (path !== '/inicio/cambiar-direccion' || !window.Alpine) {
+                return;
+            }
+            var slot = document.getElementById('dir-switcher-slot');
+            if (slot) {
+                Alpine.initTree(slot);
+            }
+        });
+        document.addEventListener('direccionCambiada', function () {
+            var modal = document.getElementById('modal-container');
+            if (!modal) {
+                return;
+            }
+            modal.classList.remove('show');
+            modal.innerHTML = '';
+        });
         var bitacoraRutaCargada = null;
 
         document.addEventListener('htmx:afterSettle', function (evt) {
             updateActiveSidebar();
+            sincronizarTituloPestana();
             var drawer = document.getElementById('bitacora-drawer');
             if (!drawer || !drawer.classList.contains('is-open')) {
                 return;
@@ -800,7 +984,28 @@
         }
 
         .content-area {
+            position: relative;
             padding: 15px;
+        }
+
+        .vista-espera {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
+            display: flex;
+            justify-content: center;
+            padding-top: 4.5rem;
+            background: rgba(248, 250, 252, 0.94);
+        }
+
+        .vista-espera-caja {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            height: 2.5rem;
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            font-weight: 600;
         }
 
         .sidebar-overlay {
