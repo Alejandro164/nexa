@@ -1,0 +1,289 @@
+<div th:fragment="detalle" id="notas-materia-modal" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        #notas-materia-modal .modal-backdrop { z-index: 160; }
+        #notas-materia-modal .modal-dialog {
+            max-width: 920px;
+            display: flex;
+            flex-direction: column;
+            max-height: min(860px, calc(100vh - 2rem));
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+        }
+        #notas-materia-modal .modal-header { align-items: flex-start; gap: 1rem; }
+        #notas-materia-modal .notas-mat-heading { min-width: 0; }
+        #notas-materia-modal .modal-title { margin: 0; color: #0f172a; letter-spacing: -0.02em; }
+        #notas-materia-modal .notas-mat-sub { margin: 0.2rem 0 0; font-size: 0.8rem; color: #64748b; }
+        #notas-materia-modal .notas-mat-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 0.85rem 1.5rem;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            background: #f8fafc;
+        }
+        #notas-materia-modal .notas-mat-student { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+        #notas-materia-modal .notas-mat-avatar {
+            width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+            color: #fff; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+        }
+        #notas-materia-modal .notas-mat-name { font-size: 0.9rem; font-weight: 700; color: #0f172a; }
+        #notas-materia-modal .notas-mat-meta { font-size: 0.75rem; color: #64748b; margin-top: 1px; }
+        #notas-materia-modal .notas-mat-acciones {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        #notas-materia-modal .notas-mat-periodo {
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            background: #fff;
+            border: 1px solid var(--border, #e2e8f0);
+            color: #334155;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        #notas-materia-modal .notas-mat-acciones .btn-primary.btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+        #notas-materia-modal .modal-body {
+            overflow: auto;
+            padding: 1rem 1.5rem 1.25rem;
+            background: #f8fafc;
+        }
+        #notas-materia-modal .modal-dialog > .modal-footer {
+            margin: 0; padding: 0.85rem 1.5rem; border-top: 1px solid var(--border, #e2e8f0); background: #fff;
+        }
+        #notas-materia-modal .notas-mat-kpis {
+            display: grid; grid-template-columns: repeat(4, 1fr); background: #fff;
+            border: 1px solid var(--border, #e2e8f0); border-radius: 12px; overflow: hidden; margin-bottom: 0.85rem;
+        }
+        #notas-materia-modal .notas-mat-kpi { padding: 0.75rem 1rem; border-right: 1px solid var(--border, #e2e8f0); }
+        #notas-materia-modal .notas-mat-kpi:last-child { border-right: none; }
+        #notas-materia-modal .notas-mat-kpi span {
+            display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
+            text-transform: uppercase; color: #64748b;
+        }
+        #notas-materia-modal .notas-mat-valor {
+            display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-top: 0.15rem;
+        }
+        #notas-materia-modal .notas-mat-kpi strong {
+            font-size: 1.15rem; font-weight: 750; color: #0f172a; font-variant-numeric: tabular-nums;
+        }
+        #notas-materia-modal .notas-mat-tabla-wrap {
+            background: #fff; border: 1px solid var(--border, #e2e8f0); border-radius: 12px; overflow: auto;
+        }
+        #notas-materia-modal .notas-mat-tabla { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 680px; }
+        #notas-materia-modal .notas-mat-tabla th {
+            position: sticky; top: 0; z-index: 1;
+            padding: 0.75rem 0.85rem; background: #f8fafc;
+            box-shadow: inset 0 -1px 0 var(--border, #e2e8f0);
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+            color: #64748b; text-align: left; white-space: nowrap;
+        }
+        #notas-materia-modal .notas-mat-tabla td {
+            padding: 0.75rem 0.85rem; font-size: 0.84rem; color: #334155;
+            border-bottom: 1px solid #f1f5f9; vertical-align: top;
+        }
+        #notas-materia-modal .notas-mat-tabla tr:last-child td { border-bottom: none; }
+        #notas-materia-modal .notas-mat-tabla tr:hover td { background: #f8fafc; }
+        #notas-materia-modal .notas-mat-titulo { font-weight: 700; color: #0f172a; }
+        #notas-materia-modal .notas-mat-desc,
+        #notas-materia-modal span.notas-mat-obs {
+            display: block; margin-top: 0.2rem; color: #64748b; font-size: 0.78rem; font-weight: 500;
+            line-height: 1.4; white-space: pre-wrap;
+        }
+        #notas-materia-modal td.notas-mat-obs {
+            color: #64748b; font-size: 0.8rem; font-weight: 500; line-height: 1.4; white-space: pre-wrap;
+        }
+        #notas-materia-modal .notas-mat-fecha,
+        #notas-materia-modal .notas-mat-peso,
+        #notas-materia-modal .notas-mat-puntos,
+        #notas-materia-modal .notas-mat-nota {
+            font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 700;
+        }
+        #notas-materia-modal .notas-mat-vacio { color: #94a3b8; font-weight: 600; }
+        #notas-materia-modal .notas-mat-estado { color: #64748b; font-size: 0.84rem; margin: 0; }
+        #notas-materia-modal .notas-mat-vacio-box {
+            background: #fff; border: 1px solid var(--border, #e2e8f0); border-radius: 12px;
+            padding: 1.25rem 1rem; color: #64748b; font-size: 0.84rem;
+        }
+        #notas-materia-modal .notas-mat-leyenda {
+            margin: 0.75rem 0 0; font-size: 0.75rem; line-height: 1.45; color: #64748b;
+        }
+        #notas-materia-modal .notas-mat-pill {
+            display: inline-flex; align-items: center; font-size: 0.72rem; font-weight: 700;
+            padding: 3px 8px; border-radius: 8px; white-space: nowrap;
+        }
+        #notas-materia-modal .notas-mat-pill.si,
+        #notas-materia-modal .notas-mat-pill.presente { background: #dcfce7; color: #166534; }
+        #notas-materia-modal .notas-mat-pill.no,
+        #notas-materia-modal .notas-mat-pill.vacio { background: #f1f5f9; color: #64748b; }
+        #notas-materia-modal .notas-mat-pill.justificada { background: #dbeafe; color: #1e40af; }
+        #notas-materia-modal .notas-mat-pill.injustificada { background: #fee2e2; color: #991b1b; }
+        #notas-materia-modal .notas-mat-pill.tardia-justificada { background: #fef3c7; color: #92400e; }
+        #notas-materia-modal .notas-mat-pill.tardia { background: #ffedd5; color: #9a3412; }
+        #notas-materia-modal .excelente { color: #166534; }
+        #notas-materia-modal .bueno { color: #1e40af; }
+        #notas-materia-modal .regular { color: #92400e; }
+        #notas-materia-modal .deficiente,
+        #notas-materia-modal .aplazado { color: #991b1b; }
+        #notas-materia-modal .notas-mat-kpi strong.excelente { color: #166534; }
+        #notas-materia-modal .notas-mat-kpi strong.bueno { color: #1e40af; }
+        #notas-materia-modal .notas-mat-kpi strong.regular { color: #92400e; }
+        #notas-materia-modal .notas-mat-kpi strong.deficiente,
+        #notas-materia-modal .notas-mat-kpi strong.aplazado { color: #991b1b; }
+        @media (max-width: 720px) {
+            #notas-materia-modal .notas-mat-kpis { grid-template-columns: repeat(2, 1fr); }
+            #notas-materia-modal .notas-mat-kpi:nth-child(odd) { border-right: 1px solid var(--border, #e2e8f0); }
+            #notas-materia-modal .notas-mat-kpi:nth-child(even) { border-right: none; }
+            #notas-materia-modal .notas-mat-kpi:nth-child(-n+2) { border-bottom: 1px solid var(--border, #e2e8f0); }
+        }
+    </style>
+
+    <template x-if="detalleMateria && desglosePeriodo && seleccionado">
+        <div class="modal-backdrop" role="presentation" @click.self="cerrarDetalleMateria()">
+            <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="notas-materia-titulo">
+                <div class="modal-header">
+                    <div class="notas-mat-heading">
+                        <h3 class="modal-title" id="notas-materia-titulo">Detalle por materia</h3>
+                        <p class="notas-mat-sub"
+                           x-text="detalleMateria.componente + ' de ' + detalleMateria.materia + (detalleMateria.docente ? ' · ' + detalleMateria.docente : '') + ' · ' + desglosePeriodo.etiqueta"></p>
+                    </div>
+                    <button type="button" class="close-btn" aria-label="Cerrar" @click="cerrarDetalleMateria()">&times;</button>
+                </div>
+                <div class="notas-mat-toolbar">
+                    <div class="notas-mat-student">
+                        <span class="notas-mat-avatar" :style="'background:' + seleccionado.color"
+                              x-text="seleccionado.iniciales"></span>
+                        <div>
+                            <div class="notas-mat-name" x-text="seleccionado.nombre"></div>
+                            <div class="notas-mat-meta"
+                                 x-text="seleccionado.cedula + ' · Sección ' + grupoDe(seleccionado)"></div>
+                        </div>
+                    </div>
+                    <div class="notas-mat-acciones">
+                        <span class="notas-mat-periodo" x-text="desglosePeriodo.etiqueta"></span>
+                        <button type="button" class="btn-primary btn-sm" @click="simularEnvio()">Enviar</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div id="notas-materia-cuerpo">
+                        <p class="notas-mat-estado">Cargando…</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" @click="cerrarDetalleMateria()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<div th:fragment="registros">
+    <p th:if="${error != null}" class="notas-mat-estado" th:text="${error}">No se pudo cargar el detalle.</p>
+    <p th:if="${error == null and detalle == null}" class="notas-mat-estado">No se pudo cargar el detalle.</p>
+
+    <div th:if="${error == null and detalle != null}">
+        <div class="notas-mat-kpis">
+            <div class="notas-mat-kpi">
+                <span>Nota</span>
+                <div class="notas-mat-valor">
+                    <strong th:if="${detalle.promedio == null}">—</strong>
+                    <strong th:if="${detalle.promedio != null}" th:classappend="${escala.tono(detalle.promedio)}"
+                            th:text="${detalle.promedio}">0</strong>
+                    <span th:if="${detalle.promedio != null}" class="notas-pill"
+                          th:classappend="${escala.tono(detalle.promedio)}"
+                          th:text="${escala.tramo(detalle.promedio).nombre}">Excelente</span>
+                </div>
+            </div>
+            <div class="notas-mat-kpi">
+                <span th:text="${detalle.asistencia ? 'Lecciones' : 'Rubros'}">Rubros</span>
+                <div class="notas-mat-valor"><strong th:text="${detalle.total}">0</strong></div>
+            </div>
+            <div class="notas-mat-kpi">
+                <span th:text="${detalle.asistencia ? 'Presentes' : 'Entran'}">Entran</span>
+                <div class="notas-mat-valor"><strong th:text="${detalle.entran}">0</strong></div>
+            </div>
+            <div class="notas-mat-kpi">
+                <span>De la materia</span>
+                <div class="notas-mat-valor"><strong th:text="${detalle.pesoNota + '%'}">0%</strong></div>
+            </div>
+        </div>
+
+        <div th:if="${detalle.rubros.isEmpty()}" class="notas-mat-vacio-box" th:text="${detalle.leyenda}">Sin rubros.</div>
+
+        <div th:if="${!detalle.rubros.isEmpty() and detalle.asistencia}">
+            <div class="notas-mat-tabla-wrap">
+                <table class="notas-mat-tabla">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Lección</th>
+                            <th>Estado</th>
+                            <th>Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${detalle.rubros}">
+                            <td class="notas-mat-fecha" th:text="${r.fecha}">01/01/2026</td>
+                            <td class="notas-mat-titulo" th:text="${r.titulo}">Lección 1</td>
+                            <td><span class="notas-mat-pill" th:classappend="${r.estadoClase}" th:text="${r.estado}">Presente</span></td>
+                            <td class="notas-mat-obs" th:text="${#strings.isEmpty(r.observacion) ? '—' : r.observacion}">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="notas-mat-leyenda" th:text="${detalle.leyenda}"></p>
+        </div>
+
+        <div th:if="${!detalle.rubros.isEmpty() and !detalle.asistencia}">
+            <div class="notas-mat-tabla-wrap">
+                <table class="notas-mat-tabla">
+                    <thead>
+                        <tr>
+                            <th>Rubro</th>
+                            <th>Fecha</th>
+                            <th>Peso</th>
+                            <th>Nota</th>
+                            <th th:if="${detalle.muestraPuntos}">Puntos</th>
+                            <th>Entra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${detalle.rubros}">
+                            <td>
+                                <span class="notas-mat-titulo" th:text="${r.titulo}">Tarea</span>
+                                <span class="notas-mat-desc" th:if="${!#strings.isEmpty(r.descripcion)}" th:text="${r.descripcion}">Descripción</span>
+                                <span class="notas-mat-obs" th:if="${!#strings.isEmpty(r.observacion)}" th:text="${r.observacion}">Observación</span>
+                            </td>
+                            <td class="notas-mat-fecha">
+                                <span th:if="${#strings.isEmpty(r.fecha)}" class="notas-mat-vacio">—</span>
+                                <span th:if="${!#strings.isEmpty(r.fecha)}" th:text="${r.fecha}">01/01/2026</span>
+                            </td>
+                            <td class="notas-mat-peso" th:text="${r.peso}">25%</td>
+                            <td>
+                                <span th:if="${r.nota == null}" class="notas-mat-vacio">—</span>
+                                <span th:if="${r.nota != null}" class="notas-mat-nota" th:classappend="${escala.tono(r.nota)}"
+                                      th:text="${r.nota}">0</span>
+                            </td>
+                            <td th:if="${detalle.muestraPuntos}" class="notas-mat-puntos">
+                                <span th:if="${#strings.isEmpty(r.puntos)}" class="notas-mat-vacio">—</span>
+                                <span th:if="${!#strings.isEmpty(r.puntos)}" th:text="${r.puntos}">8/10</span>
+                            </td>
+                            <td>
+                                <span class="notas-mat-pill" th:classappend="${r.entra ? 'si' : 'no'}"
+                                      th:text="${r.entra ? 'Sí' : 'No'}">Sí</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="notas-mat-leyenda" th:text="${detalle.leyenda}"></p>
+        </div>
+    </div>
+</div>

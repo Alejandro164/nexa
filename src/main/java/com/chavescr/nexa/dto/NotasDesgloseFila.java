@@ -5,6 +5,7 @@ import java.util.Locale;
 /** Una materia del desglose: nota de cada componente y el promedio del período. */
 public class NotasDesgloseFila {
 
+    private final Long materiaId;
     private final String nombre;
     private final String docente;
     private final Integer cotidiano;
@@ -14,8 +15,9 @@ public class NotasDesgloseFila {
     private final Integer asistencia;
     private final Double promedio;
 
-    public NotasDesgloseFila(String nombre, String docente, Integer cotidiano, Integer tareas, Integer proyecto,
-            Integer pruebas, Integer asistencia, Double promedio) {
+    public NotasDesgloseFila(Long materiaId, String nombre, String docente, Integer cotidiano, Integer tareas,
+            Integer proyecto, Integer pruebas, Integer asistencia, Double promedio) {
+        this.materiaId = materiaId;
         this.nombre = nombre;
         this.docente = docente == null ? "" : docente;
         this.cotidiano = cotidiano;
@@ -24,6 +26,10 @@ public class NotasDesgloseFila {
         this.pruebas = pruebas;
         this.asistencia = asistencia;
         this.promedio = promedio;
+    }
+
+    public Long getMateriaId() {
+        return materiaId;
     }
 
     public String getNombre() {

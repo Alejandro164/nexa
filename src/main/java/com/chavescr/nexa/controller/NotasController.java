@@ -49,6 +49,26 @@ public class NotasController {
         return "notas/detalle-por-componente :: filas";
     }
 
+    @GetMapping("/detalle-materia")
+    public String detalleMateria(@RequestParam Long estudianteId, @RequestParam Long periodoId,
+            @RequestParam Long materiaId, @RequestParam String clave, Model model, HttpSession session,
+            HttpServletRequest request) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        model.addAttribute("escala", escalaNotasService.vista(direccionId));
+        try {
+            model.addAttribute("detalle", notasConsultaService.detalleMateria(
+                    direccionId, usuarioId, supervision, estudianteId, periodoId, materiaId, clave));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "notas/detalle-por-materia :: registros";
+    }
+
     @GetMapping("/ausencias")
     public String ausencias(@RequestParam Long estudianteId, @RequestParam Long periodoId, Model model,
             HttpSession session, HttpServletRequest request) {

@@ -1085,6 +1085,7 @@
                 </section>
             </div>
             <div th:replace="~{notas/detalle-por-componente :: desglose}"></div>
+            <div th:replace="~{notas/detalle-por-materia :: detalle}"></div>
             <div th:replace="~{notas/detalle-ausencias :: detalle}"></div>
             <div th:replace="~{notas/detalle-llamadas :: detalle}"></div>
             <div th:replace="~{notas/detalle-boletas :: detalle}"></div>
@@ -1124,6 +1125,8 @@
                     guardandoObs: null,
                     desglosePeriodo: null,
                     desgloseCtrl: null,
+                    detalleMateria: null,
+                    detalleCtrl: null,
                     ausenciaPeriodo: null,
                     ausenciaCtrl: null,
                     llamadaPeriodo: null,
@@ -1207,6 +1210,7 @@
                     },
                     abrirDesglose(periodo) {
                         if (!this.seleccionado || !periodo) return;
+                        this.cerrarDetalleMateria();
                         this.cerrarAusencias();
                         this.cerrarLlamadas();
                         this.cerrarBoletas();
@@ -1238,9 +1242,80 @@
                         });
                     },
                     cerrarDesglose() {
+                        this.cerrarDetalleMateria();
                         if (this.desgloseCtrl) this.desgloseCtrl.abort();
                         this.desgloseCtrl = null;
                         this.desglosePeriodo = null;
+                    },
+                    etiquetaClave(clave) {
+                        switch (clave) {
+                            case 'COTIDIANO': return 'Cotidiano';
+                            case 'TAREA': return 'Tareas';
+                            case 'PROYECTO': return 'Proyecto';
+                            case 'EXAMEN': return 'Pruebas';
+                            case 'ASISTENCIA': return 'Asistencia';
+                            default: return 'Componente';
+                        }
+                    },
+                    abrirDetalleMateria(event) {
+                        const origen = event.target && event.target.closest ? event.target : (event.target && event.target.parentElement);
+                        const btn = origen ? origen.closest('.notas-desglose-nota') : null;
+                        if (!btn || !this.seleccionado || !this.desglosePeriodo) return;
+                        const materiaId = btn.getAttribute('data-materia-id');
+                        const clave = btn.getAttribute('data-clave');
+                        if (!materiaId || !clave) return;
+                        const estudianteId = this.seleccionado.id;
+                        const periodoId = this.desglosePeriodo.id;
+                        this.detalleMateria = {
+                            materiaId: materiaId,
+                            clave: clave,
+                            materia: btn.getAttribute('data-materia') || 'Materia',
+                            componente: this.etiquetaClave(clave),
+                            docente: btn.getAttribute('data-docente') || ''
+                        };
+                        if (this.detalleCtrl) this.detalleCtrl.abort();
+                        const ctrl = new AbortController();
+                        this.detalleCtrl = ctrl;
+                        const cargando = '<p class="notas-mat-estado">Cargando…</p>';
+                        const pintar = (html) => {
+                            if (this.detalleCtrl !== ctrl) return;
+                            if (!this.detalleMateria || String(this.detalleMateria.materiaId) !== String(materiaId) || this.detalleMateria.clave !== clave) return;
+                            if (!this.seleccionado || this.seleccionado.id !== estudianteId || !this.desglosePeriodo || String(this.desglosePeriodo.id) !== String(periodoId)) return;
+                            const cuerpo = document.getElementById('notas-materia-cuerpo');
+                            if (cuerpo) cuerpo.innerHTML = html;
+                        };
+                        const pedir = () => {
+                            pintar(cargando);
+                            const url = '/notas/detalle-materia?estudianteId=' + encodeURIComponent(estudianteId)
+                                + '&periodoId=' + encodeURIComponent(periodoId)
+                                + '&materiaId=' + encodeURIComponent(materiaId)
+                                + '&clave=' + encodeURIComponent(clave);
+                            fetch(url, { signal: ctrl.signal })
+                                .then((res) => {
+                                    if (res.redirected || !res.ok) throw new Error('respuesta');
+                                    return res.text();
+                                })
+                                .then((html) => pintar(html))
+                                .catch((e) => {
+                                    if (e && e.name === 'AbortError') return;
+                                    pintar('<p class="notas-mat-estado">No se pudo cargar el detalle.</p>');
+                                });
+                        };
+                        const cuerpoYa = document.getElementById('notas-materia-cuerpo');
+                        if (cuerpoYa) cuerpoYa.innerHTML = cargando;
+                        this.$nextTick(pedir);
+                    },
+                    cerrarDetalleMateria() {
+                        if (this.detalleCtrl) this.detalleCtrl.abort();
+                        this.detalleCtrl = null;
+                        this.detalleMateria = null;
+                    },
+                    escapeDesglose() {
+                        if (this.detalleMateria) {
+                            this.cerrarDetalleMateria();
+                            return;
+                        }
+                        this.cerrarDesglose();
                     },
                     abrirAusencias(periodo) {
                         if (!this.seleccionado || !periodo) return;
