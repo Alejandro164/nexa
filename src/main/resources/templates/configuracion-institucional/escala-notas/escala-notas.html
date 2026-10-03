@@ -1,5 +1,10 @@
 <div th:fragment="content" id="institucional-escala-notas-panel" xmlns:th="http://www.thymeleaf.org"
-     x-data="escalaNotas()">
+     x-data="escalaNotas($el)"
+     th:data-nota-minima="${escalaNotas.notaMinima}"
+     th:data-nota-maxima="${escalaNotas.notaMaxima}"
+     th:data-decimales="${escalaNotas.decimales}"
+     th:data-nota-aprobacion="${escalaNotas.notaAprobacion}"
+     th:data-tramos="${escalaNotas.tramos}">
     <style>
         .escala-card { position: relative; overflow: visible; }
         .escala-body {
@@ -591,10 +596,20 @@
         }
     </style>
 
-    <form class="escala-form-raiz" @submit.prevent="guardar()" autocomplete="off">
+    <form class="escala-form-raiz"
+          hx-post="/configuracion-institucional/escala-notas"
+          hx-swap="none"
+          hx-indicator="#escala-loading"
+          hx-disabled-elt="find button[type='submit']"
+          @submit.capture="prepararEnvio($event)"
+          autocomplete="off">
         <input type="hidden" name="notaAprobacion" :value="notaAprobacion">
         <input type="hidden" name="tramos" :value="tramosJson">
         <div class="card escala-card">
+            <div id="escala-loading" class="htmx-indicator panel-loading-overlay">
+                <div class="spinner"></div>
+                <span>Guardando...</span>
+            </div>
             <div class="card-header">
                 <div>
                     <h3 class="card-title">Escala de notas</h3>
@@ -881,7 +896,7 @@
     </form>
 
     <script>
-        window.escalaNotas = function escalaNotas() {
+        window.escalaNotas = function escalaNotas(el) {
             function plantilla() {
                 return {
                     notaMinima: 0,
@@ -897,14 +912,58 @@
                 };
             }
 
-            var inicial = plantilla();
+            function desdeElemento(nodo) {
+                var d = nodo && nodo.dataset ? nodo.dataset : {};
+                if (!d.tramos) return plantilla();
+                var crudos;
+                try {
+                    crudos = JSON.parse(d.tramos);
+                } catch (e) {
+                    return plantilla();
+                }
+                if (!Array.isArray(crudos) || crudos.length < 2) return plantilla();
+                var tramos = crudos.map(function (t, i) {
+                    return {
+                        id: Number(t && t.id) > 0 ? Number(t.id) : i + 1,
+                        nombre: String((t && t.nombre) || ''),
+                        desde: Number(t && t.desde)
+                    };
+                });
+                var min = Number(d.notaMinima);
+                var max = Number(d.notaMaxima);
+                var dec = Number(d.decimales);
+                var aprob = Number(d.notaAprobacion);
+                return {
+                    notaMinima: Number.isFinite(min) ? min : 0,
+                    notaMaxima: Number.isFinite(max) ? max : 100,
+                    decimales: dec === 0 ? 0 : 1,
+                    notaAprobacion: Number.isFinite(aprob) ? aprob : 70,
+                    tramos: tramos
+                };
+            }
+
+            var inicial = desdeElemento(el);
+            var maxId = 0;
+            var corteId = null;
+            for (var c = 0; c < inicial.tramos.length; c++) {
+                maxId = Math.max(maxId, Number(inicial.tramos[c].id) || 0);
+                if (c < inicial.tramos.length - 1
+                        && Number(inicial.tramos[c].desde) === Number(inicial.notaAprobacion)) {
+                    corteId = inicial.tramos[c].id;
+                }
+            }
+            if (corteId == null) {
+                corteId = inicial.tramos[Math.max(0, inicial.tramos.length - 2)].id;
+            }
+            var prueba = Number(inicial.notaAprobacion);
+            if (!Number.isFinite(prueba)) prueba = 70;
             return {
                 notaMinima: inicial.notaMinima,
                 notaMaxima: inicial.notaMaxima,
                 decimales: inicial.decimales,
-                prueba: 85,
-                siguienteId: inicial.tramos.length + 1,
-                corteId: 3,
+                prueba: prueba,
+                siguienteId: maxId + 1,
+                corteId: corteId,
                 tramos: inicial.tramos,
                 get paso() {
                     return Number(this.decimales) === 0 ? 1 : 0.1;
@@ -1268,20 +1327,31 @@
                     }
                     if (this.tramos.length > 1) this.corteId = this.tramos[0].id;
                 },
-                guardar: function () {
+                prepararEnvio: function (event) {
                     this.alCambiarRango();
                     this.tramos.forEach(function (tramo) {
                         tramo.nombre = String(tramo.nombre || '').trim();
                     });
+                    var form = event.currentTarget || event.target;
+                    if (form && form.querySelector) {
+                        var aprobacion = form.querySelector('[name="notaAprobacion"]');
+                        var tramos = form.querySelector('[name="tramos"]');
+                        var minima = form.querySelector('[name="notaMinima"]');
+                        var maxima = form.querySelector('[name="notaMaxima"]');
+                        var decimales = form.querySelector('[name="decimales"]');
+                        if (aprobacion) aprobacion.value = this.notaAprobacion;
+                        if (tramos) tramos.value = this.tramosJson;
+                        if (minima) minima.value = this.notaMinima;
+                        if (maxima) maxima.value = this.notaMaxima;
+                        if (decimales) decimales.value = this.decimales;
+                    }
                     if (this.errores.length) {
+                        event.preventDefault();
+                        event.stopPropagation();
                         document.dispatchEvent(new CustomEvent('institucionalError', {
                             detail: { mensaje: this.errores[0] }
                         }));
-                        return;
                     }
-                    document.dispatchEvent(new CustomEvent('institucionalGuardado', {
-                        detail: { mensaje: 'Escala de notas revisada.' }
-                    }));
                 }
             };
         };

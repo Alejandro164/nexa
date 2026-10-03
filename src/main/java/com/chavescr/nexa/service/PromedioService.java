@@ -110,7 +110,7 @@ public class PromedioService {
     private FilaPromedio calcularFila(Usuario estudiante, PeriodoAcademico periodo, Long materiaId,
             Long direccionId, List<ResultadoComponente> resultados, DistribucionPorcentual distribucion,
             List<TipoComponente> tipos, Map<ClaveComponente, Map<Long, Double>> pesos) {
-        List<Integer> notas = new ArrayList<>();
+        List<Double> notas = new ArrayList<>();
         for (TipoComponente tipo : tipos) {
             if (tipo.getClave() == null) {
                 notas.add(null);
@@ -138,29 +138,29 @@ public class PromedioService {
         return (int) Math.round(presentes * 100.0 / registros.size());
     }
 
-    private Integer promedioDe(List<ResultadoComponente> resultados, ClaveComponente clave, Map<Long, Double> pesos) {
+    private Double promedioDe(List<ResultadoComponente> resultados, ClaveComponente clave, Map<Long, Double> pesos) {
         return promedioPonderado(resultados.stream()
                 .filter(r -> r.getComponente().getClave() == clave)
                 .map(r -> new double[] { r.getCalificacion(), pesos.getOrDefault(r.getComponente().getId(), 0.0) })
                 .toList());
     }
 
-    /** Promedio ponderado (0-100) de una lista de [calificacion, peso]; null si la lista está vacía. */
-    private Integer promedioPonderado(List<double[]> pares) {
+    /** Promedio ponderado (0-100, dos decimales) de una lista de [calificacion, peso]; null si la lista está vacía. */
+    private Double promedioPonderado(List<double[]> pares) {
         double sumaPesos = pares.stream().mapToDouble(p -> p[1]).sum();
         if (pares.isEmpty() || sumaPesos <= 0) {
             return null;
         }
         double suma = pares.stream().mapToDouble(p -> p[0] * p[1]).sum();
-        return (int) Math.round(suma / sumaPesos);
+        return Math.round(suma / sumaPesos * 100) / 100.0;
     }
 
-    private Double promedioFinal(DistribucionPorcentual d, List<TipoComponente> tipos, List<Integer> notas,
+    private Double promedioFinal(DistribucionPorcentual d, List<TipoComponente> tipos, List<Double> notas,
             Integer asistencia) {
         double sumaPonderada = 0;
         double sumaPesos = 0;
         for (int i = 0; i < tipos.size(); i++) {
-            Integer nota = notas.get(i);
+            Double nota = notas.get(i);
             Integer peso = pesoDe(d, tipos.get(i).getClave());
             if (nota == null || peso == null || peso <= 0) {
                 continue;

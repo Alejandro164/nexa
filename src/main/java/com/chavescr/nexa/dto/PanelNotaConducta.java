@@ -16,10 +16,11 @@ public class PanelNotaConducta {
     private final Integer grado;
     private final Long nivelId;
     private final String avisoPeriodo;
+    private final VistaEscala escala;
 
     public PanelNotaConducta(List<PeriodoAcademico> periodos, List<Integer> grados, List<NivelAcademico> secciones,
             List<FilaNotaConducta> filas, ResumenNotaConducta resumen, Long periodoId, Integer grado, Long nivelId,
-            String avisoPeriodo) {
+            String avisoPeriodo, VistaEscala escala) {
         this.periodos = periodos;
         this.grados = grados;
         this.secciones = secciones;
@@ -29,6 +30,7 @@ public class PanelNotaConducta {
         this.grado = grado;
         this.nivelId = nivelId;
         this.avisoPeriodo = avisoPeriodo;
+        this.escala = escala;
     }
 
     public List<PeriodoAcademico> getPeriodos() {
@@ -65,5 +67,9 @@ public class PanelNotaConducta {
 
     public String getAvisoPeriodo() {
         return avisoPeriodo;
+    }
+
+    public VistaEscala getEscala() {
+        return escala;
     }
 }

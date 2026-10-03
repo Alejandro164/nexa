@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.chavescr.nexa.dto.FilaNotaConducta;
 import com.chavescr.nexa.dto.PanelNotaConducta;
 import com.chavescr.nexa.dto.ResumenNotaConducta;
+import com.chavescr.nexa.dto.VistaEscala;
 import com.chavescr.nexa.entity.IncidenteConducta;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
 import com.chavescr.nexa.entity.Direccion;
@@ -50,6 +51,7 @@ public class NotaConductaService {
     private final DocenteGuiaService docenteGuiaService;
     private final AlcanceDocenteService alcanceDocenteService;
     private final NotificacionService notificacionService;
+    private final EscalaNotasService escalaNotasService;
 
     public NotaConductaService(UsuarioRepository usuarioRepository,
             PeriodoAcademicoRepository periodoRepository,
@@ -59,7 +61,8 @@ public class NotaConductaService {
             DireccionRepository direccionRepository,
             DocenteGuiaService docenteGuiaService,
             AlcanceDocenteService alcanceDocenteService,
-            NotificacionService notificacionService) {
+            NotificacionService notificacionService,
+            EscalaNotasService escalaNotasService) {
         this.usuarioRepository = usuarioRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
@@ -69,6 +72,7 @@ public class NotaConductaService {
         this.docenteGuiaService = docenteGuiaService;
         this.alcanceDocenteService = alcanceDocenteService;
         this.notificacionService = notificacionService;
+        this.escalaNotasService = escalaNotasService;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
@@ -84,10 +88,11 @@ public class NotaConductaService {
                 .toList();
 
         PeriodoAcademico periodo = resolverPeriodo(periodos, periodoId);
+        VistaEscala escala = escalaNotasService.vista(direccionId);
         if (periodo == null) {
             return new PanelNotaConducta(periodos, grados, List.of(), List.of(),
                     new ResumenNotaConducta(0, 0, 0, 0), null, grado, nivelId,
-                    "Configure un período académico para registrar las notas de conducta.");
+                    "Configure un período académico para registrar las notas de conducta.", escala);
         }
 
         if (grado != null && grados.stream().noneMatch(grado::equals)) {
@@ -119,7 +124,8 @@ public class NotaConductaService {
         for (Usuario estudiante : estudiantes) {
             List<IncidenteConducta> delEstudiante = porEstudiante.getOrDefault(estudiante.getId(), List.of());
             incidentesFiltrados.addAll(delEstudiante);
-            filas.add(construirFila(estudiante, periodo, delEstudiante, enviadas.contains(estudiante.getId())));
+            filas.add(construirFila(estudiante, periodo, delEstudiante,
+                    enviadas.contains(estudiante.getId()), escala));
         }
         filas.sort(Comparator
                 .comparing((FilaNotaConducta f) -> f.getEstudiante().getNivelAcademico() == null
@@ -131,7 +137,7 @@ public class NotaConductaService {
                 .thenComparing(f -> f.getEstudiante().getNombre(), String.CASE_INSENSITIVE_ORDER));
 
         return new PanelNotaConducta(periodos, grados, secciones, filas,
-                resumir(filas, incidentesFiltrados), periodo.getId(), grado, nivelId, null);
+                resumir(filas, incidentesFiltrados), periodo.getId(), grado, nivelId, null, escala);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -147,7 +153,8 @@ public class NotaConductaService {
 
         List<IncidenteConducta> incidentes = incidenteRepository
                 .findByDireccionIdAndPeriodoIdAndEstudianteId(direccionId, periodoId, estudianteId);
-        FilaNotaConducta fila = construirFila(estudiante, periodo, incidentes, false);
+        FilaNotaConducta fila = construirFila(estudiante, periodo, incidentes, false,
+                escalaNotasService.vista(direccionId));
 
         List<Usuario> padres = usuarioRepository.findPadresByEstudianteId(estudianteId);
         if (padres.isEmpty()) {
@@ -294,13 +301,13 @@ public class NotaConductaService {
     }
 
     private FilaNotaConducta construirFila(Usuario estudiante, PeriodoAcademico periodo,
-            List<IncidenteConducta> incidentes, boolean enviada) {
+            List<IncidenteConducta> incidentes, boolean enviada, VistaEscala escala) {
         int descuento = incidentes.stream()
                 .filter(i -> i.getTipo() != null && i.getTipo().afectaNota())
                 .mapToInt(i -> i.getPuntosDescontados() != null ? i.getPuntosDescontados() : 0)
                 .sum();
         int nota = Math.max(0, NOTA_INICIAL - descuento);
-        String categoriaCss = categoriaCss(nota);
+        VistaEscala.Tramo tramo = escala.tramo(nota);
         long llamadas = contar(incidentes, TipoIncidente.LLAMADA_ATENCION);
         long boletas = contar(incidentes, TipoIncidente.BOLETA);
 
@@ -310,8 +317,8 @@ public class NotaConductaService {
             seccion = nivel.getGrado() + "-" + nivel.getSeccion();
         }
 
-        return new FilaNotaConducta(estudiante, seccion, nota, etiquetaCategoria(categoriaCss), categoriaCss,
-                observaciones(nota, llamadas, boletas), periodo.getCodigo(), enviada,
+        return new FilaNotaConducta(estudiante, seccion, nota, tramo.nombre(), tramo.tono(),
+                observaciones(nota, llamadas, boletas, tramo.nombre()), periodo.getCodigo(), enviada,
                 iniciales(estudiante.getNombre()), colorAvatar(estudiante.getId()));
     }
 
@@ -323,7 +330,7 @@ public class NotaConductaService {
         return new ResumenNotaConducta(promedio, llamadas, boletas, filas.size());
     }
 
-    static String observaciones(int nota, long llamadas, long boletas) {
+    static String observaciones(int nota, long llamadas, long boletas, String categoria) {
         if (boletas > 0) {
             return "Conducta deficiente. " + cantidad(boletas, "boleta", "boletas")
                     + " por falta grave. Debe mejorar urgentemente su comportamiento.";
@@ -339,32 +346,7 @@ public class NotaConductaService {
         if (nota >= 100) {
             return "Estudiante ejemplar. Nunca ha tenido llamadas de atención este período.";
         }
-        if (nota >= 90) {
-            return "Excelente comportamiento. Mantiene una actitud positiva en clase.";
-        }
-        return "Cumple las normas de convivencia de la institución educativa.";
-    }
-
-    static String categoriaCss(int nota) {
-        if (nota >= 90) {
-            return "excelente";
-        }
-        if (nota >= 80) {
-            return "bueno";
-        }
-        if (nota >= 65) {
-            return "regular";
-        }
-        return "deficiente";
-    }
-
-    private static String etiquetaCategoria(String css) {
-        return switch (css) {
-            case "excelente" -> "Excelente";
-            case "bueno" -> "Bueno";
-            case "regular" -> "Regular";
-            default -> "Deficiente";
-        };
+        return categoria + ". Cumple las normas de convivencia de la institución educativa.";
     }
 
     private static String cantidad(long n, String singular, String plural) {

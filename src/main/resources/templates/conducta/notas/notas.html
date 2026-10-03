@@ -5,9 +5,14 @@
     </div>
 
     <div class="conducta-stats">
-        <div class="stat-card positiva">
+        <div class="stat-card" th:with="tramoPromedio=${resumen != null and resumen.totalEstudiantes > 0 ? escala.tramo(resumen.promedio) : null}">
             <span class="stat-label">Nota Promedio</span>
-            <span class="stat-value" th:text="${resumen != null ? resumen.promedio : 0}">0</span>
+            <span class="stat-value"
+                  th:classappend="${tramoPromedio != null ? 'nota-' + tramoPromedio.tono : ''}"
+                  th:text="${resumen != null ? resumen.promedio : 0}">0</span>
+            <span th:if="${tramoPromedio != null}" class="badge-xs" style="align-self: flex-start;"
+                  th:classappend="${'badge-' + tramoPromedio.tono}"
+                  th:text="${tramoPromedio.nombre}">Excelente</span>
             <span style="font-size:0.78rem;color:var(--text-secondary);">Promedio general de conducta</span>
         </div>
         <div class="stat-card">
@@ -99,6 +104,11 @@
             </div>
         </div>
         <div th:if="${avisoPeriodo}" class="form-alert-error" style="margin: 1rem 1.5rem;" th:text="${avisoPeriodo}"></div>
+        <div class="conducta-leyenda" th:if="${escala != null}">
+            <span th:each="tramo : ${escala.tramos}" class="badge-xs"
+                  th:classappend="${'badge-' + tramo.tono}"
+                  th:text="${tramo.nombre + ' · ' + tramo.desde}">Excelente · 90</span>
+        </div>
         <div style="overflow-x: auto;">
             <table class="conducta-table">
                 <thead>
