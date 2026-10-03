@@ -493,6 +493,41 @@
             .notas-final.regular { color: #92400e; }
             .notas-final.deficiente { color: #991b1b; }
             .notas-final.aplazado { color: #991b1b; }
+            .notas-conducta-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 3.6rem;
+                min-height: 1.85rem;
+                padding: 0.12rem 0.5rem;
+                border: 1px solid #cbd5e1;
+                border-radius: 7px;
+                background: #fff;
+                font: inherit;
+                font-variant-numeric: tabular-nums;
+                font-weight: 800;
+                line-height: 1.2;
+                cursor: pointer;
+                box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+                transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s;
+            }
+            .notas-conducta-btn:hover {
+                background: rgba(45, 90, 135, 0.08);
+                border-color: var(--primary);
+            }
+            .notas-conducta-btn:focus-visible {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.18);
+            }
+            .notas-conducta-btn:active {
+                background: rgba(45, 90, 135, 0.14);
+            }
+            .notas-conducta-btn.is-on {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff;
+            }
             .notas-bar {
                 height: 4px;
                 border-radius: 99px;
@@ -934,13 +969,33 @@
                                                 </td>
                                                 <template x-for="p in periodosDelAnio" :key="m.id + '-' + p.id">
                                                     <td class="num">
-                                                        <div class="notas-final" :class="nivel(pctDe(notaDe(m, p.id)))"
+                                                        <button type="button" x-show="esConducta(m)"
+                                                                class="notas-final notas-conducta-btn"
+                                                                :class="[nivel(pctDe(notaDe(m, p.id))), { 'is-on': esConductaPeriodo(p) }]"
+                                                                :aria-pressed="esConductaPeriodo(p)"
+                                                                aria-haspopup="dialog"
+                                                                :aria-label="'Detalle de conducta de ' + p.etiqueta + ': ' + fmtNota(notaDe(m, p.id))"
+                                                                :title="'Ver detalle de conducta de ' + p.etiqueta"
+                                                                @click="abrirConducta(p)"
+                                                                x-text="fmtNota(notaDe(m, p.id))"></button>
+                                                        <div x-show="!esConducta(m)" class="notas-final"
+                                                             :class="nivel(pctDe(notaDe(m, p.id)))"
                                                              x-text="fmtNota(notaDe(m, p.id))"></div>
                                                     </td>
                                                 </template>
                                                 <td class="num notas-col-anio">
                                                     <div class="notas-celda">
-                                                        <div class="notas-final" :class="nivel(pctDe(resumenDe(m)))"
+                                                        <button type="button" x-show="esConducta(m)"
+                                                                class="notas-final notas-conducta-btn"
+                                                                :class="[nivel(pctDe(resumenDe(m))), { 'is-on': esConductaAnio() }]"
+                                                                :aria-pressed="esConductaAnio()"
+                                                                aria-haspopup="dialog"
+                                                                :aria-label="'Detalle de conducta del año: ' + fmtNota(resumenDe(m))"
+                                                                title="Ver detalle de conducta del año"
+                                                                @click="abrirConductaAnio()"
+                                                                x-text="fmtNota(resumenDe(m))"></button>
+                                                        <div x-show="!esConducta(m)" class="notas-final"
+                                                             :class="nivel(pctDe(resumenDe(m)))"
                                                              x-text="fmtNota(resumenDe(m))"></div>
                                                         <div class="notas-bar" x-show="pctDe(resumenDe(m)) != null">
                                                             <div class="notas-bar-fill" :style="barraDe(resumenDe(m))"></div>
@@ -1089,6 +1144,7 @@
             <div th:replace="~{notas/detalle-ausencias :: detalle}"></div>
             <div th:replace="~{notas/detalle-llamadas :: detalle}"></div>
             <div th:replace="~{notas/detalle-boletas :: detalle}"></div>
+            <div th:replace="~{notas/detalle-conducta :: detalle}"></div>
         </div>
 
         <script th:inline="javascript">
@@ -1133,6 +1189,7 @@
                     llamadaCtrl: null,
                     boletaPeriodo: null,
                     boletaCtrl: null,
+                    conductaPeriodo: null,
                     anios: catalogo.anios || [],
                     periodos: catalogo.periodos || [],
                     filasAusencia: [
@@ -1214,6 +1271,7 @@
                         this.cerrarAusencias();
                         this.cerrarLlamadas();
                         this.cerrarBoletas();
+                        this.cerrarConducta();
                         const estudianteId = this.seleccionado.id;
                         const periodoId = periodo.id;
                         this.desglosePeriodo = periodo;
@@ -1322,6 +1380,7 @@
                         this.cerrarDesglose();
                         this.cerrarLlamadas();
                         this.cerrarBoletas();
+                        this.cerrarConducta();
                         const estudianteId = this.seleccionado.id;
                         const periodoId = periodo.id;
                         this.ausenciaPeriodo = periodo;
@@ -1359,6 +1418,7 @@
                         this.cerrarDesglose();
                         this.cerrarAusencias();
                         this.cerrarBoletas();
+                        this.cerrarConducta();
                         const estudianteId = this.seleccionado.id;
                         const periodoId = periodo.id;
                         this.llamadaPeriodo = periodo;
@@ -1391,11 +1451,17 @@
                         this.llamadaCtrl = null;
                         this.llamadaPeriodo = null;
                     },
+                    abrirBoletasAnio() {
+                        const periodos = this.periodosDelAnio;
+                        if (!periodos.length) return;
+                        this.abrirBoletas(periodos[periodos.length - 1]);
+                    },
                     abrirBoletas(periodo) {
                         if (!this.seleccionado || !periodo) return;
                         this.cerrarDesglose();
                         this.cerrarAusencias();
                         this.cerrarLlamadas();
+                        this.cerrarConducta();
                         const estudianteId = this.seleccionado.id;
                         const periodoId = periodo.id;
                         this.boletaPeriodo = periodo;
@@ -1428,11 +1494,33 @@
                         this.boletaCtrl = null;
                         this.boletaPeriodo = null;
                     },
+                    abrirConductaAnio() {
+                        this.abrirConducta({ id: 'anio', etiqueta: 'Año lectivo', titulo: 'Año lectivo' });
+                    },
+                    abrirConducta(periodo) {
+                        if (!this.seleccionado || !periodo) return;
+                        this.cerrarDesglose();
+                        this.cerrarAusencias();
+                        this.cerrarLlamadas();
+                        this.cerrarBoletas();
+                        this.conductaPeriodo = periodo;
+                    },
+                    cerrarConducta() {
+                        this.conductaPeriodo = null;
+                    },
+                    esConductaPeriodo(periodo) {
+                        return !!(this.conductaPeriodo && periodo
+                            && String(this.conductaPeriodo.id) === String(periodo.id));
+                    },
+                    esConductaAnio() {
+                        return !!(this.conductaPeriodo && this.conductaPeriodo.id === 'anio');
+                    },
                     cerrarDetalle() {
                         this.cerrarDesglose();
                         this.cerrarAusencias();
                         this.cerrarLlamadas();
                         this.cerrarBoletas();
+                        this.cerrarConducta();
                     },
                     esBoletaAbierta(periodo) {
                         return !!(this.boletaPeriodo && periodo
@@ -1453,6 +1541,7 @@
                     promedioPeriodo(est, periodo) {
                         if (!est || !periodo) return null;
                         const notas = this.materiasDe(est)
+                            .filter((m) => !this.esConducta(m))
                             .map((m) => this.pctDe(this.notaDe(m, periodo.id)))
                             .filter((n) => n != null);
                         if (!notas.length) return null;
@@ -1615,6 +1704,7 @@
                         if (!est || !periodo) return 0;
                         const umbral = this.corte();
                         return this.materiasDe(est).filter((m) => {
+                            if (this.esConducta(m)) return false;
                             const n = this.pctDe(this.notaDe(m, periodo.id));
                             if (n == null) return false;
                             return aprobadas ? n >= umbral : n < umbral;

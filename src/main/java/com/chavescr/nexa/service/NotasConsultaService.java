@@ -252,12 +252,6 @@ public class NotasConsultaService {
             filas.add(new NotasDesgloseFila(vista.id, vista.nombre, vista.docente, nota.cotidiano(), nota.tareas(),
                     nota.proyecto(), nota.pruebas(), nota.asistencia(), nota.porcentaje()));
         }
-
-        int descuento = descuentosConducta(direccionId, periodoIds, List.of(estudianteId))
-                .getOrDefault(estudianteId, Map.of())
-                .getOrDefault(periodoId, 0);
-        filas.add(new NotasDesgloseFila(null, "Conducta", "", null, null, null, null, null,
-                (double) Math.max(0, NOTA_CONDUCTA_INICIAL - descuento)));
         return filas;
     }
 

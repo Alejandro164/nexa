@@ -318,7 +318,7 @@
                         </div>
                         <div class="notas-desglose-kpi">
                             <span>Materias</span>
-                            <strong x-text="materiasDe(seleccionado).length"></strong>
+                            <strong x-text="materiasDe(seleccionado).filter(m => !esConducta(m)).length"></strong>
                         </div>
                         <div class="notas-desglose-kpi">
                             <span>Aprobadas</span>
@@ -379,59 +379,39 @@
                 <span class="notas-desglose-docente" th:if="${!#strings.isEmpty(f.docente)}" th:text="${f.docente}">Docente</span>
             </td>
             <td class="nota">
-                <button th:if="${f.materiaId != null}" type="button" class="notas-desglose-nota"
+                <button type="button" class="notas-desglose-nota"
                         th:attr="data-materia-id=${f.materiaId},data-clave='COTIDIANO',data-materia=${f.nombre},data-docente=${f.docente},aria-label=${'Ver cotidiano de ' + f.nombre},title=${'Ver cotidiano de ' + f.nombre}">
                     <span th:if="${f.cotidiano == null}" class="notas-desglose-vacio">—</span>
                     <span th:if="${f.cotidiano != null}" th:classappend="${escala.tono(f.cotidiano)}" th:text="${f.cotidiano}">0</span>
                 </button>
-                <th:block th:if="${f.materiaId == null}">
-                    <span th:if="${f.cotidiano == null}" class="notas-desglose-vacio">—</span>
-                    <span th:if="${f.cotidiano != null}" th:classappend="${escala.tono(f.cotidiano)}" th:text="${f.cotidiano}">0</span>
-                </th:block>
             </td>
             <td class="nota">
-                <button th:if="${f.materiaId != null}" type="button" class="notas-desglose-nota"
+                <button type="button" class="notas-desglose-nota"
                         th:attr="data-materia-id=${f.materiaId},data-clave='TAREA',data-materia=${f.nombre},data-docente=${f.docente},aria-label=${'Ver tareas de ' + f.nombre},title=${'Ver tareas de ' + f.nombre}">
                     <span th:if="${f.tareas == null}" class="notas-desglose-vacio">—</span>
                     <span th:if="${f.tareas != null}" th:classappend="${escala.tono(f.tareas)}" th:text="${f.tareas}">0</span>
                 </button>
-                <th:block th:if="${f.materiaId == null}">
-                    <span th:if="${f.tareas == null}" class="notas-desglose-vacio">—</span>
-                    <span th:if="${f.tareas != null}" th:classappend="${escala.tono(f.tareas)}" th:text="${f.tareas}">0</span>
-                </th:block>
             </td>
             <td class="nota">
-                <button th:if="${f.materiaId != null}" type="button" class="notas-desglose-nota"
+                <button type="button" class="notas-desglose-nota"
                         th:attr="data-materia-id=${f.materiaId},data-clave='PROYECTO',data-materia=${f.nombre},data-docente=${f.docente},aria-label=${'Ver proyecto de ' + f.nombre},title=${'Ver proyecto de ' + f.nombre}">
                     <span th:if="${f.proyecto == null}" class="notas-desglose-vacio">—</span>
                     <span th:if="${f.proyecto != null}" th:classappend="${escala.tono(f.proyecto)}" th:text="${f.proyecto}">0</span>
                 </button>
-                <th:block th:if="${f.materiaId == null}">
-                    <span th:if="${f.proyecto == null}" class="notas-desglose-vacio">—</span>
-                    <span th:if="${f.proyecto != null}" th:classappend="${escala.tono(f.proyecto)}" th:text="${f.proyecto}">0</span>
-                </th:block>
             </td>
             <td class="nota">
-                <button th:if="${f.materiaId != null}" type="button" class="notas-desglose-nota"
+                <button type="button" class="notas-desglose-nota"
                         th:attr="data-materia-id=${f.materiaId},data-clave='EXAMEN',data-materia=${f.nombre},data-docente=${f.docente},aria-label=${'Ver pruebas de ' + f.nombre},title=${'Ver pruebas de ' + f.nombre}">
                     <span th:if="${f.pruebas == null}" class="notas-desglose-vacio">—</span>
                     <span th:if="${f.pruebas != null}" th:classappend="${escala.tono(f.pruebas)}" th:text="${f.pruebas}">0</span>
                 </button>
-                <th:block th:if="${f.materiaId == null}">
-                    <span th:if="${f.pruebas == null}" class="notas-desglose-vacio">—</span>
-                    <span th:if="${f.pruebas != null}" th:classappend="${escala.tono(f.pruebas)}" th:text="${f.pruebas}">0</span>
-                </th:block>
             </td>
             <td class="nota">
-                <button th:if="${f.materiaId != null}" type="button" class="notas-desglose-nota"
+                <button type="button" class="notas-desglose-nota"
                         th:attr="data-materia-id=${f.materiaId},data-clave='ASISTENCIA',data-materia=${f.nombre},data-docente=${f.docente},aria-label=${'Ver asistencia de ' + f.nombre},title=${'Ver asistencia de ' + f.nombre}">
                     <span th:if="${f.asistencia == null}" class="notas-desglose-vacio">—</span>
                     <span th:if="${f.asistencia != null}" th:classappend="${escala.tono(f.asistencia)}" th:text="${f.asistencia}">0</span>
                 </button>
-                <th:block th:if="${f.materiaId == null}">
-                    <span th:if="${f.asistencia == null}" class="notas-desglose-vacio">—</span>
-                    <span th:if="${f.asistencia != null}" th:classappend="${escala.tono(f.asistencia)}" th:text="${f.asistencia}">0</span>
-                </th:block>
             </td>
             <td class="final">
                 <span th:if="${f.promedio == null}" class="notas-desglose-vacio">—</span>
