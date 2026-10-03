@@ -14,8 +14,12 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.dto.NotasBoletaDetalle;
+import com.chavescr.nexa.dto.NotasBoletasPeriodo;
 import com.chavescr.nexa.dto.NotasAusenciaDetalle;
 import com.chavescr.nexa.dto.NotasAusenciasPeriodo;
+import com.chavescr.nexa.dto.NotasLlamadaDetalle;
+import com.chavescr.nexa.dto.NotasLlamadasPeriodo;
 import com.chavescr.nexa.dto.NotasCatalogo;
 import com.chavescr.nexa.dto.NotasDesgloseFila;
 import com.chavescr.nexa.dto.NotasCatalogo.AnioOpcion;
@@ -26,9 +30,12 @@ import com.chavescr.nexa.dto.NotasCatalogo.NivelOpcion;
 import com.chavescr.nexa.dto.NotasCatalogo.NotaPeriodo;
 import com.chavescr.nexa.dto.NotasCatalogo.ObservacionPeriodo;
 import com.chavescr.nexa.dto.NotasCatalogo.PeriodoOpcion;
+import com.chavescr.nexa.dto.NotasCatalogo.SeguimientoPeriodo;
 import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.ClaveComponente;
 import com.chavescr.nexa.entity.Componente;
+import com.chavescr.nexa.entity.IncidenteConducta;
+import com.chavescr.nexa.entity.IncidenteConducta.EstadoIncidente;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
 import com.chavescr.nexa.entity.DistribucionPorcentual;
 import com.chavescr.nexa.entity.Materia;
@@ -133,6 +140,7 @@ public class NotasConsultaService {
 
         NotasArmadas armadas = materiasPorEstudiante(direccionId, nivelIds, estudiantes, visibles);
         Map<Long, List<ObservacionPeriodo>> observaciones = observacionesDe(direccionId, estudiantes, visibles);
+        Map<Long, List<SeguimientoPeriodo>> seguimiento = seguimientoDe(direccionId, estudiantes, visibles);
 
         String aviso = null;
         if (periodos.isEmpty()) {
@@ -159,7 +167,8 @@ public class NotasConsultaService {
                         .map(u -> estudiante(u,
                                 armadas.materias().getOrDefault(u.getId(), List.of()),
                                 armadas.ausencias().getOrDefault(u.getId(), List.of()),
-                                observaciones.getOrDefault(u.getId(), List.of())))
+                                observaciones.getOrDefault(u.getId(), List.of()),
+                                seguimiento.getOrDefault(u.getId(), List.of())))
                         .toList());
     }
 
@@ -268,6 +277,50 @@ public class NotasConsultaService {
         return new NotasAusenciasPeriodo(registros);
     }
 
+    /** Llamadas de atención del estudiante en el período, de la más reciente a la más antigua. */
+    public NotasLlamadasPeriodo llamadas(Long direccionId, Long usuarioId, boolean supervision,
+            Long estudianteId, Long periodoId) {
+        periodoDeEstudianteVisible(direccionId, usuarioId, supervision, estudianteId, periodoId);
+        List<NotasLlamadaDetalle> registros = new ArrayList<>();
+        for (IncidenteConducta incidente : incidenteRepository.findDeEstudianteEnPeriodo(
+                direccionId, periodoId, estudianteId, TipoIncidente.LLAMADA_ATENCION)) {
+            String docente = incidente.getRegistradoPor() == null ? "" : incidente.getRegistradoPor().getNombre();
+            String descripcion = incidente.getDescripcion() == null ? "" : incidente.getDescripcion().trim();
+            EstadoIncidente estado = incidente.getEstado() == null ? EstadoIncidente.PENDIENTE : incidente.getEstado();
+            registros.add(new NotasLlamadaDetalle(
+                    FECHA.format(incidente.getFecha()),
+                    incidente.getMotivo(),
+                    descripcion,
+                    docente == null ? "" : docente.trim(),
+                    etiquetaEstado(estado),
+                    claseEstado(estado)));
+        }
+        return new NotasLlamadasPeriodo(registros);
+    }
+
+    /** Boletas del estudiante en el período, de la más reciente a la más antigua. */
+    public NotasBoletasPeriodo boletas(Long direccionId, Long usuarioId, boolean supervision,
+            Long estudianteId, Long periodoId) {
+        periodoDeEstudianteVisible(direccionId, usuarioId, supervision, estudianteId, periodoId);
+        List<NotasBoletaDetalle> registros = new ArrayList<>();
+        for (IncidenteConducta incidente : incidenteRepository.findDeEstudianteEnPeriodo(
+                direccionId, periodoId, estudianteId, TipoIncidente.BOLETA)) {
+            String docente = incidente.getRegistradoPor() == null ? "" : incidente.getRegistradoPor().getNombre();
+            String descripcion = incidente.getDescripcion() == null ? "" : incidente.getDescripcion().trim();
+            EstadoIncidente estado = incidente.getEstado() == null ? EstadoIncidente.PENDIENTE : incidente.getEstado();
+            int puntos = incidente.getPuntosDescontados() == null ? 0 : incidente.getPuntosDescontados();
+            registros.add(new NotasBoletaDetalle(
+                    FECHA.format(incidente.getFecha()),
+                    incidente.getMotivo(),
+                    puntos,
+                    descripcion,
+                    docente == null ? "" : docente.trim(),
+                    etiquetaEstado(estado),
+                    claseEstado(estado)));
+        }
+        return new NotasBoletasPeriodo(registros);
+    }
+
     private PeriodoAcademico periodoDeEstudianteVisible(Long direccionId, Long usuarioId, boolean supervision,
             Long estudianteId, Long periodoId) {
         Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
@@ -290,6 +343,24 @@ public class NotasConsultaService {
             case TARDIA_JUSTIFICADA -> "Tardía justificada";
             case TARDIA -> "Tardía injustificada";
             case PRESENTE -> "";
+        };
+    }
+
+    private String etiquetaEstado(EstadoIncidente estado) {
+        return switch (estado) {
+            case PENDIENTE -> "Pendiente";
+            case EN_PROCESO -> "En proceso";
+            case RESUELTO -> "Resuelto";
+            case APELADO -> "Apelado";
+        };
+    }
+
+    private String claseEstado(EstadoIncidente estado) {
+        return switch (estado) {
+            case PENDIENTE -> "pendiente";
+            case EN_PROCESO -> "enproceso";
+            case RESUELTO -> "resuelto";
+            case APELADO -> "apelado";
         };
     }
 
@@ -730,8 +801,39 @@ public class NotasConsultaService {
         return mapa;
     }
 
+    private Map<Long, List<SeguimientoPeriodo>> seguimientoDe(Long direccionId, List<Usuario> estudiantes,
+            List<PeriodoAcademico> periodos) {
+        if (estudiantes.isEmpty() || periodos.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> estudianteIds = estudiantes.stream().map(Usuario::getId).toList();
+        List<Long> periodoIds = periodos.stream().map(PeriodoAcademico::getId).toList();
+        Map<Long, Map<Long, int[]>> acumulado = new HashMap<>();
+        for (Object[] fila : incidenteRepository.contarPorEstudiantePeriodoYTipo(
+                direccionId, periodoIds, estudianteIds)) {
+            int[] par = acumulado
+                    .computeIfAbsent((Long) fila[0], k -> new HashMap<>())
+                    .computeIfAbsent((Long) fila[1], k -> new int[2]);
+            int cantidad = fila[3] == null ? 0 : ((Number) fila[3]).intValue();
+            String tipo = String.valueOf(fila[2]);
+            if (TipoIncidente.LLAMADA_ATENCION.name().equals(tipo)) {
+                par[0] = cantidad;
+            } else if (TipoIncidente.BOLETA.name().equals(tipo)) {
+                par[1] = cantidad;
+            }
+        }
+        Map<Long, List<SeguimientoPeriodo>> mapa = new HashMap<>();
+        acumulado.forEach((estudianteId, porPeriodo) -> {
+            List<SeguimientoPeriodo> lista = new ArrayList<>();
+            porPeriodo.forEach((periodoId, par) -> lista.add(new SeguimientoPeriodo(periodoId, par[0], par[1])));
+            mapa.put(estudianteId, lista);
+        });
+        return mapa;
+    }
+
     private EstudianteOpcion estudiante(Usuario usuario, List<MateriaNota> materias,
-            List<AusenciaPeriodo> ausencias, List<ObservacionPeriodo> observaciones) {
+            List<AusenciaPeriodo> ausencias, List<ObservacionPeriodo> observaciones,
+            List<SeguimientoPeriodo> seguimiento) {
         NivelAcademico nivel = usuario.getNivelAcademico();
         long id = usuario.getId();
         return new EstudianteOpcion(
@@ -745,7 +847,8 @@ public class NotasConsultaService {
                 COLORES[(int) Math.floorMod(id, COLORES.length)],
                 materias,
                 ausencias,
-                observaciones);
+                observaciones,
+                seguimiento);
     }
 
     private String iniciales(String nombre) {

@@ -67,6 +67,42 @@ public class NotasController {
         return "notas/detalle-ausencias :: registros";
     }
 
+    @GetMapping("/llamadas")
+    public String llamadas(@RequestParam Long estudianteId, @RequestParam Long periodoId, Model model,
+            HttpSession session, HttpServletRequest request) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        try {
+            model.addAttribute("llamadas", notasConsultaService.llamadas(
+                    direccionId, usuarioId, supervision, estudianteId, periodoId));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "notas/detalle-llamadas :: registros";
+    }
+
+    @GetMapping("/boletas")
+    public String boletas(@RequestParam Long estudianteId, @RequestParam Long periodoId, Model model,
+            HttpSession session, HttpServletRequest request) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        try {
+            model.addAttribute("boletas", notasConsultaService.boletas(
+                    direccionId, usuarioId, supervision, estudianteId, periodoId));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "notas/detalle-boletas :: registros";
+    }
+
     @PostMapping("/observacion")
     public String guardarObservacion(@RequestParam Long estudianteId, @RequestParam Long periodoId,
             @RequestParam(required = false) String texto, Model model, HttpSession session,

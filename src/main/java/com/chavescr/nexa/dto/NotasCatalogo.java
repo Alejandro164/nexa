@@ -152,10 +152,12 @@ public class NotasCatalogo {
         private final List<MateriaNota> materias;
         private final List<AusenciaPeriodo> ausencias;
         private final List<ObservacionPeriodo> observaciones;
+        private final List<SeguimientoPeriodo> seguimiento;
 
         public EstudianteOpcion(Long id, String nombre, String cedula, Integer grado, String seccion,
                 Long nivelId, String iniciales, String color, List<MateriaNota> materias,
-                List<AusenciaPeriodo> ausencias, List<ObservacionPeriodo> observaciones) {
+                List<AusenciaPeriodo> ausencias, List<ObservacionPeriodo> observaciones,
+                List<SeguimientoPeriodo> seguimiento) {
             this.id = id;
             this.nombre = nombre;
             this.cedula = cedula;
@@ -167,6 +169,7 @@ public class NotasCatalogo {
             this.materias = materias;
             this.ausencias = ausencias;
             this.observaciones = observaciones;
+            this.seguimiento = seguimiento;
         }
 
         public Long getId() {
@@ -211,6 +214,35 @@ public class NotasCatalogo {
 
         public List<ObservacionPeriodo> getObservaciones() {
             return observaciones;
+        }
+
+        public List<SeguimientoPeriodo> getSeguimiento() {
+            return seguimiento;
+        }
+    }
+
+    /** Llamadas de atención y boletas del estudiante en un período. */
+    public static class SeguimientoPeriodo {
+        private final Long periodoId;
+        private final int llamadas;
+        private final int boletas;
+
+        public SeguimientoPeriodo(Long periodoId, int llamadas, int boletas) {
+            this.periodoId = periodoId;
+            this.llamadas = llamadas;
+            this.boletas = boletas;
+        }
+
+        public Long getPeriodoId() {
+            return periodoId;
+        }
+
+        public int getLlamadas() {
+            return llamadas;
+        }
+
+        public int getBoletas() {
+            return boletas;
         }
     }
 
