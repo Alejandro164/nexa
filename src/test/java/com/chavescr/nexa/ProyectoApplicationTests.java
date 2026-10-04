@@ -342,21 +342,32 @@ class ProyectoApplicationTests {
 		context.setVariable("detalle", new NotasConductaDetalle(false, true, "73.0", new ArrayList<>(List.of(
 				new Cuenta("2026-I", new ArrayList<>(List.of(
 						new Linea("Boletas", 1, 10),
-						new Linea("Ausencias injustificadas", 2, 10))),
-						new ArrayList<>(List.of(new Registro("02/03/2026", "Ciencias", "Ausencia injustificada", 5))),
-						85)))));
+						new Linea("Ausencias injustificadas", 2, 10, "ausencia-injustificada"))),
+						new ArrayList<>(List.of(new Registro("02/03/2026", "Ciencias", "Ausencia injustificada", 5,
+								"ausencia-injustificada"))),
+						85, 100, null)))));
 
 		String conConducta = templateEngine.process(registros, context);
 		assertTrue(conConducta.contains("Ausencias injustificadas"));
 		assertTrue(conConducta.contains("−10"));
 		assertTrue(conConducta.contains("Ciencias"));
 		assertTrue(conConducta.contains("−5"));
+		assertTrue(conConducta.contains("data-vista=\"historial\" hidden"));
+		assertFalse(conConducta.contains("Cada ausencia y tardía"));
 		assertTrue(conConducta.contains("73.0"));
+		assertTrue(conConducta.contains("100.00"));
 		assertFalse(conConducta.contains("rebajan el componente"));
+
+		String shell = templateEngine.process(
+				new TemplateSpec("notas/detalle-conducta", Set.of("detalle"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null),
+				new Context());
+		assertTrue(shell.contains("notas-con-periodo-btn"));
+		assertTrue(shell.contains("periodosDelAnio"));
 
 		context.setVariable("detalle", new NotasConductaDetalle(false, false, "90.0", new ArrayList<>(List.of(
 				new Cuenta("2026-I", new ArrayList<>(List.of(new Linea("Boletas", 1, 10))),
-						new ArrayList<>(), 90)))));
+						new ArrayList<>(), 90, 100, null)))));
 		String alComponente = templateEngine.process(registros, context);
 		assertTrue(alComponente.contains("rebajan el componente"));
 		assertFalse(alComponente.contains("Ausencias injustificadas"));

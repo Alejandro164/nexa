@@ -5,6 +5,9 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -15,12 +18,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.chavescr.nexa.dto.DetalleAsistencia;
+import com.chavescr.nexa.dto.DetalleAsistencia.Cuadro;
+import com.chavescr.nexa.dto.DetalleAsistencia.Fila;
 import com.chavescr.nexa.dto.FilaAsistencia;
 import com.chavescr.nexa.entity.AsistenciaEstudiante;
 import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
@@ -44,6 +51,8 @@ public class AsistenciaService {
     private final PeriodoAcademicoRepository periodoRepository;
     private final HorarioLeccionRepository horarioLeccionRepository;
     private final AlmacenamientoService almacenamientoService;
+    private final AlcanceDocenteService alcanceDocenteService;
+    private final RebajaConductaService rebajaConductaService;
 
     public AsistenciaService(AsistenciaEstudianteRepository asistenciaRepository,
             NivelAcademicoRepository nivelAcademicoRepository,
@@ -51,7 +60,9 @@ public class AsistenciaService {
             UsuarioRepository usuarioRepository,
             PeriodoAcademicoRepository periodoRepository,
             HorarioLeccionRepository horarioLeccionRepository,
-            AlmacenamientoService almacenamientoService) {
+            AlmacenamientoService almacenamientoService,
+            AlcanceDocenteService alcanceDocenteService,
+            RebajaConductaService rebajaConductaService) {
         this.asistenciaRepository = asistenciaRepository;
         this.nivelAcademicoRepository = nivelAcademicoRepository;
         this.materiaRepository = materiaRepository;
@@ -59,6 +70,8 @@ public class AsistenciaService {
         this.periodoRepository = periodoRepository;
         this.horarioLeccionRepository = horarioLeccionRepository;
         this.almacenamientoService = almacenamientoService;
+        this.alcanceDocenteService = alcanceDocenteService;
+        this.rebajaConductaService = rebajaConductaService;
     }
 
     @Transactional(readOnly = true)
@@ -85,6 +98,38 @@ public class AsistenciaService {
             return "El período activo no tiene lecciones registradas en el horario. Configúralas en Configuración académica.";
         }
         return null;
+    }
+
+    /**
+     * Tardías y ausencias del estudiante en los períodos del año del período activo.
+     * Los puntos salen de la regla de la institución. Un docente solo ve estudiantes de sus secciones.
+     */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public DetalleAsistencia detalleEstudiante(Long direccionId, Long estudianteId, Long docenteId) {
+        Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
+        exigirEstudianteVisible(direccionId, docenteId, estudiante);
+        List<PeriodoAcademico> periodos = periodosDelAnioActivo(direccionId);
+        if (periodos.isEmpty()) {
+            throw new IllegalArgumentException("No hay períodos en el año lectivo");
+        }
+        LocalDate desde = periodos.get(0).getFechaInicio();
+        LocalDate hasta = periodos.get(0).getFechaFin();
+        for (PeriodoAcademico periodo : periodos) {
+            if (periodo.getFechaFin().isAfter(hasta)) {
+                hasta = periodo.getFechaFin();
+            }
+        }
+        List<Object[]> filas = asistenciaRepository.findAusenciasDeEstudiante(direccionId, estudianteId, desde, hasta,
+                EstadoAsistencia.PRESENTE);
+        CalculoRebaja calculo = rebajaConductaService.calculo(direccionId);
+        Long actualId = periodoPorDefecto(periodos, LocalDate.now()).getId();
+        List<DetalleAsistencia.Periodo> bloques = new ArrayList<>();
+        for (PeriodoAcademico periodo : periodos) {
+            bloques.add(bloque(periodo, filas, calculo, periodo.getId().equals(actualId)));
+        }
+        return new DetalleAsistencia(texto(estudiante.getNombre()), iniciales(estudiante.getNombre()),
+                meta(estudiante), bloques);
     }
 
     @Transactional(readOnly = true)
@@ -271,6 +316,159 @@ public class AsistenciaService {
             nombre = nombre.substring(nombre.length() - 255);
         }
         return nombre.isEmpty() ? "justificacion" : nombre;
+    }
+
+    private void exigirEstudianteVisible(Long direccionId, Long docenteId, Usuario estudiante) {
+        if (docenteId == null) {
+            return;
+        }
+        Long nivelId = estudiante.getNivelAcademico() == null ? null : estudiante.getNivelAcademico().getId();
+        boolean visible = nivelId != null && alcanceDocenteService.nivelesVisibles(direccionId, docenteId).stream()
+                .anyMatch(nivel -> nivelId.equals(nivel.getId()));
+        if (!visible) {
+            throw new IllegalArgumentException("No puede consultar la asistencia de este estudiante");
+        }
+    }
+
+    private List<PeriodoAcademico> periodosDelAnioActivo(Long direccionId) {
+        PeriodoAcademico activo = obtenerUltimoPeriodoActivo(direccionId);
+        if (activo == null || activo.getFechaInicio() == null) {
+            return List.of();
+        }
+        int anio = activo.getFechaInicio().getYear();
+        List<PeriodoAcademico> periodos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
+        if (periodos == null) {
+            return List.of();
+        }
+        return periodos.stream()
+                .filter(periodo -> periodo.getFechaInicio() != null && periodo.getFechaFin() != null
+                        && periodo.getFechaInicio().getYear() == anio)
+                .sorted(Comparator.comparing(PeriodoAcademico::getFechaInicio))
+                .toList();
+    }
+
+    /** El período que contiene hoy, o el de fechas más cercanas si hoy queda fuera de todos. */
+    static PeriodoAcademico periodoPorDefecto(List<PeriodoAcademico> periodos, LocalDate hoy) {
+        PeriodoAcademico contiene = null;
+        for (PeriodoAcademico periodo : periodos) {
+            if (!hoy.isBefore(periodo.getFechaInicio()) && !hoy.isAfter(periodo.getFechaFin())) {
+                contiene = periodo;
+            }
+        }
+        if (contiene != null) {
+            return contiene;
+        }
+        PeriodoAcademico cercano = periodos.get(0);
+        long mejor = Long.MAX_VALUE;
+        for (PeriodoAcademico periodo : periodos) {
+            long distancia = hoy.isBefore(periodo.getFechaInicio())
+                    ? ChronoUnit.DAYS.between(hoy, periodo.getFechaInicio())
+                    : ChronoUnit.DAYS.between(periodo.getFechaFin(), hoy);
+            if (distancia < mejor) {
+                mejor = distancia;
+                cercano = periodo;
+            }
+        }
+        return cercano;
+    }
+
+    private DetalleAsistencia.Periodo bloque(PeriodoAcademico periodo, List<Object[]> filas, CalculoRebaja calculo,
+            boolean actual) {
+        List<Object[]> delPeriodo = new ArrayList<>();
+        for (Object[] fila : filas) {
+            LocalDate fecha = (LocalDate) fila[0];
+            if (fecha != null && !fecha.isBefore(periodo.getFechaInicio()) && !fecha.isAfter(periodo.getFechaFin())) {
+                delPeriodo.add(fila);
+            }
+        }
+        int[] conteo = new int[4];
+        List<Fila> lista = new ArrayList<>();
+        for (Object[] fila : delPeriodo) {
+            EstadoAsistencia estado = (EstadoAsistencia) fila[2];
+            CalculoRebaja.sumar(conteo, estado, 1);
+            lista.add(filaDe(fila, estado));
+        }
+        String codigo = periodo.getCodigo() == null || periodo.getCodigo().isBlank() ? "Período" : periodo.getCodigo();
+        String rango = periodo.getFechaInicio().format(FECHA_PERIODO) + " – " + periodo.getFechaFin().format(FECHA_PERIODO);
+        return new DetalleAsistencia.Periodo(periodo.getId(), codigo, rango, cuadros(conteo, calculo), lista, actual);
+    }
+
+    private static List<Cuadro> cuadros(int[] conteo, CalculoRebaja calculo) {
+        return List.of(
+                cuadro("is-ausente-injustificada", "Ausencias injustificadas", conteo[1],
+                        TipoRebaja.AUSENCIA_INJUSTIFICADA, calculo),
+                cuadro("is-ausente-justificada", "Ausencias justificadas", conteo[0],
+                        TipoRebaja.AUSENCIA_JUSTIFICADA, calculo),
+                cuadro("is-tardia-injustificada", "Tardías injustificadas", conteo[3],
+                        TipoRebaja.TARDIA_INJUSTIFICADA, calculo),
+                cuadro("is-tardia-justificada", "Tardías justificadas", conteo[2],
+                        TipoRebaja.TARDIA_JUSTIFICADA, calculo));
+    }
+
+    private static Cuadro cuadro(String clase, String etiqueta, int cantidad, TipoRebaja tipo, CalculoRebaja calculo) {
+        return new Cuadro(clase, etiqueta, cantidad, calculo.puntos(tipo, cantidad));
+    }
+
+    private static Fila filaDe(Object[] fila, EstadoAsistencia estado) {
+        LocalDate fecha = (LocalDate) fila[0];
+        Integer leccion = fila[1] instanceof Number numero ? numero.intValue() : null;
+        return new Fila(
+                fecha == null ? "" : fecha.format(FECHA_PERIODO),
+                oGuion(fila[3]),
+                leccion == null ? "—" : String.valueOf(leccion),
+                etiqueta(estado),
+                claseEstado(estado),
+                oGuion(fila[5]),
+                oGuion(fila[4]));
+    }
+
+    private static String etiqueta(EstadoAsistencia estado) {
+        if (estado == null) {
+            return "";
+        }
+        return switch (estado) {
+            case AUSENTE -> "Ausencia";
+            case JUSTIFICADA -> "Ausencia justificada";
+            case TARDIA -> "Tardía";
+            case TARDIA_JUSTIFICADA -> "Tardía justificada";
+            case PRESENTE -> "";
+        };
+    }
+
+    private static String claseEstado(EstadoAsistencia estado) {
+        if (estado == null) {
+            return "";
+        }
+        return estado.esTardia() ? "is-tardia" : "is-ausente";
+    }
+
+    private static String meta(Usuario estudiante) {
+        String cedula = texto(estudiante.getCedula());
+        String seccion = estudiante.getNivelAcademico() == null ? ""
+                : "Sección " + estudiante.getNivelAcademico().getNombreCompleto();
+        if (!cedula.isEmpty() && !seccion.isEmpty()) {
+            return cedula + " · " + seccion;
+        }
+        return cedula.isEmpty() ? seccion : cedula;
+    }
+
+    private static String iniciales(String nombre) {
+        String limpio = texto(nombre);
+        if (limpio.isEmpty()) {
+            return "?";
+        }
+        String[] partes = limpio.split("\\s+");
+        String segunda = partes.length > 1 ? partes[1].substring(0, 1) : "";
+        return (partes[0].substring(0, 1) + segunda).toUpperCase(Locale.ROOT);
+    }
+
+    private static String oGuion(Object valor) {
+        String texto = texto(valor == null ? null : String.valueOf(valor));
+        return texto.isEmpty() ? "—" : texto;
+    }
+
+    private static String texto(String valor) {
+        return valor == null ? "" : valor.trim();
     }
 
     private FilaAsistencia construirFila(Usuario estudiante, AsistenciaEstudiante registro) {

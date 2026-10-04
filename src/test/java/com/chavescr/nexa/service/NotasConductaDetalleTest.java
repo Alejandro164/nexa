@@ -124,8 +124,12 @@ class NotasConductaDetalleTest {
         assertEquals(0, puntosDe(detalle, "Ausencias justificadas"));
         assertEquals(2, puntosDe(detalle, "Tardías injustificadas"));
         List<Registro> registros = detalle.getCuentas().get(0).getRegistros();
-        assertEquals(List.of(5, 5, 2, 0), registros.stream().map(Registro::getPuntos).toList());
-        assertEquals("Matemática", registros.get(2).getMateria());
+        List<Registro> ausencias = registros.stream()
+                .filter(r -> r.getClave().startsWith("ausencia") || r.getClave().startsWith("tardia")).toList();
+        assertEquals(List.of(5, 5, 2, 0), ausencias.stream().map(Registro::getPuntos).toList());
+        assertEquals("Matemática", ausencias.get(2).getMateria());
+        assertEquals(10, registros.stream().filter(r -> "boleta".equals(r.getClave())).mapToInt(Registro::getPuntos).sum());
+        assertEquals(5, registros.stream().filter(r -> "llamada".equals(r.getClave())).mapToInt(Registro::getPuntos).sum());
     }
 
     @Test
@@ -141,7 +145,8 @@ class NotasConductaDetalleTest {
         assertFalse(detalle.isAsistenciaEnConducta());
         assertEquals(List.of("Boletas", "Llamadas de atención"),
                 detalle.getCuentas().get(0).getLineas().stream().map(Linea::getConcepto).toList());
-        assertTrue(detalle.getCuentas().get(0).getRegistros().isEmpty());
+        assertTrue(detalle.getCuentas().get(0).getRegistros().stream()
+                .allMatch(r -> "boleta".equals(r.getClave())));
         verifyNoInteractions(asistenciaRepository);
     }
 
@@ -166,6 +171,33 @@ class NotasConductaDetalleTest {
         assertEquals("97.50", detalle.getNota());
         assertEquals(List.of("2026-I", "2026-II"),
                 detalle.getCuentas().stream().map(c -> c.getPeriodo()).toList());
+        assertEquals(100, detalle.getCuentas().get(0).getBase());
+        assertEquals(100, detalle.getCuentas().get(1).getBase());
+        assertEquals("", detalle.getCuentas().get(1).getOrigenBase());
+    }
+
+    @Test
+    void cadaPeriodoParteDeCienAunqueElAnteriorHayaBajado() {
+        PeriodoAcademico segundo = new PeriodoAcademico();
+        segundo.setId(6L);
+        segundo.setCodigo("2026-II");
+        segundo.setFechaInicio(LocalDate.of(2026, 7, 1));
+        segundo.setFechaFin(LocalDate.of(2026, 11, 30));
+        when(periodoRepository.findByDireccionIdOrderByFechaInicioDesc(DIRECCION))
+                .thenReturn(List.of(segundo, periodo));
+        when(rebajaConductaService.calculo(DIRECCION)).thenReturn(predeterminada(false));
+        when(incidenteRepository.findByDireccionIdAndPeriodoIdAndEstudianteId(DIRECCION, PERIODO, ESTUDIANTE))
+                .thenReturn(List.of(boleta(10)));
+        when(incidenteRepository.findByDireccionIdAndPeriodoIdAndEstudianteId(DIRECCION, 6L, ESTUDIANTE))
+                .thenReturn(List.of(llamada()));
+
+        NotasConductaDetalle detalle = service.detalleConducta(DIRECCION, null, true, ESTUDIANTE, null, 2026);
+
+        assertEquals("92.50", detalle.getNota());
+        assertEquals(100, detalle.getCuentas().get(0).getBase());
+        assertEquals(90, detalle.getCuentas().get(0).getNota());
+        assertEquals(100, detalle.getCuentas().get(1).getBase());
+        assertEquals(95, detalle.getCuentas().get(1).getNota());
     }
 
     private static int puntosDe(NotasConductaDetalle detalle, String concepto) {

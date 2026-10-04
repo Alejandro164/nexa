@@ -1,0 +1,353 @@
+<div th:fragment="detalle" id="detalle-asistencia-modal" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        #detalle-asistencia-modal { display: none; }
+        #detalle-asistencia-modal.is-abierto { display: block; }
+        #detalle-asistencia-modal.is-abierto .modal-backdrop {
+            animation: academicModalBackdropIn 180ms ease-out both;
+        }
+        #detalle-asistencia-modal.is-abierto .modal-dialog {
+            animation: academicModalDialogIn 240ms cubic-bezier(.22, 1, .36, 1) both;
+        }
+        #detalle-asistencia-modal .modal-dialog:focus { outline: none; }
+        #detalle-asistencia-modal .modal-dialog {
+            max-width: min(1120px, calc(100vw - 2rem));
+            display: flex;
+            flex-direction: column;
+            max-height: min(760px, calc(100vh - 2rem));
+        }
+        #detalle-asistencia-modal .modal-header { align-items: flex-start; gap: 1rem; }
+        #detalle-asistencia-modal .asist-det-heading { min-width: 0; }
+        #detalle-asistencia-modal .modal-title { margin: 0; color: #0f172a; letter-spacing: -0.02em; }
+        #detalle-asistencia-modal .asist-det-sub { margin: 0.2rem 0 0; font-size: 0.8rem; color: #64748b; }
+        #detalle-asistencia-cuerpo {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        #detalle-asistencia-modal .asist-det-vacio {
+            margin: 0;
+            padding: 1.25rem 1.5rem;
+            color: #64748b;
+            font-size: 0.84rem;
+        }
+        #detalle-asistencia-modal .asist-det-estudiante {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 0.85rem 1.5rem;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            background: #f8fafc;
+        }
+        #detalle-asistencia-modal .asist-det-quien {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 0;
+        }
+        #detalle-asistencia-modal .asist-det-periodos {
+            display: inline-flex;
+            padding: 3px;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 10px;
+            background: #fff;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        #detalle-asistencia-modal .asist-det-periodo-btn {
+            min-height: 28px;
+            padding: 0 0.7rem;
+            border: none;
+            border-radius: 7px;
+            background: transparent;
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        #detalle-asistencia-modal .asist-det-periodo-btn.is-on {
+            background: var(--primary, #2d5a87);
+            color: #fff;
+        }
+        #detalle-asistencia-modal .asist-det-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: var(--primary, #2d5a87);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        #detalle-asistencia-modal .asist-det-nombre {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        #detalle-asistencia-modal .asist-det-meta { font-size: 0.75rem; color: #64748b; margin-top: 1px; }
+        #detalle-asistencia-modal .modal-body {
+            overflow: auto;
+            padding: 1.15rem 1.5rem 1.35rem;
+            background: #fff;
+            min-height: 0;
+            flex: 1;
+        }
+        #detalle-asistencia-modal .modal-dialog > .modal-footer {
+            margin: 0;
+            padding: 0.85rem 1.5rem;
+            border-top: 1px solid var(--border, #e2e8f0);
+            background: #fff;
+        }
+        #detalle-asistencia-modal .asist-det-periodo { margin-top: 0; }
+        #detalle-asistencia-modal .asist-det-periodo[hidden] { display: none; }
+        #detalle-asistencia-modal .asist-det-periodo-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.65rem;
+        }
+        #detalle-asistencia-modal .asist-det-enviar {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+        #detalle-asistencia-modal .asist-det-periodo-head h4 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        #detalle-asistencia-modal .asist-det-rango {
+            display: block;
+            margin-top: 0.15rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+        #detalle-asistencia-modal .asist-det-resumen {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        #detalle-asistencia-modal .asist-det-cuadro {
+            padding: 0.65rem 0.85rem;
+            border-radius: 12px;
+            border: 1px solid transparent;
+        }
+        #detalle-asistencia-modal .asist-det-cuadro-num {
+            display: inline;
+            margin-right: 0.35rem;
+            font-size: 1.05rem;
+            font-weight: 800;
+            line-height: 1.2;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.03em;
+            vertical-align: baseline;
+        }
+        #detalle-asistencia-modal .asist-det-cuadro-label {
+            display: inline;
+            font-size: 0.78rem;
+            font-weight: 700;
+            line-height: 1.2;
+            vertical-align: baseline;
+        }
+        #detalle-asistencia-modal .asist-det-cuadro-puntos {
+            display: block;
+            margin-top: 0.2rem;
+            font-size: 0.82rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+        #detalle-asistencia-modal .asist-det-cuadro-puntos.is-cero {
+            opacity: 0.55;
+        }
+        #detalle-asistencia-modal .asist-det-cuadro.is-ausente-injustificada {
+            background: rgba(220, 38, 38, 0.1);
+            color: #b91c1c;
+            border-color: rgba(220, 38, 38, 0.22);
+        }
+        #detalle-asistencia-modal .asist-det-cuadro.is-ausente-justificada {
+            background: rgba(45, 90, 135, 0.08);
+            color: #1e3a5f;
+            border-color: rgba(45, 90, 135, 0.18);
+        }
+        #detalle-asistencia-modal .asist-det-cuadro.is-tardia-injustificada {
+            background: rgba(217, 119, 6, 0.12);
+            color: #b45309;
+            border-color: rgba(217, 119, 6, 0.28);
+        }
+        #detalle-asistencia-modal .asist-det-cuadro.is-tardia-justificada {
+            background: rgba(22, 163, 74, 0.1);
+            color: #15803d;
+            border-color: rgba(22, 163, 74, 0.22);
+        }
+        @media (max-width: 800px) {
+            #detalle-asistencia-modal .asist-det-resumen {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        #detalle-asistencia-modal .asist-det-historial {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        #detalle-asistencia-modal .asist-det-historial col.fecha { width: 8.5rem; }
+        #detalle-asistencia-modal .asist-det-historial col.materia { width: 10.5rem; }
+        #detalle-asistencia-modal .asist-det-historial col.leccion { width: 5.5rem; }
+        #detalle-asistencia-modal .asist-det-historial col.estado { width: 12.5rem; }
+        #detalle-asistencia-modal .asist-det-historial col.docente { width: 12rem; }
+        #detalle-asistencia-modal .asist-det-historial th,
+        #detalle-asistencia-modal .asist-det-historial td {
+            padding: 0.7rem 0.45rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            text-align: left;
+        }
+        #detalle-asistencia-modal .asist-det-historial thead th {
+            padding-top: 0;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        #detalle-asistencia-modal .asist-det-historial td {
+            font-size: 0.84rem;
+            color: #334155;
+        }
+        #detalle-asistencia-modal .asist-det-fecha {
+            color: #64748b;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+        #detalle-asistencia-modal .asist-det-estado {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        #detalle-asistencia-modal .asist-det-estado.is-tardia {
+            background: rgba(217, 119, 6, 0.12);
+            color: #b45309;
+        }
+        #detalle-asistencia-modal .asist-det-estado.is-ausente {
+            background: rgba(220, 38, 38, 0.1);
+            color: #b91c1c;
+        }
+        #detalle-asistencia-modal .asist-det-detalle {
+            color: #64748b;
+            white-space: normal;
+            line-height: 1.45;
+            overflow-wrap: break-word;
+        }
+    </style>
+
+    <div class="modal-backdrop" role="presentation">
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="detalle-asistencia-titulo" tabindex="-1">
+            <div class="modal-header">
+                <div class="asist-det-heading">
+                    <h3 class="modal-title" id="detalle-asistencia-titulo">Detalle de asistencia</h3>
+                    <p class="asist-det-sub">Tardías y ausencias del estudiante</p>
+                </div>
+                <button type="button" class="close-btn" data-cerrar aria-label="Cerrar">&times;</button>
+            </div>
+            <div id="detalle-asistencia-cuerpo">
+                <p class="asist-det-vacio">Seleccione un estudiante.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-cerrar>Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="cuerpo">
+    <p class="asist-det-vacio" th:if="${error != null}" th:text="${error}">No se pudo cargar.</p>
+    <th:block th:if="${detalle != null}">
+        <div class="asist-det-estudiante">
+            <div class="asist-det-quien">
+                <span class="asist-det-avatar" th:text="${detalle.iniciales}">AR</span>
+                <div>
+                    <div class="asist-det-nombre" th:text="${detalle.nombre}">Nombre</div>
+                    <div class="asist-det-meta" th:if="${!#strings.isEmpty(detalle.meta)}" th:text="${detalle.meta}">Cédula · Sección</div>
+                </div>
+            </div>
+            <div class="asist-det-periodos" role="group" aria-label="Seleccionar período">
+                <button type="button" class="asist-det-periodo-btn"
+                        th:each="p : ${detalle.periodos}"
+                        th:classappend="${p.actual} ? ' is-on'"
+                        th:attr="data-periodo=${p.id}, aria-pressed=${p.actual}"
+                        th:text="${p.codigo}">2026-I</button>
+            </div>
+        </div>
+        <div class="modal-body">
+            <section class="asist-det-periodo" th:each="p : ${detalle.periodos}"
+                     th:attr="data-periodo=${p.id}, hidden=${p.actual} ? null : 'hidden'">
+                <div class="asist-det-periodo-head">
+                    <div>
+                        <h4 th:text="${p.codigo}">2026-I</h4>
+                        <span class="asist-det-rango" th:text="${p.rango}">01/02/2026 – 30/06/2026</span>
+                    </div>
+                    <button type="button" class="btn-primary btn-sm asist-det-enviar">Enviar</button>
+                </div>
+                <div class="asist-det-resumen">
+                    <div class="asist-det-cuadro" th:each="c : ${p.cuadros}" th:classappend="${c.clase}">
+                        <span class="asist-det-cuadro-num" th:text="${c.cantidad}">0</span>
+                        <span class="asist-det-cuadro-label" th:text="${c.etiqueta}">Ausencias</span>
+                        <span class="asist-det-cuadro-puntos" th:classappend="${c.cero} ? ' is-cero'"
+                              th:text="${c.puntosTexto}">0 puntos</span>
+                    </div>
+                </div>
+                <table class="asist-det-historial">
+                    <colgroup>
+                        <col class="fecha">
+                        <col class="materia">
+                        <col class="leccion">
+                        <col class="estado">
+                        <col class="docente">
+                        <col class="detalle">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Materia</th>
+                            <th>Lección</th>
+                            <th>Estado</th>
+                            <th>Docente</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${p.filas.empty}">
+                            <td colspan="6" class="asist-det-vacio">Sin tardías ni ausencias en este período.</td>
+                        </tr>
+                        <tr th:each="f : ${p.filas}">
+                            <td class="asist-det-fecha" th:text="${f.fecha}">01/03/2026</td>
+                            <td th:text="${f.materia}">Matemáticas</td>
+                            <td th:text="${f.leccion}">1</td>
+                            <td><span class="asist-det-estado" th:classappend="${f.estadoClase}" th:text="${f.estado}">Tardía</span></td>
+                            <td th:text="${f.docente}">Docente</td>
+                            <td class="asist-det-detalle" th:text="${f.detalle}">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </th:block>
+</div>

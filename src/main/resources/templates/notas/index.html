@@ -1500,6 +1500,31 @@
                     abrirConductaAnio() {
                         this.abrirConducta({ id: 'anio', etiqueta: 'Año lectivo', titulo: 'Año lectivo' });
                     },
+                    historialConducta(event) {
+                        const cuerpo = document.getElementById('notas-conducta-cuerpo');
+                        if (!cuerpo) return;
+                        const volver = event.target.closest('[data-volver]');
+                        const fila = event.target.closest('[data-historial]');
+                        if (!volver && !fila) return;
+                        const resumenes = cuerpo.querySelectorAll('[data-vista="resumen"]');
+                        const listas = cuerpo.querySelectorAll('[data-vista="historial"]');
+                        const pie = cuerpo.querySelector('[data-vista="pie"]');
+                        if (volver) {
+                            listas.forEach(function (nodo) { nodo.hidden = true; });
+                            resumenes.forEach(function (nodo) { nodo.hidden = false; });
+                            if (pie) pie.hidden = false;
+                            return;
+                        }
+                        const seccion = fila.closest('section');
+                        const panel = seccion && seccion.querySelector(
+                            '[data-vista="historial"][data-clave="' + fila.getAttribute('data-historial') + '"]');
+                        if (!panel) return;
+                        event.preventDefault();
+                        resumenes.forEach(function (nodo) { nodo.hidden = true; });
+                        listas.forEach(function (nodo) { nodo.hidden = true; });
+                        if (pie) pie.hidden = true;
+                        panel.hidden = false;
+                    },
                     abrirConducta(periodo) {
                         if (!this.seleccionado || !periodo) return;
                         this.cerrarDesglose();

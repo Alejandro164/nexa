@@ -1,7 +1,7 @@
 <div th:fragment="detalle" id="notas-conducta-modal" xmlns:th="http://www.thymeleaf.org">
     <style>
         #notas-conducta-modal .modal-dialog {
-            max-width: 480px;
+            max-width: 640px;
             display: flex;
             flex-direction: column;
             max-height: min(720px, calc(100vh - 2rem));
@@ -13,18 +13,39 @@
         #notas-conducta-modal .notas-con-toolbar {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
             padding: 0.85rem 1.5rem;
             border-bottom: 1px solid var(--border, #e2e8f0);
             background: #f8fafc;
         }
-        #notas-conducta-modal .notas-con-quien { min-width: 0; flex: 1; }
+        #notas-conducta-modal .notas-con-student { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+        #notas-conducta-modal .notas-con-quien { min-width: 0; }
+        #notas-conducta-modal .notas-con-filtro { display: flex; flex-direction: row; align-items: flex-end; gap: 0.5rem; }
+        #notas-conducta-modal .notas-con-filtro-label {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b;
+            white-space: nowrap; padding-bottom: 0.4rem;
+        }
+        #notas-conducta-modal .notas-con-periodos-col {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;
+        }
         #notas-conducta-modal .notas-con-enviar {
-            margin-left: auto;
-            flex-shrink: 0;
             padding: 6px 12px;
             font-size: 0.8rem;
             border-radius: 6px;
+        }
+        #notas-conducta-modal .notas-con-periodos {
+            display: inline-flex; padding: 3px; border: 1px solid var(--border, #e2e8f0);
+            border-radius: 10px; background: #fff; gap: 2px;
+        }
+        #notas-conducta-modal .notas-con-periodo-btn {
+            min-height: 28px; padding: 0 0.7rem; border: none; border-radius: 7px; background: transparent;
+            color: #64748b; font-size: 0.75rem; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap;
+        }
+        #notas-conducta-modal .notas-con-periodo-btn.is-on { background: var(--primary, #2d5a87); color: #fff; }
+        #notas-conducta-modal .notas-con-origen {
+            display: block; margin-top: 0.15rem; font-size: 0.72rem; font-weight: 600; color: #64748b;
         }
         #notas-conducta-modal .notas-con-avatar {
             width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
@@ -86,6 +107,35 @@
         #notas-conducta-modal .notas-con-resta { color: #b91c1c; }
         #notas-conducta-modal .notas-con-cero { color: #94a3b8; font-weight: 700; }
         #notas-conducta-modal .notas-con-base td { font-size: 1.05rem; }
+        #notas-conducta-modal tr.is-abre { cursor: pointer; }
+        #notas-conducta-modal tr.is-abre:hover th,
+        #notas-conducta-modal tr.is-abre:hover td { background: #f8fafc; }
+        #notas-conducta-modal tr.is-abre:focus-visible {
+            outline: 2px solid var(--primary, #2d5a87);
+            outline-offset: -2px;
+        }
+        #notas-conducta-modal tr.is-abre th { text-decoration: underline; text-underline-offset: 3px; }
+        #notas-conducta-modal .notas-con-volver {
+            margin: 0 0 0.85rem;
+            padding: 0;
+            border: none;
+            background: none;
+            color: var(--primary, #2d5a87);
+            font: inherit;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        #notas-conducta-modal .notas-con-historial h4 {
+            margin: 0 0 0.2rem;
+            font-size: 1rem;
+            color: #0f172a;
+        }
+        #notas-conducta-modal .notas-con-historial p {
+            margin: 0 0 0.75rem;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
         #notas-conducta-modal .notas-con-puntos {
             display: flex;
             align-items: baseline;
@@ -170,17 +220,33 @@
                     <button type="button" class="close-btn" aria-label="Cerrar" @click="cerrarConducta()">&times;</button>
                 </div>
                 <div class="notas-con-toolbar">
-                    <span class="notas-con-avatar" :style="'background:' + seleccionado.color"
-                          x-text="seleccionado.iniciales"></span>
-                    <div class="notas-con-quien">
-                        <div class="notas-con-name" x-text="seleccionado.nombre"></div>
-                        <div class="notas-con-meta"
-                             x-text="seleccionado.cedula + ' · Sección ' + grupoDe(seleccionado)"></div>
+                    <div class="notas-con-student">
+                        <span class="notas-con-avatar" :style="'background:' + seleccionado.color"
+                              x-text="seleccionado.iniciales"></span>
+                        <div class="notas-con-quien">
+                            <div class="notas-con-name" x-text="seleccionado.nombre"></div>
+                            <div class="notas-con-meta"
+                                 x-text="seleccionado.cedula + ' · Sección ' + grupoDe(seleccionado)"></div>
+                        </div>
                     </div>
-                    <button type="button" class="btn-primary btn-sm notas-con-enviar"
-                            @click="simularEnvio()">Enviar</button>
+                    <div class="notas-con-filtro">
+                        <span class="notas-con-filtro-label">Período</span>
+                        <div class="notas-con-periodos-col">
+                            <button type="button" class="btn-primary btn-sm notas-con-enviar"
+                                    @click="simularEnvio()">Enviar</button>
+                            <div class="notas-con-periodos" role="group" aria-label="Filtrar conducta por período">
+                                <template x-for="p in periodosDelAnio" :key="'con-p-' + p.id">
+                                    <button type="button" class="notas-con-periodo-btn"
+                                            :class="{ 'is-on': esConductaPeriodo(p) }"
+                                            :aria-pressed="esConductaPeriodo(p)"
+                                            @click="abrirConducta(p)"
+                                            x-text="p.etiqueta"></button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" @click="historialConducta($event)" @keydown.enter="historialConducta($event)">
                     <div id="notas-conducta-cuerpo">
                         <p class="notas-con-estado">Cargando…</p>
                     </div>
@@ -200,38 +266,49 @@
             Las ausencias y tardías rebajan el componente, así que no entran en esta nota.
         </p>
         <section th:each="cuenta : ${detalle.cuentas}">
-            <h4 class="notas-con-periodo" th:if="${detalle.anio}" th:text="${cuenta.periodo}">2026-I</h4>
-            <table class="notas-con-cuenta">
-                <thead>
-                    <tr>
-                        <th scope="col">Concepto</th>
-                        <th scope="col">Cantidad</th>
-                        <th scope="col">Puntos</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="notas-con-base">
-                        <th scope="row">Nota base</th>
-                        <td></td>
-                        <td>100</td>
-                    </tr>
-                    <tr th:each="linea : ${cuenta.lineas}">
-                        <th scope="row" th:text="${linea.concepto}">Boletas</th>
-                        <td th:text="${linea.cantidad}">0</td>
-                        <td th:classappend="${linea.puntos > 0 ? 'notas-con-resta' : 'notas-con-cero'}"
-                            th:text="${linea.puntos > 0 ? '−' + linea.puntos : '0'}">0</td>
-                    </tr>
-                </tbody>
-            </table>
-            <div class="notas-con-registros" th:if="${detalle.asistenciaEnConducta and !cuenta.registros.isEmpty()}">
-                <h4>Cada ausencia y tardía</h4>
+            <div data-vista="resumen">
+                <h4 class="notas-con-periodo" th:if="${detalle.anio}" th:text="${cuenta.periodo}">2026-I</h4>
+                <table class="notas-con-cuenta">
+                    <thead>
+                        <tr>
+                            <th scope="col">Concepto</th>
+                            <th scope="col">Cantidad</th>
+                            <th scope="col">Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="notas-con-base">
+                            <th scope="row">
+                            Nota base
+                            </th>
+                            <td></td>
+                            <td th:text="${cuenta.baseTexto}">100.00</td>
+                        </tr>
+                        <tr th:each="linea : ${cuenta.lineas}"
+                            th:classappend="${linea.abre} ? 'is-abre'"
+                            th:attr="data-historial=${linea.abre ? linea.clave : null}, tabindex=${linea.abre ? 0 : null}, role=${linea.abre ? 'button' : null}, aria-label=${linea.abre ? 'Ver ' + linea.concepto : null}">
+                            <th scope="row" th:text="${linea.concepto}">Boletas</th>
+                            <td th:text="${linea.cantidad}">0</td>
+                            <td th:classappend="${linea.puntos > 0 ? 'notas-con-resta' : 'notas-con-cero'}"
+                                th:text="${linea.puntos > 0 ? '−' + linea.puntos : '0'}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="notas-con-historial" data-vista="historial" hidden
+                 th:each="linea : ${cuenta.lineas}" th:if="${linea.abre}"
+                 th:attr="data-clave=${linea.clave}">
+                <button type="button" class="notas-con-volver" data-volver>Volver a la cuenta</button>
+                <p class="notas-con-cuando" th:if="${detalle.anio}" th:text="${cuenta.periodo}">2026-I</p>
+                <h4 th:text="${linea.concepto}">Ausencias injustificadas</h4>
+                <p th:text="${linea.cantidad + (linea.cantidad == 1 ? ' registro' : ' registros') + ' · −' + linea.puntos + (linea.puntos == 1 ? ' punto' : ' puntos')}">7 registros · −10 puntos</p>
                 <table class="notas-con-lista">
                     <tbody>
-                        <tr th:each="r : ${cuenta.registros}">
+                        <tr th:each="r : ${cuenta.registros}" th:if="${r.clave == linea.clave}">
                             <td class="notas-con-cuando" th:text="${r.fecha}">01/01/2026</td>
                             <td>
                                 <div th:text="${r.materia}">Ciencias</div>
-                                <div class="notas-con-cuando" th:text="${r.tipo}">Ausencia injustificada</div>
+                                <div class="notas-con-cuando" th:if="${!#strings.isEmpty(r.tipo)}" th:text="${r.tipo}">Ausencia injustificada</div>
                             </td>
                             <td th:classappend="${r.puntos > 0 ? 'notas-con-resta' : 'notas-con-cero'}"
                                 th:text="${r.puntos > 0 ? '−' + r.puntos : '0'}">0</td>
@@ -240,7 +317,7 @@
                 </table>
             </div>
         </section>
-        <div class="notas-con-puntos">
+        <div class="notas-con-puntos" data-vista="pie">
             <span th:text="${detalle.anio} ? 'Promedio' : 'Puntos'">Puntos</span>
             <strong th:text="${detalle.nota}">84.0</strong>
         </div>

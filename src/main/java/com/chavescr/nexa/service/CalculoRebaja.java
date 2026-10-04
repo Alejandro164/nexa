@@ -131,6 +131,7 @@ public final class CalculoRebaja {
         return nota(puntosBoletas, 0, conteo);
     }
 
+    /** Cada período parte de 100. El promedio anual se calcula aparte, con esas notas. */
     public int nota(int puntosBoletas, int llamadas, int[] conteo) {
         int descuento = Math.max(0, puntosBoletas) + puntos(TipoRebaja.LLAMADA, llamadas) + puntosAsistencia(conteo);
         return Math.max(0, NOTA_INICIAL - descuento);
