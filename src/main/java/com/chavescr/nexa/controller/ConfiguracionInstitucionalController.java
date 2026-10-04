@@ -17,6 +17,7 @@ import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.ConfiguracionDireccionService;
 import com.chavescr.nexa.service.EscalaNotasService;
+import com.chavescr.nexa.service.RebajaConductaService;
 import com.chavescr.nexa.service.TipoComponenteService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +36,9 @@ public class ConfiguracionInstitucionalController {
 
     @Autowired
     private EscalaNotasService escalaNotasService;
+
+    @Autowired
+    private RebajaConductaService rebajaConductaService;
 
     @GetMapping
     public String index(Model model, HttpServletRequest request, HttpSession session) {
@@ -155,6 +159,21 @@ public class ConfiguracionInstitucionalController {
         return "configuracion-institucional/escala-notas/escala-notas :: content";
     }
 
+    @PostMapping("/escala-notas/rebajas")
+    public String guardarRebajas(@RequestParam String rebajas,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            rebajaConductaService.guardar(direccionId, rebajas);
+            response.setHeader("HX-Trigger",
+                    "{\"institucionalGuardado\":{\"mensaje\":\"Rebajas actualizadas\"}}");
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
+        }
+        cargarEscala(model, direccionId);
+        return "configuracion-institucional/escala-notas/escala-notas :: content";
+    }
+
     private void cargarJornada(Model model, Long direccionId) {
         model.addAttribute("configJornada", service.obtener(direccionId));
         model.addAttribute("diasCatalogo", DiaLaboral.CATALOGO);
@@ -166,6 +185,7 @@ public class ConfiguracionInstitucionalController {
 
     private void cargarEscala(Model model, Long direccionId) {
         model.addAttribute("escalaNotas", escalaNotasService.obtener(direccionId));
+        model.addAttribute("rebajas", rebajaConductaService.reglas(direccionId));
     }
 
     private Long requerirDireccion(HttpSession session) {

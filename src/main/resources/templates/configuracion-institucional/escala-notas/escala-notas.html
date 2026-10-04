@@ -773,7 +773,15 @@
         </div>
     </form>
 
-    <form class="rebaja-form" @submit.prevent="guardar()" autocomplete="off" x-data="rebajaConducta()">
+    <form class="rebaja-form"
+          hx-post="/configuracion-institucional/escala-notas/rebajas"
+          hx-swap="none"
+          hx-indicator="#rebaja-loading"
+          hx-disabled-elt="find button[type='submit']"
+          @submit.capture="prepararEnvio($event)"
+          autocomplete="off"
+          x-data="rebajaConducta($el)"
+          th:data-rebajas="${rebajas}">
         <input type="hidden" name="rebajas" :value="reglasJson">
         <div class="card rebaja-parametros">
             <div class="rebaja-politicas">
@@ -808,6 +816,10 @@
             </div>
         </div>
         <div class="card rebaja-card">
+            <div id="rebaja-loading" class="htmx-indicator panel-loading-overlay">
+                <div class="spinner"></div>
+                <span>Guardando...</span>
+            </div>
             <div class="card-header">
                 <div>
                     <h3 class="card-title">Rebajas</h3>
@@ -1356,7 +1368,7 @@
             };
         };
 
-        window.rebajaConducta = function rebajaConducta() {
+        window.rebajaConducta = function rebajaConducta(el) {
             function base() {
                 return [
                     { id: 'llamada', nombre: 'Llamada de atención', tono: 'llamada', cada: 1, puntos: 5, ejemplo: 2 },
@@ -1380,8 +1392,36 @@
                 });
             }
 
+            function desdeElemento(nodo) {
+                var filas = base();
+                var crudas = [];
+                try {
+                    crudas = JSON.parse((nodo && nodo.dataset && nodo.dataset.rebajas) || '[]');
+                } catch (e) {
+                    return copiar(filas);
+                }
+                if (!Array.isArray(crudas)) return copiar(filas);
+                var porId = {};
+                crudas.forEach(function (regla) {
+                    if (regla && regla.id) porId[String(regla.id)] = regla;
+                });
+                return filas.map(function (fila) {
+                    var regla = porId[fila.id];
+                    var cada = regla ? Number(regla.cada) : fila.cada;
+                    var puntos = regla ? Number(regla.puntos) : fila.puntos;
+                    return {
+                        id: fila.id,
+                        nombre: fila.nombre,
+                        tono: fila.tono,
+                        cada: Number.isFinite(cada) ? cada : fila.cada,
+                        puntos: Number.isFinite(puntos) ? puntos : fila.puntos,
+                        ejemplo: fila.ejemplo
+                    };
+                });
+            }
+
             return {
-                filas: copiar(base()),
+                filas: desdeElemento(el),
                 destinoAsistencia: 'conducta',
                 quienPuntosBoleta: 'guia',
                 gruposDe: function (fila) {
@@ -1454,19 +1494,13 @@
                     return Array.from(new Set(out));
                 },
                 get reglasJson() {
-                    var self = this;
-                    return JSON.stringify({
-                        puntosBoleta: self.quienPuntosBoleta === 'profesor' ? 'profesor' : 'guia',
-                        ausenciasYTardias: self.destinoAsistencia === 'componente' ? 'componente' : 'conducta',
-                        filas: self.filas.map(function (fila) {
-                            return {
-                                id: fila.id,
-                                cada: Math.round(Number(fila.cada)),
-                                puntos: Math.round(Number(fila.puntos)),
-                                destino: self.destinoDe(fila)
-                            };
-                        })
-                    });
+                    return JSON.stringify(this.filas.map(function (fila) {
+                        return {
+                            id: fila.id,
+                            cada: Math.round(Number(fila.cada)),
+                            puntos: Math.round(Number(fila.puntos))
+                        };
+                    }));
                 },
                 normalizar: function (fila) {
                     var cada = Math.round(Number(fila.cada));
@@ -1481,18 +1515,21 @@
                     this.destinoAsistencia = 'conducta';
                     this.quienPuntosBoleta = 'guia';
                 },
-                guardar: function () {
+                prepararEnvio: function (event) {
                     var self = this;
                     this.filas.forEach(function (fila) { self.normalizar(fila); });
+                    var form = event.currentTarget || event.target;
+                    if (form && form.querySelector) {
+                        var input = form.querySelector('[name="rebajas"]');
+                        if (input) input.value = this.reglasJson;
+                    }
                     if (this.errores.length) {
+                        event.preventDefault();
+                        event.stopPropagation();
                         document.dispatchEvent(new CustomEvent('institucionalError', {
                             detail: { mensaje: this.errores[0] }
                         }));
-                        return;
                     }
-                    document.dispatchEvent(new CustomEvent('institucionalGuardado', {
-                        detail: { mensaje: 'Rebajas de conducta revisadas.' }
-                    }));
                 }
             };
         };

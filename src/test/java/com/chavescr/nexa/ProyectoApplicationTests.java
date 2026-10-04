@@ -29,6 +29,7 @@ import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.RebajaConducta;
 import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.Usuario;
 
@@ -128,6 +129,7 @@ class ProyectoApplicationTests {
 		context.setVariable("almuerzos", configJornada.almuerzos());
 		context.setVariable("configJornada", configJornada);
 		context.setVariable("escalaNotas", EscalaNotas.predeterminada());
+		context.setVariable("rebajas", RebajaConducta.REGLAS_PREDETERMINADAS);
 		context.setVariable("franja", configJornada.franjas().get(1));
 		context.setVariable("diasCatalogo", DiaLaboral.CATALOGO);
 		context.setVariable("horario", Map.of("1-LUNES", List.of(leccion)));
@@ -184,7 +186,10 @@ class ProyectoApplicationTests {
 		String escalaRenderizada = templateEngine.process(
 				"configuracion-institucional/escala-notas/escala-notas", context);
 		assertTrue(escalaRenderizada.contains("/configuracion-institucional/escala-notas"));
+		assertTrue(escalaRenderizada.contains("/configuracion-institucional/escala-notas/rebajas"));
 		assertTrue(escalaRenderizada.contains("Guardar escala"));
+		assertTrue(escalaRenderizada.contains("Guardar rebajas"));
+		assertTrue(escalaRenderizada.contains("data-rebajas"));
 		assertTrue(escalaRenderizada.contains("Excelente"));
 		assertTrue(escalaRenderizada.contains("data-nota-aprobacion=\"70\""));
 	}
