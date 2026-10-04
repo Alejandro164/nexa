@@ -56,6 +56,19 @@ public class ConductaController {
         return FRAGMENTO_NOTAS;
     }
 
+    @GetMapping("/notas/detalle")
+    public String detalleNotas(@RequestParam Long estudianteId,
+            @RequestParam(required = false) String periodoId,
+            Model model, HttpSession session, HttpServletRequest request) {
+        try {
+            model.addAttribute("detalle", notaConductaService.detalle(requerirDireccion(session), estudianteId,
+                    parseId(periodoId), docenteIdSiAplica(request, session)));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "conducta/notas/detalle-conducta :: cuerpo";
+    }
+
     @PostMapping("/notas/enviar")
     public String enviar(@RequestParam(required = false) String estudianteId,
             @RequestParam(required = false) String periodoId,

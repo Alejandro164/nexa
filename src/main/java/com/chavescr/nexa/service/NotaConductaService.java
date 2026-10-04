@@ -1,6 +1,8 @@
 package com.chavescr.nexa.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -13,11 +15,15 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.dto.DetalleNotaConducta;
+import com.chavescr.nexa.dto.DetalleNotaConducta.Concepto;
+import com.chavescr.nexa.dto.DetalleNotaConducta.Registro;
 import com.chavescr.nexa.dto.FilaNotaConducta;
 import com.chavescr.nexa.dto.PanelNotaConducta;
 import com.chavescr.nexa.dto.ResumenNotaConducta;
 import com.chavescr.nexa.dto.VistaEscala;
 import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
+import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.IncidenteConducta;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
 import com.chavescr.nexa.entity.Direccion;
@@ -38,6 +44,7 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 @Transactional
 public class NotaConductaService {
 
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String[] COLORES_AVATAR = {
             "#2d5a87", "#059669", "#0284c7", "#7c3aed",
             "#e11d48", "#ca8a04", "#db2777", "#0891b2"
@@ -147,6 +154,65 @@ public class NotaConductaService {
 
         return new PanelNotaConducta(periodos, grados, secciones, filas,
                 resumir(filas, incidentesFiltrados), periodo.getId(), grado, nivelId, null, escala);
+    }
+
+    /**
+     * Cuenta del año del período indicado. Las ausencias y tardías solo entran cuando la institución
+     * las rebaja en la nota de conducta. Un docente solo ve estudiantes de sus secciones.
+     */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public DetalleNotaConducta detalle(Long direccionId, Long estudianteId, Long periodoId, Long docenteId) {
+        Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
+        exigirConsulta(direccionId, docenteId, estudiante);
+
+        List<PeriodoAcademico> todos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
+        PeriodoAcademico ancla = resolverPeriodo(todos == null ? List.of() : todos, periodoId);
+        if (ancla == null || ancla.getFechaInicio() == null) {
+            throw new IllegalArgumentException("No hay un período académico para consultar la nota.");
+        }
+        int anio = ancla.getFechaInicio().getYear();
+        List<PeriodoAcademico> delAnio = (todos == null ? List.<PeriodoAcademico>of() : todos).stream()
+                .filter(p -> p.getFechaInicio() != null && p.getFechaFin() != null
+                        && p.getFechaInicio().getYear() == anio)
+                .sorted(Comparator.comparing(PeriodoAcademico::getFechaInicio))
+                .toList();
+        if (delAnio.isEmpty()) {
+            throw new IllegalArgumentException("No hay períodos en el año lectivo");
+        }
+        PeriodoAcademico elegido = delAnio.stream().filter(p -> p.getId().equals(periodoId)).findFirst()
+                .orElseGet(() -> AsistenciaService.periodoPorDefecto(delAnio, LocalDate.now()));
+
+        CalculoRebaja calculo = rebajaConductaService.calculo(direccionId);
+        boolean aplicaAsistencia = calculo.asistenciaRebajaConducta();
+        List<Object[]> asistencias = List.of();
+        if (aplicaAsistencia) {
+            LocalDate desde = delAnio.get(0).getFechaInicio();
+            LocalDate hasta = delAnio.get(0).getFechaFin();
+            for (PeriodoAcademico periodo : delAnio) {
+                if (periodo.getFechaFin().isAfter(hasta)) {
+                    hasta = periodo.getFechaFin();
+                }
+            }
+            asistencias = asistenciaRepository.findAusenciasDeEstudiante(direccionId, estudianteId, desde, hasta,
+                    EstadoAsistencia.PRESENTE);
+        }
+
+        List<DetalleNotaConducta.Periodo> bloques = new ArrayList<>();
+        for (PeriodoAcademico periodo : delAnio) {
+            List<IncidenteConducta> incidentes = new ArrayList<>(incidenteRepository
+                    .findByDireccionIdAndPeriodoIdAndEstudianteId(direccionId, periodo.getId(), estudianteId));
+            incidentes.sort(Comparator.comparing(IncidenteConducta::getFecha, Comparator.nullsLast(Comparator.naturalOrder()))
+                    .thenComparing(i -> i.getId() == null ? 0L : i.getId()));
+            List<Object[]> delPeriodo = asistencias.stream()
+                    .filter(fila -> caeEn(fila, periodo))
+                    .toList();
+            bloques.add(bloque(periodo, incidentes, delPeriodo, calculo, aplicaAsistencia,
+                    periodo.getId().equals(elegido.getId())));
+        }
+        return new DetalleNotaConducta(estudiante.getId(), texto(estudiante.getNombre()),
+                iniciales(estudiante.getNombre()), colorAvatar(estudiante.getId()), meta(estudiante),
+                aplicaAsistencia, bloques);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -296,6 +362,137 @@ public class NotaConductaService {
             existentes.put((Long) fila[0], (NotaConducta) fila[1]);
         }
         return existentes;
+    }
+
+    private void exigirConsulta(Long direccionId, Long docenteId, Usuario estudiante) {
+        if (docenteId == null) {
+            return;
+        }
+        Long nivelEstudiante = estudiante.getNivelAcademico() != null ? estudiante.getNivelAcademico().getId() : null;
+        boolean visible = nivelEstudiante != null
+                && nivelesVisibles(direccionId, docenteId).stream().anyMatch(n -> n.getId().equals(nivelEstudiante));
+        if (!visible) {
+            throw new IllegalArgumentException("No tiene permiso para consultar la nota de este estudiante.");
+        }
+    }
+
+    private DetalleNotaConducta.Periodo bloque(PeriodoAcademico periodo, List<IncidenteConducta> incidentes,
+            List<Object[]> asistencias, CalculoRebaja calculo, boolean aplicaAsistencia, boolean actual) {
+        List<IncidenteConducta> boletas = incidentes.stream().filter(i -> i.getTipo() == TipoIncidente.BOLETA).toList();
+        List<IncidenteConducta> llamadas = incidentes.stream()
+                .filter(i -> i.getTipo() == TipoIncidente.LLAMADA_ATENCION).toList();
+        int puntosBoletas = boletas.stream().mapToInt(i -> i.getPuntosDescontados() == null ? 0 : i.getPuntosDescontados()).sum();
+        int[] marcasLlamada = calculo.puntosPorRegistro(TipoRebaja.LLAMADA, llamadas.size());
+
+        List<Concepto> conceptos = new ArrayList<>();
+        conceptos.add(conceptoIncidente("boleta", "Boletas", boletas, null));
+        conceptos.add(conceptoIncidente("llamada", "Llamadas de atención", llamadas, marcasLlamada));
+        int[] conteo = null;
+        if (aplicaAsistencia) {
+            conteo = new int[4];
+            for (Object[] fila : asistencias) {
+                CalculoRebaja.sumar(conteo, (EstadoAsistencia) fila[2], 1);
+            }
+            conceptos.add(conceptoAsistencia("ausencia-injustificada", "Ausencias injustificadas",
+                    TipoRebaja.AUSENCIA_INJUSTIFICADA, EstadoAsistencia.AUSENTE, asistencias, calculo));
+            conceptos.add(conceptoAsistencia("ausencia-justificada", "Ausencias justificadas",
+                    TipoRebaja.AUSENCIA_JUSTIFICADA, EstadoAsistencia.JUSTIFICADA, asistencias, calculo));
+            conceptos.add(conceptoAsistencia("tardia-injustificada", "Tardías injustificadas",
+                    TipoRebaja.TARDIA_INJUSTIFICADA, EstadoAsistencia.TARDIA, asistencias, calculo));
+            conceptos.add(conceptoAsistencia("tardia-justificada", "Tardías justificadas",
+                    TipoRebaja.TARDIA_JUSTIFICADA, EstadoAsistencia.TARDIA_JUSTIFICADA, asistencias, calculo));
+        }
+        int nota = calculo.nota(puntosBoletas, llamadas.size(), conteo);
+        Concepto base = new Concepto("base", "Nota base", String.valueOf(CalculoRebaja.NOTA_INICIAL), false,
+                String.valueOf(CalculoRebaja.NOTA_INICIAL), List.of(new Registro("—", "—", "—", "—",
+                        "El período parte de 100 puntos.", false, String.valueOf(CalculoRebaja.NOTA_INICIAL))));
+        String codigo = periodo.getCodigo() == null || periodo.getCodigo().isBlank() ? "Período" : periodo.getCodigo();
+        String rango = periodo.getFechaInicio().format(FECHA) + " – " + periodo.getFechaFin().format(FECHA);
+        return new DetalleNotaConducta.Periodo(periodo.getId(), codigo, rango, actual, String.valueOf(nota), base,
+                conceptos);
+    }
+
+    private Concepto conceptoIncidente(String clave, String etiqueta, List<IncidenteConducta> incidentes, int[] marcas) {
+        List<Registro> registros = new ArrayList<>();
+        int puntos = 0;
+        for (int i = 0; i < incidentes.size(); i++) {
+            int rebaja = marcas == null
+                    ? (incidentes.get(i).getPuntosDescontados() == null ? 0 : incidentes.get(i).getPuntosDescontados())
+                    : marcas[i];
+            puntos += rebaja;
+            registros.add(registroIncidente(incidentes.get(i), rebaja));
+        }
+        if (marcas != null) {
+            puntos = 0;
+            for (int marca : marcas) {
+                puntos += marca;
+            }
+        }
+        return new Concepto(clave, etiqueta, String.valueOf(incidentes.size()), puntos == 0, puntosTexto(puntos),
+                registros);
+    }
+
+    private Concepto conceptoAsistencia(String clave, String etiqueta, TipoRebaja tipo, EstadoAsistencia estado,
+            List<Object[]> filas, CalculoRebaja calculo) {
+        List<Object[]> delTipo = filas.stream().filter(fila -> fila[2] == estado).toList();
+        int[] marcas = calculo.puntosPorRegistro(tipo, delTipo.size());
+        List<Registro> registros = new ArrayList<>();
+        int puntos = 0;
+        for (int i = 0; i < delTipo.size(); i++) {
+            puntos += marcas[i];
+            registros.add(registroAsistencia(delTipo.get(i), marcas[i]));
+        }
+        return new Concepto(clave, etiqueta, String.valueOf(delTipo.size()), puntos == 0, puntosTexto(puntos),
+                registros);
+    }
+
+    private static Registro registroIncidente(IncidenteConducta incidente, int puntos) {
+        String detalle = texto(incidente.getDescripcion());
+        if (detalle.isEmpty()) {
+            detalle = texto(incidente.getMotivo());
+        }
+        String profesor = incidente.getRegistradoPor() == null ? "" : texto(incidente.getRegistradoPor().getNombre());
+        String fecha = incidente.getFecha() == null ? "—" : incidente.getFecha().format(FECHA);
+        return new Registro(fecha, "—", "—", oGuion(profesor), oGuion(detalle), puntos == 0, puntosTexto(puntos));
+    }
+
+    private static Registro registroAsistencia(Object[] fila, int puntos) {
+        LocalDate fecha = (LocalDate) fila[0];
+        String leccion = fila[1] instanceof Number numero ? String.valueOf(numero.intValue()) : "";
+        return new Registro(fecha == null ? "—" : fecha.format(FECHA), oGuion(fila[3]), oGuion(leccion),
+                oGuion(fila[5]), oGuion(fila[4]), puntos == 0, puntosTexto(puntos));
+    }
+
+    private static boolean caeEn(Object[] fila, PeriodoAcademico periodo) {
+        LocalDate fecha = (LocalDate) fila[0];
+        return fecha != null && !fecha.isBefore(periodo.getFechaInicio()) && !fecha.isAfter(periodo.getFechaFin());
+    }
+
+    private static String meta(Usuario estudiante) {
+        String cedula = texto(estudiante.getCedula());
+        String seccion = "Sin sección";
+        if (estudiante.getNivelAcademico() != null) {
+            NivelAcademico nivel = estudiante.getNivelAcademico();
+            seccion = nivel.getGrado() + "-" + nivel.getSeccion();
+        }
+        String textoSeccion = "Sin sección".equals(seccion) ? seccion : "Sección " + seccion;
+        if (!cedula.isEmpty()) {
+            return cedula + " · " + textoSeccion;
+        }
+        return textoSeccion;
+    }
+
+    private static String puntosTexto(int puntos) {
+        return puntos == 0 ? "0" : "−" + puntos;
+    }
+
+    private static String oGuion(Object valor) {
+        String texto = texto(valor == null ? null : String.valueOf(valor));
+        return texto.isEmpty() ? "—" : texto;
+    }
+
+    private static String texto(String valor) {
+        return valor == null ? "" : valor.trim();
     }
 
     private void exigirAlcance(Long direccionId, Long docenteId, Usuario estudiante) {

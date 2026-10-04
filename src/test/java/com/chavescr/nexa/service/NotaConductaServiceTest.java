@@ -17,6 +17,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.chavescr.nexa.dto.DetalleNotaConducta;
+import com.chavescr.nexa.dto.DetalleNotaConducta.Concepto;
+import com.chavescr.nexa.dto.DetalleNotaConducta.Registro;
 import com.chavescr.nexa.dto.FilaNotaConducta;
 import com.chavescr.nexa.dto.VistaEscala;
 import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
@@ -152,6 +158,72 @@ class NotaConductaServiceTest {
 
         assertEquals(100, fila.getNota());
         verifyNoInteractions(asistenciaRepository);
+    }
+
+    @Test
+    void elDetalleTraeProfesorMateriaYLeccionYLaMismaNotaDeLaTabla() {
+        estudiante.getNivelAcademico().setId(3L);
+        estudiante.setCedula("4-5678-9012");
+        when(usuarioRepository.findEstudianteActivoConNivel(ESTUDIANTE, DIRECCION)).thenReturn(java.util.Optional.of(estudiante));
+        when(periodoRepository.findByDireccionIdOrderByFechaInicioDesc(DIRECCION)).thenReturn(List.of(periodo));
+        when(rebajaConductaService.calculo(DIRECCION)).thenReturn(calculo(true));
+        Usuario profe = new Usuario();
+        profe.setNombre("María González");
+        IncidenteConducta boleta = new IncidenteConducta();
+        boleta.setId(1L);
+        boleta.setTipo(TipoIncidente.BOLETA);
+        boleta.setFecha(LocalDate.of(2026, 8, 4));
+        boleta.setMotivo("Falta de respeto");
+        boleta.setPuntosDescontados(10);
+        boleta.setRegistradoPor(profe);
+        when(incidenteRepository.findByDireccionIdAndPeriodoIdAndEstudianteId(DIRECCION, PERIODO, ESTUDIANTE))
+                .thenReturn(List.of(boleta));
+        when(asistenciaRepository.findAusenciasDeEstudiante(DIRECCION, ESTUDIANTE, periodo.getFechaInicio(),
+                periodo.getFechaFin(), EstadoAsistencia.PRESENTE)).thenReturn(List.of(
+                        new Object[] { LocalDate.of(2026, 8, 12), 2, EstadoAsistencia.TARDIA, "Matemáticas", null,
+                                "Carlos López" },
+                        new Object[] { LocalDate.of(2026, 8, 20), 3, EstadoAsistencia.AUSENTE, "Ciencias", null,
+                                "Carlos López" }));
+
+        DetalleNotaConducta detalle = service.detalle(DIRECCION, ESTUDIANTE, PERIODO, null);
+
+        assertTrue(detalle.isAsistenciaEnConducta());
+        assertEquals("4-5678-9012 · Sección 7-A", detalle.getMeta());
+        DetalleNotaConducta.Periodo bloque = detalle.getPeriodos().get(0);
+        assertEquals("83", bloque.getNota());
+        assertEquals(List.of("Boletas", "Llamadas de atención", "Ausencias injustificadas", "Ausencias justificadas",
+                "Tardías injustificadas", "Tardías justificadas"),
+                bloque.getConceptos().stream().map(Concepto::getEtiqueta).toList());
+        assertEquals("−10", concepto(bloque, "Boletas").getPuntosTexto());
+        Registro tardia = concepto(bloque, "Tardías injustificadas").getRegistros().get(0);
+        assertEquals("Matemáticas", tardia.getMateria());
+        assertEquals("2", tardia.getLeccion());
+        assertEquals("Carlos López", tardia.getProfesor());
+        assertEquals("−2", tardia.getPuntosTexto());
+        assertEquals("María González", concepto(bloque, "Boletas").getRegistros().get(0).getProfesor());
+        assertEquals("—", concepto(bloque, "Boletas").getRegistros().get(0).getLeccion());
+    }
+
+    @Test
+    void siRebajanElComponenteElDetalleNoIncluyeAusenciasNiTardias() {
+        estudiante.getNivelAcademico().setId(3L);
+        when(usuarioRepository.findEstudianteActivoConNivel(ESTUDIANTE, DIRECCION)).thenReturn(java.util.Optional.of(estudiante));
+        when(periodoRepository.findByDireccionIdOrderByFechaInicioDesc(DIRECCION)).thenReturn(List.of(periodo));
+        when(rebajaConductaService.calculo(DIRECCION)).thenReturn(calculo(false));
+        when(incidenteRepository.findByDireccionIdAndPeriodoIdAndEstudianteId(DIRECCION, PERIODO, ESTUDIANTE))
+                .thenReturn(List.of());
+
+        DetalleNotaConducta detalle = service.detalle(DIRECCION, ESTUDIANTE, PERIODO, null);
+
+        assertFalse(detalle.isAsistenciaEnConducta());
+        assertEquals(List.of("Boletas", "Llamadas de atención"),
+                detalle.getPeriodos().get(0).getConceptos().stream().map(Concepto::getEtiqueta).toList());
+        assertEquals("100", detalle.getPeriodos().get(0).getNota());
+        verifyNoInteractions(asistenciaRepository);
+    }
+
+    private static Concepto concepto(DetalleNotaConducta.Periodo periodo, String etiqueta) {
+        return periodo.getConceptos().stream().filter(c -> etiqueta.equals(c.getEtiqueta())).findFirst().orElseThrow();
     }
 
     private void prepararPanel(CalculoRebaja calculo) {

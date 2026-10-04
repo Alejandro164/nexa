@@ -1,0 +1,378 @@
+<div th:fragment="detalle" id="conducta-detalle-modal" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        #conducta-detalle-modal { display: none; }
+        #conducta-detalle-modal.is-abierto { display: block; }
+        #conducta-detalle-modal.is-abierto .modal-backdrop {
+            animation: academicModalBackdropIn 180ms ease-out both;
+        }
+        #conducta-detalle-modal.is-abierto .modal-dialog {
+            animation: academicModalDialogIn 240ms cubic-bezier(.22, 1, .36, 1) both;
+        }
+        #conducta-detalle-modal .modal-dialog:focus { outline: none; }
+        #conducta-detalle-modal .modal-dialog {
+            max-width: min(1380px, calc(100vw - 2rem));
+            display: flex;
+            flex-direction: column;
+            max-height: min(760px, calc(100vh - 2rem));
+        }
+        #conducta-detalle-modal .modal-header { align-items: flex-start; gap: 1rem; }
+        #conducta-detalle-modal .con-det-heading { min-width: 0; }
+        #conducta-detalle-modal .modal-title { margin: 0; color: #0f172a; letter-spacing: -0.02em; }
+        #conducta-detalle-modal .con-det-sub { margin: 0.2rem 0 0; font-size: 0.8rem; color: #64748b; }
+        #conducta-detalle-modal .con-det-estudiante {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 0.85rem 1.5rem;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            background: #f8fafc;
+        }
+        #conducta-detalle-modal .con-det-quien {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 0;
+        }
+        #conducta-detalle-modal .con-det-periodo-acciones {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        #conducta-detalle-modal .con-det-enviar {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+        #conducta-detalle-modal .con-det-periodos {
+            display: inline-flex;
+            padding: 3px;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 10px;
+            background: #fff;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        #conducta-detalle-modal .con-det-periodo-btn {
+            min-height: 28px;
+            padding: 0 0.7rem;
+            border: none;
+            border-radius: 7px;
+            background: transparent;
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        #conducta-detalle-modal .con-det-periodo-btn.is-on {
+            background: var(--primary, #2d5a87);
+            color: #fff;
+        }
+        #conducta-detalle-modal .con-det-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: var(--primary, #2d5a87);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        #conducta-detalle-modal .con-det-nombre { font-size: 0.9rem; font-weight: 700; color: #0f172a; }
+        #conducta-detalle-modal .con-det-meta { font-size: 0.75rem; color: #64748b; margin-top: 1px; }
+        #conducta-detalle-cuerpo {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1;
+        }
+        #conducta-detalle-modal .con-det-vacio,
+        #conducta-detalle-modal .con-det-aviso {
+            margin: 0;
+            padding: 0.75rem 1.5rem;
+            color: #475569;
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+        #conducta-detalle-modal .con-det-aviso {
+            background: rgba(45, 90, 135, 0.06);
+        }
+        #conducta-detalle-modal .modal-body {
+            overflow: auto;
+            padding: 1.15rem 1.5rem 1.35rem;
+            background: #fff;
+            min-height: 0;
+            flex: 1;
+        }
+        #conducta-detalle-modal .modal-dialog > .modal-footer {
+            margin: 0;
+            padding: 0.85rem 1.5rem;
+            border-top: 1px solid var(--border, #e2e8f0);
+            background: #fff;
+        }
+        #conducta-detalle-modal .con-det-periodo[hidden] { display: none; }
+        #conducta-detalle-modal .con-det-periodo-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.75rem;g
+        }
+        #conducta-detalle-modal .con-det-periodo-head h4 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        #conducta-detalle-modal .con-det-rango {
+            display: block;
+            margin-top: 0.15rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+        #conducta-detalle-modal .con-det-conceptos {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        #conducta-detalle-modal .con-det-periodo-head .con-det-concepto {
+            flex: 0 0 auto;
+        }
+        #conducta-detalle-modal .con-det-concepto {
+            margin: 0;
+            padding: 0.5rem 0.55rem;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 10px;
+            background: #fff;
+            color: #0f172a;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+        #conducta-detalle-modal .con-det-concepto.is-on {
+            border-color: var(--primary, #2d5a87);
+            background: rgba(45, 90, 135, 0.08);
+            box-shadow: inset 0 0 0 1px var(--primary, #2d5a87);
+        }
+        #conducta-detalle-modal .con-det-concepto-linea {
+            display: block;
+            font-size: 0.74rem;
+            font-weight: 700;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+        #conducta-detalle-modal .con-det-concepto-linea strong {
+            margin-right: 0.35rem;
+            font-size: 1.05rem;
+            font-variant-numeric: tabular-nums;
+        }
+        #conducta-detalle-modal .con-det-concepto-puntos {
+            display: block;
+            margin-top: 0.2rem;
+            font-size: 0.82rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+        #conducta-detalle-modal .con-det-lista {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        #conducta-detalle-modal .con-det-lista col.fecha { width: 7.5rem; }
+        #conducta-detalle-modal .con-det-lista col.materia { width: 9.5rem; }
+        #conducta-detalle-modal .con-det-lista col.leccion { width: 5.5rem; }
+        #conducta-detalle-modal .con-det-lista col.profesor { width: 11rem; }
+        #conducta-detalle-modal .con-det-lista col.puntos { width: 6rem; }
+        #conducta-detalle-modal .con-det-lista th,
+        #conducta-detalle-modal .con-det-lista td {
+            padding: 0.7rem 0.45rem;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: left;
+            vertical-align: middle;
+        }
+        #conducta-detalle-modal .con-det-lista thead th {
+            padding-top: 0;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        #conducta-detalle-modal .con-det-lista td {
+            font-size: 0.84rem;
+            color: #334155;
+        }
+        #conducta-detalle-modal .con-det-lista td:last-child,
+        #conducta-detalle-modal .con-det-lista th:last-child {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+        #conducta-detalle-modal .con-det-fecha {
+            color: #64748b;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+        #conducta-detalle-modal .con-det-sin td {
+            text-align: left;
+            font-weight: 600;
+            color: #64748b;
+        }
+        #conducta-detalle-modal .con-det-resta { color: #b91c1c; }
+        #conducta-detalle-modal .con-det-cero { color: #94a3b8; }
+        #conducta-detalle-modal .con-det-nota {
+            display: flex;
+            align-items: baseline;
+            justify-content: flex-end;
+            gap: 0.4rem;
+            width: fit-content;
+            margin: 0.85rem 0 0 auto;
+            padding: 0.4rem 0.75rem;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+        #conducta-detalle-modal .con-det-nota span {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        #conducta-detalle-modal .con-det-nota strong {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+    </style>
+
+    <div class="modal-backdrop" role="presentation">
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="conducta-detalle-titulo" tabindex="-1">
+            <div class="modal-header">
+                <div class="con-det-heading">
+                    <h3 class="modal-title" id="conducta-detalle-titulo">Detalle de conducta</h3>
+                    <p class="con-det-sub">Cada período parte de 100 y va restando.</p>
+                </div>
+                <button type="button" class="close-btn" data-cerrar aria-label="Cerrar">&times;</button>
+            </div>
+            <div id="conducta-detalle-cuerpo">
+                <p class="con-det-vacio">Seleccione un estudiante.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-cerrar>Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="cuerpo">
+    <p class="con-det-vacio" th:if="${error != null}" th:text="${error}">No se pudo cargar.</p>
+    <th:block th:if="${detalle != null}">
+        <div class="con-det-estudiante">
+            <div class="con-det-quien">
+                <span class="con-det-avatar" th:text="${detalle.iniciales}"
+                      th:style="${'background:' + detalle.colorAvatar}">AR</span>
+                <div>
+                    <div class="con-det-nombre" th:text="${detalle.nombre}">Nombre</div>
+                    <div class="con-det-meta" th:if="${!#strings.isEmpty(detalle.meta)}" th:text="${detalle.meta}">Sección</div>
+                </div>
+            </div>
+            <div class="con-det-periodo-acciones">
+                <div class="con-det-periodos" role="group" aria-label="Seleccionar período">
+                    <button type="button" class="con-det-periodo-btn"
+                            th:each="p : ${detalle.periodos}"
+                            th:classappend="${p.actual} ? ' is-on'"
+                            th:attr="data-periodo=${p.id}, aria-pressed=${p.actual}"
+                            th:text="${p.codigo}">2026-I</button>
+                </div>
+                <button type="button" class="btn-primary btn-sm con-det-enviar">Enviar</button>
+            </div>
+        </div>
+        <p class="con-det-aviso" th:unless="${detalle.asistenciaEnConducta}">
+            Las ausencias y tardías rebajan el componente, así que no entran en esta nota.
+        </p>
+        <div class="modal-body">
+            <section class="con-det-periodo" th:each="p : ${detalle.periodos}"
+                     th:attr="data-periodo=${p.id}, hidden=${p.actual} ? null : 'hidden'">
+                <div class="con-det-periodo-head">
+                    <div>
+                        <h4 th:text="${p.codigo}">2026-I</h4>
+                        <span class="con-det-rango" th:text="${p.rango}">01/02/2026 – 30/06/2026</span>
+                    </div>
+                    <button type="button" class="con-det-concepto is-on" data-concepto="base" aria-pressed="true">
+                        <span class="con-det-concepto-linea"><strong th:text="${p.base.cantidad}">100</strong> Nota base</span>
+                    </button>
+                </div>
+                <div class="con-det-conceptos" role="group" aria-label="Conceptos del período">
+                    <button type="button" class="con-det-concepto" th:each="c : ${p.conceptos}"
+                            th:attr="data-concepto=${c.clave}" aria-pressed="false">
+                        <span class="con-det-concepto-linea"><strong th:text="${c.cantidad}">0</strong> <span th:text="${c.etiqueta}">Boletas</span></span>
+                        <span class="con-det-concepto-puntos" th:text="${c.puntosTexto}"
+                              th:classappend="${c.cero} ? ' con-det-cero' : ' con-det-resta'">0</span>
+                    </button>
+                </div>
+                <table class="con-det-lista">
+                    <colgroup>
+                        <col class="fecha">
+                        <col class="materia">
+                        <col class="leccion">
+                        <col class="profesor">
+                        <col class="detalle">
+                        <col class="puntos">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Materia</th>
+                            <th>Lección</th>
+                            <th>Profesor</th>
+                            <th>Detalle</th>
+                            <th>Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="r : ${p.base.registros}" data-detalle="base">
+                            <td class="con-det-fecha" th:text="${r.fecha}">—</td>
+                            <td th:text="${r.materia}">—</td>
+                            <td th:text="${r.leccion}">—</td>
+                            <td th:text="${r.profesor}">—</td>
+                            <td th:text="${r.detalle}">El período parte de 100 puntos.</td>
+                            <td th:text="${r.puntosTexto}">100</td>
+                        </tr>
+                        <th:block th:each="c : ${p.conceptos}">
+                            <tr th:each="r : ${c.registros}" hidden th:attr="data-detalle=${c.clave}">
+                                <td class="con-det-fecha" th:text="${r.fecha}">01/03/2026</td>
+                                <td th:text="${r.materia}">—</td>
+                                <td th:text="${r.leccion}">—</td>
+                                <td th:text="${r.profesor}">—</td>
+                                <td th:text="${r.detalle}">Detalle</td>
+                                <td th:text="${r.puntosTexto}"
+                                    th:classappend="${#strings.startsWith(r.puntosTexto, '−')} ? ' con-det-resta' : ' con-det-cero'">0</td>
+                            </tr>
+                        </th:block>
+                        <tr class="con-det-sin" hidden>
+                            <td colspan="6">Sin registros en este período.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="con-det-nota">
+                    <span>Nota</span>
+                    <strong th:text="${p.nota}">100</strong>
+                </div>
+            </section>
+        </div>
+    </th:block>
+</div>

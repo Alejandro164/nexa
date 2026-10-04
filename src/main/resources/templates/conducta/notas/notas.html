@@ -132,7 +132,7 @@
                         </td>
                     </tr>
                     <tr th:each="f : ${filas}"
-                        th:attr="data-search=${#strings.toLowerCase(f.estudiante.nombre + ' ' + (f.estudiante.cedula != null ? f.estudiante.cedula : ''))}">
+                        th:attr="data-search=${#strings.toLowerCase(f.estudiante.nombre + ' ' + (f.estudiante.cedula != null ? f.estudiante.cedula : ''))}, data-estudiante-id=${f.estudiante.id}">
                         <td>
                             <div class="student-cell">
                                 <div class="student-avatar" th:style="${'background:' + f.colorAvatar}"
@@ -170,18 +170,181 @@
             </table>
         </div>
     </div>
+    <style>
+        #notas-tbody tr[data-estudiante-id] td:not(.actions-cell) { cursor: pointer; }
+    </style>
     <script>
         (function () {
-            var input = document.getElementById('notas-buscar');
-            var tbody = document.getElementById('notas-tbody');
-            if (!input || !tbody) return;
-            input.addEventListener('input', function () {
-                var f = this.value.trim().toLowerCase();
-                tbody.querySelectorAll('tr[data-search]').forEach(function (tr) {
-                    var hay = !f || (tr.getAttribute('data-search') || '').indexOf(f) !== -1;
-                    tr.style.display = hay ? '' : 'none';
+            const input = document.getElementById('notas-buscar');
+            const tbody = document.getElementById('notas-tbody');
+            if (!tbody) return;
+            if (input) {
+                input.addEventListener('input', function () {
+                    const f = this.value.trim().toLowerCase();
+                    tbody.querySelectorAll('tr[data-search]').forEach(function (tr) {
+                        const hay = !f || (tr.getAttribute('data-search') || '').indexOf(f) !== -1;
+                        tr.style.display = hay ? '' : 'none';
+                    });
                 });
+            }
+            tbody.addEventListener('click', function (event) {
+                if (event.target.closest('.actions-cell')) return;
+                const fila = event.target.closest('tr[data-estudiante-id]');
+                if (!fila || !tbody.contains(fila)) return;
+                abrirDetalleConducta(fila, event.target.closest('td') || fila);
             });
+        })();
+
+        function abrirDetalleConducta(fila, origen) {
+            const modal = document.getElementById('conducta-detalle-modal');
+            const cuerpo = document.getElementById('conducta-detalle-cuerpo');
+            if (!modal || !cuerpo || !fila || !fila.dataset.estudianteId) {
+                return;
+            }
+            modal.dataset.estudianteId = fila.dataset.estudianteId;
+            modal._foco = origen || null;
+            modal.classList.add('is-abierto');
+            cuerpo.innerHTML = '<p class="con-det-vacio">Cargando…</p>';
+            const dialogo = modal.querySelector('.modal-dialog');
+            if (dialogo) {
+                dialogo.focus();
+            }
+            const periodo = document.querySelector('#notas-panel select[name="periodoId"]');
+            let url = '/conducta/notas/detalle?estudianteId=' + encodeURIComponent(fila.dataset.estudianteId);
+            if (periodo && periodo.value) {
+                url += '&periodoId=' + encodeURIComponent(periodo.value);
+            }
+            htmx.ajax('GET', url, { target: '#conducta-detalle-cuerpo', swap: 'innerHTML' });
+        }
+
+        function seleccionarPeriodoConducta(clave) {
+            const modal = document.getElementById('conducta-detalle-modal');
+            if (!modal) {
+                return;
+            }
+            const botones = modal.querySelectorAll('.con-det-periodo-btn');
+            for (let i = 0; i < botones.length; i++) {
+                const activo = botones[i].dataset.periodo === clave;
+                botones[i].classList.toggle('is-on', activo);
+                botones[i].setAttribute('aria-pressed', activo ? 'true' : 'false');
+            }
+            const secciones = modal.querySelectorAll('.con-det-periodo');
+            for (let j = 0; j < secciones.length; j++) {
+                secciones[j].hidden = secciones[j].dataset.periodo !== clave;
+            }
+        }
+
+        function seleccionarConceptoConducta(boton) {
+            const seccion = boton.closest('.con-det-periodo');
+            if (!seccion) {
+                return;
+            }
+            const clave = boton.dataset.concepto;
+            const botones = seccion.querySelectorAll('.con-det-concepto');
+            for (let i = 0; i < botones.length; i++) {
+                const activo = botones[i] === boton;
+                botones[i].classList.toggle('is-on', activo);
+                botones[i].setAttribute('aria-pressed', activo ? 'true' : 'false');
+            }
+            const filas = seccion.querySelectorAll('tr[data-detalle]');
+            let visibles = 0;
+            for (let j = 0; j < filas.length; j++) {
+                const muestra = filas[j].dataset.detalle === clave;
+                filas[j].hidden = !muestra;
+                if (muestra) {
+                    visibles++;
+                }
+            }
+            const vacio = seccion.querySelector('.con-det-sin');
+            if (vacio) {
+                vacio.hidden = visibles > 0;
+            }
+        }
+
+        function enviarDetalleConducta() {
+            const modal = document.getElementById('conducta-detalle-modal');
+            if (!modal || !modal.dataset.estudianteId) {
+                return;
+            }
+            const periodo = modal.querySelector('.con-det-periodo-btn.is-on');
+            if (!periodo) {
+                return;
+            }
+            if (!window.confirm('¿Enviar la nota de conducta de este período a los encargados?')) {
+                return;
+            }
+            const grado = document.querySelector('#notas-panel select[name="grado"]');
+            const nivel = document.querySelector('#notas-panel select[name="nivelId"]');
+            htmx.ajax('POST', '/conducta/notas/enviar', {
+                target: '#notas-panel',
+                swap: 'innerHTML',
+                indicator: '#notas-loading',
+                values: {
+                    estudianteId: modal.dataset.estudianteId,
+                    periodoId: periodo.dataset.periodo,
+                    grado: grado ? grado.value : '',
+                    nivelId: nivel ? nivel.value : ''
+                }
+            });
+        }
+
+        function cerrarDetalleConducta() {
+            const modal = document.getElementById('conducta-detalle-modal');
+            if (!modal || !modal.classList.contains('is-abierto')) {
+                return;
+            }
+            modal.classList.remove('is-abierto');
+            if (modal._foco && modal._foco.isConnected) {
+                modal._foco.focus();
+            }
+        }
+
+        (function () {
+            const modal = document.getElementById('conducta-detalle-modal');
+            if (modal && !modal.dataset.enlazado) {
+                modal.dataset.enlazado = '1';
+                modal.addEventListener('click', function (event) {
+                    const periodo = event.target.closest('.con-det-periodo-btn');
+                    if (periodo && modal.contains(periodo)) {
+                        seleccionarPeriodoConducta(periodo.dataset.periodo);
+                        return;
+                    }
+                    const concepto = event.target.closest('.con-det-concepto');
+                    if (concepto && modal.contains(concepto)) {
+                        seleccionarConceptoConducta(concepto);
+                        return;
+                    }
+                    if (event.target.closest('.con-det-enviar') && modal.contains(event.target)) {
+                        enviarDetalleConducta();
+                        return;
+                    }
+                    if (event.target.closest('[data-cerrar]')) {
+                        cerrarDetalleConducta();
+                        return;
+                    }
+                    if (event.target.classList.contains('modal-backdrop')) {
+                        cerrarDetalleConducta();
+                    }
+                });
+            }
+            if (!window.detalleConductaTecla) {
+                window.detalleConductaTecla = true;
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        cerrarDetalleConducta();
+                    }
+                });
+                document.body.addEventListener('htmx:afterSwap', function (event) {
+                    const target = event.detail && event.detail.target;
+                    if (!target || target.id !== 'conducta-detalle-cuerpo') {
+                        return;
+                    }
+                    const marcado = target.querySelector('.con-det-periodo-btn.is-on');
+                    if (marcado) {
+                        seleccionarPeriodoConducta(marcado.dataset.periodo);
+                    }
+                });
+            }
         })();
     </script>
 </div>
