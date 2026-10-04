@@ -114,7 +114,7 @@
                         <tr>
                             <th>Estudiante</th>
                             <th th:each="tipo : ${tiposComponente}" th:text="${tipo.nombre}">Componente</th>
-                            <th>Asistencia</th>
+                            <th th:if="${conAsistencia}">Asistencia</th>
                             <th style="background:rgba(45,90,135,0.08);">Promedio Final</th>
                         </tr>
                     </thead>
@@ -130,7 +130,7 @@
                                       th:classappend="${'nota-' + escala.tono(nota)}"
                                       th:text="${#numbers.formatDecimal(nota, 1, 2)}">95.00</span>
                             </td>
-                            <td>
+                            <td th:if="${conAsistencia}">
                                 <span th:if="${fila.asistencia == null}">—</span>
                                 <span th:if="${fila.asistencia != null}" class="badge"
                                       th:classappend="${'nota-' + escala.tono(fila.asistencia)}" th:text="${fila.asistencia}">95</span>

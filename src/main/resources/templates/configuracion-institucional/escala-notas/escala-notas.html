@@ -781,36 +781,40 @@
           @submit.capture="prepararEnvio($event)"
           autocomplete="off"
           x-data="rebajaConducta($el)"
-          th:data-rebajas="${rebajas}">
+          th:data-rebajas="${rebajaConducta.reglas}"
+          th:data-quien-puntos-boleta="${rebajaConducta.quienRegistraPuntosBoleta}"
+          th:data-destino-rebaja="${rebajaConducta.destinoRebajaAsistencia}">
         <input type="hidden" name="rebajas" :value="reglasJson">
+        <input type="hidden" name="quienRegistraPuntosBoleta" :value="quienPuntosBoleta">
+        <input type="hidden" name="destinoRebajaAsistencia" :value="destinoAsistencia">
         <div class="card rebaja-parametros">
             <div class="rebaja-politicas">
                 <div class="rebaja-politica">
                     <div class="rebaja-politica-texto">
                         <strong id="rebaja-boleta-label">Puntos de las boletas</strong>
-                        <span>Quién los escribe al registrar cada boleta.</span>
+                        <span>Quién registra los puntos de cada boleta.</span>
                     </div>
                     <div class="rebaja-destino" role="radiogroup" aria-labelledby="rebaja-boleta-label">
-                        <button type="button" role="radio" :class="{ 'is-on': quienPuntosBoleta === 'guia' }"
-                                :aria-checked="quienPuntosBoleta === 'guia'"
-                                @click="quienPuntosBoleta = 'guia'">Profesor guía</button>
-                        <button type="button" role="radio" :class="{ 'is-on': quienPuntosBoleta === 'profesor' }"
-                                :aria-checked="quienPuntosBoleta === 'profesor'"
-                                @click="quienPuntosBoleta = 'profesor'">El profesor</button>
+                        <button type="button" role="radio" :class="{ 'is-on': quienPuntosBoleta === 'PROFESOR_GUIA' }"
+                                :aria-checked="quienPuntosBoleta === 'PROFESOR_GUIA'"
+                                @click="quienPuntosBoleta = 'PROFESOR_GUIA'">Profesor guía</button>
+                        <button type="button" role="radio" :class="{ 'is-on': quienPuntosBoleta === 'PROFESOR_MATERIA' }"
+                                :aria-checked="quienPuntosBoleta === 'PROFESOR_MATERIA'"
+                                @click="quienPuntosBoleta = 'PROFESOR_MATERIA'">Profesor de la materia</button>
                     </div>
                 </div>
                 <div class="rebaja-politica">
                     <div class="rebaja-politica-texto">
                         <strong id="rebaja-destino-label">Ausencias y tardías</strong>
-                        <span>A dónde van los puntos de cada registro.</span>
+                        <span>Dónde se rebajan los puntos.</span>
                     </div>
                     <div class="rebaja-destino" role="radiogroup" aria-labelledby="rebaja-destino-label">
-                        <button type="button" role="radio" :class="{ 'is-on': destinoAsistencia === 'conducta' }"
-                                :aria-checked="destinoAsistencia === 'conducta'"
-                                @click="destinoAsistencia = 'conducta'">La conducta</button>
-                        <button type="button" role="radio" :class="{ 'is-on': destinoAsistencia === 'componente' }"
-                                :aria-checked="destinoAsistencia === 'componente'"
-                                @click="destinoAsistencia = 'componente'">El componente</button>
+                        <button type="button" role="radio" :class="{ 'is-on': destinoAsistencia === 'CONDUCTA' }"
+                                :aria-checked="destinoAsistencia === 'CONDUCTA'"
+                                @click="destinoAsistencia = 'CONDUCTA'">La conducta</button>
+                        <button type="button" role="radio" :class="{ 'is-on': destinoAsistencia === 'COMPONENTE' }"
+                                :aria-checked="destinoAsistencia === 'COMPONENTE'"
+                                @click="destinoAsistencia = 'COMPONENTE'">El componente</button>
                     </div>
                 </div>
             </div>
@@ -1420,10 +1424,15 @@
                 });
             }
 
+            function opcion(nodo, clave, permitidas, fallback) {
+                var valor = nodo && nodo.dataset ? nodo.dataset[clave] : '';
+                return permitidas.indexOf(valor) >= 0 ? valor : fallback;
+            }
+
             return {
                 filas: desdeElemento(el),
-                destinoAsistencia: 'conducta',
-                quienPuntosBoleta: 'guia',
+                destinoAsistencia: opcion(el, 'destinoRebaja', ['CONDUCTA', 'COMPONENTE'], 'CONDUCTA'),
+                quienPuntosBoleta: opcion(el, 'quienPuntosBoleta', ['PROFESOR_GUIA', 'PROFESOR_MATERIA'], 'PROFESOR_GUIA'),
                 gruposDe: function (fila) {
                     var cada = Math.round(Number(fila.cada));
                     var cantidad = Math.round(Number(fila.ejemplo));
@@ -1437,7 +1446,7 @@
                 },
                 destinoDe: function (fila) {
                     if (fila.id === 'llamada') return 'conducta';
-                    return this.destinoAsistencia === 'componente' ? 'componente' : 'conducta';
+                    return this.destinoAsistencia === 'COMPONENTE' ? 'componente' : 'conducta';
                 },
                 textoRegla: function (fila) {
                     var cada = Math.round(Number(fila.cada));
@@ -1512,8 +1521,8 @@
                 },
                 restablecer: function () {
                     this.filas = copiar(base());
-                    this.destinoAsistencia = 'conducta';
-                    this.quienPuntosBoleta = 'guia';
+                    this.destinoAsistencia = 'CONDUCTA';
+                    this.quienPuntosBoleta = 'PROFESOR_GUIA';
                 },
                 prepararEnvio: function (event) {
                     var self = this;
@@ -1521,7 +1530,11 @@
                     var form = event.currentTarget || event.target;
                     if (form && form.querySelector) {
                         var input = form.querySelector('[name="rebajas"]');
+                        var quien = form.querySelector('[name="quienRegistraPuntosBoleta"]');
+                        var destino = form.querySelector('[name="destinoRebajaAsistencia"]');
                         if (input) input.value = this.reglasJson;
+                        if (quien) quien.value = this.quienPuntosBoleta;
+                        if (destino) destino.value = this.destinoAsistencia;
                     }
                     if (this.errores.length) {
                         event.preventDefault();

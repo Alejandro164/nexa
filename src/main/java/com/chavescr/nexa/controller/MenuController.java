@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.NotasConsultaService;
+import com.chavescr.nexa.service.RebajaConductaService;
 import com.chavescr.nexa.service.TipoComponenteService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,12 +20,14 @@ public class MenuController {
     private final TipoComponenteService tipoComponenteService;
     private final NotasConsultaService notasConsultaService;
     private final EscalaNotasService escalaNotasService;
+    private final RebajaConductaService rebajaConductaService;
 
     public MenuController(TipoComponenteService tipoComponenteService, NotasConsultaService notasConsultaService,
-            EscalaNotasService escalaNotasService) {
+            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService) {
         this.tipoComponenteService = tipoComponenteService;
         this.notasConsultaService = notasConsultaService;
         this.escalaNotasService = escalaNotasService;
+        this.rebajaConductaService = rebajaConductaService;
     }
 
     @GetMapping("/estudiantes")
@@ -76,6 +79,7 @@ public class MenuController {
         model.addAttribute("notasCatalogo", notasConsultaService.consultar(
                 direccionId, usuarioId, supervision, supervision));
         model.addAttribute("escala", escalaNotasService.vista(direccionId));
+        model.addAttribute("conAsistencia", rebajaConductaService.asistenciaRebajaComponente(direccionId));
         return htmxRequest ? "notas/index :: htmx-content" : "notas/index";
     }
 

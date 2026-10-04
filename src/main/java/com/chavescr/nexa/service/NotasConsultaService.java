@@ -67,7 +67,6 @@ public class NotasConsultaService {
 
     private static final long CONDUCTA_ID = -1L;
     private static final int NOTA_CONDUCTA_INICIAL = 100;
-    private static final int[] DISTRIBUCION_DEFECTO = { 40, 15, 20, 20, 5 };
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String[] COLORES = {
             "#2d5a87", "#059669", "#0284c7", "#7c3aed", "#e11d48", "#ca8a04", "#db2777", "#0891b2"
@@ -86,6 +85,7 @@ public class NotasConsultaService {
     private final IncidenteConductaRepository incidenteRepository;
     private final ObservacionGuiaRepository observacionRepository;
     private final MateriaRepository materiaRepository;
+    private final RebajaConductaService rebajaConductaService;
 
     public NotasConsultaService(PeriodoAcademicoRepository periodoRepository,
             NivelAcademicoRepository nivelRepository, UsuarioRepository usuarioRepository,
@@ -96,7 +96,8 @@ public class NotasConsultaService {
             TipoComponenteRepository tipoComponenteRepository,
             IncidenteConductaRepository incidenteRepository,
             ObservacionGuiaRepository observacionRepository,
-            MateriaRepository materiaRepository) {
+            MateriaRepository materiaRepository,
+            RebajaConductaService rebajaConductaService) {
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
         this.usuarioRepository = usuarioRepository;
@@ -110,6 +111,7 @@ public class NotasConsultaService {
         this.incidenteRepository = incidenteRepository;
         this.observacionRepository = observacionRepository;
         this.materiaRepository = materiaRepository;
+        this.rebajaConductaService = rebajaConductaService;
     }
 
     /**
@@ -235,8 +237,11 @@ public class NotasConsultaService {
         List<Long> periodoIds = List.of(periodoId);
         Map<PesoKey, Map<Long, Double>> pesos = pesosDe(
                 componenteRepository.findParaNotas(direccionId, nivelIds), periodoIds);
-        Map<DistKey, int[]> distribuciones = distribucionesDe(direccionId, periodoIds);
-        Map<Long, int[]> asistencia = asistenciaDeEstudiante(direccionId, estudianteId, periodo);
+        boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
+        Distribuciones distribuciones = distribucionesDe(direccionId, periodoIds, conAsistencia);
+        Map<Long, int[]> asistencia = conAsistencia
+                ? asistenciaDeEstudiante(direccionId, estudianteId, periodo)
+                : Map.of();
         Set<ClaveComponente> claves = clavesActivas(direccionId);
 
         List<NotasDesgloseFila> filas = new ArrayList<>();
@@ -246,7 +251,7 @@ public class NotasConsultaService {
             ComponentesNota nota = ponderar(
                     porMateria.getOrDefault(vista.id, List.of()),
                     asistencia.get(vista.id),
-                    distribuciones.getOrDefault(new DistKey(periodoId, vista.id), DISTRIBUCION_DEFECTO),
+                    distribuciones.de(periodoId, vista.id),
                     claves,
                     pesosDeMateria(pesos, nivelId, vista.id, periodoId));
             filas.add(new NotasDesgloseFila(vista.id, vista.nombre, vista.docente, nota.cotidiano(), nota.tareas(),
@@ -273,11 +278,16 @@ public class NotasConsultaService {
                 .orElseThrow(() -> new IllegalArgumentException("Materia no encontrada"));
         exigirMateriaDeLaSeccion(direccionId, nivel.getId(), materiaId, periodo);
 
-        int[] dist = distribucionesDe(direccionId, List.of(periodo.getId()))
-                .getOrDefault(new DistKey(periodo.getId(), materiaId), DISTRIBUCION_DEFECTO);
+        boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
+        int[] dist = distribucionesDe(direccionId, List.of(periodo.getId()), conAsistencia)
+                .de(periodo.getId(), materiaId);
         String nombre = materia.getNombre() == null || materia.getNombre().isBlank() ? "Materia" : materia.getNombre();
         String limpia = claveTexto == null ? "" : claveTexto.trim().toUpperCase(Locale.ROOT);
         if ("ASISTENCIA".equals(limpia)) {
+            if (!conAsistencia) {
+                throw new IllegalArgumentException(
+                        "La asistencia no forma parte de la nota: las ausencias y tardías rebajan la conducta");
+            }
             return detalleAsistencia(direccionId, estudianteId, materiaId, periodo, nombre, dist[4]);
         }
         ClaveComponente clave;
@@ -657,9 +667,10 @@ public class NotasConsultaService {
 
         Map<PesoKey, Map<Long, Double>> pesos = pesosDe(
                 componenteRepository.findParaNotas(direccionId, nivelIds), periodoIds);
-        Map<DistKey, int[]> distribuciones = distribucionesDe(direccionId, periodoIds);
+        boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
+        Distribuciones distribuciones = distribucionesDe(direccionId, periodoIds, conAsistencia);
         AsistenciaCargada cargada = asistenciaDe(direccionId, nivelIds, periodos);
-        Map<AsistKey, int[]> asistencia = cargada.porMateria();
+        Map<AsistKey, int[]> asistencia = conAsistencia ? cargada.porMateria() : Map.of();
         Set<ClaveComponente> claves = clavesActivas(direccionId);
         Map<Long, Map<Long, Integer>> descuentosConducta = descuentosConducta(direccionId, periodoIds,
                 estudiantes.stream().map(Usuario::getId).toList());
@@ -744,7 +755,7 @@ public class NotasConsultaService {
 
     private NotaPeriodo notaDe(Long estudianteId, Long nivelId, Long materiaId, Long periodoId,
             Set<ClaveComponente> claves, Map<NotaKey, List<ResultadoComponente>> porNota,
-            Map<PesoKey, Map<Long, Double>> pesos, Map<DistKey, int[]> distribuciones,
+            Map<PesoKey, Map<Long, Double>> pesos, Distribuciones distribuciones,
             Map<AsistKey, int[]> asistencia) {
         List<ResultadoComponente> resultados = porNota.getOrDefault(
                 new NotaKey(estudianteId, materiaId, periodoId), List.of());
@@ -753,7 +764,7 @@ public class NotasConsultaService {
             return null;
         }
 
-        int[] dist = distribuciones.getOrDefault(new DistKey(periodoId, materiaId), DISTRIBUCION_DEFECTO);
+        int[] dist = distribuciones.de(periodoId, materiaId);
         ComponentesNota componentes = ponderar(resultados, asist, dist, claves,
                 pesosDeMateria(pesos, nivelId, materiaId, periodoId));
 
@@ -905,16 +916,19 @@ public class NotasConsultaService {
         return pesos;
     }
 
-    private Map<DistKey, int[]> distribucionesDe(Long direccionId, List<Long> periodoIds) {
-        Map<DistKey, int[]> mapa = new HashMap<>();
+    private Distribuciones distribucionesDe(Long direccionId, List<Long> periodoIds, boolean conAsistencia) {
+        Map<DistKey, int[]> guardadas = new HashMap<>();
         for (DistribucionPorcentual dist : distribucionRepository.findByDireccionIdAndPeriodoIdIn(direccionId,
                 periodoIds)) {
-            mapa.put(new DistKey(dist.getPeriodo().getId(), dist.getMateria().getId()), new int[] {
-                    dist.getCotidiano(), dist.getTareas(), dist.getProyectos(), dist.getExamenes(),
-                    dist.getAsistencia()
-            });
+            guardadas.put(new DistKey(dist.getPeriodo().getId(), dist.getMateria().getId()), pesos(dist));
         }
-        return mapa;
+        return new Distribuciones(guardadas, pesos(DistribucionPorcentual.predeterminada(conAsistencia)));
+    }
+
+    private static int[] pesos(DistribucionPorcentual dist) {
+        return new int[] {
+                dist.getCotidiano(), dist.getTareas(), dist.getProyectos(), dist.getExamenes(), dist.getAsistencia()
+        };
     }
 
     private AsistenciaCargada asistenciaDe(Long direccionId, List<Long> nivelIds, List<PeriodoAcademico> periodos) {
@@ -1131,6 +1145,12 @@ public class NotasConsultaService {
     }
 
     private record DistKey(long periodoId, long materiaId) {
+    }
+
+    private record Distribuciones(Map<DistKey, int[]> guardadas, int[] predeterminada) {
+        int[] de(Long periodoId, Long materiaId) {
+            return guardadas.getOrDefault(new DistKey(periodoId, materiaId), predeterminada);
+        }
     }
 
     private record AsistKey(long estudianteId, long materiaId, long periodoId) {

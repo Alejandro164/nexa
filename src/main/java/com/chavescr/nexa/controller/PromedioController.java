@@ -17,6 +17,7 @@ import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.EnvioNotasDocenteService;
 import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.PromedioService;
+import com.chavescr.nexa.service.RebajaConductaService;
 import com.chavescr.nexa.service.TipoComponenteService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,15 +33,17 @@ public class PromedioController {
     private final EnvioNotasDocenteService envioNotasDocenteService;
     private final TipoComponenteService tipoComponenteService;
     private final EscalaNotasService escalaNotasService;
+    private final RebajaConductaService rebajaConductaService;
 
     public PromedioController(PromedioService service, AlcanceDocenteService alcanceDocenteService,
             EnvioNotasDocenteService envioNotasDocenteService, TipoComponenteService tipoComponenteService,
-            EscalaNotasService escalaNotasService) {
+            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
         this.envioNotasDocenteService = envioNotasDocenteService;
         this.tipoComponenteService = tipoComponenteService;
         this.escalaNotasService = escalaNotasService;
+        this.rebajaConductaService = rebajaConductaService;
     }
 
     @GetMapping
@@ -58,6 +61,7 @@ public class PromedioController {
             materiaId = materias.get(0).getId();
         }
         var tipos = tipoComponenteService.listarActivos(direccionId);
+        boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
         List<FilaPromedio> filas = nivelId != null && materiaId != null
                 ? service.calcularPromedio(direccionId, nivelId, materiaId, tipos)
                 : List.of();
@@ -76,7 +80,8 @@ public class PromedioController {
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("tiposComponente", tipos);
-        model.addAttribute("columnasPromedio", tipos.size() + 3);
+        model.addAttribute("conAsistencia", conAsistencia);
+        model.addAttribute("columnasPromedio", tipos.size() + (conAsistencia ? 3 : 2));
         model.addAttribute("filas", filas);
         model.addAttribute("estudiantesEvaluados", promedios.size());
         model.addAttribute("promedioGrupo", Math.round(promedioGrupo * 10) / 10.0);

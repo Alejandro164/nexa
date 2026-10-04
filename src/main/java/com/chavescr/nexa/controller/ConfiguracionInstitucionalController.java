@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.DiaLaboral;
+import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.ConfiguracionDireccionService;
 import com.chavescr.nexa.service.EscalaNotasService;
@@ -161,10 +163,12 @@ public class ConfiguracionInstitucionalController {
 
     @PostMapping("/escala-notas/rebajas")
     public String guardarRebajas(@RequestParam String rebajas,
+            @RequestParam QuienRegistraPuntosBoleta quienRegistraPuntosBoleta,
+            @RequestParam DestinoRebajaAsistencia destinoRebajaAsistencia,
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
-            rebajaConductaService.guardar(direccionId, rebajas);
+            rebajaConductaService.guardar(direccionId, rebajas, quienRegistraPuntosBoleta, destinoRebajaAsistencia);
             response.setHeader("HX-Trigger",
                     "{\"institucionalGuardado\":{\"mensaje\":\"Rebajas actualizadas\"}}");
         } catch (IllegalArgumentException e) {
@@ -185,7 +189,7 @@ public class ConfiguracionInstitucionalController {
 
     private void cargarEscala(Model model, Long direccionId) {
         model.addAttribute("escalaNotas", escalaNotasService.obtener(direccionId));
-        model.addAttribute("rebajas", rebajaConductaService.reglas(direccionId));
+        model.addAttribute("rebajaConducta", rebajaConductaService.obtener(direccionId));
     }
 
     private Long requerirDireccion(HttpSession session) {

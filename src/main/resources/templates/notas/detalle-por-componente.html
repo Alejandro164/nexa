@@ -340,20 +340,22 @@
                                     <th>Tareas</th>
                                     <th>Proyecto</th>
                                     <th>Pruebas</th>
-                                    <th>Asistencia</th>
+                                    <th th:if="${conAsistencia}">Asistencia</th>
                                     <th class="final">Promedio final</th>
                                 </tr>
                             </thead>
                             <tbody id="notas-desglose-cuerpo">
                                 <tr class="notas-desglose-fila">
-                                    <td class="notas-desglose-estado" colspan="7">Cargando…</td>
+                                    <td class="notas-desglose-estado" th:colspan="${conAsistencia} ? 7 : 6">Cargando…</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
                     <p class="notas-desglose-leyenda">
-                        Pulse una nota para ver el detalle de esa materia y ese componente. El período elegido filtra el desglose. La nota de la materia es el promedio ponderado de cotidiano, tareas, proyecto, pruebas y asistencia.
+                        Pulse una nota para ver el detalle de esa materia y ese componente. El período elegido filtra el desglose.
+                        <th:block th:if="${conAsistencia}">La nota de la materia es el promedio ponderado de cotidiano, tareas, proyecto, pruebas y asistencia.</th:block>
+                        <th:block th:unless="${conAsistencia}">La nota de la materia es el promedio ponderado de cotidiano, tareas, proyecto y pruebas; las ausencias y tardías rebajan la conducta.</th:block>
                     </p>
                 </div>
 
@@ -367,10 +369,10 @@
 
 <th:block th:fragment="filas">
     <tr th:if="${error != null}" class="notas-desglose-fila">
-        <td class="notas-desglose-estado" colspan="7" th:text="${error}">No se pudo cargar el desglose.</td>
+        <td class="notas-desglose-estado" th:colspan="${conAsistencia} ? 7 : 6" th:text="${error}">No se pudo cargar el desglose.</td>
     </tr>
     <tr th:if="${error == null and (filas == null or filas.isEmpty)}" class="notas-desglose-fila">
-        <td class="notas-desglose-estado" colspan="7">No hay materias en este período.</td>
+        <td class="notas-desglose-estado" th:colspan="${conAsistencia} ? 7 : 6">No hay materias en este período.</td>
     </tr>
     <th:block th:if="${error == null}">
         <tr th:each="f : ${filas}" class="notas-desglose-fila">
@@ -406,7 +408,7 @@
                     <span th:if="${f.pruebas != null}" th:classappend="${escala.tono(f.pruebas)}" th:text="${f.pruebas}">0</span>
                 </button>
             </td>
-            <td class="nota">
+            <td class="nota" th:if="${conAsistencia}">
                 <button type="button" class="notas-desglose-nota"
                         th:attr="data-materia-id=${f.materiaId},data-clave='ASISTENCIA',data-materia=${f.nombre},data-docente=${f.docente},aria-label=${'Ver asistencia de ' + f.nombre},title=${'Ver asistencia de ' + f.nombre}">
                     <span th:if="${f.asistencia == null}" class="notas-desglose-vacio">—</span>

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.service.AlcanceDocenteService;
 import com.chavescr.nexa.service.DistribucionPorcentualService;
+import com.chavescr.nexa.service.RebajaConductaService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,11 +23,13 @@ public class DistribucionPorcentualController {
 
     private final DistribucionPorcentualService service;
     private final AlcanceDocenteService alcanceDocenteService;
+    private final RebajaConductaService rebajaConductaService;
 
     public DistribucionPorcentualController(DistribucionPorcentualService service,
-            AlcanceDocenteService alcanceDocenteService) {
+            AlcanceDocenteService alcanceDocenteService, RebajaConductaService rebajaConductaService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
+        this.rebajaConductaService = rebajaConductaService;
     }
 
     @GetMapping
@@ -73,6 +76,7 @@ public class DistribucionPorcentualController {
         model.addAttribute("materias", materias);
         model.addAttribute("periodoId", periodoId);
         model.addAttribute("materiaId", materiaId);
+        model.addAttribute("conAsistencia", rebajaConductaService.asistenciaRebajaComponente(direccionId));
         if (periodoId != null && materiaId != null) {
             model.addAttribute("distribucion", service.obtenerDistribucion(direccionId, periodoId, materiaId));
         }

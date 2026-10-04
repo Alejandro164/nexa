@@ -11,6 +11,7 @@ import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.NotasConsultaService;
 import com.chavescr.nexa.service.ObservacionGuiaService;
+import com.chavescr.nexa.service.RebajaConductaService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -22,12 +23,15 @@ public class NotasController {
     private final ObservacionGuiaService observacionGuiaService;
     private final NotasConsultaService notasConsultaService;
     private final EscalaNotasService escalaNotasService;
+    private final RebajaConductaService rebajaConductaService;
 
     public NotasController(ObservacionGuiaService observacionGuiaService,
-            NotasConsultaService notasConsultaService, EscalaNotasService escalaNotasService) {
+            NotasConsultaService notasConsultaService, EscalaNotasService escalaNotasService,
+            RebajaConductaService rebajaConductaService) {
         this.observacionGuiaService = observacionGuiaService;
         this.notasConsultaService = notasConsultaService;
         this.escalaNotasService = escalaNotasService;
+        this.rebajaConductaService = rebajaConductaService;
     }
 
     @GetMapping("/desglose")
@@ -40,6 +44,7 @@ public class NotasController {
         boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         model.addAttribute("escala", escalaNotasService.vista(direccionId));
+        model.addAttribute("conAsistencia", rebajaConductaService.asistenciaRebajaComponente(direccionId));
         try {
             model.addAttribute("filas", notasConsultaService.desglose(
                     direccionId, usuarioId, supervision, estudianteId, periodoId));

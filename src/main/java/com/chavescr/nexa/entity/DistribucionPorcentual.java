@@ -48,6 +48,20 @@ public class DistribucionPorcentual {
     @Column(nullable = false)
     private Integer asistencia = 0;
 
+    /**
+     * Reparto que se usa mientras la materia no tenga uno guardado. Sin asistencia, su 5% se
+     * reparte en proporción entre los cuatro componentes.
+     */
+    public static DistribucionPorcentual predeterminada(boolean conAsistencia) {
+        DistribucionPorcentual distribucion = new DistribucionPorcentual();
+        distribucion.setCotidiano(conAsistencia ? 40 : 42);
+        distribucion.setTareas(conAsistencia ? 15 : 16);
+        distribucion.setProyectos(conAsistencia ? 20 : 21);
+        distribucion.setExamenes(conAsistencia ? 20 : 21);
+        distribucion.setAsistencia(conAsistencia ? 5 : 0);
+        return distribucion;
+    }
+
     public Long getId() {
         return id;
     }

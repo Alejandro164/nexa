@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
+import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 import com.chavescr.nexa.entity.RebajaConducta;
 
 class RebajaConductaServiceTest {
@@ -111,6 +113,28 @@ class RebajaConductaServiceTest {
                 () -> RebajaConductaService.canonizar(json));
 
         assertEquals("Falta la rebaja de «Ausencia justificada»", error.getMessage());
+    }
+
+    @Test
+    void pideQuienRegistraLosPuntosDeLasBoletas() {
+        RebajaConductaService service = new RebajaConductaService(null, null);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.guardar(1L, RebajaConducta.REGLAS_PREDETERMINADAS,
+                        null, DestinoRebajaAsistencia.CONDUCTA));
+
+        assertEquals("Indica quién registra los puntos de las boletas", error.getMessage());
+    }
+
+    @Test
+    void pideDondeSeRebajanAusenciasYTardias() {
+        RebajaConductaService service = new RebajaConductaService(null, null);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.guardar(1L, RebajaConducta.REGLAS_PREDETERMINADAS,
+                        QuienRegistraPuntosBoleta.PROFESOR_GUIA, null));
+
+        assertEquals("Indica dónde se rebajan las ausencias y tardías", error.getMessage());
     }
 
     private static String conLlamada(int cada, int puntos) {

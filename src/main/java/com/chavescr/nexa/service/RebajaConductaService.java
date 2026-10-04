@@ -6,7 +6,9 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.Direccion;
+import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 import com.chavescr.nexa.entity.RebajaConducta;
 import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.repository.DireccionRepository;
@@ -34,17 +36,30 @@ public class RebajaConductaService {
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public String reglas(Long direccionId) {
-        return repository.findByDireccionId(direccionId)
-                .map(guardada -> legible(guardada.getReglas()))
-                .orElseGet(RebajaConducta::reglasPredeterminadas);
+    public RebajaConducta obtener(Long direccionId) {
+        return repository.findByDireccionId(direccionId).orElseGet(RebajaConducta::predeterminada);
+    }
+
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public boolean asistenciaRebajaComponente(Long direccionId) {
+        return obtener(direccionId).getDestinoRebajaAsistencia() == DestinoRebajaAsistencia.COMPONENTE;
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public RebajaConducta guardar(Long direccionId, String reglasJson) {
+    public RebajaConducta guardar(Long direccionId, String reglasJson,
+            QuienRegistraPuntosBoleta quienRegistraPuntosBoleta,
+            DestinoRebajaAsistencia destinoRebajaAsistencia) {
         String canonico = canonizar(reglasJson);
+        if (quienRegistraPuntosBoleta == null) {
+            throw new IllegalArgumentException("Indica quién registra los puntos de las boletas");
+        }
+        if (destinoRebajaAsistencia == null) {
+            throw new IllegalArgumentException("Indica dónde se rebajan las ausencias y tardías");
+        }
         RebajaConducta rebaja = repository.findByDireccionId(direccionId).orElseGet(() -> nueva(direccionId));
         rebaja.setReglas(canonico);
+        rebaja.setQuienRegistraPuntosBoleta(quienRegistraPuntosBoleta);
+        rebaja.setDestinoRebajaAsistencia(destinoRebajaAsistencia);
         return repository.save(rebaja);
     }
 
@@ -88,14 +103,6 @@ public class RebajaConductaService {
         RebajaConducta rebaja = new RebajaConducta();
         rebaja.setDireccion(direccion);
         return rebaja;
-    }
-
-    private static String legible(String json) {
-        try {
-            return canonizar(json);
-        } catch (RuntimeException e) {
-            return RebajaConducta.reglasPredeterminadas();
-        }
     }
 
     private static Map<String, JsonNode> leer(String json) {

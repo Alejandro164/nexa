@@ -38,11 +38,13 @@ public class PromedioService {
     private final AsistenciaEstudianteRepository asistenciaRepository;
     private final DistribucionPorcentualService distribucionService;
     private final ComponenteService componenteService;
+    private final RebajaConductaService rebajaConductaService;
 
     public PromedioService(UsuarioRepository usuarioRepository, NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository, PeriodoAcademicoRepository periodoRepository,
             ResultadoComponenteRepository resultadoRepository, AsistenciaEstudianteRepository asistenciaRepository,
-            DistribucionPorcentualService distribucionService, ComponenteService componenteService) {
+            DistribucionPorcentualService distribucionService, ComponenteService componenteService,
+            RebajaConductaService rebajaConductaService) {
         this.usuarioRepository = usuarioRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
@@ -51,6 +53,7 @@ public class PromedioService {
         this.asistenciaRepository = asistenciaRepository;
         this.distribucionService = distribucionService;
         this.componenteService = componenteService;
+        this.rebajaConductaService = rebajaConductaService;
     }
 
     public List<NivelAcademico> listarNivelesActivos(Long direccionId) {
@@ -67,6 +70,10 @@ public class PromedioService {
                 .stream().findFirst().orElse(null);
     }
 
+    /**
+     * Si en la institución las ausencias y tardías rebajan la conducta, la asistencia no se calcula
+     * y el promedio final se reparte solo entre los componentes.
+     */
     public List<FilaPromedio> calcularPromedio(Long direccionId, Long nivelId, Long materiaId,
             List<TipoComponente> tipos) {
         PeriodoAcademico periodo = periodoActual(direccionId);
@@ -74,6 +81,7 @@ public class PromedioService {
             return List.of();
         }
         Long periodoId = periodo.getId();
+        boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
 
         List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
 
@@ -88,7 +96,8 @@ public class PromedioService {
 
         return estudiantes.stream()
                 .map(est -> calcularFila(est, periodo, materiaId, direccionId,
-                        resultadosPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, columnas, pesos))
+                        resultadosPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, columnas, pesos,
+                        conAsistencia))
                 .toList();
     }
 
@@ -109,7 +118,7 @@ public class PromedioService {
 
     private FilaPromedio calcularFila(Usuario estudiante, PeriodoAcademico periodo, Long materiaId,
             Long direccionId, List<ResultadoComponente> resultados, DistribucionPorcentual distribucion,
-            List<TipoComponente> tipos, Map<ClaveComponente, Map<Long, Double>> pesos) {
+            List<TipoComponente> tipos, Map<ClaveComponente, Map<Long, Double>> pesos, boolean conAsistencia) {
         List<Double> notas = new ArrayList<>();
         for (TipoComponente tipo : tipos) {
             if (tipo.getClave() == null) {
@@ -119,7 +128,9 @@ public class PromedioService {
             notas.add(promedioDe(resultados, tipo.getClave(), pesos.getOrDefault(tipo.getClave(), Map.of())));
         }
 
-        Integer asistenciaScore = calcularAsistencia(direccionId, estudiante.getId(), materiaId, periodo);
+        Integer asistenciaScore = conAsistencia
+                ? calcularAsistencia(direccionId, estudiante.getId(), materiaId, periodo)
+                : null;
         Double promedioFinal = promedioFinal(distribucion, tipos, notas, asistenciaScore);
         return new FilaPromedio(estudiante, notas, asistenciaScore, promedioFinal);
     }

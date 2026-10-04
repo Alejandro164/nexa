@@ -1150,6 +1150,7 @@
         <script th:inline="javascript">
             var NOTAS_CATALOGO = /*[[${notasCatalogo}]]*/ {};
             var NOTAS_ESCALA = /*[[${escala.tramos}]]*/ [];
+            var NOTAS_CON_ASISTENCIA = /*[[${conAsistencia}]]*/ true;
 
             function notasModulo() {
                 const catalogo = NOTAS_CATALOGO || {};
@@ -1284,7 +1285,8 @@
                             const cuerpo = document.getElementById('notas-desglose-cuerpo');
                             if (cuerpo) cuerpo.innerHTML = html;
                         };
-                        const cargando = '<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="7">Cargando…</td></tr>';
+                        const columnas = NOTAS_CON_ASISTENCIA ? 7 : 6;
+                        const cargando = '<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="' + columnas + '">Cargando…</td></tr>';
                         this.$nextTick(() => {
                             pintar(cargando);
                             fetch('/notas/desglose?estudianteId=' + estudianteId + '&periodoId=' + periodoId, { signal: ctrl.signal })
@@ -1295,7 +1297,7 @@
                                 .then((html) => pintar(html))
                                 .catch((e) => {
                                     if (e && e.name === 'AbortError') return;
-                                    pintar('<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="7">No se pudo cargar el desglose.</td></tr>');
+                                    pintar('<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="' + columnas + '">No se pudo cargar el desglose.</td></tr>');
                                 });
                         });
                     },
