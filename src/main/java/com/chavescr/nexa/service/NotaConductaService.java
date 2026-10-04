@@ -17,6 +17,7 @@ import com.chavescr.nexa.dto.FilaNotaConducta;
 import com.chavescr.nexa.dto.PanelNotaConducta;
 import com.chavescr.nexa.dto.ResumenNotaConducta;
 import com.chavescr.nexa.dto.VistaEscala;
+import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.IncidenteConducta;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
 import com.chavescr.nexa.entity.Direccion;
@@ -25,6 +26,7 @@ import com.chavescr.nexa.entity.NotaConducta;
 import com.chavescr.nexa.entity.Notificacion;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.Usuario;
+import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.IncidenteConductaRepository;
 import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
@@ -36,7 +38,6 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 @Transactional
 public class NotaConductaService {
 
-    private static final int NOTA_INICIAL = 100;
     private static final String[] COLORES_AVATAR = {
             "#2d5a87", "#059669", "#0284c7", "#7c3aed",
             "#e11d48", "#ca8a04", "#db2777", "#0891b2"
@@ -52,6 +53,8 @@ public class NotaConductaService {
     private final AlcanceDocenteService alcanceDocenteService;
     private final NotificacionService notificacionService;
     private final EscalaNotasService escalaNotasService;
+    private final RebajaConductaService rebajaConductaService;
+    private final AsistenciaEstudianteRepository asistenciaRepository;
 
     public NotaConductaService(UsuarioRepository usuarioRepository,
             PeriodoAcademicoRepository periodoRepository,
@@ -62,7 +65,9 @@ public class NotaConductaService {
             DocenteGuiaService docenteGuiaService,
             AlcanceDocenteService alcanceDocenteService,
             NotificacionService notificacionService,
-            EscalaNotasService escalaNotasService) {
+            EscalaNotasService escalaNotasService,
+            RebajaConductaService rebajaConductaService,
+            AsistenciaEstudianteRepository asistenciaRepository) {
         this.usuarioRepository = usuarioRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
@@ -73,6 +78,8 @@ public class NotaConductaService {
         this.alcanceDocenteService = alcanceDocenteService;
         this.notificacionService = notificacionService;
         this.escalaNotasService = escalaNotasService;
+        this.rebajaConductaService = rebajaConductaService;
+        this.asistenciaRepository = asistenciaRepository;
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
@@ -114,6 +121,8 @@ public class NotaConductaService {
 
         Map<Long, List<IncidenteConducta>> porEstudiante = agruparIncidentes(
                 direccionId, periodo.getId(), estudianteIds);
+        CalculoRebaja calculo = rebajaConductaService.calculo(direccionId);
+        Map<Long, int[]> asistencias = conteosAsistencia(direccionId, periodo, estudianteIds, calculo);
 
         Set<Long> enviadas = estudianteIds.isEmpty()
                 ? Set.of()
@@ -125,7 +134,7 @@ public class NotaConductaService {
             List<IncidenteConducta> delEstudiante = porEstudiante.getOrDefault(estudiante.getId(), List.of());
             incidentesFiltrados.addAll(delEstudiante);
             filas.add(construirFila(estudiante, periodo, delEstudiante,
-                    enviadas.contains(estudiante.getId()), escala));
+                    enviadas.contains(estudiante.getId()), escala, calculo, asistencias.get(estudiante.getId())));
         }
         filas.sort(Comparator
                 .comparing((FilaNotaConducta f) -> f.getEstudiante().getNivelAcademico() == null
@@ -153,8 +162,10 @@ public class NotaConductaService {
 
         List<IncidenteConducta> incidentes = incidenteRepository
                 .findByDireccionIdAndPeriodoIdAndEstudianteId(direccionId, periodoId, estudianteId);
+        CalculoRebaja calculo = rebajaConductaService.calculo(direccionId);
+        Map<Long, int[]> asistencias = conteosAsistencia(direccionId, periodo, List.of(estudianteId), calculo);
         FilaNotaConducta fila = construirFila(estudiante, periodo, incidentes, false,
-                escalaNotasService.vista(direccionId));
+                escalaNotasService.vista(direccionId), calculo, asistencias.get(estudianteId));
 
         List<Usuario> padres = usuarioRepository.findPadresByEstudianteId(estudianteId);
         if (padres.isEmpty()) {
@@ -300,16 +311,35 @@ public class NotaConductaService {
         }
     }
 
+    private Map<Long, int[]> conteosAsistencia(Long direccionId, PeriodoAcademico periodo,
+            List<Long> estudianteIds, CalculoRebaja calculo) {
+        if (!calculo.asistenciaRebajaConducta() || estudianteIds.isEmpty()
+                || periodo.getFechaInicio() == null || periodo.getFechaFin() == null) {
+            return Map.of();
+        }
+        Map<Long, int[]> conteos = new HashMap<>();
+        for (Object[] fila : asistenciaRepository.contarEstadosPorEstudiante(direccionId, estudianteIds,
+                periodo.getFechaInicio(), periodo.getFechaFin(), EstadoAsistencia.PRESENTE)) {
+            Long estudianteId = (Long) fila[0];
+            int[] conteo = conteos.computeIfAbsent(estudianteId, id -> new int[4]);
+            int cantidad = fila[2] == null ? 0 : ((Number) fila[2]).intValue();
+            CalculoRebaja.sumar(conteo, (EstadoAsistencia) fila[1], cantidad);
+        }
+        return conteos;
+    }
+
     private FilaNotaConducta construirFila(Usuario estudiante, PeriodoAcademico periodo,
-            List<IncidenteConducta> incidentes, boolean enviada, VistaEscala escala) {
-        int descuento = incidentes.stream()
+            List<IncidenteConducta> incidentes, boolean enviada, VistaEscala escala, CalculoRebaja calculo,
+            int[] asistencia) {
+        int puntosBoletas = incidentes.stream()
                 .filter(i -> i.getTipo() != null && i.getTipo().afectaNota())
                 .mapToInt(i -> i.getPuntosDescontados() != null ? i.getPuntosDescontados() : 0)
                 .sum();
-        int nota = Math.max(0, NOTA_INICIAL - descuento);
-        VistaEscala.Tramo tramo = escala.tramo(nota);
         long llamadas = contar(incidentes, TipoIncidente.LLAMADA_ATENCION);
         long boletas = contar(incidentes, TipoIncidente.BOLETA);
+        int puntosAsistencia = calculo.puntosAsistencia(asistencia);
+        int nota = calculo.nota(puntosBoletas, (int) llamadas, asistencia);
+        VistaEscala.Tramo tramo = escala.tramo(nota);
 
         String seccion = "Sin sección";
         if (estudiante.getNivelAcademico() != null) {
@@ -318,8 +348,8 @@ public class NotaConductaService {
         }
 
         return new FilaNotaConducta(estudiante, seccion, nota, tramo.nombre(), tramo.tono(),
-                observaciones(nota, llamadas, boletas, tramo.nombre()), periodo.getCodigo(), enviada,
-                iniciales(estudiante.getNombre()), colorAvatar(estudiante.getId()));
+                observaciones(nota, llamadas, boletas, tramo.nombre(), puntosAsistencia), periodo.getCodigo(),
+                enviada, iniciales(estudiante.getNombre()), colorAvatar(estudiante.getId()));
     }
 
     private ResumenNotaConducta resumir(List<FilaNotaConducta> filas, List<IncidenteConducta> incidentes) {
@@ -330,23 +360,28 @@ public class NotaConductaService {
         return new ResumenNotaConducta(promedio, llamadas, boletas, filas.size());
     }
 
-    static String observaciones(int nota, long llamadas, long boletas, String categoria) {
+    static String observaciones(int nota, long llamadas, long boletas, String categoria, int puntosAsistencia) {
+        String texto;
         if (boletas > 0) {
-            return "Conducta deficiente. " + cantidad(boletas, "boleta", "boletas")
+            texto = "Conducta deficiente. " + cantidad(boletas, "boleta", "boletas")
                     + " por falta grave. Debe mejorar urgentemente su comportamiento.";
-        }
-        if (llamadas >= 3) {
-            return "Requiere mejorar su conducta. Ha recibido "
+        } else if (llamadas >= 3) {
+            texto = "Requiere mejorar su conducta. Ha recibido "
                     + cantidad(llamadas, "llamada de atención", "llamadas de atención") + " este período.";
-        }
-        if (llamadas > 0) {
-            return "Generalmente cumple con las normas. Ha tenido "
+        } else if (llamadas > 0) {
+            texto = "Generalmente cumple con las normas. Ha tenido "
                     + cantidad(llamadas, "llamado de atención", "llamados de atención") + ".";
-        }
-        if (nota >= 100) {
+        } else if (puntosAsistencia > 0) {
+            return "Las ausencias y tardías rebajan " + cantidad(puntosAsistencia, "punto", "puntos") + " de la nota.";
+        } else if (nota >= 100) {
             return "Estudiante ejemplar. Nunca ha tenido llamadas de atención este período.";
+        } else {
+            texto = categoria + ". Cumple las normas de convivencia de la institución educativa.";
         }
-        return categoria + ". Cumple las normas de convivencia de la institución educativa.";
+        if (puntosAsistencia > 0) {
+            return texto + " Las ausencias y tardías rebajan " + cantidad(puntosAsistencia, "punto", "puntos") + ".";
+        }
+        return texto;
     }
 
     private static String cantidad(long n, String singular, String plural) {

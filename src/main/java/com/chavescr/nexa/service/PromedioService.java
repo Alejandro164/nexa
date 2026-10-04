@@ -82,6 +82,7 @@ public class PromedioService {
         }
         Long periodoId = periodo.getId();
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
+        CalculoRebaja calculo = conAsistencia ? rebajaConductaService.calculo(direccionId) : null;
 
         List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
 
@@ -97,7 +98,7 @@ public class PromedioService {
         return estudiantes.stream()
                 .map(est -> calcularFila(est, periodo, materiaId, direccionId,
                         resultadosPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, columnas, pesos,
-                        conAsistencia))
+                        calculo))
                 .toList();
     }
 
@@ -118,7 +119,7 @@ public class PromedioService {
 
     private FilaPromedio calcularFila(Usuario estudiante, PeriodoAcademico periodo, Long materiaId,
             Long direccionId, List<ResultadoComponente> resultados, DistribucionPorcentual distribucion,
-            List<TipoComponente> tipos, Map<ClaveComponente, Map<Long, Double>> pesos, boolean conAsistencia) {
+            List<TipoComponente> tipos, Map<ClaveComponente, Map<Long, Double>> pesos, CalculoRebaja calculo) {
         List<Double> notas = new ArrayList<>();
         for (TipoComponente tipo : tipos) {
             if (tipo.getClave() == null) {
@@ -128,25 +129,27 @@ public class PromedioService {
             notas.add(promedioDe(resultados, tipo.getClave(), pesos.getOrDefault(tipo.getClave(), Map.of())));
         }
 
-        Integer asistenciaScore = conAsistencia
-                ? calcularAsistencia(direccionId, estudiante.getId(), materiaId, periodo)
-                : null;
+        Integer asistenciaScore = calculo == null
+                ? null
+                : calcularAsistencia(direccionId, estudiante.getId(), materiaId, periodo, calculo);
         Double promedioFinal = promedioFinal(distribucion, tipos, notas, asistenciaScore);
         return new FilaPromedio(estudiante, notas, asistenciaScore, promedioFinal);
     }
 
+    /** Parte de 100 y resta los puntos de la regla. No es el porcentaje de lecciones presentes. */
     private Integer calcularAsistencia(Long direccionId, Long estudianteId, Long materiaId,
-            PeriodoAcademico periodo) {
+            PeriodoAcademico periodo, CalculoRebaja calculo) {
         List<AsistenciaEstudiante> registros = asistenciaRepository
                 .findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(direccionId, estudianteId,
                         materiaId, periodo.getFechaInicio(), periodo.getFechaFin());
         if (registros.isEmpty()) {
             return null;
         }
-        long presentes = registros.stream()
-                .filter(r -> r.getEstado() != null && r.getEstado().cuentaComoPresente())
-                .count();
-        return (int) Math.round(presentes * 100.0 / registros.size());
+        int[] conteo = new int[4];
+        for (AsistenciaEstudiante registro : registros) {
+            CalculoRebaja.sumar(conteo, registro.getEstado(), 1);
+        }
+        return calculo.notaAsistencia(conteo);
     }
 
     private Double promedioDe(List<ResultadoComponente> resultados, ClaveComponente clave, Map<Long, Double> pesos) {

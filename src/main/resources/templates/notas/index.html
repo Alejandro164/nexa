@@ -1191,6 +1191,7 @@
                     boletaPeriodo: null,
                     boletaCtrl: null,
                     conductaPeriodo: null,
+                    conductaCtrl: null,
                     anios: catalogo.anios || [],
                     periodos: catalogo.periodos || [],
                     filasAusencia: [
@@ -1505,9 +1506,39 @@
                         this.cerrarAusencias();
                         this.cerrarLlamadas();
                         this.cerrarBoletas();
+                        const estudianteId = this.seleccionado.id;
+                        const delAnio = periodo.id === 'anio';
                         this.conductaPeriodo = periodo;
+                        if (this.conductaCtrl) this.conductaCtrl.abort();
+                        const ctrl = new AbortController();
+                        this.conductaCtrl = ctrl;
+                        const pintar = (html) => {
+                            if (this.conductaCtrl !== ctrl) return;
+                            if (!this.seleccionado || this.seleccionado.id !== estudianteId) return;
+                            if (delAnio ? !this.esConductaAnio() : !this.esConductaPeriodo(periodo)) return;
+                            const cuerpo = document.getElementById('notas-conducta-cuerpo');
+                            if (cuerpo) cuerpo.innerHTML = html;
+                        };
+                        const url = delAnio
+                            ? '/notas/conducta?estudianteId=' + estudianteId + '&anio=' + encodeURIComponent(this.anio)
+                            : '/notas/conducta?estudianteId=' + estudianteId + '&periodoId=' + periodo.id;
+                        this.$nextTick(() => {
+                            pintar('<p class="notas-con-estado">Cargando…</p>');
+                            fetch(url, { signal: ctrl.signal })
+                                .then((res) => {
+                                    if (res.redirected || !res.ok) throw new Error('respuesta');
+                                    return res.text();
+                                })
+                                .then((html) => pintar(html))
+                                .catch((e) => {
+                                    if (e && e.name === 'AbortError') return;
+                                    pintar('<p class="notas-con-estado">No se pudo cargar el detalle de conducta.</p>');
+                                });
+                        });
                     },
                     cerrarConducta() {
+                        if (this.conductaCtrl) this.conductaCtrl.abort();
+                        this.conductaCtrl = null;
                         this.conductaPeriodo = null;
                     },
                     esConductaPeriodo(periodo) {
@@ -1547,10 +1578,10 @@
                             .map((m) => this.pctDe(this.notaDe(m, periodo.id)))
                             .filter((n) => n != null);
                         if (!notas.length) return null;
-                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(1);
+                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(2);
                     },
                     fmtPeriodo(n) {
-                        return n == null ? '—' : Number(n).toFixed(1);
+                        return n == null ? '—' : Number(n).toFixed(2);
                     },
                     etiquetaAnio() {
                         const n = this.periodosDelAnio.length;
@@ -1570,7 +1601,7 @@
                         });
                         const conPct = notas.filter(function (n) { return n.porcentaje != null; });
                         if (!conPct.length) return null;
-                        const pct = +(conPct.reduce(function (acc, n) { return acc + Number(n.porcentaje); }, 0) / conPct.length).toFixed(1);
+                        const pct = +(conPct.reduce(function (acc, n) { return acc + Number(n.porcentaje); }, 0) / conPct.length).toFixed(2);
                         return { porcentaje: pct };
                     },
                     pctDe(n) {
@@ -1578,7 +1609,7 @@
                     },
                     fmtNota(n) {
                         const pct = this.pctDe(n);
-                        return pct == null ? '—' : pct.toFixed(1);
+                        return pct == null ? '—' : pct.toFixed(2);
                     },
                     conteoSeguimientoPeriodo(tipo, periodo) {
                         const lista = this.seleccionado && this.seleccionado.seguimiento;
@@ -1692,7 +1723,7 @@
                             .map((m) => this.pctDe(this.resumenDe(m)))
                             .filter((n) => n != null);
                         if (!notas.length) return null;
-                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(1);
+                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(2);
                     },
                     conteo(est, aprobadas) {
                         const umbral = this.corte();

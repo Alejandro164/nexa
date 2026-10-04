@@ -110,6 +110,25 @@ public class NotasController {
         return "notas/detalle-llamadas :: registros";
     }
 
+    @GetMapping("/conducta")
+    public String conducta(@RequestParam Long estudianteId, @RequestParam(required = false) Long periodoId,
+            @RequestParam(required = false) Integer anio, Model model, HttpSession session,
+            HttpServletRequest request) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        try {
+            model.addAttribute("detalle", notasConsultaService.detalleConducta(
+                    direccionId, usuarioId, supervision, estudianteId, periodoId, anio));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "notas/detalle-conducta :: registros";
+    }
+
     @GetMapping("/boletas")
     public String boletas(@RequestParam Long estudianteId, @RequestParam Long periodoId, Model model,
             HttpSession session, HttpServletRequest request) {

@@ -25,6 +25,22 @@ public interface AsistenciaEstudianteRepository extends JpaRepository<Asistencia
     List<AsistenciaEstudiante> findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(Long direccionId,
             Long estudianteId, Long materiaId, LocalDate desde, LocalDate hasta);
 
+    /** Lecciones que no son presente, agrupadas por estudiante y estado, dentro de un período. */
+    @Query("""
+            SELECT a.estudiante.id, a.estado, COUNT(a)
+            FROM AsistenciaEstudiante a
+            WHERE a.direccion.id = :direccionId
+              AND a.estudiante.id IN :estudianteIds
+              AND a.fecha >= :desde AND a.fecha <= :hasta
+              AND a.estado IS NOT NULL
+              AND a.estado <> :presente
+            GROUP BY a.estudiante.id, a.estado
+            """)
+    List<Object[]> contarEstadosPorEstudiante(@Param("direccionId") Long direccionId,
+            @Param("estudianteIds") Collection<Long> estudianteIds,
+            @Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta,
+            @Param("presente") EstadoAsistencia presente);
+
     @Query("""
             SELECT a.estudiante.id, a.materia.id, a.fecha, a.estado
             FROM AsistenciaEstudiante a

@@ -2,12 +2,18 @@ package com.chavescr.nexa.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 import com.chavescr.nexa.entity.RebajaConducta;
+import com.chavescr.nexa.repository.DireccionRepository;
+import com.chavescr.nexa.repository.RebajaConductaRepository;
 
 class RebajaConductaServiceTest {
 
@@ -135,6 +141,49 @@ class RebajaConductaServiceTest {
                         QuienRegistraPuntosBoleta.PROFESOR_GUIA, null));
 
         assertEquals("Indica dónde se rebajan las ausencias y tardías", error.getMessage());
+    }
+
+    @Test
+    void elCalculoUsaLosGruposGuardados() {
+        CalculoRebaja calculo = calculoDe(DestinoRebajaAsistencia.CONDUCTA, grupos());
+
+        assertEquals(9, calculo.puntosAsistencia(new int[] { 2, 4, 0, 3 }));
+        assertEquals(81, calculo.nota(10, new int[] { 2, 4, 0, 3 }));
+    }
+
+    @Test
+    void elCalculoIgnoraLaAsistenciaCuandoRebajaElComponente() {
+        CalculoRebaja calculo = calculoDe(DestinoRebajaAsistencia.COMPONENTE, grupos());
+
+        assertEquals(0, calculo.puntosAsistencia(new int[] { 2, 4, 0, 3 }));
+        assertEquals(90, calculo.nota(10, new int[] { 2, 4, 0, 3 }));
+    }
+
+    @Test
+    void unTextoIlegibleVuelveALasReglasPredeterminadas() {
+        CalculoRebaja calculo = calculoDe(DestinoRebajaAsistencia.CONDUCTA, "no-es-json");
+
+        assertEquals(5, calculo.puntosAsistencia(new int[] { 0, 1, 0, 0 }));
+    }
+
+    private static CalculoRebaja calculoDe(DestinoRebajaAsistencia destino, String reglas) {
+        RebajaConductaRepository repository = mock(RebajaConductaRepository.class);
+        RebajaConductaService service = new RebajaConductaService(repository, mock(DireccionRepository.class));
+        RebajaConducta rebaja = new RebajaConducta();
+        rebaja.setDestinoRebajaAsistencia(destino);
+        rebaja.setReglas(reglas);
+        when(repository.findByDireccionId(2L)).thenReturn(Optional.of(rebaja));
+        return service.calculo(2L);
+    }
+
+    private static String grupos() {
+        return "["
+                + "{\"id\":\"llamada\",\"cada\":1,\"puntos\":5},"
+                + "{\"id\":\"tardia-injustificada\",\"cada\":2,\"puntos\":2},"
+                + "{\"id\":\"tardia-justificada\",\"cada\":1,\"puntos\":0},"
+                + "{\"id\":\"ausencia-injustificada\",\"cada\":3,\"puntos\":5},"
+                + "{\"id\":\"ausencia-justificada\",\"cada\":1,\"puntos\":1}"
+                + "]";
     }
 
     private static String conLlamada(int cada, int puntos) {

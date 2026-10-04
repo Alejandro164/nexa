@@ -111,6 +111,48 @@
             letter-spacing: -0.03em;
             line-height: 1;
         }
+        #notas-conducta-modal .notas-con-aviso {
+            margin: 0 0 1rem;
+            padding: 0.7rem 0.85rem;
+            border-radius: 8px;
+            background: rgba(45, 90, 135, 0.06);
+            color: #475569;
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+        #notas-conducta-modal .notas-con-periodo {
+            margin: 1.15rem 0 0.45rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        #notas-conducta-modal .notas-con-cuenta + .notas-con-registros { margin-top: 0.85rem; }
+        #notas-conducta-modal .notas-con-registros h4 {
+            margin: 0 0 0.35rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        #notas-conducta-modal .notas-con-lista { width: 100%; border-collapse: collapse; }
+        #notas-conducta-modal .notas-con-lista td {
+            padding: 0.55rem 0.2rem;
+            border-top: 1px solid #f1f5f9;
+            font-size: 0.82rem;
+            color: #334155;
+            vertical-align: baseline;
+        }
+        #notas-conducta-modal .notas-con-lista td:last-child {
+            text-align: right;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        #notas-conducta-modal .notas-con-cuando { color: #64748b; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        #notas-conducta-modal .notas-con-estado { color: #64748b; font-size: 0.84rem; margin: 0; }
     </style>
 
     <template x-if="conductaPeriodo && seleccionado">
@@ -122,7 +164,7 @@
                         <h3 class="modal-title" id="notas-conducta-titulo">Detalle de conducta</h3>
                         <p class="notas-con-sub"
                            x-text="conductaPeriodo.id === 'anio'
-                                ? 'Año lectivo. Parte de 100 y va restando.'
+                                ? 'Año lectivo. Cada período parte de 100 y la nota del año es el promedio.'
                                 : conductaPeriodo.etiqueta + '. Parte de 100 y va restando.'"></p>
                     </div>
                     <button type="button" class="close-btn" aria-label="Cerrar" @click="cerrarConducta()">&times;</button>
@@ -139,55 +181,8 @@
                             @click="simularEnvio()">Enviar</button>
                 </div>
                 <div class="modal-body">
-                    <table class="notas-con-cuenta">
-                        <thead>
-                            <tr>
-                                <th scope="col">Concepto</th>
-                                <th scope="col">Cantidad</th>
-                                <th scope="col">Puntos</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="notas-con-base">
-                                <th scope="row">Nota base</th>
-                                <td></td>
-                                <td>100</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Boletas</th>
-                                <td>4</td>
-                                <td class="notas-con-resta">−10</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Llamadas de atención</th>
-                                <td>6</td>
-                                <td class="notas-con-resta">−1</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Ausencias justificadas</th>
-                                <td>1</td>
-                                <td class="notas-con-cero">0</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Ausencias injustificadas</th>
-                                <td>1</td>
-                                <td class="notas-con-resta">−3</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Tardías justificadas</th>
-                                <td>1</td>
-                                <td class="notas-con-cero">0</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Tardías injustificadas</th>
-                                <td>1</td>
-                                <td class="notas-con-resta">−2</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div class="notas-con-puntos">
-                        <span>Puntos</span>
-                        <strong>84</strong>
+                    <div id="notas-conducta-cuerpo">
+                        <p class="notas-con-estado">Cargando…</p>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -196,4 +191,58 @@
             </div>
         </div>
     </template>
+</div>
+
+<div th:fragment="registros">
+    <p class="notas-con-estado" th:if="${error != null}" th:text="${error}">No se pudo cargar.</p>
+    <th:block th:if="${detalle != null}">
+        <p class="notas-con-aviso" th:unless="${detalle.asistenciaEnConducta}">
+            Las ausencias y tardías rebajan el componente, así que no entran en esta nota.
+        </p>
+        <section th:each="cuenta : ${detalle.cuentas}">
+            <h4 class="notas-con-periodo" th:if="${detalle.anio}" th:text="${cuenta.periodo}">2026-I</h4>
+            <table class="notas-con-cuenta">
+                <thead>
+                    <tr>
+                        <th scope="col">Concepto</th>
+                        <th scope="col">Cantidad</th>
+                        <th scope="col">Puntos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="notas-con-base">
+                        <th scope="row">Nota base</th>
+                        <td></td>
+                        <td>100</td>
+                    </tr>
+                    <tr th:each="linea : ${cuenta.lineas}">
+                        <th scope="row" th:text="${linea.concepto}">Boletas</th>
+                        <td th:text="${linea.cantidad}">0</td>
+                        <td th:classappend="${linea.puntos > 0 ? 'notas-con-resta' : 'notas-con-cero'}"
+                            th:text="${linea.puntos > 0 ? '−' + linea.puntos : '0'}">0</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="notas-con-registros" th:if="${detalle.asistenciaEnConducta and !cuenta.registros.isEmpty()}">
+                <h4>Cada ausencia y tardía</h4>
+                <table class="notas-con-lista">
+                    <tbody>
+                        <tr th:each="r : ${cuenta.registros}">
+                            <td class="notas-con-cuando" th:text="${r.fecha}">01/01/2026</td>
+                            <td>
+                                <div th:text="${r.materia}">Ciencias</div>
+                                <div class="notas-con-cuando" th:text="${r.tipo}">Ausencia injustificada</div>
+                            </td>
+                            <td th:classappend="${r.puntos > 0 ? 'notas-con-resta' : 'notas-con-cero'}"
+                                th:text="${r.puntos > 0 ? '−' + r.puntos : '0'}">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <div class="notas-con-puntos">
+            <span th:text="${detalle.anio} ? 'Promedio' : 'Puntos'">Puntos</span>
+            <strong th:text="${detalle.nota}">84.0</strong>
+        </div>
+    </th:block>
 </div>

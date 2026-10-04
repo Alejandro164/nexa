@@ -1,5 +1,6 @@
 package com.chavescr.nexa.service;
 
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -43,6 +44,19 @@ public class RebajaConductaService {
     @Transactional(readOnly = true, rollbackFor = Exception.class)
     public boolean asistenciaRebajaComponente(Long direccionId) {
         return obtener(direccionId).getDestinoRebajaAsistencia() == DestinoRebajaAsistencia.COMPONENTE;
+    }
+
+    /** Reglas listas para restar de la nota. Si el texto guardado no se puede leer, usa las predeterminadas. */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public CalculoRebaja calculo(Long direccionId) {
+        RebajaConducta rebaja = obtener(direccionId);
+        Map<String, JsonNode> porId = leerOPredeterminadas(rebaja.getReglas());
+        Map<TipoRebaja, int[]> reglas = new EnumMap<>(TipoRebaja.class);
+        for (TipoRebaja tipo : TipoRebaja.values()) {
+            reglas.put(tipo, reglaDe(porId.get(tipo.id()), tipo));
+        }
+        boolean enConducta = rebaja.getDestinoRebajaAsistencia() != DestinoRebajaAsistencia.COMPONENTE;
+        return new CalculoRebaja(reglas, enConducta);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -103,6 +117,25 @@ public class RebajaConductaService {
         RebajaConducta rebaja = new RebajaConducta();
         rebaja.setDireccion(direccion);
         return rebaja;
+    }
+
+    private static Map<String, JsonNode> leerOPredeterminadas(String json) {
+        try {
+            return leer(json == null || json.isBlank() ? RebajaConducta.REGLAS_PREDETERMINADAS : json);
+        } catch (IllegalArgumentException e) {
+            return leer(RebajaConducta.REGLAS_PREDETERMINADAS);
+        }
+    }
+
+    private static int[] reglaDe(JsonNode nodo, TipoRebaja tipo) {
+        if (nodo == null) {
+            return new int[] { tipo.cada(), tipo.puntos() };
+        }
+        JsonNode cada = nodo.get("cada");
+        JsonNode puntos = nodo.get("puntos");
+        int cadaValor = cada != null && cada.canConvertToInt() ? cada.intValue() : tipo.cada();
+        int puntosValor = puntos != null && puntos.canConvertToInt() ? puntos.intValue() : tipo.puntos();
+        return new int[] { cadaValor, puntosValor };
     }
 
     private static Map<String, JsonNode> leer(String json) {

@@ -7,7 +7,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +26,7 @@ import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.ResultadoComponente;
+import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.ComponenteRepository;
@@ -129,6 +132,7 @@ class NotasConsultaServiceTest {
     void elDesgloseIncluyeLaAsistenciaCuandoRebajaElComponente() {
         conCotidianoDe80();
         when(rebajaConductaService.asistenciaRebajaComponente(DIRECCION)).thenReturn(true);
+        when(rebajaConductaService.calculo(DIRECCION)).thenReturn(predeterminada());
         when(asistenciaRepository.findEstadosDeEstudiante(DIRECCION, ESTUDIANTE, periodo.getFechaInicio(),
                 periodo.getFechaFin())).thenReturn(List.of(
                         new Object[] { MATERIA, EstadoAsistencia.PRESENTE },
@@ -137,8 +141,8 @@ class NotasConsultaServiceTest {
         NotasDesgloseFila fila = service.desglose(DIRECCION, null, true, ESTUDIANTE, PERIODO).get(0);
 
         assertEquals(80, fila.getCotidiano());
-        assertEquals(50, fila.getAsistencia());
-        assertEquals(76.7, fila.getPromedio());
+        assertEquals(95, fila.getAsistencia());
+        assertEquals(81.7, fila.getPromedio());
     }
 
     @Test
@@ -165,6 +169,14 @@ class NotasConsultaServiceTest {
         assertEquals("La asistencia no forma parte de la nota: las ausencias y tardías rebajan la conducta",
                 error.getMessage());
         verifyNoInteractions(asistenciaRepository);
+    }
+
+    private static CalculoRebaja predeterminada() {
+        Map<TipoRebaja, int[]> reglas = new EnumMap<>(TipoRebaja.class);
+        for (TipoRebaja tipo : TipoRebaja.values()) {
+            reglas.put(tipo, new int[] { tipo.cada(), tipo.puntos() });
+        }
+        return new CalculoRebaja(reglas, false);
     }
 
     private void conCotidianoDe80() {

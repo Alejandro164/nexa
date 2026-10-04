@@ -1,5 +1,7 @@
 package com.chavescr.nexa.dto;
 
+import java.util.Locale;
+
 /** Un rubro del detalle: una tarea, prueba, proyecto, trabajo cotidiano o lección. */
 public class NotasRubroDetalle {
 
@@ -46,6 +48,10 @@ public class NotasRubroDetalle {
 
     public Integer getNota() {
         return nota;
+    }
+
+    public String getNotaTexto() {
+        return nota == null ? null : String.format(Locale.US, "%.2f", nota.doubleValue());
     }
 
     public String getPuntos() {

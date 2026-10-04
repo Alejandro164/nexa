@@ -16,6 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.dto.NotasBoletaDetalle;
+import com.chavescr.nexa.dto.NotasConductaDetalle;
+import com.chavescr.nexa.dto.NotasConductaDetalle.Cuenta;
+import com.chavescr.nexa.dto.NotasConductaDetalle.Linea;
+import com.chavescr.nexa.dto.NotasConductaDetalle.Registro;
 import com.chavescr.nexa.dto.NotasBoletasPeriodo;
 import com.chavescr.nexa.dto.NotasAusenciaDetalle;
 import com.chavescr.nexa.dto.NotasAusenciasPeriodo;
@@ -47,6 +51,7 @@ import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.ResultadoComponente;
 import com.chavescr.nexa.entity.TipoComponente;
+import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.ComponenteRepository;
@@ -66,7 +71,6 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 public class NotasConsultaService {
 
     private static final long CONDUCTA_ID = -1L;
-    private static final int NOTA_CONDUCTA_INICIAL = 100;
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String[] COLORES = {
             "#2d5a87", "#059669", "#0284c7", "#7c3aed", "#e11d48", "#ca8a04", "#db2777", "#0891b2"
@@ -238,6 +242,7 @@ public class NotasConsultaService {
         Map<PesoKey, Map<Long, Double>> pesos = pesosDe(
                 componenteRepository.findParaNotas(direccionId, nivelIds), periodoIds);
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
+        CalculoRebaja calculo = conAsistencia ? rebajaConductaService.calculo(direccionId) : null;
         Distribuciones distribuciones = distribucionesDe(direccionId, periodoIds, conAsistencia);
         Map<Long, int[]> asistencia = conAsistencia
                 ? asistenciaDeEstudiante(direccionId, estudianteId, periodo)
@@ -253,7 +258,8 @@ public class NotasConsultaService {
                     asistencia.get(vista.id),
                     distribuciones.de(periodoId, vista.id),
                     claves,
-                    pesosDeMateria(pesos, nivelId, vista.id, periodoId));
+                    pesosDeMateria(pesos, nivelId, vista.id, periodoId),
+                    calculo);
             filas.add(new NotasDesgloseFila(vista.id, vista.nombre, vista.docente, nota.cotidiano(), nota.tareas(),
                     nota.proyecto(), nota.pruebas(), nota.asistencia(), nota.porcentaje()));
         }
@@ -376,7 +382,9 @@ public class NotasConsultaService {
                         direccionId, estudianteId, materiaId, periodo.getFechaInicio(), periodo.getFechaFin()));
         lecciones.sort(Comparator.comparing(AsistenciaEstudiante::getFecha)
                 .thenComparing(AsistenciaEstudiante::getNumeroLeccion));
+        CalculoRebaja calculo = rebajaConductaService.calculo(direccionId);
         List<NotasRubroDetalle> rubros = new ArrayList<>();
+        int[] conteo = new int[4];
         int presentes = 0;
         for (AsistenciaEstudiante leccion : lecciones) {
             EstadoAsistencia estado = leccion.getEstado();
@@ -384,6 +392,7 @@ public class NotasConsultaService {
             if (presente) {
                 presentes++;
             }
+            CalculoRebaja.sumar(conteo, estado, 1);
             String observacion = leccion.getObservaciones() == null ? "" : leccion.getObservaciones().trim();
             rubros.add(new NotasRubroDetalle(
                     "Lección " + leccion.getNumeroLeccion(),
@@ -398,11 +407,14 @@ public class NotasConsultaService {
                     claseAsistencia(estado)));
         }
         int total = lecciones.size();
-        Integer promedio = total == 0 ? null : (int) Math.round(presentes * 100.0 / total);
+        Integer promedio = total == 0 ? null : calculo.notaAsistencia(conteo);
+        int rebaja = total == 0 ? 0 : calculo.rebajaAsistencia(conteo);
         String leyenda = total == 0
                 ? "No hay lecciones registradas en " + materia + " en este período."
-                : "El porcentaje cuenta las lecciones presentes o con tardía: " + presentes + " de " + total
-                        + ". La asistencia vale " + pesoNota + "% de la nota de " + materia + ".";
+                : "Parte de 100. Las ausencias y tardías rebajan " + rebaja
+                        + (rebaja == 1 ? " punto" : " puntos") + ", así que la asistencia queda en "
+                        + String.format(Locale.US, "%.2f", promedio.doubleValue())
+                        + ". Vale " + pesoNota + "% de la nota de " + materia + ".";
         return new NotasMateriaDetalle(materia, "Asistencia", true, true, promedio, pesoNota, total, presentes,
                 leyenda, false, rubros);
     }
@@ -577,8 +589,134 @@ public class NotasConsultaService {
         return new NotasBoletasPeriodo(registros);
     }
 
+    /**
+     * Cuenta que explica la nota de conducta. Con período, una sola cuenta. Con año, una por
+     * período y el promedio, que es el número de la columna Año.
+     */
+    public NotasConductaDetalle detalleConducta(Long direccionId, Long usuarioId, boolean supervision,
+            Long estudianteId, Long periodoId, Integer anio) {
+        exigirEstudianteVisible(direccionId, usuarioId, supervision, estudianteId);
+        List<PeriodoAcademico> periodos;
+        boolean delAnio;
+        if (periodoId != null) {
+            periodos = List.of(periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
+                    .orElseThrow(() -> new IllegalArgumentException("Período no encontrado")));
+            delAnio = false;
+        } else if (anio != null) {
+            periodos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId).stream()
+                    .filter(p -> p.getFechaInicio() != null && p.getFechaInicio().getYear() == anio)
+                    .sorted(Comparator.comparing(PeriodoAcademico::getFechaInicio))
+                    .toList();
+            if (periodos.isEmpty()) {
+                throw new IllegalArgumentException("No hay períodos en ese año lectivo");
+            }
+            delAnio = true;
+        } else {
+            throw new IllegalArgumentException("Seleccione un período");
+        }
+
+        CalculoRebaja calculo = rebajaConductaService.calculo(direccionId);
+        List<Cuenta> cuentas = new ArrayList<>();
+        int suma = 0;
+        for (PeriodoAcademico periodo : periodos) {
+            Cuenta cuenta = cuentaDe(direccionId, estudianteId, periodo, calculo);
+            cuentas.add(cuenta);
+            suma += cuenta.getNota();
+        }
+        double promedio = Math.round((suma / (double) cuentas.size()) * 10) / 10.0;
+        double mostrada = delAnio ? promedio : cuentas.get(0).getNota();
+        String nota = String.format(Locale.US, "%.2f", mostrada);
+        return new NotasConductaDetalle(delAnio, calculo.asistenciaRebajaConducta(), nota, cuentas);
+    }
+
+    private Cuenta cuentaDe(Long direccionId, Long estudianteId, PeriodoAcademico periodo, CalculoRebaja calculo) {
+        int boletas = 0;
+        int puntosBoletas = 0;
+        int llamadas = 0;
+        for (IncidenteConducta incidente : incidenteRepository.findByDireccionIdAndPeriodoIdAndEstudianteId(
+                direccionId, periodo.getId(), estudianteId)) {
+            if (incidente.getTipo() == TipoIncidente.BOLETA) {
+                boletas++;
+                puntosBoletas += incidente.getPuntosDescontados() == null ? 0 : incidente.getPuntosDescontados();
+            } else if (incidente.getTipo() == TipoIncidente.LLAMADA_ATENCION) {
+                llamadas++;
+            }
+        }
+        List<Linea> lineas = new ArrayList<>();
+        lineas.add(new Linea("Boletas", boletas, puntosBoletas));
+        lineas.add(new Linea("Llamadas de atención", llamadas, calculo.puntos(TipoRebaja.LLAMADA, llamadas)));
+
+        List<Registro> registros = new ArrayList<>();
+        int[] conteo = null;
+        if (calculo.asistenciaRebajaConducta() && periodo.getFechaInicio() != null && periodo.getFechaFin() != null) {
+            List<Object[]> filas = asistenciaRepository.findAusenciasDeEstudiante(direccionId, estudianteId,
+                    periodo.getFechaInicio(), periodo.getFechaFin(), EstadoAsistencia.PRESENTE);
+            int[] puntos = puntosDeCadaRegistro(calculo, filas);
+            conteo = new int[4];
+            List<Registro> lista = new ArrayList<>();
+            for (int i = 0; i < filas.size(); i++) {
+                Object[] fila = filas.get(i);
+                EstadoAsistencia estado = (EstadoAsistencia) fila[2];
+                CalculoRebaja.sumar(conteo, estado, 1);
+                String materia = fila[3] == null ? "" : ((String) fila[3]).trim();
+                lista.add(new Registro(FECHA.format((LocalDate) fila[0]), materia.isEmpty() ? "Materia" : materia,
+                        etiquetaAusencia(estado), puntos[i]));
+            }
+            registros = lista;
+            lineas.add(new Linea("Ausencias justificadas", conteo[0],
+                    calculo.puntos(TipoRebaja.AUSENCIA_JUSTIFICADA, conteo[0])));
+            lineas.add(new Linea("Ausencias injustificadas", conteo[1],
+                    calculo.puntos(TipoRebaja.AUSENCIA_INJUSTIFICADA, conteo[1])));
+            lineas.add(new Linea("Tardías justificadas", conteo[2],
+                    calculo.puntos(TipoRebaja.TARDIA_JUSTIFICADA, conteo[2])));
+            lineas.add(new Linea("Tardías injustificadas", conteo[3],
+                    calculo.puntos(TipoRebaja.TARDIA_INJUSTIFICADA, conteo[3])));
+        }
+        int nota = calculo.nota(puntosBoletas, llamadas, conteo);
+        String etiqueta = periodo.getCodigo() == null || periodo.getCodigo().isBlank()
+                ? "Período" : periodo.getCodigo();
+        return new Cuenta(etiqueta, lineas, registros, nota);
+    }
+
+    private static int[] puntosDeCadaRegistro(CalculoRebaja calculo, List<Object[]> filas) {
+        Map<TipoRebaja, List<Integer>> posiciones = new HashMap<>();
+        for (int i = 0; i < filas.size(); i++) {
+            TipoRebaja tipo = tipoRebaja((EstadoAsistencia) filas.get(i)[2]);
+            if (tipo != null) {
+                posiciones.computeIfAbsent(tipo, k -> new ArrayList<>()).add(i);
+            }
+        }
+        int[] puntos = new int[filas.size()];
+        posiciones.forEach((tipo, indices) -> {
+            int[] marcas = calculo.puntosPorRegistro(tipo, indices.size());
+            for (int j = 0; j < marcas.length; j++) {
+                puntos[indices.get(j)] = marcas[j];
+            }
+        });
+        return puntos;
+    }
+
+    private static TipoRebaja tipoRebaja(EstadoAsistencia estado) {
+        if (estado == null) {
+            return null;
+        }
+        return switch (estado) {
+            case JUSTIFICADA -> TipoRebaja.AUSENCIA_JUSTIFICADA;
+            case AUSENTE -> TipoRebaja.AUSENCIA_INJUSTIFICADA;
+            case TARDIA_JUSTIFICADA -> TipoRebaja.TARDIA_JUSTIFICADA;
+            case TARDIA -> TipoRebaja.TARDIA_INJUSTIFICADA;
+            case PRESENTE -> null;
+        };
+    }
+
     private PeriodoAcademico periodoDeEstudianteVisible(Long direccionId, Long usuarioId, boolean supervision,
             Long estudianteId, Long periodoId) {
+        exigirEstudianteVisible(direccionId, usuarioId, supervision, estudianteId);
+        return periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
+    }
+
+    private Usuario exigirEstudianteVisible(Long direccionId, Long usuarioId, boolean supervision, Long estudianteId) {
         Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
         if (estudiante.getNivelAcademico() == null) {
@@ -588,8 +726,7 @@ public class NotasConsultaService {
                 .noneMatch(n -> estudiante.getNivelAcademico().getId().equals(n.getId()))) {
             throw new IllegalArgumentException("No puede consultar las notas de este estudiante");
         }
-        return periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
-                .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
+        return estudiante;
     }
 
     private String etiquetaAusencia(EstadoAsistencia estado) {
@@ -668,12 +805,16 @@ public class NotasConsultaService {
         Map<PesoKey, Map<Long, Double>> pesos = pesosDe(
                 componenteRepository.findParaNotas(direccionId, nivelIds), periodoIds);
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
+        CalculoRebaja calculo = rebajaConductaService.calculo(direccionId);
         Distribuciones distribuciones = distribucionesDe(direccionId, periodoIds, conAsistencia);
         AsistenciaCargada cargada = asistenciaDe(direccionId, nivelIds, periodos);
         Map<AsistKey, int[]> asistencia = conAsistencia ? cargada.porMateria() : Map.of();
         Set<ClaveComponente> claves = clavesActivas(direccionId);
-        Map<Long, Map<Long, Integer>> descuentosConducta = descuentosConducta(direccionId, periodoIds,
-                estudiantes.stream().map(Usuario::getId).toList());
+        List<Long> estudianteIds = estudiantes.stream().map(Usuario::getId).toList();
+        Map<Long, Map<Long, Integer>> descuentosConducta = descuentosConducta(direccionId, periodoIds, estudianteIds);
+        Map<Long, Map<Long, Integer>> llamadasConducta = llamadasDe(direccionId, periodoIds, estudianteIds);
+        Map<Long, Map<Long, int[]>> rebajasAsistencia = conteosParaConducta(direccionId, periodos, estudianteIds,
+                calculo);
         List<Long> periodosOrdenados = periodos.stream().map(PeriodoAcademico::getId).toList();
 
         Map<Long, List<MateriaNota>> porEstudiante = new HashMap<>();
@@ -690,7 +831,7 @@ public class NotasConsultaService {
                 List<NotaPeriodo> delEstudiante = new ArrayList<>();
                 for (Long periodoId : periodosMateria) {
                     NotaPeriodo nota = notaDe(estudiante.getId(), nivelId, vista.id, periodoId, claves, porNota,
-                            pesos, distribuciones, asistencia);
+                            pesos, distribuciones, asistencia, calculo);
                     if (nota != null) {
                         delEstudiante.add(nota);
                     }
@@ -698,24 +839,66 @@ public class NotasConsultaService {
                 notas.add(new MateriaNota(vista.id, vista.nombre, vista.docente, periodosMateria, delEstudiante));
             }
             notas.add(conducta(periodosOrdenados,
-                    descuentosConducta.getOrDefault(estudiante.getId(), Map.of())));
+                    descuentosConducta.getOrDefault(estudiante.getId(), Map.of()),
+                    llamadasConducta.getOrDefault(estudiante.getId(), Map.of()),
+                    rebajasAsistencia.getOrDefault(estudiante.getId(), Map.of()), calculo));
             porEstudiante.put(estudiante.getId(), notas);
         }
         return new NotasArmadas(porEstudiante, ausenciasDe(cargada.porEstudiante()));
     }
 
     /**
-     * Misma regla que el módulo de conducta: cada período inicia en 100 y solo las boletas descuentan.
-     * La fila va siempre al final, después de las materias.
+     * Misma regla que el módulo de conducta: cada período inicia en 100. Las boletas descuentan
+     * sus puntos, las llamadas usan la regla y, si las ausencias y tardías rebajan la conducta,
+     * también ellas. La fila va siempre al final, después de las materias.
      */
-    private MateriaNota conducta(List<Long> periodoIds, Map<Long, Integer> descuentos) {
+    private MateriaNota conducta(List<Long> periodoIds, Map<Long, Integer> descuentos, Map<Long, Integer> llamadas,
+            Map<Long, int[]> ausencias, CalculoRebaja calculo) {
         List<NotaPeriodo> notas = new ArrayList<>();
         for (Long periodoId : periodoIds) {
-            int descuento = descuentos.getOrDefault(periodoId, 0);
-            double nota = Math.max(0, NOTA_CONDUCTA_INICIAL - descuento);
-            notas.add(new NotaPeriodo(periodoId, nota, null, null));
+            int nota = calculo.nota(descuentos.getOrDefault(periodoId, 0), llamadas.getOrDefault(periodoId, 0),
+                    ausencias.get(periodoId));
+            notas.add(new NotaPeriodo(periodoId, (double) nota, null, null));
         }
         return new MateriaNota(CONDUCTA_ID, "Conducta", "", periodoIds, notas);
+    }
+
+    private Map<Long, Map<Long, Integer>> llamadasDe(Long direccionId, List<Long> periodoIds, List<Long> estudianteIds) {
+        Map<Long, Map<Long, Integer>> llamadas = new HashMap<>();
+        if (estudianteIds.isEmpty() || periodoIds.isEmpty()) {
+            return llamadas;
+        }
+        for (Object[] fila : incidenteRepository.contarPorEstudiantePeriodoYTipo(direccionId, periodoIds,
+                estudianteIds)) {
+            if (!TipoIncidente.LLAMADA_ATENCION.name().equals(String.valueOf(fila[2]))) {
+                continue;
+            }
+            int cantidad = fila[3] == null ? 0 : ((Number) fila[3]).intValue();
+            llamadas.computeIfAbsent((Long) fila[0], id -> new HashMap<>()).put((Long) fila[1], cantidad);
+        }
+        return llamadas;
+    }
+
+    private Map<Long, Map<Long, int[]>> conteosParaConducta(Long direccionId, List<PeriodoAcademico> periodos,
+            List<Long> estudianteIds, CalculoRebaja calculo) {
+        if (!calculo.asistenciaRebajaConducta() || estudianteIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, Map<Long, int[]>> conteos = new HashMap<>();
+        for (PeriodoAcademico periodo : periodos) {
+            if (periodo.getFechaInicio() == null || periodo.getFechaFin() == null) {
+                continue;
+            }
+            for (Object[] fila : asistenciaRepository.contarEstadosPorEstudiante(direccionId, estudianteIds,
+                    periodo.getFechaInicio(), periodo.getFechaFin(), EstadoAsistencia.PRESENTE)) {
+                int[] conteo = conteos
+                        .computeIfAbsent((Long) fila[0], id -> new HashMap<>())
+                        .computeIfAbsent(periodo.getId(), id -> new int[4]);
+                int cantidad = fila[2] == null ? 0 : ((Number) fila[2]).intValue();
+                CalculoRebaja.sumar(conteo, (EstadoAsistencia) fila[1], cantidad);
+            }
+        }
+        return conteos;
     }
 
     private Map<Long, Map<Long, Integer>> descuentosConducta(Long direccionId, List<Long> periodoIds,
@@ -756,17 +939,17 @@ public class NotasConsultaService {
     private NotaPeriodo notaDe(Long estudianteId, Long nivelId, Long materiaId, Long periodoId,
             Set<ClaveComponente> claves, Map<NotaKey, List<ResultadoComponente>> porNota,
             Map<PesoKey, Map<Long, Double>> pesos, Distribuciones distribuciones,
-            Map<AsistKey, int[]> asistencia) {
+            Map<AsistKey, int[]> asistencia, CalculoRebaja calculo) {
         List<ResultadoComponente> resultados = porNota.getOrDefault(
                 new NotaKey(estudianteId, materiaId, periodoId), List.of());
         int[] asist = asistencia.get(new AsistKey(estudianteId, materiaId, periodoId));
-        if (resultados.isEmpty() && (asist == null || asist[1] == 0)) {
+        if (resultados.isEmpty() && !tieneLecciones(asist)) {
             return null;
         }
 
         int[] dist = distribuciones.de(periodoId, materiaId);
         ComponentesNota componentes = ponderar(resultados, asist, dist, claves,
-                pesosDeMateria(pesos, nivelId, materiaId, periodoId));
+                pesosDeMateria(pesos, nivelId, materiaId, periodoId), calculo);
 
         int puntos = 0;
         int totales = 0;
@@ -805,7 +988,7 @@ public class NotasConsultaService {
 
     /** Misma ponderación que la nota del período: un componente entra solo si tiene calificación y peso. */
     private ComponentesNota ponderar(List<ResultadoComponente> resultados, int[] asist, int[] dist,
-            Set<ClaveComponente> claves, Map<ClaveComponente, Map<Long, Double>> pesosPorClave) {
+            Set<ClaveComponente> claves, Map<ClaveComponente, Map<Long, Double>> pesosPorClave, CalculoRebaja calculo) {
         Integer cotidiano = null;
         Integer tareas = null;
         Integer proyecto = null;
@@ -828,8 +1011,8 @@ public class NotasConsultaService {
             sumaPesos += peso;
         }
         Integer asistencia = null;
-        if (asist != null && asist[1] > 0) {
-            asistencia = (int) Math.round(asist[0] * 100.0 / asist[1]);
+        if (tieneLecciones(asist)) {
+            asistencia = calculo.notaAsistencia(asist);
             if (dist[4] > 0) {
                 sumaPonderada += asistencia * dist[4];
                 sumaPesos += dist[4];
@@ -843,12 +1026,8 @@ public class NotasConsultaService {
         Map<Long, int[]> mapa = new HashMap<>();
         for (Object[] fila : asistenciaRepository.findEstadosDeEstudiante(
                 direccionId, estudianteId, periodo.getFechaInicio(), periodo.getFechaFin())) {
-            int[] contador = mapa.computeIfAbsent((Long) fila[0], k -> new int[2]);
-            contador[1]++;
-            EstadoAsistencia estado = (EstadoAsistencia) fila[1];
-            if (estado != null && estado.cuentaComoPresente()) {
-                contador[0]++;
-            }
+            contarLeccion(mapa.computeIfAbsent((Long) fila[0], k -> conteoAsistencia()),
+                    (EstadoAsistencia) fila[1]);
         }
         return mapa;
     }
@@ -946,35 +1125,39 @@ public class NotasConsultaService {
                 if (!periodo.contiene(fecha)) {
                     continue;
                 }
-                int[] contador = mapa.computeIfAbsent(
-                        new AsistKey(estudianteId, (Long) fila[1], periodo.getId()), k -> new int[2]);
-                contador[1]++;
-                if (estado != null && estado.cuentaComoPresente()) {
-                    contador[0]++;
-                }
+                contarLeccion(mapa.computeIfAbsent(
+                        new AsistKey(estudianteId, (Long) fila[1], periodo.getId()), k -> conteoAsistencia()),
+                        estado);
                 acumularAusencia(ausencias, estudianteId, periodo.getId(), estado);
             }
         }
         return new AsistenciaCargada(mapa, ausencias);
     }
 
+    /** [ausencia justificada, injustificada, tardía justificada, injustificada, lecciones]. */
+    private static int[] conteoAsistencia() {
+        return new int[5];
+    }
+
+    private static void contarLeccion(int[] conteo, EstadoAsistencia estado) {
+        conteo[4]++;
+        CalculoRebaja.sumar(conteo, estado, 1);
+    }
+
+    private static boolean tieneLecciones(int[] asist) {
+        return asist != null && asist.length > 4 && asist[4] > 0;
+    }
+
     /** Cada lección cuenta una vez. Presente no entra en el cuadro de ausencias. */
     private void acumularAusencia(Map<Long, Map<Long, int[]>> porEstudiante, Long estudianteId, Long periodoId,
             EstadoAsistencia estado) {
-        if (estado == null || estado == EstadoAsistencia.PRESENTE) {
+        if (CalculoRebaja.indice(estado) < 0) {
             return;
         }
         int[] conteo = porEstudiante
                 .computeIfAbsent(estudianteId, k -> new HashMap<>())
                 .computeIfAbsent(periodoId, k -> new int[4]);
-        switch (estado) {
-            case JUSTIFICADA -> conteo[0]++;
-            case AUSENTE -> conteo[1]++;
-            case TARDIA_JUSTIFICADA -> conteo[2]++;
-            case TARDIA -> conteo[3]++;
-            default -> {
-            }
-        }
+        CalculoRebaja.sumar(conteo, estado, 1);
     }
 
     private Map<Long, List<AusenciaPeriodo>> ausenciasDe(Map<Long, Map<Long, int[]>> porEstudiante) {

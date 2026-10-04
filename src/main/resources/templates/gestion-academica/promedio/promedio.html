@@ -133,13 +133,14 @@
                             <td th:if="${conAsistencia}">
                                 <span th:if="${fila.asistencia == null}">—</span>
                                 <span th:if="${fila.asistencia != null}" class="badge"
-                                      th:classappend="${'nota-' + escala.tono(fila.asistencia)}" th:text="${fila.asistencia}">95</span>
+                                      th:classappend="${'nota-' + escala.tono(fila.asistencia)}"
+                                      th:text="${#numbers.formatDecimal(fila.asistencia, 1, 2)}">95.00</span>
                             </td>
                             <td class="promedio-final">
                                 <span th:if="${fila.promedioFinal == null}" style="color: var(--text-secondary); font-size:0.9rem;">Sin datos</span>
                                 <span th:if="${fila.promedioFinal != null}" class="cifra"
                                       th:classappend="${'nota-' + escala.tono(fila.promedioFinal)}"
-                                      th:text="${#numbers.formatDecimal(fila.promedioFinal, 1, 1)}">0.0</span>
+                                      th:text="${#numbers.formatDecimal(fila.promedioFinal, 1, 2)}">0.00</span>
                             </td>
                         </tr>
                     </tbody>
@@ -152,19 +153,19 @@
                     <span style="color: var(--text-secondary); font-size: 0.8rem;">Promedio del grupo</span>
                     <div style="font-size: 1.3rem; font-weight: 700;"
                          th:classappend="${estudiantesEvaluados > 0 ? 'cifra nota-' + escala.tono(promedioGrupo) : ''}"
-                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(promedioGrupo, 1, 1) : '—'}">—</div>
+                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(promedioGrupo, 1, 2) : '—'}">—</div>
                 </div>
                 <div>
                     <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más alta</span>
                     <div style="font-size: 1.3rem; font-weight: 700;"
                          th:classappend="${estudiantesEvaluados > 0 ? 'cifra nota-' + escala.tono(notaMasAlta) : ''}"
-                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(notaMasAlta, 1, 1) : '—'}">—</div>
+                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(notaMasAlta, 1, 2) : '—'}">—</div>
                 </div>
                 <div>
                     <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más baja</span>
                     <div style="font-size: 1.3rem; font-weight: 700;"
                          th:classappend="${estudiantesEvaluados > 0 ? 'cifra nota-' + escala.tono(notaMasBaja) : ''}"
-                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(notaMasBaja, 1, 1) : '—'}">—</div>
+                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(notaMasBaja, 1, 2) : '—'}">—</div>
                 </div>
                 <div>
                     <span style="color: var(--text-secondary); font-size: 0.8rem;">Estudiantes evaluados</span>

@@ -44,20 +44,40 @@ public class NotasDesgloseFila {
         return cotidiano;
     }
 
+    public String getCotidianoTexto() {
+        return dosDecimales(cotidiano);
+    }
+
     public Integer getTareas() {
         return tareas;
+    }
+
+    public String getTareasTexto() {
+        return dosDecimales(tareas);
     }
 
     public Integer getProyecto() {
         return proyecto;
     }
 
+    public String getProyectoTexto() {
+        return dosDecimales(proyecto);
+    }
+
     public Integer getPruebas() {
         return pruebas;
     }
 
+    public String getPruebasTexto() {
+        return dosDecimales(pruebas);
+    }
+
     public Integer getAsistencia() {
         return asistencia;
+    }
+
+    public String getAsistenciaTexto() {
+        return dosDecimales(asistencia);
     }
 
     public Double getPromedio() {
@@ -65,6 +85,10 @@ public class NotasDesgloseFila {
     }
 
     public String getPromedioTexto() {
-        return promedio == null ? null : String.format(Locale.US, "%.1f", promedio);
+        return dosDecimales(promedio);
+    }
+
+    private static String dosDecimales(Number nota) {
+        return nota == null ? null : String.format(Locale.US, "%.2f", nota.doubleValue());
     }
 }

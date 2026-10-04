@@ -195,7 +195,7 @@
                 <div class="notas-mat-valor">
                     <strong th:if="${detalle.promedio == null}">—</strong>
                     <strong th:if="${detalle.promedio != null}" th:classappend="${escala.tono(detalle.promedio)}"
-                            th:text="${detalle.promedio}">0</strong>
+                            th:text="${detalle.promedioTexto}">0.00</strong>
                     <span th:if="${detalle.promedio != null}" class="notas-pill"
                           th:classappend="${escala.tono(detalle.promedio)}"
                           th:text="${escala.tramo(detalle.promedio).nombre}">Excelente</span>
@@ -269,7 +269,7 @@
                             <td>
                                 <span th:if="${r.nota == null}" class="notas-mat-vacio">—</span>
                                 <span th:if="${r.nota != null}" class="notas-mat-nota" th:classappend="${escala.tono(r.nota)}"
-                                      th:text="${r.nota}">0</span>
+                                      th:text="${r.notaTexto}">0.00</span>
                             </td>
                             <td th:if="${detalle.muestraPuntos}" class="notas-mat-puntos">
                                 <span th:if="${#strings.isEmpty(r.puntos)}" class="notas-mat-vacio">—</span>

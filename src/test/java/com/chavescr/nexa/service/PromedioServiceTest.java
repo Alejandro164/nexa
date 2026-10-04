@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import com.chavescr.nexa.entity.DistribucionPorcentual;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.ResultadoComponente;
 import com.chavescr.nexa.entity.TipoComponente;
+import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
@@ -119,14 +121,36 @@ class PromedioServiceTest {
     @Test
     void laAsistenciaPesaEnElPromedioCuandoRebajaElComponente() {
         when(rebajaConductaService.asistenciaRebajaComponente(DIRECCION)).thenReturn(true);
+        when(rebajaConductaService.calculo(DIRECCION)).thenReturn(predeterminada());
         when(asistenciaRepository.findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(
                 DIRECCION, ESTUDIANTE, MATERIA, periodo.getFechaInicio(), periodo.getFechaFin()))
                 .thenReturn(List.of(leccion(EstadoAsistencia.PRESENTE), leccion(EstadoAsistencia.AUSENTE)));
 
         FilaPromedio fila = service.calcularPromedio(DIRECCION, NIVEL, MATERIA, List.of(cotidiano)).get(0);
 
-        assertEquals(50, fila.getAsistencia());
-        assertEquals(76.7, fila.getPromedioFinal());
+        assertEquals(95, fila.getAsistencia());
+        assertEquals(81.7, fila.getPromedioFinal());
+    }
+
+    @Test
+    void sieteAusenciasConLaReglaDeCadaTresBajanDiezYLaNotaQuedaEnNoventa() {
+        when(rebajaConductaService.asistenciaRebajaComponente(DIRECCION)).thenReturn(true);
+        when(rebajaConductaService.calculo(DIRECCION)).thenReturn(reglaDeAusencia(3, 5));
+        when(asistenciaRepository.findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(
+                DIRECCION, ESTUDIANTE, MATERIA, periodo.getFechaInicio(), periodo.getFechaFin()))
+                .thenReturn(List.of(
+                        leccion(EstadoAsistencia.PRESENTE),
+                        leccion(EstadoAsistencia.AUSENTE),
+                        leccion(EstadoAsistencia.AUSENTE),
+                        leccion(EstadoAsistencia.AUSENTE),
+                        leccion(EstadoAsistencia.AUSENTE),
+                        leccion(EstadoAsistencia.AUSENTE),
+                        leccion(EstadoAsistencia.AUSENTE),
+                        leccion(EstadoAsistencia.AUSENTE)));
+
+        FilaPromedio fila = service.calcularPromedio(DIRECCION, NIVEL, MATERIA, List.of(cotidiano)).get(0);
+
+        assertEquals(90, fila.getAsistencia());
     }
 
     @Test
@@ -138,6 +162,20 @@ class PromedioServiceTest {
         assertNull(fila.getAsistencia());
         assertEquals(80.0, fila.getPromedioFinal());
         verifyNoInteractions(asistenciaRepository);
+    }
+
+    private static CalculoRebaja predeterminada() {
+        Map<TipoRebaja, int[]> reglas = new EnumMap<>(TipoRebaja.class);
+        for (TipoRebaja tipo : TipoRebaja.values()) {
+            reglas.put(tipo, new int[] { tipo.cada(), tipo.puntos() });
+        }
+        return new CalculoRebaja(reglas, false);
+    }
+
+    private static CalculoRebaja reglaDeAusencia(int cada, int puntos) {
+        Map<TipoRebaja, int[]> reglas = new EnumMap<>(TipoRebaja.class);
+        reglas.put(TipoRebaja.AUSENCIA_INJUSTIFICADA, new int[] { cada, puntos });
+        return new CalculoRebaja(reglas, false);
     }
 
     private static AsistenciaEstudiante leccion(EstadoAsistencia estado) {

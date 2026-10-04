@@ -1,6 +1,7 @@
 package com.chavescr.nexa.dto;
 
 import java.util.List;
+import java.util.Locale;
 
 /** Detalle de una materia y un componente: los rubros que forman la nota de la celda. */
 public class NotasMateriaDetalle {
@@ -51,6 +52,10 @@ public class NotasMateriaDetalle {
 
     public Integer getPromedio() {
         return promedio;
+    }
+
+    public String getPromedioTexto() {
+        return promedio == null ? null : String.format(Locale.US, "%.2f", promedio.doubleValue());
     }
 
     public int getPesoNota() {
