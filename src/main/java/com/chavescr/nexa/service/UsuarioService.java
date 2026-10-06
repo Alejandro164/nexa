@@ -148,6 +148,16 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
+    public List<Long> listarIdsDeHijos(Long padreId) {
+        if (padreId == null) {
+            return List.of();
+        }
+        return usuarioRepository.findEstudiantesByPadreId(padreId).stream()
+                .map(Usuario::getId)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Usuario findByUsername(String username) {
         return usuarioRepository.findByEmailWithDirecciones(username).orElse(null);
     }

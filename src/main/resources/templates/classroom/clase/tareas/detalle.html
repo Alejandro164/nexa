@@ -4,7 +4,7 @@
             th:hx-get="@{/classroom/clase/{id}/tareas(id=${ctx.clase.id})}"
             hx-target="#tareas-panel" hx-swap="innerHTML">← Todas las tareas</button>
 
-    <div class="cr-detalle" th:classappend="${!ctx.rol.estudiante} ? 'revision'">
+    <div class="cr-detalle" th:classappend="${ctx.rol.revision} ? 'revision'">
 
         <!-- ════════ Instrucciones ════════ -->
         <section class="cr-panel cr-detalle-main">
@@ -49,7 +49,7 @@
             </div>
 
             <!-- ════════ Revisión (docente / supervisión) ════════ -->
-            <th:block th:unless="${ctx.rol.estudiante}">
+            <th:block th:if="${ctx.rol.revision}">
                 <div class="cr-stats">
                     <div class="cr-stat">
                         <b th:text="${#lists.size(filas.?[estado.name() == 'ENTREGADA'])}">0</b>

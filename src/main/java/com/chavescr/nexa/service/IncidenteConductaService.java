@@ -55,7 +55,7 @@ public class IncidenteConductaService {
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
     public PanelIncidenteConducta cargarPanel(TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,
-            Long nivelId, Long docenteId, Long soloEstudianteId) {
+            Long nivelId, Long docenteId, java.util.Collection<Long> soloEstudiantes) {
         List<PeriodoAcademico> periodos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
         List<NivelAcademico> nivelesVisibles = nivelesVisibles(direccionId, docenteId);
         List<Integer> grados = nivelesVisibles.stream()
@@ -87,10 +87,10 @@ public class IncidenteConductaService {
 
         List<IncidenteConducta> incidentes = listar(tipo, direccionId, periodo.getId(), grado, nivelId,
                 docenteId != null, nivelesVisibles);
-        if (soloEstudianteId != null) {
+        if (soloEstudiantes != null) {
             incidentes = incidentes.stream()
                     .filter(incidente -> incidente.getEstudiante() != null
-                            && soloEstudianteId.equals(incidente.getEstudiante().getId()))
+                            && soloEstudiantes.contains(incidente.getEstudiante().getId()))
                     .toList();
         }
         List<FilaIncidenteConducta> filas = incidentes.stream().map(this::construirFila).toList();

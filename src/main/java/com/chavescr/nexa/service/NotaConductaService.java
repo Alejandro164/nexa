@@ -97,7 +97,7 @@ public class NotaConductaService {
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
     public PanelNotaConducta cargarPanel(Long direccionId, Long periodoId, Integer grado, Long nivelId,
-            Long docenteId, Long soloEstudianteId) {
+            Long docenteId, java.util.Collection<Long> soloEstudiantes) {
         List<PeriodoAcademico> periodos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
         List<NivelAcademico> nivelesVisibles = nivelesVisibles(direccionId, docenteId);
         List<Integer> grados = nivelesVisibles.stream()
@@ -130,9 +130,9 @@ public class NotaConductaService {
         }
 
         List<Usuario> estudiantes = listarEstudiantes(direccionId, grado, nivelId, nivelesVisibles, docenteId != null);
-        if (soloEstudianteId != null) {
+        if (soloEstudiantes != null) {
             estudiantes = estudiantes.stream()
-                    .filter(estudiante -> soloEstudianteId.equals(estudiante.getId()))
+                    .filter(estudiante -> soloEstudiantes.contains(estudiante.getId()))
                     .toList();
         }
         List<Long> estudianteIds = estudiantes.stream().map(Usuario::getId).toList();

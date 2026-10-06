@@ -343,6 +343,7 @@
                     { id: 'director', nombre: 'Director', letra: 'D' },
                     { id: 'docente', nombre: 'Docente', letra: 'Do' },
                     { id: 'estudiante', nombre: 'Estudiante', letra: 'E' },
+                    { id: 'padre', nombre: 'Padres de familia', letra: 'P' },
                     { id: 'auxiliar', nombre: 'Auxiliar', letra: 'Au' },
                     { id: 'guarda', nombre: 'Guarda', letra: 'G' }
                 ],
@@ -407,6 +408,7 @@
                         : this.modo === 'director' ? 'DIRECTOR'
                         : this.modo === 'docente' ? 'DOCENTE'
                         : this.modo === 'estudiante' ? 'ESTUDIANTE'
+                        : this.modo === 'padre' ? 'PADRE'
                         : this.nombre().toUpperCase();
                     document.querySelectorAll('.dropdown-user-role, .sidebar-user-role').forEach(function (el) {
                         el.textContent = texto;
@@ -419,7 +421,7 @@
                     if (this.modo === 'admin') {
                         return 'Solo las opciones de administrador.';
                     }
-                    if (this.modo === 'director' || this.modo === 'docente' || this.modo === 'estudiante') {
+                    if (this.modo === 'director' || this.modo === 'docente' || this.modo === 'estudiante' || this.modo === 'padre') {
                         return 'El menú muestra ese rol. Seguís siendo administrador.';
                     }
                     return 'Este modo todavía no cambia el menú.';

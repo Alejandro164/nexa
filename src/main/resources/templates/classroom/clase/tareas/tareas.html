@@ -40,7 +40,7 @@
                 </th:block>
 
                 <!-- Docente / supervisión: entregas por revisar -->
-                <span th:if="${!ctx.rol.estudiante and porRevisar.get(t.id) != null and porRevisar.get(t.id) > 0}"
+                <span th:if="${ctx.rol.revision and porRevisar.get(t.id) != null and porRevisar.get(t.id) > 0}"
                       class="cr-badge entregada"
                       th:text="${porRevisar.get(t.id) + ' por revisar'}">3 por revisar</span>
             </div>

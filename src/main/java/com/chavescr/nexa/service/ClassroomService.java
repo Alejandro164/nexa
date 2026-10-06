@@ -566,7 +566,23 @@ public class ClassroomService {
                 && subgrupoService.asiste(usuario.getId(), direccionId, periodoId, nivelId, materiaId)) {
             return RolClase.ESTUDIANTE;
         }
+        if (roles.contains("ROLE_PADRE") && hijoAsiste(usuario.getId(), direccionId, periodoId, nivelId, materiaId)) {
+            return RolClase.PADRE;
+        }
         return null;
+    }
+
+    private boolean hijoAsiste(Long padreId, Long direccionId, Long periodoId, Long nivelId, Long materiaId) {
+        for (Usuario hijo : usuarioRepository.findEstudiantesByPadreId(padreId)) {
+            if (!Boolean.TRUE.equals(hijo.getActivo()) || hijo.getNivelAcademico() == null
+                    || !nivelId.equals(hijo.getNivelAcademico().getId())) {
+                continue;
+            }
+            if (subgrupoService.asiste(hijo.getId(), direccionId, periodoId, nivelId, materiaId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Long periodoId(Long direccionId) {

@@ -118,15 +118,15 @@ public class SecurityConfig {
                         // ── Estudiante: consulta de contacto, conducta, notas y nube.
                         //    Classroom, horario y el calendario de agenda se declaran en sus bloques. ──
                         .requestMatchers(HttpMethod.GET, "/contacto/**")
-                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
                         .requestMatchers(HttpMethod.GET, "/conducta", "/conducta/notas", "/conducta/notas/detalle",
                                 "/conducta/llamadas", "/conducta/boletas")
-                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
                         .requestMatchers(HttpMethod.GET, "/notas", "/notas/desglose", "/notas/detalle-materia",
                                 "/notas/ausencias", "/notas/llamadas", "/notas/conducta", "/notas/boletas")
-                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
                         .requestMatchers(HttpMethod.GET, "/nube-nexa/**")
-                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
 
                         // ── Estudiantes: lectura para staff, edición solo ADMIN/DIRECTOR ──
                         .requestMatchers(HttpMethod.GET, "/estudiantes/**")
@@ -147,13 +147,15 @@ public class SecurityConfig {
 
                         // ── Classroom: docentes y estudiantes de cada clase; ADMIN/DIRECTOR en solo lectura.
                         //    La pertenencia a cada clase la valida ClassroomService ──
+                        .requestMatchers(HttpMethod.GET, "/classroom/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
                         .requestMatchers("/classroom/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
 
-                        // ── Horario: consulta de la semana. El alcance (propio, sección o toda la
+                        // ── Horario: consulta de la semana. El alcance (propio, hijos o toda la
                         //    dirección) lo aplica HorarioConsultaService ──
                         .requestMatchers("/horario/**")
-                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
 
                         .requestMatchers("/horario-periferica/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)

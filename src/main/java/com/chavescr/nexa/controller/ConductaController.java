@@ -1,6 +1,7 @@
 package com.chavescr.nexa.controller;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
@@ -17,6 +18,7 @@ import com.chavescr.nexa.dto.PanelNotaConducta;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
 import com.chavescr.nexa.service.IncidenteConductaService;
 import com.chavescr.nexa.service.NotaConductaService;
+import com.chavescr.nexa.service.UsuarioService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,11 +36,13 @@ public class ConductaController {
 
     private final NotaConductaService notaConductaService;
     private final IncidenteConductaService incidenteConductaService;
+    private final UsuarioService usuarioService;
 
     public ConductaController(NotaConductaService notaConductaService,
-            IncidenteConductaService incidenteConductaService) {
+            IncidenteConductaService incidenteConductaService, UsuarioService usuarioService) {
         this.notaConductaService = notaConductaService;
         this.incidenteConductaService = incidenteConductaService;
+        this.usuarioService = usuarioService;
     }
 
     @GetMapping
@@ -52,7 +56,7 @@ public class ConductaController {
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
         cargarNotas(model, requerirDireccion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
-                docenteIdSiAplica(request, session), estudianteIdSiAplica(request, session));
+                docenteIdSiAplica(request, session), alcanceEstudiantes(request, session));
         return FRAGMENTO_NOTAS;
     }
 
@@ -61,9 +65,9 @@ public class ConductaController {
             @RequestParam(required = false) String periodoId,
             Model model, HttpSession session, HttpServletRequest request) {
         try {
-            Long propio = estudianteIdSiAplica(request, session);
-            if (propio != null && !propio.equals(estudianteId)) {
-                throw new IllegalArgumentException("No puede consultar la conducta de otro estudiante");
+            List<Long> alcance = alcanceEstudiantes(request, session);
+            if (alcance != null && !alcance.contains(estudianteId)) {
+                throw new IllegalArgumentException("No puede consultar la conducta de este estudiante");
             }
             model.addAttribute("detalle", notaConductaService.detalle(requerirDireccion(session), estudianteId,
                     parseId(periodoId), docenteIdSiAplica(request, session)));
@@ -102,7 +106,7 @@ public class ConductaController {
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
         cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, requerirDireccion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
-                docenteIdSiAplica(request, session), estudianteIdSiAplica(request, session));
+                docenteIdSiAplica(request, session), alcanceEstudiantes(request, session));
         return FRAGMENTO_LLAMADAS;
     }
 
@@ -180,7 +184,7 @@ public class ConductaController {
             Model model, HttpSession session, HttpServletRequest request) {
         cargarIncidentes(model, TipoIncidente.BOLETA, requerirDireccion(session), parseId(periodoId),
                 parseEntero(grado), parseId(nivelId), docenteIdSiAplica(request, session),
-                estudianteIdSiAplica(request, session));
+                alcanceEstudiantes(request, session));
         return FRAGMENTO_BOLETAS;
     }
 
@@ -258,9 +262,9 @@ public class ConductaController {
     }
 
     private void cargarNotas(Model model, Long direccionId, Long periodoId, Integer grado, Long nivelId,
-            Long docenteId, Long soloEstudianteId) {
+            Long docenteId, List<Long> soloEstudiantes) {
         PanelNotaConducta panel = notaConductaService.cargarPanel(direccionId, periodoId, grado, nivelId, docenteId,
-                soloEstudianteId);
+                soloEstudiantes);
         model.addAttribute("periodos", panel.getPeriodos());
         model.addAttribute("grados", panel.getGrados());
         model.addAttribute("secciones", panel.getSecciones());
@@ -279,9 +283,9 @@ public class ConductaController {
     }
 
     private void cargarIncidentes(Model model, TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,
-            Long nivelId, Long docenteId, Long soloEstudianteId) {
+            Long nivelId, Long docenteId, List<Long> soloEstudiantes) {
         PanelIncidenteConducta panel = incidenteConductaService.cargarPanel(tipo, direccionId, periodoId, grado,
-                nivelId, docenteId, soloEstudianteId);
+                nivelId, docenteId, soloEstudiantes);
         model.addAttribute("periodos", panel.getPeriodos());
         model.addAttribute("grados", panel.getGrados());
         model.addAttribute("secciones", panel.getSecciones());
@@ -349,11 +353,18 @@ public class ConductaController {
         return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
     }
 
-    private Long estudianteIdSiAplica(HttpServletRequest request, HttpSession session) {
-        boolean soloEstudiante = request.isUserInRole("ROLE_ESTUDIANTE")
-                && !request.isUserInRole("ROLE_ADMIN")
-                && !request.isUserInRole("ROLE_DIRECTOR")
-                && !request.isUserInRole("ROLE_DOCENTE");
-        return soloEstudiante ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
+    private List<Long> alcanceEstudiantes(HttpServletRequest request, HttpSession session) {
+        if (request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR")
+                || request.isUserInRole("ROLE_DOCENTE")) {
+            return null;
+        }
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        if (request.isUserInRole("ROLE_ESTUDIANTE")) {
+            return usuarioId == null ? List.of() : List.of(usuarioId);
+        }
+        if (request.isUserInRole("ROLE_PADRE")) {
+            return usuarioService.listarIdsDeHijos(usuarioId);
+        }
+        return null;
     }
 }

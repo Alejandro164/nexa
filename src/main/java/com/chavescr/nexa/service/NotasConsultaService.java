@@ -128,7 +128,7 @@ public class NotasConsultaService {
     }
 
     public NotasCatalogo consultar(Long direccionId, Long usuarioId, boolean elegirAnio,
-            boolean catalogoCompleto, Long soloEstudianteId) {
+            boolean catalogoCompleto, java.util.Collection<Long> estudiantesVisibles) {
         List<PeriodoAcademico> periodos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
         PeriodoAcademico activo = periodos.stream()
                 .filter(p -> Boolean.TRUE.equals(p.getActivo()))
@@ -151,16 +151,22 @@ public class NotasConsultaService {
 
         List<NivelAcademico> niveles;
         List<Usuario> estudiantes;
-        if (soloEstudianteId != null) {
-            Usuario propio = usuarioRepository.findEstudianteActivoConNivel(soloEstudianteId, direccionId)
-                    .orElse(null);
-            if (propio == null || propio.getNivelAcademico() == null) {
-                niveles = List.of();
-                estudiantes = List.of();
-            } else {
-                niveles = List.of(propio.getNivelAcademico());
-                estudiantes = List.of(propio);
+        if (estudiantesVisibles != null) {
+            java.util.ArrayList<NivelAcademico> nivelesPropios = new java.util.ArrayList<>();
+            java.util.ArrayList<Usuario> propios = new java.util.ArrayList<>();
+            for (Long id : estudiantesVisibles) {
+                Usuario propio = usuarioRepository.findEstudianteActivoConNivel(id, direccionId).orElse(null);
+                if (propio == null || propio.getNivelAcademico() == null) {
+                    continue;
+                }
+                propios.add(propio);
+                Long nivelId = propio.getNivelAcademico().getId();
+                if (nivelesPropios.stream().noneMatch(nivel -> nivel.getId().equals(nivelId))) {
+                    nivelesPropios.add(propio.getNivelAcademico());
+                }
             }
+            niveles = nivelesPropios;
+            estudiantes = propios;
         } else {
             niveles = nivelesVisibles(direccionId, usuarioId, catalogoCompleto);
             List<Long> nivelIdsConsulta = niveles.stream().map(NivelAcademico::getId).toList();
@@ -181,8 +187,10 @@ public class NotasConsultaService {
         if (periodos.isEmpty()) {
             aviso = "No hay períodos académicos en esta dirección.";
         } else if (niveles.isEmpty()) {
-            aviso = soloEstudianteId != null
-                    ? "No tiene una sección asignada."
+            aviso = estudiantesVisibles != null
+                    ? (estudiantesVisibles.size() == 1 && estudiantesVisibles.contains(usuarioId)
+                            ? "No tiene una sección asignada."
+                            : "No hay estudiantes vinculados a tu cuenta.")
                     : catalogoCompleto
                     ? "No hay grados ni secciones activos en esta dirección."
                     : "No tiene secciones asignadas como profesor guía.";
@@ -222,9 +230,7 @@ public class NotasConsultaService {
         if (nivel == null) {
             throw new IllegalArgumentException("El estudiante no tiene sección asignada");
         }
-        if (!supervision && (usuarioId == null || !usuarioId.equals(estudiante.getId()))
-                && nivelesVisibles(direccionId, usuarioId, false).stream()
-                .noneMatch(n -> nivel.getId().equals(n.getId()))) {
+        if (!puedeVerEstudiante(direccionId, usuarioId, supervision, estudiante)) {
             throw new IllegalArgumentException("No puede consultar las notas de este estudiante");
         }
         PeriodoAcademico periodo = periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
@@ -769,15 +775,28 @@ public class NotasConsultaService {
                 .orElseThrow(() -> new IllegalArgumentException("Período no encontrado"));
     }
 
+    private boolean puedeVerEstudiante(Long direccionId, Long usuarioId, boolean supervision, Usuario estudiante) {
+        if (supervision) {
+            return true;
+        }
+        if (usuarioId != null && usuarioId.equals(estudiante.getId())) {
+            return true;
+        }
+        if (usuarioId != null && usuarioRepository.existeVinculoPadreEstudiante(usuarioId, estudiante.getId())) {
+            return true;
+        }
+        Long nivelId = estudiante.getNivelAcademico() == null ? null : estudiante.getNivelAcademico().getId();
+        return nivelId != null && nivelesVisibles(direccionId, usuarioId, false).stream()
+                .anyMatch(nivel -> nivelId.equals(nivel.getId()));
+    }
+
     private Usuario exigirEstudianteVisible(Long direccionId, Long usuarioId, boolean supervision, Long estudianteId) {
         Usuario estudiante = usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Estudiante no encontrado"));
         if (estudiante.getNivelAcademico() == null) {
             throw new IllegalArgumentException("El estudiante no tiene sección asignada");
         }
-        if (!supervision && (usuarioId == null || !usuarioId.equals(estudiante.getId()))
-                && nivelesVisibles(direccionId, usuarioId, false).stream()
-                .noneMatch(n -> estudiante.getNivelAcademico().getId().equals(n.getId()))) {
+        if (!puedeVerEstudiante(direccionId, usuarioId, supervision, estudiante)) {
             throw new IllegalArgumentException("No puede consultar las notas de este estudiante");
         }
         return estudiante;
