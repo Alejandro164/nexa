@@ -92,6 +92,12 @@ public class NotaConductaService {
     @Transactional(readOnly = true, rollbackFor = Exception.class)
     public PanelNotaConducta cargarPanel(Long direccionId, Long periodoId, Integer grado, Long nivelId,
             Long docenteId) {
+        return cargarPanel(direccionId, periodoId, grado, nivelId, docenteId, null);
+    }
+
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public PanelNotaConducta cargarPanel(Long direccionId, Long periodoId, Integer grado, Long nivelId,
+            Long docenteId, Long soloEstudianteId) {
         List<PeriodoAcademico> periodos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
         List<NivelAcademico> nivelesVisibles = nivelesVisibles(direccionId, docenteId);
         List<Integer> grados = nivelesVisibles.stream()
@@ -124,6 +130,11 @@ public class NotaConductaService {
         }
 
         List<Usuario> estudiantes = listarEstudiantes(direccionId, grado, nivelId, nivelesVisibles, docenteId != null);
+        if (soloEstudianteId != null) {
+            estudiantes = estudiantes.stream()
+                    .filter(estudiante -> soloEstudianteId.equals(estudiante.getId()))
+                    .toList();
+        }
         List<Long> estudianteIds = estudiantes.stream().map(Usuario::getId).toList();
 
         Map<Long, List<IncidenteConducta>> porEstudiante = agruparIncidentes(

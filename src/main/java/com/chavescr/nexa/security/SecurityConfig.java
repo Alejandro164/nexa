@@ -115,6 +115,19 @@ public class SecurityConfig {
                         .requestMatchers("/agenda/actividad/**").hasAnyAuthority(ADMIN, DIRECTOR)
                         .requestMatchers("/agenda/**").hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
 
+                        // ── Estudiante: consulta de contacto, conducta, notas y nube.
+                        //    Classroom, horario y el calendario de agenda se declaran en sus bloques. ──
+                        .requestMatchers(HttpMethod.GET, "/contacto/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+                        .requestMatchers(HttpMethod.GET, "/conducta", "/conducta/notas", "/conducta/notas/detalle",
+                                "/conducta/llamadas", "/conducta/boletas")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+                        .requestMatchers(HttpMethod.GET, "/notas", "/notas/desglose", "/notas/detalle-materia",
+                                "/notas/ausencias", "/notas/llamadas", "/notas/conducta", "/notas/boletas")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+                        .requestMatchers(HttpMethod.GET, "/nube-nexa/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+
                         // ── Estudiantes: lectura para staff, edición solo ADMIN/DIRECTOR ──
                         .requestMatchers(HttpMethod.GET, "/estudiantes/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)

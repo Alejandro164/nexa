@@ -75,9 +75,11 @@ public class MenuController {
         boolean admin = request.isUserInRole("ROLE_ADMIN");
         boolean director = request.isUserInRole("ROLE_DIRECTOR");
         boolean supervision = admin || director;
+        boolean docente = request.isUserInRole("ROLE_DOCENTE");
+        boolean estudiante = request.isUserInRole("ROLE_ESTUDIANTE") && !supervision && !docente;
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         model.addAttribute("notasCatalogo", notasConsultaService.consultar(
-                direccionId, usuarioId, supervision, supervision));
+                direccionId, usuarioId, supervision, supervision, estudiante ? usuarioId : null));
         model.addAttribute("escala", escalaNotasService.vista(direccionId));
         model.addAttribute("conAsistencia", rebajaConductaService.asistenciaRebajaComponente(direccionId));
         return htmxRequest ? "notas/index :: htmx-content" : "notas/index";

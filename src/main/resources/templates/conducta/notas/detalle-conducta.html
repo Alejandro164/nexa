@@ -278,7 +278,8 @@
     </div>
 </div>
 
-<div th:fragment="cuerpo">
+<div th:fragment="cuerpo" xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <p class="con-det-vacio" th:if="${error != null}" th:text="${error}">No se pudo cargar.</p>
     <th:block th:if="${detalle != null}">
         <div class="con-det-estudiante">
@@ -298,7 +299,8 @@
                             th:attr="data-periodo=${p.id}, aria-pressed=${p.actual}"
                             th:text="${p.codigo}">2026-I</button>
                 </div>
-                <button type="button" class="btn-primary btn-sm con-det-enviar">Enviar</button>
+                <button type="button" class="btn-primary btn-sm con-det-enviar"
+                        sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">Enviar</button>
             </div>
         </div>
         <p class="con-det-aviso" th:unless="${detalle.asistenciaEnConducta}">

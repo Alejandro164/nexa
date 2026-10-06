@@ -389,7 +389,7 @@
                     if (!this.esAdmin && !this.esSystem) {
                         return true;
                     }
-                    if (this.modo === 'estudiante' || this.modo === 'auxiliar' || this.modo === 'guarda') {
+                    if (this.modo === 'auxiliar' || this.modo === 'guarda') {
                         return true;
                     }
                     return (' ' + roles + ' ').indexOf(' ' + this.modo + ' ') !== -1;
@@ -419,7 +419,7 @@
                     if (this.modo === 'admin') {
                         return 'Solo las opciones de administrador.';
                     }
-                    if (this.modo === 'director' || this.modo === 'docente') {
+                    if (this.modo === 'director' || this.modo === 'docente' || this.modo === 'estudiante') {
                         return 'El menú muestra ese rol. Seguís siendo administrador.';
                     }
                     return 'Este modo todavía no cambia el menú.';

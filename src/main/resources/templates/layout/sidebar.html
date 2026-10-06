@@ -17,11 +17,11 @@
 
     </div>
 
-    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente')">
+    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente estudiante')">
         <div class="nav-section-title">Gestión y Personas</div>
 
-        <a href="/contacto" class="nav-item" x-show="ve('director docente')" hx-get="/contacto" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+        <a href="/contacto" class="nav-item" x-show="ve('director docente estudiante')" hx-get="/contacto" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path
@@ -71,7 +71,7 @@
         </a>
     </div>
 
-    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente')">
+    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente estudiante')">
         <div class="nav-section-title">Academia y Servicios</div>
         <a href="/gestion-academica" class="nav-item" x-show="ve('director docente')" hx-get="/gestion-academica" hx-target=".content-area"
             hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
@@ -108,8 +108,8 @@
             </svg>
             <span class="nav-item-text">Evaluación Académica</span>
         </a>
-        <a href="/conducta" class="nav-item" x-show="ve('director docente')" hx-get="/conducta" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+        <a href="/conducta" class="nav-item" x-show="ve('director docente estudiante')" hx-get="/conducta" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 20h9" />
@@ -118,8 +118,8 @@
             </svg>
             <span class="nav-item-text">Conducta</span>
         </a>
-        <a href="/notas" class="nav-item" x-show="ve('director docente')" hx-get="/notas" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+        <a href="/notas" class="nav-item" x-show="ve('director docente estudiante')" hx-get="/notas" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
@@ -129,7 +129,7 @@
             </svg>
             <span class="nav-item-text">Notas</span>
         </a>
-        <a href="/classroom" class="nav-item" x-show="ve('director docente')" hx-get="/classroom" hx-target=".content-area" hx-swap="innerHTML"
+        <a href="/classroom" class="nav-item" x-show="ve('director docente estudiante')" hx-get="/classroom" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -140,7 +140,7 @@
             </svg>
             <span class="nav-item-text">Classroom</span>
         </a>
-        <a href="/horario" class="nav-item" x-show="ve('director docente')" hx-get="/horario" hx-target=".content-area" hx-swap="innerHTML"
+        <a href="/horario" class="nav-item" x-show="ve('director docente estudiante')" hx-get="/horario" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -186,10 +186,10 @@
 
     </div>
 
-    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('director docente')">
+    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('director docente estudiante')">
         <div class="nav-section-title">Gestión Documental</div>
-        <a href="/nube-nexa" class="nav-item" x-show="ve('director docente')" hx-get="/nube-nexa" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+        <a href="/nube-nexa" class="nav-item" x-show="ve('director docente estudiante')" hx-get="/nube-nexa" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
@@ -220,7 +220,7 @@
         </a>
     </div>
 
-    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente')" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente estudiante')" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE')">
         <div class="nav-section-title">Comunicación y Enlaces</div>
         <a href="/comunicacion" class="nav-item" x-show="ve('admin')" hx-get="/comunicacion" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
@@ -231,8 +231,8 @@
             <span class="nav-item-text">Comunicación</span>
         </a>
 
-        <a href="/agenda" class="nav-item" x-show="ve('admin director docente')" hx-get="/agenda" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+        <a href="/agenda" class="nav-item" x-show="ve('admin director docente estudiante')" hx-get="/agenda" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

@@ -1,4 +1,5 @@
-<div th:fragment="content" xmlns:th="http://www.thymeleaf.org" style="position: relative;">
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" style="position: relative;">
     <div id="llamadas-loading" class="htmx-indicator panel-loading-overlay">
         <div class="spinner"></div>
         <span>Cargando...</span>
@@ -54,6 +55,7 @@
                 </div>
                 <div class="conducta-actions">
                     <button type="button" class="conducta-btn conducta-btn-primary"
+                            sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')"
                             th:disabled="${avisoPeriodo != null}"
                             hx-get="/conducta/llamadas/form"
                             hx-target="#modal-container"
@@ -116,6 +118,7 @@
                         </td>
                         <td class="actions-cell">
                             <button type="button" class="btn-xs" th:if="${f.puedeResolver}"
+                                    sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')"
                                     style="background:#fef3c7;color:#92400e;padding:5px 12px;border-radius:6px;font-weight:600;border:none;cursor:pointer;"
                                     hx-post="/conducta/llamadas/resolver"
                                     hx-target="#llamadas-panel" hx-swap="innerHTML"

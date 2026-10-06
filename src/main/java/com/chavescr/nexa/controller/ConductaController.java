@@ -52,7 +52,7 @@ public class ConductaController {
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
         cargarNotas(model, requerirDireccion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
-                docenteIdSiAplica(request, session));
+                docenteIdSiAplica(request, session), estudianteIdSiAplica(request, session));
         return FRAGMENTO_NOTAS;
     }
 
@@ -61,6 +61,10 @@ public class ConductaController {
             @RequestParam(required = false) String periodoId,
             Model model, HttpSession session, HttpServletRequest request) {
         try {
+            Long propio = estudianteIdSiAplica(request, session);
+            if (propio != null && !propio.equals(estudianteId)) {
+                throw new IllegalArgumentException("No puede consultar la conducta de otro estudiante");
+            }
             model.addAttribute("detalle", notaConductaService.detalle(requerirDireccion(session), estudianteId,
                     parseId(periodoId), docenteIdSiAplica(request, session)));
         } catch (IllegalArgumentException e) {
@@ -98,7 +102,7 @@ public class ConductaController {
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
         cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, requerirDireccion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
-                docenteIdSiAplica(request, session));
+                docenteIdSiAplica(request, session), estudianteIdSiAplica(request, session));
         return FRAGMENTO_LLAMADAS;
     }
 
@@ -175,7 +179,8 @@ public class ConductaController {
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
         cargarIncidentes(model, TipoIncidente.BOLETA, requerirDireccion(session), parseId(periodoId),
-                parseEntero(grado), parseId(nivelId), docenteIdSiAplica(request, session));
+                parseEntero(grado), parseId(nivelId), docenteIdSiAplica(request, session),
+                estudianteIdSiAplica(request, session));
         return FRAGMENTO_BOLETAS;
     }
 
@@ -249,7 +254,13 @@ public class ConductaController {
 
     private void cargarNotas(Model model, Long direccionId, Long periodoId, Integer grado, Long nivelId,
             Long docenteId) {
-        PanelNotaConducta panel = notaConductaService.cargarPanel(direccionId, periodoId, grado, nivelId, docenteId);
+        cargarNotas(model, direccionId, periodoId, grado, nivelId, docenteId, null);
+    }
+
+    private void cargarNotas(Model model, Long direccionId, Long periodoId, Integer grado, Long nivelId,
+            Long docenteId, Long soloEstudianteId) {
+        PanelNotaConducta panel = notaConductaService.cargarPanel(direccionId, periodoId, grado, nivelId, docenteId,
+                soloEstudianteId);
         model.addAttribute("periodos", panel.getPeriodos());
         model.addAttribute("grados", panel.getGrados());
         model.addAttribute("secciones", panel.getSecciones());
@@ -264,8 +275,13 @@ public class ConductaController {
 
     private void cargarIncidentes(Model model, TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,
             Long nivelId, Long docenteId) {
+        cargarIncidentes(model, tipo, direccionId, periodoId, grado, nivelId, docenteId, null);
+    }
+
+    private void cargarIncidentes(Model model, TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,
+            Long nivelId, Long docenteId, Long soloEstudianteId) {
         PanelIncidenteConducta panel = incidenteConductaService.cargarPanel(tipo, direccionId, periodoId, grado,
-                nivelId, docenteId);
+                nivelId, docenteId, soloEstudianteId);
         model.addAttribute("periodos", panel.getPeriodos());
         model.addAttribute("grados", panel.getGrados());
         model.addAttribute("secciones", panel.getSecciones());
@@ -331,5 +347,13 @@ public class ConductaController {
                 && !request.isUserInRole("ROLE_ADMIN")
                 && !request.isUserInRole("ROLE_DIRECTOR");
         return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
+    }
+
+    private Long estudianteIdSiAplica(HttpServletRequest request, HttpSession session) {
+        boolean soloEstudiante = request.isUserInRole("ROLE_ESTUDIANTE")
+                && !request.isUserInRole("ROLE_ADMIN")
+                && !request.isUserInRole("ROLE_DIRECTOR")
+                && !request.isUserInRole("ROLE_DOCENTE");
+        return soloEstudiante ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
     }
 }

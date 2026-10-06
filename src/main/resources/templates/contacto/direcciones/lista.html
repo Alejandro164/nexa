@@ -1,4 +1,5 @@
-<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org"
+     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <p th:if="${direcciones == null or direcciones.empty}" class="table-empty">No se encontraron contactos.</p>
     <div class="contact-grid" th:unless="${direcciones == null or direcciones.empty}">
         <div class="contact-card" th:each="c : ${direcciones}">
@@ -18,11 +19,13 @@
                 <a class="btn btn-sm btn-secondary" th:if="${c.email != null}" th:href="'mailto:' + ${c.email}" title="Enviar correo">✉️</a>
                 <a class="btn btn-sm btn-secondary" th:if="${c.telefono != null}" th:href="'tel:' + ${c.telefono}" title="Llamar">📞</a>
                 <button class="btn btn-sm btn-secondary"
+                        sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')"
                         th:attr="hx-get='/contacto/direcciones/form/' + ${c.id}"
                         hx-target="#contacto-direcciones-modal" hx-swap="innerHTML"
                         hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
                         title="Editar">✏️</button>
                 <button class="btn btn-sm btn-secondary"
+                        sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')"
                         onclick="abrirConfirmacionAcademica(this)"
                         th:attr="data-delete-url='/contacto/direcciones/' + ${c.id},data-delete-target='#contacto-direcciones-content',data-delete-title='Eliminar contacto',data-delete-message='¿Deseas eliminar ' + ${c.nombre} + '? Esta acción no se puede deshacer.'"
                         title="Eliminar">🗑️</button>

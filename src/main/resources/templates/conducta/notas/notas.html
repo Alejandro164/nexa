@@ -1,4 +1,5 @@
-<div th:fragment="content" xmlns:th="http://www.thymeleaf.org" style="position: relative;">
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" style="position: relative;">
     <div id="notas-loading" class="htmx-indicator panel-loading-overlay">
         <div class="spinner"></div>
         <span>Cargando...</span>
@@ -88,6 +89,7 @@
                         Reporte
                     </button>
                     <button type="button" class="conducta-btn conducta-btn-primary"
+                            sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')"
                             th:disabled="${avisoPeriodo != null or filas == null or filas.empty}"
                             hx-post="/conducta/notas/enviar"
                             hx-target="#notas-panel" hx-swap="innerHTML"
@@ -157,6 +159,7 @@
                         <td th:text="${f.periodoCodigo}">II-2026</td>
                         <td class="actions-cell">
                             <button type="button" class="btn-xs primary"
+                                    sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')"
                                     th:title="${f.enviada ? 'Reenviar nota a los encargados' : 'Enviar nota a los encargados'}"
                                     th:text="${f.enviada ? 'Reenviar' : 'Enviar'}"
                                     th:disabled="${avisoPeriodo != null}"
