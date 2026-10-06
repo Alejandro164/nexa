@@ -53,6 +53,7 @@ public class AsistenciaService {
     private final AlmacenamientoService almacenamientoService;
     private final AlcanceDocenteService alcanceDocenteService;
     private final RebajaConductaService rebajaConductaService;
+    private final SubgrupoService subgrupoService;
 
     public AsistenciaService(AsistenciaEstudianteRepository asistenciaRepository,
             NivelAcademicoRepository nivelAcademicoRepository,
@@ -62,7 +63,8 @@ public class AsistenciaService {
             HorarioLeccionRepository horarioLeccionRepository,
             AlmacenamientoService almacenamientoService,
             AlcanceDocenteService alcanceDocenteService,
-            RebajaConductaService rebajaConductaService) {
+            RebajaConductaService rebajaConductaService,
+            SubgrupoService subgrupoService) {
         this.asistenciaRepository = asistenciaRepository;
         this.nivelAcademicoRepository = nivelAcademicoRepository;
         this.materiaRepository = materiaRepository;
@@ -72,6 +74,7 @@ public class AsistenciaService {
         this.almacenamientoService = almacenamientoService;
         this.alcanceDocenteService = alcanceDocenteService;
         this.rebajaConductaService = rebajaConductaService;
+        this.subgrupoService = subgrupoService;
     }
 
     @Transactional(readOnly = true)
@@ -132,10 +135,21 @@ public class AsistenciaService {
                 meta(estudiante), bloques);
     }
 
+    private List<Usuario> estudiantesDeLaLeccion(Long direccionId, Long nivelId, LocalDate fecha,
+            Integer numeroLeccion, Long materiaId) {
+        List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
+        PeriodoAcademico periodo = obtenerUltimoPeriodoActivo(direccionId);
+        if (periodo == null) {
+            return estudiantes;
+        }
+        return subgrupoService.paraAsistencia(direccionId, periodo.getId(), nivelId, fecha, numeroLeccion, materiaId,
+                estudiantes);
+    }
+
     @Transactional(readOnly = true)
     public List<FilaAsistencia> listarFilas(Long direccionId, Long nivelId, LocalDate fecha, Long materiaId,
             Integer numeroLeccion) {
-        List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
+        List<Usuario> estudiantes = estudiantesDeLaLeccion(direccionId, nivelId, fecha, numeroLeccion, materiaId);
         Map<Long, AsistenciaEstudiante> registros = asistenciaRepository
                 .findByDireccionIdAndNivelAcademicoIdAndFechaAndMateriaIdAndNumeroLeccion(
                         direccionId, nivelId, fecha, materiaId, numeroLeccion)
@@ -195,7 +209,7 @@ public class AsistenciaService {
     public int copiarDeLeccionAnterior(Long direccionId, Long nivelId, Long materiaId, LocalDate fecha,
             Integer leccionOrigen, Integer leccionDestino, Long registradoPorId) {
         exigirPeriodoListoParaAsistencia(direccionId, fecha);
-        List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
+        List<Usuario> estudiantes = estudiantesDeLaLeccion(direccionId, nivelId, fecha, leccionDestino, materiaId);
         int copiados = 0;
         for (Usuario estudiante : estudiantes) {
             AsistenciaEstudiante origen = asistenciaRepository

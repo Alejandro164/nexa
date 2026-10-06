@@ -39,12 +39,13 @@ public class PromedioService {
     private final DistribucionPorcentualService distribucionService;
     private final ComponenteService componenteService;
     private final RebajaConductaService rebajaConductaService;
+    private final SubgrupoService subgrupoService;
 
     public PromedioService(UsuarioRepository usuarioRepository, NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository, PeriodoAcademicoRepository periodoRepository,
             ResultadoComponenteRepository resultadoRepository, AsistenciaEstudianteRepository asistenciaRepository,
             DistribucionPorcentualService distribucionService, ComponenteService componenteService,
-            RebajaConductaService rebajaConductaService) {
+            RebajaConductaService rebajaConductaService, SubgrupoService subgrupoService) {
         this.usuarioRepository = usuarioRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
@@ -54,6 +55,7 @@ public class PromedioService {
         this.distribucionService = distribucionService;
         this.componenteService = componenteService;
         this.rebajaConductaService = rebajaConductaService;
+        this.subgrupoService = subgrupoService;
     }
 
     public List<NivelAcademico> listarNivelesActivos(Long direccionId) {
@@ -84,7 +86,8 @@ public class PromedioService {
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
         CalculoRebaja calculo = conAsistencia ? rebajaConductaService.calculo(direccionId) : null;
 
-        List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
+        List<Usuario> estudiantes = subgrupoService.deMateria(direccionId, periodoId, nivelId, materiaId,
+                usuarioRepository.findEstudiantesActivosByNivelId(nivelId));
 
         Map<Long, List<ResultadoComponente>> resultadosPorEstudiante = resultadoRepository
                 .findByComponente_Direccion_IdAndComponente_Nivel_IdAndComponente_Materia_IdAndPeriodo_Id(

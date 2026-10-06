@@ -741,7 +741,7 @@
                         Horario
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': $store.academico.activeTab === 'subgrupos' }"
-                            @click="$store.academico.activeTab = 'subgrupos'">
+                            @click="$store.academico.activeTab = 'subgrupos'; recargarSubgruposAcademico()">
                         Subgrupos
                     </button>
                 </div>
@@ -778,7 +778,11 @@
 
             <!-- Contenido Visual de Subgrupos -->
             <div x-show="$store.academico.activeTab === 'subgrupos'" class="tab-pane" x-cloak>
-                <div th:replace="~{configuracion-academica/subgrupos/subgrupos :: content}"></div>
+                <div id="subgrupos-panel">
+                    <div class="vista-espera-caja" style="position:static;padding:2.5rem 0;">
+                        <span>Los subgrupos se cargan al abrir esta pestaña.</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -835,6 +839,25 @@
                     url += '?' + parametros.toString();
                 }
                 htmx.ajax('GET', url, {target: '#horario-panel', swap: 'outerHTML'});
+            }
+
+            function recargarSubgruposAcademico() {
+                const panel = document.getElementById('subgrupos-panel');
+                const formulario = panel ? panel.querySelector('#subgrupos-filtros') : null;
+                const periodo = formulario ? formulario.querySelector('[name="periodoId"]') : null;
+                const nivel = formulario ? formulario.querySelector('[name="nivelId"]') : null;
+                const parametros = new URLSearchParams();
+                if (periodo && periodo.value) {
+                    parametros.set('periodoId', periodo.value);
+                }
+                if (nivel && nivel.value) {
+                    parametros.set('nivelId', nivel.value);
+                }
+                let url = '/configuracion-academica/subgrupos';
+                if (parametros.toString()) {
+                    url += '?' + parametros.toString();
+                }
+                htmx.ajax('GET', url, {target: '#subgrupos-panel', swap: 'outerHTML'});
             }
 
             function cerrarSelectoresAcademicos(excepto) {

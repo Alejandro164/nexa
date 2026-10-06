@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Horario Periférica</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Horario Periférica</h2>
+    <p layout:fragment="page-subtitle">Dónde está cada docente, de lunes a viernes</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">Horario Periférica</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Dónde está cada docente, de lunes a viernes</p>
+    <main layout:fragment="content">
+        <style>
+            .hp-card {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                box-shadow: var(--shadow-sm);
+                overflow: hidden;
+            }
+            .hp-head {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 1rem 1.5rem;
+                padding: 1.15rem 1.35rem 1rem;
+                border-bottom: 1px solid var(--border);
+            }
+            .hp-head h3 {
+                margin: 0;
+                font-size: 1.2rem;
+                font-weight: 700;
+                letter-spacing: -0.01em;
+                color: #0f172a;
+            }
+            .hp-head p {
+                margin: 0.25rem 0 0;
+                max-width: 40rem;
+                font-size: 0.84rem;
+                line-height: 1.45;
+                color: var(--text-secondary);
+            }
+            .hp-count {
+                flex-shrink: 0;
+                font-size: 0.75rem;
+                font-weight: 700;
+                color: var(--primary);
+                background: rgba(45, 90, 135, 0.1);
+                padding: 0.4rem 0.7rem;
+                border-radius: 999px;
+                white-space: nowrap;
+            }
+            .hp-leyenda {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.45rem 0.7rem;
+                padding: 0.75rem 1.35rem;
+                background: var(--input-bg);
+                border-bottom: 1px solid var(--border);
+            }
+            .hp-lugar-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.4rem;
+                font-size: 0.75rem;
+                font-weight: 650;
+                color: #334155;
+            }
+            .hp-lugar-chip i {
+                width: 8px;
+                height: 8px;
+                border-radius: 99px;
+                background: var(--hp-color);
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--hp-color) 18%, white);
+            }
+            .hp-scroll {
+                overflow: auto;
+                max-height: calc(100dvh - 16.5rem);
+            }
+            .hp-grid {
+                display: grid;
+                grid-template-columns: 108px repeat(5, minmax(168px, 1fr));
+                min-width: 980px;
+                border-top: 1px solid var(--border);
+                border-left: 1px solid var(--border);
+            }
+            .hp-day, .hp-hora, .hp-cell, .hp-receso {
+                border-right: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+            }
+            .hp-day, .hp-hora.hp-esquina {
+                position: sticky;
+                top: 0;
+                z-index: 3;
+                background: #f1f5f9;
+            }
+            .hp-day {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                padding: 0.7rem 0.45rem;
+                text-align: center;
+            }
+            .hp-day small {
+                font-size: 0.62rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--primary);
+            }
+            .hp-day strong {
+                font-size: 0.86rem;
+                color: #0f172a;
+            }
+            .hp-day.is-hoy {
+                background: #e7f0f8;
+                box-shadow: inset 0 -2px 0 var(--primary);
+            }
+            .hp-hora {
+                position: sticky;
+                left: 0;
+                z-index: 2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0.15rem;
+                padding: 0.75rem 0.4rem;
+                background: #f8fafc;
+                text-align: center;
+            }
+            .hp-hora.hp-esquina {
+                z-index: 4;
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: #64748b;
+            }
+            .hp-marca {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                line-height: 1.1;
+            }
+            .hp-marca b {
+                font-size: 0.92rem;
+                font-weight: 750;
+                font-variant-numeric: tabular-nums;
+                color: #0f172a;
+            }
+            .hp-marca span {
+                margin-top: 1px;
+                font-size: 0.62rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: #94a3b8;
+            }
+            .hp-flecha {
+                width: 1px;
+                height: 10px;
+                margin: 4px 0;
+                background: #cbd5e1;
+                position: relative;
+            }
+            .hp-flecha::after {
+                content: "";
+                position: absolute;
+                left: -3px;
+                bottom: -1px;
+                border-left: 3.5px solid transparent;
+                border-right: 3.5px solid transparent;
+                border-top: 5px solid #94a3b8;
+            }
+            .hp-cell {
+                min-height: 108px;
+                padding: 6px;
+                background: #fff;
+            }
+            .hp-cell.is-hoy { background: #f7fafc; }
+            .hp-vacio {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                min-height: 96px;
+                border-radius: 8px;
+                border: 1px dashed #e2e8f0;
+                color: #cbd5e1;
+                font-size: 0.72rem;
+                font-weight: 650;
+            }
+            .hp-pila {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .hp-persona {
+                --hp-color: #2d5a87;
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+                min-width: 0;
+                padding: 7px 8px;
+                border-radius: 9px;
+                background: color-mix(in srgb, var(--hp-color) 11%, white);
+                box-shadow: inset 3px 0 0 var(--hp-color);
+            }
+            .hp-avatar {
+                flex: 0 0 auto;
+                width: 26px;
+                height: 26px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                background: var(--hp-color);
+                color: #fff;
+                font-size: 0.62rem;
+                font-weight: 750;
+                letter-spacing: 0.02em;
+            }
+            .hp-persona-copy {
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+            }
+            .hp-persona-copy strong {
+                font-size: 0.78rem;
+                font-weight: 700;
+                color: #0f172a;
+                line-height: 1.25;
+            }
+            .hp-sitio {
+                display: inline-flex;
+                align-items: center;
+                gap: 3px;
+                min-width: 0;
+                font-size: 0.68rem;
+                font-weight: 650;
+                color: #475569;
+            }
+            .hp-sitio svg { flex: 0 0 auto; color: var(--hp-color); }
+            .hp-receso {
+                grid-column: 1 / -1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.55rem;
+                min-height: 32px;
+                background: #fff7ed;
+                color: #c2410c;
+                border-bottom-color: #fed7aa;
+                font-size: 0.7rem;
+                font-weight: 750;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+            }
+            .hp-receso span {
+                letter-spacing: 0;
+                text-transform: none;
+                font-variant-numeric: tabular-nums;
+                font-weight: 700;
+            }
+            @media (max-width: 720px) {
+                .hp-head { flex-direction: column; }
+                .hp-scroll { max-height: calc(100dvh - 12rem); }
+            }
+        </style>
+
+        <section class="hp-card" id="horario-periferica">
+            <header class="hp-head">
+                <div>
+                    <h3>Semana periférica</h3>
+                    <p>Cada fila es un bloque con hora de entrada y hora de salida. En una misma celda pueden coincidir varios docentes; cada uno lleva el lugar donde va a estar.</p>
+                </div>
+                <span class="hp-count">Lunes a viernes</span>
+            </header>
+
+            <div class="hp-leyenda">
+                <span class="hp-lugar-chip" style="--hp-color:#2d5a87"><i></i>Sede Norte</span>
+                <span class="hp-lugar-chip" style="--hp-color:#0f766e"><i></i>Biblioteca comunal</span>
+                <span class="hp-lugar-chip" style="--hp-color:#b45309"><i></i>Centro cívico</span>
+                <span class="hp-lugar-chip" style="--hp-color:#6d28d9"><i></i>Aula móvil</span>
+                <span class="hp-lugar-chip" style="--hp-color:#be123c"><i></i>Salón parroquial</span>
+            </div>
+
+            <div class="hp-scroll">
+                <div class="hp-grid">
+                    <div class="hp-hora hp-esquina">Bloque</div>
+                    <div class="hp-day" data-dia="lunes"><small>Lun</small><strong>Lunes</strong></div>
+                    <div class="hp-day" data-dia="martes"><small>Mar</small><strong>Martes</strong></div>
+                    <div class="hp-day" data-dia="miercoles"><small>Mié</small><strong>Miércoles</strong></div>
+                    <div class="hp-day" data-dia="jueves"><small>Jue</small><strong>Jueves</strong></div>
+                    <div class="hp-day" data-dia="viernes"><small>Vie</small><strong>Viernes</strong></div>
+
+                    <div class="hp-hora">
+                        <div class="hp-marca"><b>07:00</b><span>Entrada</span></div>
+                        <div class="hp-flecha"></div>
+                        <div class="hp-marca"><b>09:30</b><span>Salida</span></div>
+                    </div>
+                    <div class="hp-cell" data-dia="lunes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#2d5a87">
+                                <span class="hp-avatar">AR</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Ana Rodríguez</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sede Norte</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#0f766e">
+                                <span class="hp-avatar">CL</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Carlos López</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Biblioteca comunal</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#b45309">
+                                <span class="hp-avatar">MG</span>
+                                <span class="hp-persona-copy">
+                                    <strong>María González</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Centro cívico</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="martes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#6d28d9">
+                                <span class="hp-avatar">EV</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Elena Vargas</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Aula móvil</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="miercoles">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#be123c">
+                                <span class="hp-avatar">JM</span>
+                                <span class="hp-persona-copy">
+                                    <strong>José Mora</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Salón parroquial</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#2d5a87">
+                                <span class="hp-avatar">PS</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Patricia Solís</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sede Norte</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="jueves"><div class="hp-vacio">Libre</div></div>
+                    <div class="hp-cell" data-dia="viernes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#b45309">
+                                <span class="hp-avatar">AC</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Andrés Castillo</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Centro cívico</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#6d28d9">
+                                <span class="hp-avatar">AR</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Ana Rodríguez</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Aula móvil</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="hp-hora">
+                        <div class="hp-marca"><b>09:30</b><span>Entrada</span></div>
+                        <div class="hp-flecha"></div>
+                        <div class="hp-marca"><b>12:00</b><span>Salida</span></div>
+                    </div>
+                    <div class="hp-cell" data-dia="lunes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#0f766e">
+                                <span class="hp-avatar">PS</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Patricia Solís</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Biblioteca comunal</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="martes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#2d5a87">
+                                <span class="hp-avatar">CL</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Carlos López</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sede Norte</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#be123c">
+                                <span class="hp-avatar">AC</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Andrés Castillo</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Salón parroquial</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="miercoles"><div class="hp-vacio">Libre</div></div>
+                    <div class="hp-cell" data-dia="jueves">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#6d28d9">
+                                <span class="hp-avatar">MG</span>
+                                <span class="hp-persona-copy">
+                                    <strong>María González</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Aula móvil</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#b45309">
+                                <span class="hp-avatar">EV</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Elena Vargas</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Centro cívico</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#0f766e">
+                                <span class="hp-avatar">JM</span>
+                                <span class="hp-persona-copy">
+                                    <strong>José Mora</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Biblioteca comunal</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="viernes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#2d5a87">
+                                <span class="hp-avatar">CL</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Carlos López</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sede Norte</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="hp-receso">Receso <span>12:00 – 13:00</span></div>
+
+                    <div class="hp-hora">
+                        <div class="hp-marca"><b>13:00</b><span>Entrada</span></div>
+                        <div class="hp-flecha"></div>
+                        <div class="hp-marca"><b>15:30</b><span>Salida</span></div>
+                    </div>
+                    <div class="hp-cell" data-dia="lunes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#be123c">
+                                <span class="hp-avatar">AC</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Andrés Castillo</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Salón parroquial</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="martes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#0f766e">
+                                <span class="hp-avatar">AR</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Ana Rodríguez</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Biblioteca comunal</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#0f766e">
+                                <span class="hp-avatar">MG</span>
+                                <span class="hp-persona-copy">
+                                    <strong>María González</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Biblioteca comunal</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="miercoles">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#2d5a87">
+                                <span class="hp-avatar">EV</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Elena Vargas</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sede Norte</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="jueves">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#b45309">
+                                <span class="hp-avatar">PS</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Patricia Solís</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Centro cívico</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="viernes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#6d28d9">
+                                <span class="hp-avatar">JM</span>
+                                <span class="hp-persona-copy">
+                                    <strong>José Mora</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Aula móvil</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#2d5a87">
+                                <span class="hp-avatar">AC</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Andrés Castillo</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sede Norte</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="hp-hora">
+                        <div class="hp-marca"><b>15:30</b><span>Entrada</span></div>
+                        <div class="hp-flecha"></div>
+                        <div class="hp-marca"><b>17:30</b><span>Salida</span></div>
+                    </div>
+                    <div class="hp-cell" data-dia="lunes"><div class="hp-vacio">Libre</div></div>
+                    <div class="hp-cell" data-dia="martes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#b45309">
+                                <span class="hp-avatar">JM</span>
+                                <span class="hp-persona-copy">
+                                    <strong>José Mora</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Centro cívico</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="miercoles">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#6d28d9">
+                                <span class="hp-avatar">CL</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Carlos López</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Aula móvil</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#be123c">
+                                <span class="hp-avatar">PS</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Patricia Solís</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Salón parroquial</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="jueves">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#2d5a87">
+                                <span class="hp-avatar">AR</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Ana Rodríguez</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Sede Norte</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                    <div class="hp-cell" data-dia="viernes">
+                        <div class="hp-pila">
+                            <article class="hp-persona" style="--hp-color:#0f766e">
+                                <span class="hp-avatar">MG</span>
+                                <span class="hp-persona-copy">
+                                    <strong>María González</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Biblioteca comunal</span>
+                                </span>
+                            </article>
+                            <article class="hp-persona" style="--hp-color:#be123c">
+                                <span class="hp-avatar">EV</span>
+                                <span class="hp-persona-copy">
+                                    <strong>Elena Vargas</strong>
+                                    <span class="hp-sitio"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Salón parroquial</span>
+                                </span>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            (function () {
+                const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+                const hoy = dias[new Date().getDay()];
+                const raiz = document.getElementById('horario-periferica');
+                if (!raiz) {
+                    return;
+                }
+                raiz.querySelectorAll('[data-dia="' + hoy + '"]').forEach(function (el) {
+                    el.classList.add('is-hoy');
+                });
+            })();
+        </script>
+    </main>
+    </th:block>
+
+</body>
+
+</html>

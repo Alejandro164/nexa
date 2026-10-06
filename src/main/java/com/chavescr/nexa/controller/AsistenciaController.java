@@ -316,7 +316,7 @@ public class AsistenciaController {
             return "Esta materia no tiene lección programada ese día en esta sección.";
         }
         if (filas.isEmpty()) {
-            return "No hay estudiantes activos en esta sección.";
+            return "No hay estudiantes asignados a esta materia en la lección.";
         }
         return null;
     }

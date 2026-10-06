@@ -34,12 +34,15 @@ public class HorarioConsultaService {
     private final ConfiguracionAcademicaService configuracionAcademicaService;
     private final HorarioLeccionRepository horarioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final SubgrupoService subgrupoService;
 
     public HorarioConsultaService(ConfiguracionAcademicaService configuracionAcademicaService,
-            HorarioLeccionRepository horarioRepository, UsuarioRepository usuarioRepository) {
+            HorarioLeccionRepository horarioRepository, UsuarioRepository usuarioRepository,
+            SubgrupoService subgrupoService) {
         this.configuracionAcademicaService = configuracionAcademicaService;
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
+        this.subgrupoService = subgrupoService;
     }
 
     public ConsultaHorario consultar(Long direccionId, Long usuarioId, Set<String> roles, String vistaPedida,
@@ -182,8 +185,9 @@ public class HorarioConsultaService {
                     periodos, periodo, estudiantes, estudiante.getId(), config, Map.of(), diaHoy);
         }
 
-        Map<String, List<HorarioLeccion>> horario = agrupar(horarioRepository.findConsultaPorNivel(
-                direccionId, periodo.getId(), nivel.getId()));
+        Map<String, List<HorarioLeccion>> horario = agrupar(subgrupoService.paraEstudiante(
+                estudiante.getId(), horarioRepository.findConsultaPorNivel(
+                        direccionId, periodo.getId(), nivel.getId())));
         String detalle = "Sección " + nivel.getNombreCompleto();
         return armar(ConsultaHorario.VISTA_ESTUDIANTES, puedeVerDocentes, puedeVerEstudiantes, puedeElegir,
                 titular, detalle, ayuda(ConsultaHorario.VISTA_ESTUDIANTES), null,

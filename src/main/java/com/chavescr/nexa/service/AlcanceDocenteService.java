@@ -103,11 +103,7 @@ public class AlcanceDocenteService {
         if (periodoId == null || nivelId == null || materiaId == null) {
             return List.of();
         }
-        List<Integer> delDia = numerosLeccionEnPeriodo(direccionId, periodoId, nivelId, materiaId, dia, docenteId);
-        if (!delDia.isEmpty() || dia == null) {
-            return delDia;
-        }
-        return numerosLeccionEnPeriodo(direccionId, periodoId, nivelId, materiaId, null, docenteId);
+        return numerosLeccionEnPeriodo(direccionId, periodoId, nivelId, materiaId, dia, docenteId);
     }
 
     private List<Integer> numerosLeccionEnPeriodo(Long direccionId, Long periodoId, Long nivelId, Long materiaId,

@@ -145,6 +145,9 @@ public class SecurityConfig {
                         .requestMatchers("/horario/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
 
+                        .requestMatchers("/horario-periferica/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
+
                         // ── Comunicación: visible para todos los roles (declarado explícito) ──
                         .requestMatchers("/comunicacion/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, PADRE, ESTUDIANTE)

@@ -33,16 +33,19 @@ public class ComponenteService {
     private final MateriaRepository materiaRepository;
     private final ResultadoComponenteRepository resultadoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final SubgrupoService subgrupoService;
 
     public ComponenteService(ComponenteRepository componenteRepository, PeriodoAcademicoRepository periodoRepository,
             NivelAcademicoRepository nivelRepository, MateriaRepository materiaRepository,
-            ResultadoComponenteRepository resultadoRepository, UsuarioRepository usuarioRepository) {
+            ResultadoComponenteRepository resultadoRepository, UsuarioRepository usuarioRepository,
+            SubgrupoService subgrupoService) {
         this.componenteRepository = componenteRepository;
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
         this.resultadoRepository = resultadoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.subgrupoService = subgrupoService;
     }
 
     @Transactional(readOnly = true)
@@ -182,7 +185,12 @@ public class ComponenteService {
     public List<FilaNota> listarNotas(Long direccionId, Long componenteId) {
         Componente componente = obtener(direccionId, componenteId);
         Map<Long, NotaGuardada> notas = notasPorEstudiante(direccionId, componente);
-        return usuarioRepository.findEstudiantesActivosByNivelId(componente.getNivel().getId()).stream()
+        List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(componente.getNivel().getId());
+        if (componente.getMateria() != null) {
+            estudiantes = subgrupoService.deMateria(direccionId, periodoVisible(direccionId, componente).getId(),
+                    componente.getNivel().getId(), componente.getMateria().getId(), estudiantes);
+        }
+        return estudiantes.stream()
                 .map(estudiante -> {
                     NotaGuardada nota = notas.get(estudiante.getId());
                     return new FilaNota(estudiante,
