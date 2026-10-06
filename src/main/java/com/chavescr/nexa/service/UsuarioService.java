@@ -148,16 +148,6 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioDTO> obtenerEstudiantesDelUsuarioActual() {
-        String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
-        return usuarioRepository.findByIdentifier(identifier)
-                .map(padre -> usuarioRepository.findEstudiantesByPadreId(padre.getId()).stream()
-                        .map(UsuarioDTO::new)
-                        .toList())
-                .orElse(Collections.emptyList());
-    }
-
-    @Transactional(readOnly = true)
     public Usuario findByUsername(String username) {
         return usuarioRepository.findByEmailWithDirecciones(username).orElse(null);
     }

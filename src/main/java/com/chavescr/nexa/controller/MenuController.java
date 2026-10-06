@@ -88,11 +88,6 @@ public class MenuController {
         return htmxRequest ? "personal/index :: htmx-content" : "personal/index";
     }
 
-    @GetMapping("/padres")
-    public String padres(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "gestion-padres/index :: htmx-content" : "gestion-padres/index";
-    }
-
     @GetMapping("/comunicacion")
     public String comunicacion(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "comunicacion/index :: htmx-content" : "comunicacion/index";

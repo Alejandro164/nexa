@@ -20,8 +20,8 @@
     <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente')">
         <div class="nav-section-title">Gestión y Personas</div>
 
-        <a href="/contacto" class="nav-item" x-show="ve('docente')" hx-get="/contacto" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DOCENTE')">
+        <a href="/contacto" class="nav-item" x-show="ve('director docente')" hx-get="/contacto" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path
@@ -49,18 +49,6 @@
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
             <span class="nav-item-text">Docentes</span>
-        </a>
-
-        <a href="/padres" class="nav-item" x-show="ve('director')" hx-get="/padres" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            <span class="nav-item-text">Padres</span>
         </a>
         <a href="/personal" class="nav-item" x-show="ve('director')" hx-get="/personal" hx-target=".content-area" hx-swap="innerHTML"
         hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
@@ -232,7 +220,7 @@
         </a>
     </div>
 
-    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente')" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_PADRE')">
+    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente')" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
         <div class="nav-section-title">Comunicación y Enlaces</div>
         <a href="/comunicacion" class="nav-item" x-show="ve('admin')" hx-get="/comunicacion" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
@@ -253,17 +241,6 @@
                 <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
             <span class="nav-item-text">Agenda</span>
-        </a>
-        <a href="/portal-padres" class="nav-item" x-show="ve('admin')" hx-get="/portal-padres" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_PADRE')">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            <span class="nav-item-text">Portal Padres</span>
         </a>
     </div>
 

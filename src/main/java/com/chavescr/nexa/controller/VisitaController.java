@@ -425,7 +425,7 @@ public class VisitaController {
         return "redirect:/control-de-acceso";
     }
 
-    // ─── RETIRO DE ESTUDIANTES (solicitado por padres desde Portal Padres) ──
+    // ─── RETIRO DE ESTUDIANTES ──
 
     @GetMapping("/retiros/refresh")
     public String refreshRetiros(Model model, HttpSession session, HttpServletRequest request) {

@@ -343,7 +343,6 @@
                     { id: 'director', nombre: 'Director', letra: 'D' },
                     { id: 'docente', nombre: 'Docente', letra: 'Do' },
                     { id: 'estudiante', nombre: 'Estudiante', letra: 'E' },
-                    { id: 'padre', nombre: 'Padres de familia', letra: 'P' },
                     { id: 'auxiliar', nombre: 'Auxiliar', letra: 'Au' },
                     { id: 'guarda', nombre: 'Guarda', letra: 'G' }
                 ],
@@ -390,7 +389,7 @@
                     if (!this.esAdmin && !this.esSystem) {
                         return true;
                     }
-                    if (this.modo === 'estudiante' || this.modo === 'padre' || this.modo === 'auxiliar' || this.modo === 'guarda') {
+                    if (this.modo === 'estudiante' || this.modo === 'auxiliar' || this.modo === 'guarda') {
                         return true;
                     }
                     return (' ' + roles + ' ').indexOf(' ' + this.modo + ' ') !== -1;
@@ -408,7 +407,6 @@
                         : this.modo === 'director' ? 'DIRECTOR'
                         : this.modo === 'docente' ? 'DOCENTE'
                         : this.modo === 'estudiante' ? 'ESTUDIANTE'
-                        : this.modo === 'padre' ? 'PADRE'
                         : this.nombre().toUpperCase();
                     document.querySelectorAll('.dropdown-user-role, .sidebar-user-role').forEach(function (el) {
                         el.textContent = texto;

@@ -245,7 +245,7 @@ public class NotaConductaService {
         notaRepository.findByDireccionIdAndPeriodoIdAndEstudianteId(direccionId, periodoId, estudianteId)
                 .ifPresent(n -> existentes.put(estudianteId, n));
         notaRepository.save(prepararEnvio(direccion, periodo, estudiante, fila, existentes));
-        notificacionService.crearTodas(padres, mensajePadres(estudiante, fila), "/portal-padres");
+        notificacionService.crearTodas(padres, mensajePadres(estudiante, fila), "/inicio");
         return "Nota de " + estudiante.getNombre() + " enviada a " + padres.size()
                 + (padres.size() == 1 ? " encargado." : " encargados.");
     }
@@ -282,7 +282,7 @@ public class NotaConductaService {
             aGuardar.add(prepararEnvio(direccion, periodo, fila.getEstudiante(), fila, existentes));
             String mensaje = mensajePadres(fila.getEstudiante(), fila);
             for (Usuario padre : padres) {
-                notificaciones.add(notificacionService.nueva(padre, mensaje, "/portal-padres"));
+                notificaciones.add(notificacionService.nueva(padre, mensaje, "/inicio"));
             }
             enviados++;
         }

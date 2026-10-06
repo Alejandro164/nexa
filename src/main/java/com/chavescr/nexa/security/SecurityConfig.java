@@ -115,13 +115,10 @@ public class SecurityConfig {
                         .requestMatchers("/agenda/actividad/**").hasAnyAuthority(ADMIN, DIRECTOR)
                         .requestMatchers("/agenda/**").hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
 
-                        // ── Portal Padres: ya reforzado en el controller, se agrega también aquí ──
-                        .requestMatchers("/portal-padres/**").hasAnyAuthority(ADMIN, PADRE)
-
-                        // ── Estudiantes / Padres: lectura para staff, edición solo ADMIN/DIRECTOR ──
-                        .requestMatchers(HttpMethod.GET, "/estudiantes/**", "/padres/**")
+                        // ── Estudiantes: lectura para staff, edición solo ADMIN/DIRECTOR ──
+                        .requestMatchers(HttpMethod.GET, "/estudiantes/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
-                        .requestMatchers("/estudiantes/**", "/padres/**").hasAnyAuthority(ADMIN, DIRECTOR)
+                        .requestMatchers("/estudiantes/**").hasAnyAuthority(ADMIN, DIRECTOR)
 
                         // ── Resto de módulos operativos: abiertos a todo el staff (ADMIN/DIRECTOR/DOCENTE) ──
                         .requestMatchers("/docentes/**", "/control-de-acceso/**", "/gestion-academica/**",

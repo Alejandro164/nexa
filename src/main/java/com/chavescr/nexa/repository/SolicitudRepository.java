@@ -10,7 +10,5 @@ import com.chavescr.nexa.entity.Solicitud;
 @Repository
 public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
 
-    List<Solicitud> findByPadreIdOrderByFechaSolicitudDesc(Long padreId);
-
     List<Solicitud> findByDireccionIdOrderByFechaSolicitudDesc(Long direccionId);
 }
