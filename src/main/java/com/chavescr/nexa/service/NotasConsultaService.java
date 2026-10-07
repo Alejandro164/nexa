@@ -120,15 +120,11 @@ public class NotasConsultaService {
 
     /**
      * @param elegirAnio        director o administrador: puede cambiar de año lectivo
-     * @param catalogoCompleto  administrador o director: todos los grados y secciones de la dirección
+     * @param catalogoCompleto  administrador o director: todos los grados y secciones de la dirección.
+     *                          El docente ve solo las secciones donde es profesor guía.
      */
     public NotasCatalogo consultar(Long direccionId, Long usuarioId, boolean elegirAnio,
             boolean catalogoCompleto) {
-        return consultar(direccionId, usuarioId, elegirAnio, catalogoCompleto, null);
-    }
-
-    public NotasCatalogo consultar(Long direccionId, Long usuarioId, boolean elegirAnio,
-            boolean catalogoCompleto, java.util.Collection<Long> estudiantesVisibles) {
         List<PeriodoAcademico> periodos = periodoRepository.findByDireccionIdOrderByFechaInicioDesc(direccionId);
         PeriodoAcademico activo = periodos.stream()
                 .filter(p -> Boolean.TRUE.equals(p.getActivo()))
@@ -149,34 +145,14 @@ public class NotasConsultaService {
                 .sorted(Comparator.comparing(PeriodoAcademico::getFechaInicio))
                 .toList();
 
-        List<NivelAcademico> niveles;
-        List<Usuario> estudiantes;
-        if (estudiantesVisibles != null) {
-            java.util.ArrayList<NivelAcademico> nivelesPropios = new java.util.ArrayList<>();
-            java.util.ArrayList<Usuario> propios = new java.util.ArrayList<>();
-            for (Long id : estudiantesVisibles) {
-                Usuario propio = usuarioRepository.findEstudianteActivoConNivel(id, direccionId).orElse(null);
-                if (propio == null || propio.getNivelAcademico() == null) {
-                    continue;
-                }
-                propios.add(propio);
-                Long nivelId = propio.getNivelAcademico().getId();
-                if (nivelesPropios.stream().noneMatch(nivel -> nivel.getId().equals(nivelId))) {
-                    nivelesPropios.add(propio.getNivelAcademico());
-                }
-            }
-            niveles = nivelesPropios;
-            estudiantes = propios;
-        } else {
-            niveles = nivelesVisibles(direccionId, usuarioId, catalogoCompleto);
-            List<Long> nivelIdsConsulta = niveles.stream().map(NivelAcademico::getId).toList();
-            estudiantes = nivelIdsConsulta.isEmpty()
-                    ? List.of()
-                    : usuarioRepository.findEstudiantesActivosConNivelEn(direccionId, nivelIdsConsulta, null, null)
-                            .stream()
-                            .filter(u -> u.getNivelAcademico() != null)
-                            .toList();
-        }
+        List<NivelAcademico> niveles = nivelesVisibles(direccionId, usuarioId, catalogoCompleto);
+        List<Long> nivelIdsConsulta = niveles.stream().map(NivelAcademico::getId).toList();
+        List<Usuario> estudiantes = nivelIdsConsulta.isEmpty()
+                ? List.of()
+                : usuarioRepository.findEstudiantesActivosConNivelEn(direccionId, nivelIdsConsulta, null, null)
+                        .stream()
+                        .filter(u -> u.getNivelAcademico() != null)
+                        .toList();
         List<Long> nivelIds = niveles.stream().map(NivelAcademico::getId).toList();
 
         NotasArmadas armadas = materiasPorEstudiante(direccionId, nivelIds, estudiantes, visibles);
@@ -187,11 +163,7 @@ public class NotasConsultaService {
         if (periodos.isEmpty()) {
             aviso = "No hay períodos académicos en esta dirección.";
         } else if (niveles.isEmpty()) {
-            aviso = estudiantesVisibles != null
-                    ? (estudiantesVisibles.size() == 1 && estudiantesVisibles.contains(usuarioId)
-                            ? "No tiene una sección asignada."
-                            : "No hay estudiantes vinculados a tu cuenta.")
-                    : catalogoCompleto
+            aviso = catalogoCompleto
                     ? "No hay grados ni secciones activos en esta dirección."
                     : "No tiene secciones asignadas como profesor guía.";
         }
@@ -777,12 +749,6 @@ public class NotasConsultaService {
 
     private boolean puedeVerEstudiante(Long direccionId, Long usuarioId, boolean supervision, Usuario estudiante) {
         if (supervision) {
-            return true;
-        }
-        if (usuarioId != null && usuarioId.equals(estudiante.getId())) {
-            return true;
-        }
-        if (usuarioId != null && usuarioRepository.existeVinculoPadreEstudiante(usuarioId, estudiante.getId())) {
             return true;
         }
         Long nivelId = estudiante.getNivelAcademico() == null ? null : estudiante.getNivelAcademico().getId();

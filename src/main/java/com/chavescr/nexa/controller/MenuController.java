@@ -5,14 +5,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-import java.util.List;
-
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.NotasConsultaService;
 import com.chavescr.nexa.service.RebajaConductaService;
 import com.chavescr.nexa.service.TipoComponenteService;
-import com.chavescr.nexa.service.UsuarioService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -24,16 +21,13 @@ public class MenuController {
     private final NotasConsultaService notasConsultaService;
     private final EscalaNotasService escalaNotasService;
     private final RebajaConductaService rebajaConductaService;
-    private final UsuarioService usuarioService;
 
     public MenuController(TipoComponenteService tipoComponenteService, NotasConsultaService notasConsultaService,
-            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService,
-            UsuarioService usuarioService) {
+            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService) {
         this.tipoComponenteService = tipoComponenteService;
         this.notasConsultaService = notasConsultaService;
         this.escalaNotasService = escalaNotasService;
         this.rebajaConductaService = rebajaConductaService;
-        this.usuarioService = usuarioService;
     }
 
     @GetMapping("/estudiantes")
@@ -78,17 +72,10 @@ public class MenuController {
         if (direccionId == null) {
             throw new DireccionNoSeleccionadaException();
         }
-        boolean admin = request.isUserInRole("ROLE_ADMIN");
-        boolean director = request.isUserInRole("ROLE_DIRECTOR");
-        boolean supervision = admin || director;
-        boolean docente = request.isUserInRole("ROLE_DOCENTE");
-        boolean estudiante = request.isUserInRole("ROLE_ESTUDIANTE") && !supervision && !docente;
-        boolean padre = request.isUserInRole("ROLE_PADRE") && !supervision && !docente && !estudiante;
+        boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-        List<Long> visibles = estudiante ? List.of(usuarioId)
-                : padre ? usuarioService.listarIdsDeHijos(usuarioId) : null;
         model.addAttribute("notasCatalogo", notasConsultaService.consultar(
-                direccionId, usuarioId, supervision, supervision, visibles));
+                direccionId, usuarioId, supervision, supervision));
         model.addAttribute("escala", escalaNotasService.vista(direccionId));
         model.addAttribute("conAsistencia", rebajaConductaService.asistenciaRebajaComponente(direccionId));
         return htmxRequest ? "notas/index :: htmx-content" : "notas/index";
@@ -102,6 +89,16 @@ public class MenuController {
     @GetMapping("/comunicacion")
     public String comunicacion(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "comunicacion/index :: htmx-content" : "comunicacion/index";
+    }
+
+    @GetMapping("/comunicacion/mensajeria")
+    public String comunicacionMensajeria() {
+        return "comunicacion/mensajeria/mensajeria :: content";
+    }
+
+    @GetMapping("/comunicacion/comunicados")
+    public String comunicacionComunicados() {
+        return "comunicacion/comunicados/comunicados :: content";
     }
 
     @GetMapping("/agenda")

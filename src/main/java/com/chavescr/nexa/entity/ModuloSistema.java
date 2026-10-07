@@ -13,6 +13,7 @@ public enum ModuloSistema {
     PERSONAL("/personal", "Acción de Personal"),
     CONTROL_ACCESO("/control-de-acceso", "Control de Acceso"),
     GESTION_ACADEMICA("/gestion-academica", "Gestión Académica"),
+    RENDIMIENTO_ACADEMICO("/rendimiento-academico", "Rendimiento Académico"),
     GESTION_ESPECIAL("/gestion-especial", "Gestión Especial"),
     COORDINACION_ACADEMICA("/coordinacion-academica", "Coordinación Académica"),
     EVALUACION_ACADEMICA("/evaluacion-academica", "Evaluación Académica"),

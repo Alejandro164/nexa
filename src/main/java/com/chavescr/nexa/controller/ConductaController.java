@@ -18,7 +18,6 @@ import com.chavescr.nexa.dto.PanelNotaConducta;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
 import com.chavescr.nexa.service.IncidenteConductaService;
 import com.chavescr.nexa.service.NotaConductaService;
-import com.chavescr.nexa.service.UsuarioService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,13 +35,11 @@ public class ConductaController {
 
     private final NotaConductaService notaConductaService;
     private final IncidenteConductaService incidenteConductaService;
-    private final UsuarioService usuarioService;
 
     public ConductaController(NotaConductaService notaConductaService,
-            IncidenteConductaService incidenteConductaService, UsuarioService usuarioService) {
+            IncidenteConductaService incidenteConductaService) {
         this.notaConductaService = notaConductaService;
         this.incidenteConductaService = incidenteConductaService;
-        this.usuarioService = usuarioService;
     }
 
     @GetMapping
@@ -56,7 +53,7 @@ public class ConductaController {
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
         cargarNotas(model, requerirDireccion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
-                docenteIdSiAplica(request, session), alcanceEstudiantes(request, session));
+                docenteIdSiAplica(request, session));
         return FRAGMENTO_NOTAS;
     }
 
@@ -65,10 +62,6 @@ public class ConductaController {
             @RequestParam(required = false) String periodoId,
             Model model, HttpSession session, HttpServletRequest request) {
         try {
-            List<Long> alcance = alcanceEstudiantes(request, session);
-            if (alcance != null && !alcance.contains(estudianteId)) {
-                throw new IllegalArgumentException("No puede consultar la conducta de este estudiante");
-            }
             model.addAttribute("detalle", notaConductaService.detalle(requerirDireccion(session), estudianteId,
                     parseId(periodoId), docenteIdSiAplica(request, session)));
         } catch (IllegalArgumentException e) {
@@ -106,7 +99,7 @@ public class ConductaController {
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
         cargarIncidentes(model, TipoIncidente.LLAMADA_ATENCION, requerirDireccion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
-                docenteIdSiAplica(request, session), alcanceEstudiantes(request, session));
+                docenteIdSiAplica(request, session));
         return FRAGMENTO_LLAMADAS;
     }
 
@@ -183,8 +176,7 @@ public class ConductaController {
             @RequestParam(required = false) String nivelId,
             Model model, HttpSession session, HttpServletRequest request) {
         cargarIncidentes(model, TipoIncidente.BOLETA, requerirDireccion(session), parseId(periodoId),
-                parseEntero(grado), parseId(nivelId), docenteIdSiAplica(request, session),
-                alcanceEstudiantes(request, session));
+                parseEntero(grado), parseId(nivelId), docenteIdSiAplica(request, session));
         return FRAGMENTO_BOLETAS;
     }
 
@@ -351,20 +343,5 @@ public class ConductaController {
                 && !request.isUserInRole("ROLE_ADMIN")
                 && !request.isUserInRole("ROLE_DIRECTOR");
         return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
-    }
-
-    private List<Long> alcanceEstudiantes(HttpServletRequest request, HttpSession session) {
-        if (request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR")
-                || request.isUserInRole("ROLE_DOCENTE")) {
-            return null;
-        }
-        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-        if (request.isUserInRole("ROLE_ESTUDIANTE")) {
-            return usuarioId == null ? List.of() : List.of(usuarioId);
-        }
-        if (request.isUserInRole("ROLE_PADRE")) {
-            return usuarioService.listarIdsDeHijos(usuarioId);
-        }
-        return null;
     }
 }
