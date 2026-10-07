@@ -97,7 +97,8 @@ public class SecurityConfig {
 
                         // ── Administración: Config. Académica e Institucional para ADMIN y DIRECTOR.
                         //    Configuración, Usuarios, Seguridad e Instituciones solo para System Config. ──
-                        .requestMatchers("/configuracion-academica/**", "/configuracion-institucional/**")
+                        .requestMatchers("/configuracion-academica/**", "/grupos-por-area/**",
+                                "/configuracion-institucional/**")
                                 .hasAnyAuthority(ADMIN, DIRECTOR)
                         .requestMatchers("/configuracion", "/configuracion/**", "/usuarios", "/usuarios/**",
                                 "/seguridad", "/seguridad/**", "/direcciones", "/direcciones/**")

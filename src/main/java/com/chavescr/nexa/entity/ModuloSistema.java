@@ -31,6 +31,7 @@ public enum ModuloSistema {
     COMPONENTES("/componentes", "Componentes"),
     CONFIGURACION("/configuracion", "Configuración"),
     CONFIGURACION_ACADEMICA("/configuracion-academica", "Configuración Académica"),
+    GRUPOS_POR_AREA("/grupos-por-area", "Grupos por Área"),
     CONFIGURACION_INSTITUCIONAL("/configuracion-institucional", "Configuración Institucional"),
     USUARIOS("/usuarios", "Usuarios"),
     SEGURIDAD("/seguridad", "Seguridad"),
