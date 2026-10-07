@@ -148,13 +148,13 @@ public class UsuarioService {
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioDTO> obtenerEstudiantesDelUsuarioActual() {
-        String identifier = SecurityContextHolder.getContext().getAuthentication().getName();
-        return usuarioRepository.findByIdentifier(identifier)
-                .map(padre -> usuarioRepository.findEstudiantesByPadreId(padre.getId()).stream()
-                        .map(UsuarioDTO::new)
-                        .toList())
-                .orElse(Collections.emptyList());
+    public List<Long> listarIdsDeHijos(Long padreId) {
+        if (padreId == null) {
+            return List.of();
+        }
+        return usuarioRepository.findEstudiantesByPadreId(padreId).stream()
+                .map(Usuario::getId)
+                .toList();
     }
 
     @Transactional(readOnly = true)

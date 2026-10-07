@@ -1,6 +1,7 @@
 package com.chavescr.nexa.controller;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
@@ -54,6 +55,19 @@ public class ConductaController {
         cargarNotas(model, requerirDireccion(session), parseId(periodoId), parseEntero(grado), parseId(nivelId),
                 docenteIdSiAplica(request, session));
         return FRAGMENTO_NOTAS;
+    }
+
+    @GetMapping("/notas/detalle")
+    public String detalleNotas(@RequestParam Long estudianteId,
+            @RequestParam(required = false) String periodoId,
+            Model model, HttpSession session, HttpServletRequest request) {
+        try {
+            model.addAttribute("detalle", notaConductaService.detalle(requerirDireccion(session), estudianteId,
+                    parseId(periodoId), docenteIdSiAplica(request, session)));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "conducta/notas/detalle-conducta :: cuerpo";
     }
 
     @PostMapping("/notas/enviar")
@@ -236,7 +250,13 @@ public class ConductaController {
 
     private void cargarNotas(Model model, Long direccionId, Long periodoId, Integer grado, Long nivelId,
             Long docenteId) {
-        PanelNotaConducta panel = notaConductaService.cargarPanel(direccionId, periodoId, grado, nivelId, docenteId);
+        cargarNotas(model, direccionId, periodoId, grado, nivelId, docenteId, null);
+    }
+
+    private void cargarNotas(Model model, Long direccionId, Long periodoId, Integer grado, Long nivelId,
+            Long docenteId, List<Long> soloEstudiantes) {
+        PanelNotaConducta panel = notaConductaService.cargarPanel(direccionId, periodoId, grado, nivelId, docenteId,
+                soloEstudiantes);
         model.addAttribute("periodos", panel.getPeriodos());
         model.addAttribute("grados", panel.getGrados());
         model.addAttribute("secciones", panel.getSecciones());
@@ -251,8 +271,13 @@ public class ConductaController {
 
     private void cargarIncidentes(Model model, TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,
             Long nivelId, Long docenteId) {
+        cargarIncidentes(model, tipo, direccionId, periodoId, grado, nivelId, docenteId, null);
+    }
+
+    private void cargarIncidentes(Model model, TipoIncidente tipo, Long direccionId, Long periodoId, Integer grado,
+            Long nivelId, Long docenteId, List<Long> soloEstudiantes) {
         PanelIncidenteConducta panel = incidenteConductaService.cargarPanel(tipo, direccionId, periodoId, grado,
-                nivelId, docenteId);
+                nivelId, docenteId, soloEstudiantes);
         model.addAttribute("periodos", panel.getPeriodos());
         model.addAttribute("grados", panel.getGrados());
         model.addAttribute("secciones", panel.getSecciones());

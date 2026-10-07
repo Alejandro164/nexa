@@ -131,12 +131,14 @@
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'tareas' }"
                         @click="activeTab = 'tareas'" hx-get="/agenda/tareas" hx-target="#agenda-content"
-                        hx-swap="innerHTML">
+                        hx-swap="innerHTML"
+                        sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
                         ✅ Tareas
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'recordatorios' }"
                         @click="activeTab = 'recordatorios'" hx-get="/agenda/recordatorios" hx-target="#agenda-content"
-                        hx-swap="innerHTML">
+                        hx-swap="innerHTML"
+                        sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
                         ⏰ Recordatorios
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'actividad' }"
@@ -147,12 +149,14 @@
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'proyectos' }"
                         @click="activeTab = 'proyectos'" hx-get="/agenda/proyectos" hx-target="#agenda-content"
-                        hx-swap="innerHTML">
+                        hx-swap="innerHTML"
+                        sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
                         📁 Proyectos
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'participacion' }"
                         @click="activeTab = 'participacion'" hx-get="/agenda/participacion" hx-target="#agenda-content"
-                        hx-swap="innerHTML">
+                        hx-swap="innerHTML"
+                        sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
                         👥 Participación
                     </button>
                 </div>

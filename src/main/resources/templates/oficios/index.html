@@ -3,21 +3,22 @@
     layout:decorate="~{index}">
 
 <head>
-    <title>Gestión de Oficios</title>
+    <title>Gestión Documental</title>
 </head>
 
 <body>
 
-    <h2 layout:fragment="page-title">📋 Gestión de Oficios</h2>
-    <p layout:fragment="page-subtitle">Registro y control de oficios emitidos por la dirección</p>
+    <h2 layout:fragment="page-title">Gestión Documental</h2>
+    <p layout:fragment="page-subtitle">Circulares y oficios de la dirección</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
-    <h2 id="topbar-page-title" hx-swap-oob="true">📋 Gestión de Oficios</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Registro y control de oficios emitidos por la dirección</p>
+    <h2 id="topbar-page-title" hx-swap-oob="true">Gestión Documental</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Circulares y oficios de la dirección</p>
     <main layout:fragment="content"
           x-data="{
+              activeTab: 'circulares',
               openModal(id) {
                   const el = document.getElementById(id);
                   el.style.display = 'block';
@@ -202,9 +203,86 @@
                 background: var(--primary);
                 color: #ffffff;
             }
+
+            .config-tabs-container {
+                margin-bottom: 1.5rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar { display: none; }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane {
+                animation: fadeIn 0.35s ease-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
         </style>
 
-        <div class="oficios-container">
+        <div class="config-tabs-container">
+            <div class="config-tabs">
+                <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'circulares' }"
+                        @click="activeTab = 'circulares'">
+                    Circulares
+                </button>
+                <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'oficios' }"
+                        @click="activeTab = 'oficios'">
+                    Oficios
+                </button>
+            </div>
+        </div>
+
+        <div x-show="activeTab === 'circulares'" class="tab-pane">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Circulares</h3>
+                </div>
+                <div style="padding: 2rem; text-align: center;">
+                    <h4 style="color: var(--text-secondary); margin-bottom: 1rem;">Circulares</h4>
+                    <p style="font-size:0.9rem; color: var(--text-light);">El registro de circulares se mostrará aquí.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="oficios-container tab-pane" x-show="activeTab === 'oficios'" x-cloak>
 
             <!-- Toolbar & Search -->
             <div class="oficios-toolbar">

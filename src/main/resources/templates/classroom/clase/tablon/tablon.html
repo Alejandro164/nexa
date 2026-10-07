@@ -128,7 +128,7 @@
                 th:hx-target="|#comentarios-${pub.id}|" hx-swap="outerHTML"
                 hx-confirm="¿Eliminar este comentario?">×</button>
     </div>
-    <form th:unless="${ctx.rol.supervisor}" class="cr-comentar"
+    <form th:unless="${ctx.rol.supervisor or ctx.rol.padre}" class="cr-comentar"
           th:hx-post="@{/classroom/clase/{id}/publicacion/{pid}/comentarios(id=${ctx.clase.id}, pid=${pub.id})}"
           th:hx-target="|#comentarios-${pub.id}|" hx-swap="outerHTML">
         <span th:replace="~{classroom/clase/comunes :: avatar(${ctx.usuario}, 'sm')}"></span>

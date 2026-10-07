@@ -38,11 +38,14 @@ public class PromedioService {
     private final AsistenciaEstudianteRepository asistenciaRepository;
     private final DistribucionPorcentualService distribucionService;
     private final ComponenteService componenteService;
+    private final RebajaConductaService rebajaConductaService;
+    private final SubgrupoService subgrupoService;
 
     public PromedioService(UsuarioRepository usuarioRepository, NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository, PeriodoAcademicoRepository periodoRepository,
             ResultadoComponenteRepository resultadoRepository, AsistenciaEstudianteRepository asistenciaRepository,
-            DistribucionPorcentualService distribucionService, ComponenteService componenteService) {
+            DistribucionPorcentualService distribucionService, ComponenteService componenteService,
+            RebajaConductaService rebajaConductaService, SubgrupoService subgrupoService) {
         this.usuarioRepository = usuarioRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
@@ -51,6 +54,8 @@ public class PromedioService {
         this.asistenciaRepository = asistenciaRepository;
         this.distribucionService = distribucionService;
         this.componenteService = componenteService;
+        this.rebajaConductaService = rebajaConductaService;
+        this.subgrupoService = subgrupoService;
     }
 
     public List<NivelAcademico> listarNivelesActivos(Long direccionId) {
@@ -67,6 +72,10 @@ public class PromedioService {
                 .stream().findFirst().orElse(null);
     }
 
+    /**
+     * Si en la institución las ausencias y tardías rebajan la conducta, la asistencia no se calcula
+     * y el promedio final se reparte solo entre los componentes.
+     */
     public List<FilaPromedio> calcularPromedio(Long direccionId, Long nivelId, Long materiaId,
             List<TipoComponente> tipos) {
         PeriodoAcademico periodo = periodoActual(direccionId);
@@ -74,8 +83,11 @@ public class PromedioService {
             return List.of();
         }
         Long periodoId = periodo.getId();
+        boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
+        CalculoRebaja calculo = conAsistencia ? rebajaConductaService.calculo(direccionId) : null;
 
-        List<Usuario> estudiantes = usuarioRepository.findEstudiantesActivosByNivelId(nivelId);
+        List<Usuario> estudiantes = subgrupoService.deMateria(direccionId, periodoId, nivelId, materiaId,
+                usuarioRepository.findEstudiantesActivosByNivelId(nivelId));
 
         Map<Long, List<ResultadoComponente>> resultadosPorEstudiante = resultadoRepository
                 .findByComponente_Direccion_IdAndComponente_Nivel_IdAndComponente_Materia_IdAndPeriodo_Id(
@@ -88,7 +100,8 @@ public class PromedioService {
 
         return estudiantes.stream()
                 .map(est -> calcularFila(est, periodo, materiaId, direccionId,
-                        resultadosPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, columnas, pesos))
+                        resultadosPorEstudiante.getOrDefault(est.getId(), List.of()), distribucion, columnas, pesos,
+                        calculo))
                 .toList();
     }
 
@@ -109,7 +122,7 @@ public class PromedioService {
 
     private FilaPromedio calcularFila(Usuario estudiante, PeriodoAcademico periodo, Long materiaId,
             Long direccionId, List<ResultadoComponente> resultados, DistribucionPorcentual distribucion,
-            List<TipoComponente> tipos, Map<ClaveComponente, Map<Long, Double>> pesos) {
+            List<TipoComponente> tipos, Map<ClaveComponente, Map<Long, Double>> pesos, CalculoRebaja calculo) {
         List<Double> notas = new ArrayList<>();
         for (TipoComponente tipo : tipos) {
             if (tipo.getClave() == null) {
@@ -119,23 +132,27 @@ public class PromedioService {
             notas.add(promedioDe(resultados, tipo.getClave(), pesos.getOrDefault(tipo.getClave(), Map.of())));
         }
 
-        Integer asistenciaScore = calcularAsistencia(direccionId, estudiante.getId(), materiaId, periodo);
+        Integer asistenciaScore = calculo == null
+                ? null
+                : calcularAsistencia(direccionId, estudiante.getId(), materiaId, periodo, calculo);
         Double promedioFinal = promedioFinal(distribucion, tipos, notas, asistenciaScore);
         return new FilaPromedio(estudiante, notas, asistenciaScore, promedioFinal);
     }
 
+    /** Parte de 100 y resta los puntos de la regla. No es el porcentaje de lecciones presentes. */
     private Integer calcularAsistencia(Long direccionId, Long estudianteId, Long materiaId,
-            PeriodoAcademico periodo) {
+            PeriodoAcademico periodo, CalculoRebaja calculo) {
         List<AsistenciaEstudiante> registros = asistenciaRepository
                 .findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(direccionId, estudianteId,
                         materiaId, periodo.getFechaInicio(), periodo.getFechaFin());
         if (registros.isEmpty()) {
             return null;
         }
-        long presentes = registros.stream()
-                .filter(r -> r.getEstado() != null && r.getEstado().cuentaComoPresente())
-                .count();
-        return (int) Math.round(presentes * 100.0 / registros.size());
+        int[] conteo = new int[4];
+        for (AsistenciaEstudiante registro : registros) {
+            CalculoRebaja.sumar(conteo, registro.getEstado(), 1);
+        }
+        return calculo.notaAsistencia(conteo);
     }
 
     private Double promedioDe(List<ResultadoComponente> resultados, ClaveComponente clave, Map<Long, Double> pesos) {

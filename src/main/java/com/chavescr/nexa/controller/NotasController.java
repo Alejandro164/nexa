@@ -11,6 +11,7 @@ import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.NotasConsultaService;
 import com.chavescr.nexa.service.ObservacionGuiaService;
+import com.chavescr.nexa.service.RebajaConductaService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -22,12 +23,15 @@ public class NotasController {
     private final ObservacionGuiaService observacionGuiaService;
     private final NotasConsultaService notasConsultaService;
     private final EscalaNotasService escalaNotasService;
+    private final RebajaConductaService rebajaConductaService;
 
     public NotasController(ObservacionGuiaService observacionGuiaService,
-            NotasConsultaService notasConsultaService, EscalaNotasService escalaNotasService) {
+            NotasConsultaService notasConsultaService, EscalaNotasService escalaNotasService,
+            RebajaConductaService rebajaConductaService) {
         this.observacionGuiaService = observacionGuiaService;
         this.notasConsultaService = notasConsultaService;
         this.escalaNotasService = escalaNotasService;
+        this.rebajaConductaService = rebajaConductaService;
     }
 
     @GetMapping("/desglose")
@@ -40,6 +44,7 @@ public class NotasController {
         boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         model.addAttribute("escala", escalaNotasService.vista(direccionId));
+        model.addAttribute("conAsistencia", rebajaConductaService.asistenciaRebajaComponente(direccionId));
         try {
             model.addAttribute("filas", notasConsultaService.desglose(
                     direccionId, usuarioId, supervision, estudianteId, periodoId));
@@ -47,6 +52,26 @@ public class NotasController {
             model.addAttribute("error", e.getMessage());
         }
         return "notas/detalle-por-componente :: filas";
+    }
+
+    @GetMapping("/detalle-materia")
+    public String detalleMateria(@RequestParam Long estudianteId, @RequestParam Long periodoId,
+            @RequestParam Long materiaId, @RequestParam String clave, Model model, HttpSession session,
+            HttpServletRequest request) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        model.addAttribute("escala", escalaNotasService.vista(direccionId));
+        try {
+            model.addAttribute("detalle", notasConsultaService.detalleMateria(
+                    direccionId, usuarioId, supervision, estudianteId, periodoId, materiaId, clave));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "notas/detalle-por-materia :: registros";
     }
 
     @GetMapping("/ausencias")
@@ -65,6 +90,61 @@ public class NotasController {
             model.addAttribute("error", e.getMessage());
         }
         return "notas/detalle-ausencias :: registros";
+    }
+
+    @GetMapping("/llamadas")
+    public String llamadas(@RequestParam Long estudianteId, @RequestParam Long periodoId, Model model,
+            HttpSession session, HttpServletRequest request) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        try {
+            model.addAttribute("llamadas", notasConsultaService.llamadas(
+                    direccionId, usuarioId, supervision, estudianteId, periodoId));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "notas/detalle-llamadas :: registros";
+    }
+
+    @GetMapping("/conducta")
+    public String conducta(@RequestParam Long estudianteId, @RequestParam(required = false) Long periodoId,
+            @RequestParam(required = false) Integer anio, Model model, HttpSession session,
+            HttpServletRequest request) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        try {
+            model.addAttribute("detalle", notasConsultaService.detalleConducta(
+                    direccionId, usuarioId, supervision, estudianteId, periodoId, anio));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "notas/detalle-conducta :: registros";
+    }
+
+    @GetMapping("/boletas")
+    public String boletas(@RequestParam Long estudianteId, @RequestParam Long periodoId, Model model,
+            HttpSession session, HttpServletRequest request) {
+        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        if (direccionId == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+        Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
+        try {
+            model.addAttribute("boletas", notasConsultaService.boletas(
+                    direccionId, usuarioId, supervision, estudianteId, periodoId));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "notas/detalle-boletas :: registros";
     }
 
     @PostMapping("/observacion")

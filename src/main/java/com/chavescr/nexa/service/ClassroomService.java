@@ -73,6 +73,7 @@ public class ClassroomService {
     private final ComponenteRepository componenteRepository;
     private final ComponenteService componenteService;
     private final AlmacenamientoService almacenamientoService;
+    private final SubgrupoService subgrupoService;
 
     public ClassroomService(ClassroomClaseRepository claseRepository,
             ClassroomPublicacionRepository publicacionRepository,
@@ -83,7 +84,8 @@ public class ClassroomService {
             UsuarioRepository usuarioRepository,
             ComponenteRepository componenteRepository,
             ComponenteService componenteService,
-            AlmacenamientoService almacenamientoService) {
+            AlmacenamientoService almacenamientoService,
+            SubgrupoService subgrupoService) {
         this.claseRepository = claseRepository;
         this.publicacionRepository = publicacionRepository;
         this.entregaRepository = entregaRepository;
@@ -94,6 +96,7 @@ public class ClassroomService {
         this.componenteRepository = componenteRepository;
         this.componenteService = componenteService;
         this.almacenamientoService = almacenamientoService;
+        this.subgrupoService = subgrupoService;
     }
 
     // ── Clases ────────────────────────────────────────────────────────────────
@@ -102,17 +105,23 @@ public class ClassroomService {
     @Transactional(rollbackFor = Exception.class)
     public List<TarjetaClase> listarClases(Long direccionId, Long usuarioId, Set<String> roles) {
         Usuario usuario = usuario(usuarioId);
-        Map<Long, Integer> estudiantesPorNivel = new HashMap<>();
+        Map<String, Integer> totales = new HashMap<>();
         List<TarjetaClase> tarjetas = new ArrayList<>();
 
+        PeriodoAcademico periodo = componenteService.obtenerPeriodoActivoOpcional(direccionId);
+        Long periodoId = periodo == null ? null : periodo.getId();
         for (Grupo grupo : gruposHorario(direccionId)) {
-            RolClase rol = rolEn(grupo.nivel().getId(), grupo.docentes(), usuario, roles);
+            RolClase rol = rolEn(direccionId, periodoId, grupo.nivel().getId(), grupo.materia().getId(),
+                    grupo.docentes(), usuario, roles);
             if (rol == null) {
                 continue;
             }
             ClassroomClase clase = asegurarClase(direccionId, grupo);
-            int totalEstudiantes = estudiantesPorNivel.computeIfAbsent(grupo.nivel().getId(),
-                    nivelId -> usuarioRepository.findEstudiantesActivosByNivelId(nivelId).size());
+            int totalEstudiantes = totales.computeIfAbsent(
+                    grupo.nivel().getId() + "-" + grupo.materia().getId(),
+                    clave -> subgrupoService.deMateria(direccionId, periodoId, grupo.nivel().getId(),
+                            grupo.materia().getId(),
+                            usuarioRepository.findEstudiantesActivosByNivelId(grupo.nivel().getId())).size());
             List<ClassroomPublicacion> proximas = rol.isEstudiante() ? proximasSinEntregar(clase, usuarioId) : List.of();
             long porRevisar = rol.isDocente()
                     ? entregaRepository.countByPublicacionClaseIdAndEstado(clase.getId(), EstadoEntrega.ENTREGADA)
@@ -135,7 +144,8 @@ public class ClassroomService {
                 .findFirst()
                 .map(Grupo::docentes)
                 .orElse(List.of());
-        RolClase rol = rolEn(clase.getNivel().getId(), docentes, usuario, roles);
+        RolClase rol = rolEn(direccionId, periodoId(direccionId), clase.getNivel().getId(), clase.getMateria().getId(),
+                docentes, usuario, roles);
         if (rol == null) {
             throw new AccessDeniedException("No perteneces a esta clase");
         }
@@ -144,7 +154,10 @@ public class ClassroomService {
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
     public List<Usuario> estudiantes(ContextoClase ctx) {
-        return usuarioRepository.findEstudiantesActivosByNivelId(ctx.getClase().getNivel().getId());
+        Long periodoId = periodoId(ctx.getClase().getDireccion().getId());
+        return subgrupoService.deMateria(ctx.getClase().getDireccion().getId(), periodoId,
+                ctx.getClase().getNivel().getId(), ctx.getClase().getMateria().getId(),
+                usuarioRepository.findEstudiantesActivosByNivelId(ctx.getClase().getNivel().getId()));
     }
 
     // ── Publicaciones (tablón, tareas, materiales) ────────────────────────────
@@ -540,7 +553,8 @@ public class ClassroomService {
     }
 
     // El que imparte la clase es DOCENTE aunque además sea admin; la supervisión es para quien no la imparte.
-    private RolClase rolEn(Long nivelId, List<Usuario> docentes, Usuario usuario, Set<String> roles) {
+    private RolClase rolEn(Long direccionId, Long periodoId, Long nivelId, Long materiaId, List<Usuario> docentes,
+            Usuario usuario, Set<String> roles) {
         if (docentes.stream().anyMatch(d -> d.getId().equals(usuario.getId()))) {
             return RolClase.DOCENTE;
         }
@@ -548,10 +562,32 @@ public class ClassroomService {
             return RolClase.SUPERVISOR;
         }
         if (roles.contains("ROLE_ESTUDIANTE") && Boolean.TRUE.equals(usuario.getActivo())
-                && usuario.getNivelAcademico() != null && usuario.getNivelAcademico().getId().equals(nivelId)) {
+                && usuario.getNivelAcademico() != null && usuario.getNivelAcademico().getId().equals(nivelId)
+                && subgrupoService.asiste(usuario.getId(), direccionId, periodoId, nivelId, materiaId)) {
             return RolClase.ESTUDIANTE;
         }
+        if (roles.contains("ROLE_PADRE") && hijoAsiste(usuario.getId(), direccionId, periodoId, nivelId, materiaId)) {
+            return RolClase.PADRE;
+        }
         return null;
+    }
+
+    private boolean hijoAsiste(Long padreId, Long direccionId, Long periodoId, Long nivelId, Long materiaId) {
+        for (Usuario hijo : usuarioRepository.findEstudiantesByPadreId(padreId)) {
+            if (!Boolean.TRUE.equals(hijo.getActivo()) || hijo.getNivelAcademico() == null
+                    || !nivelId.equals(hijo.getNivelAcademico().getId())) {
+                continue;
+            }
+            if (subgrupoService.asiste(hijo.getId(), direccionId, periodoId, nivelId, materiaId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Long periodoId(Long direccionId) {
+        PeriodoAcademico periodo = componenteService.obtenerPeriodoActivoOpcional(direccionId);
+        return periodo == null ? null : periodo.getId();
     }
 
     private ClassroomClase asegurarClase(Long direccionId, Grupo grupo) {

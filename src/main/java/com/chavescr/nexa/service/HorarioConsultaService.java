@@ -34,12 +34,15 @@ public class HorarioConsultaService {
     private final ConfiguracionAcademicaService configuracionAcademicaService;
     private final HorarioLeccionRepository horarioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final SubgrupoService subgrupoService;
 
     public HorarioConsultaService(ConfiguracionAcademicaService configuracionAcademicaService,
-            HorarioLeccionRepository horarioRepository, UsuarioRepository usuarioRepository) {
+            HorarioLeccionRepository horarioRepository, UsuarioRepository usuarioRepository,
+            SubgrupoService subgrupoService) {
         this.configuracionAcademicaService = configuracionAcademicaService;
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
+        this.subgrupoService = subgrupoService;
     }
 
     public ConsultaHorario consultar(Long direccionId, Long usuarioId, Set<String> roles, String vistaPedida,
@@ -47,7 +50,8 @@ public class HorarioConsultaService {
         boolean gestion = roles.contains(ROL_ADMIN) || roles.contains(ROL_DIRECTOR);
         boolean docente = !gestion && roles.contains(ROL_DOCENTE);
         boolean estudiante = !gestion && !docente && roles.contains(ROL_ESTUDIANTE);
-        if (!gestion && !docente && !estudiante) {
+        boolean padre = !gestion && !docente && !estudiante && roles.contains("ROLE_PADRE");
+        if (!gestion && !docente && !estudiante && !padre) {
             throw new AccessDeniedException("No tienes permiso para consultar el horario");
         }
 
@@ -89,7 +93,7 @@ public class HorarioConsultaService {
             return consultarDocente(direccionId, usuarioId, gestion, puedeVerDocentes, puedeVerEstudiantes,
                     periodosUi, periodo, personaId, config, diaHoy);
         }
-        return consultarEstudiantes(direccionId, usuarioId, gestion, docente, puedeVerDocentes, puedeVerEstudiantes,
+        return consultarEstudiantes(direccionId, usuarioId, gestion, docente, padre, puedeVerDocentes, puedeVerEstudiantes,
                 periodosUi, periodo, personaId, config, diaHoy);
     }
 
@@ -134,8 +138,12 @@ public class HorarioConsultaService {
     }
 
     private ConsultaHorario consultarEstudiantes(Long direccionId, Long usuarioId, boolean gestion, boolean docente,
-            boolean puedeVerDocentes, boolean puedeVerEstudiantes, List<PeriodoAcademico> periodos,
+            boolean padre, boolean puedeVerDocentes, boolean puedeVerEstudiantes, List<PeriodoAcademico> periodos,
             PeriodoAcademico periodo, Long personaId, ConfiguracionDireccion config, String diaHoy) {
+        if (padre) {
+            return consultarHijos(direccionId, usuarioId, puedeVerDocentes, puedeVerEstudiantes, periodos, periodo,
+                    personaId, config, diaHoy);
+        }
         if (!gestion && !docente) {
             return consultarEstudiantePropio(direccionId, usuarioId, puedeVerDocentes, puedeVerEstudiantes,
                     periodos, periodo, config, diaHoy);
@@ -152,6 +160,25 @@ public class HorarioConsultaService {
         Usuario elegido = elegir(estudiantes, personaId, Usuario::getId);
         return horarioDeEstudiante(direccionId, puedeVerDocentes, puedeVerEstudiantes, true,
                 elegido.getNombre(), periodos, periodo, estudiantes, elegido, config, diaHoy);
+    }
+
+    private ConsultaHorario consultarHijos(Long direccionId, Long usuarioId, boolean puedeVerDocentes,
+            boolean puedeVerEstudiantes, List<PeriodoAcademico> periodos, PeriodoAcademico periodo, Long personaId,
+            ConfiguracionDireccion config, String diaHoy) {
+        List<Usuario> hijos = usuarioRepository.findEstudiantesByPadreId(usuarioId).stream()
+                .filter(hijo -> Boolean.TRUE.equals(hijo.getActivo()) && hijo.getNivelAcademico() != null
+                        && hijo.getNivelAcademico().getDireccion() != null
+                        && direccionId.equals(hijo.getNivelAcademico().getDireccion().getId()))
+                .toList();
+        if (hijos.isEmpty()) {
+            return armar(ConsultaHorario.VISTA_ESTUDIANTES, puedeVerDocentes, puedeVerEstudiantes, false,
+                    "Horario", "Consulta semanal", ayuda(ConsultaHorario.VISTA_ESTUDIANTES),
+                    "No hay estudiantes vinculados a tu cuenta.",
+                    periodos, periodo, List.of(), null, config, Map.of(), diaHoy);
+        }
+        Usuario elegido = elegir(hijos, personaId, Usuario::getId);
+        return horarioDeEstudiante(direccionId, puedeVerDocentes, puedeVerEstudiantes, hijos.size() > 1,
+                elegido.getNombre(), periodos, periodo, hijos, elegido, config, diaHoy);
     }
 
     private ConsultaHorario consultarEstudiantePropio(Long direccionId, Long usuarioId, boolean puedeVerDocentes,
@@ -182,8 +209,9 @@ public class HorarioConsultaService {
                     periodos, periodo, estudiantes, estudiante.getId(), config, Map.of(), diaHoy);
         }
 
-        Map<String, List<HorarioLeccion>> horario = agrupar(horarioRepository.findConsultaPorNivel(
-                direccionId, periodo.getId(), nivel.getId()));
+        Map<String, List<HorarioLeccion>> horario = agrupar(subgrupoService.paraEstudiante(
+                estudiante.getId(), horarioRepository.findConsultaPorNivel(
+                        direccionId, periodo.getId(), nivel.getId())));
         String detalle = "Sección " + nivel.getNombreCompleto();
         return armar(ConsultaHorario.VISTA_ESTUDIANTES, puedeVerDocentes, puedeVerEstudiantes, puedeElegir,
                 titular, detalle, ayuda(ConsultaHorario.VISTA_ESTUDIANTES), null,

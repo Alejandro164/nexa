@@ -1,0 +1,221 @@
+<div th:fragment="detalle" id="notas-boletas-modal" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        #notas-boletas-modal .modal-dialog {
+            max-width: 860px;
+            display: flex;
+            flex-direction: column;
+            max-height: min(860px, calc(100vh - 2rem));
+        }
+        #notas-boletas-modal .modal-header { align-items: flex-start; gap: 1rem; }
+        #notas-boletas-modal .notas-bol-heading { min-width: 0; }
+        #notas-boletas-modal .modal-title { margin: 0; color: #0f172a; letter-spacing: -0.02em; }
+        #notas-boletas-modal .notas-bol-sub { margin: 0.2rem 0 0; font-size: 0.8rem; color: #64748b; }
+        #notas-boletas-modal .notas-bol-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 0.85rem 1.5rem;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            background: #f8fafc;
+        }
+        #notas-boletas-modal .notas-bol-student { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+        #notas-boletas-modal .notas-bol-avatar {
+            width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+            color: #fff; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+        }
+        #notas-boletas-modal .notas-bol-name { font-size: 0.9rem; font-weight: 700; color: #0f172a; }
+        #notas-boletas-modal .notas-bol-meta { font-size: 0.75rem; color: #64748b; margin-top: 1px; }
+        #notas-boletas-modal .notas-bol-filtro { display: flex; flex-direction: row; align-items: flex-end; gap: 0.5rem; }
+        #notas-boletas-modal .notas-bol-filtro-label {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #64748b;
+            white-space: nowrap; padding-bottom: 0.4rem;
+        }
+        #notas-boletas-modal .notas-bol-periodos-col {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;
+        }
+        #notas-boletas-modal .notas-bol-filtro .btn-primary.btn-sm {
+            padding: 6px 12px; font-size: 0.8rem; border-radius: 6px;
+        }
+        #notas-boletas-modal .notas-bol-periodos {
+            display: inline-flex; padding: 3px; border: 1px solid var(--border, #e2e8f0);
+            border-radius: 10px; background: #fff; gap: 2px;
+        }
+        #notas-boletas-modal .notas-bol-periodo {
+            min-height: 28px; padding: 0 0.7rem; border: none; border-radius: 7px; background: transparent;
+            color: #64748b; font-size: 0.75rem; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap;
+        }
+        #notas-boletas-modal .notas-bol-periodo.is-on { background: var(--primary, #2d5a87); color: #fff; }
+        #notas-boletas-modal .modal-body {
+            overflow: hidden; padding: 1rem 1.5rem 1.25rem; background: #f8fafc;
+            display: flex; flex-direction: column; min-height: 0;
+        }
+        #notas-boletas-modal .modal-dialog > .modal-footer {
+            margin: 0; padding: 0.85rem 1.5rem; border-top: 1px solid var(--border, #e2e8f0); background: #fff;
+        }
+        #notas-boletas-modal .notas-bol-kpis {
+            display: grid; grid-template-columns: repeat(5, 1fr); background: #fff;
+            border: 1px solid var(--border, #e2e8f0); border-radius: 12px; overflow: hidden; margin-bottom: 0.85rem;
+        }
+        #notas-boletas-modal .notas-bol-kpi { padding: 0.7rem 0.85rem; border-right: 1px solid var(--border, #e2e8f0); }
+        #notas-boletas-modal .notas-bol-kpi:last-child { border-right: none; }
+        #notas-boletas-modal .notas-bol-kpi span {
+            display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.03em;
+            text-transform: uppercase; color: #64748b;
+        }
+        #notas-boletas-modal .notas-bol-kpi strong {
+            display: block; margin-top: 0.15rem; font-size: 1.15rem; font-weight: 750;
+            color: #0f172a; font-variant-numeric: tabular-nums;
+        }
+        #notas-boletas-modal .notas-bol-kpi.puntos strong { color: #b91c1c; }
+        #notas-boletas-modal .notas-bol-tabla-wrap {
+            background: #fff; border: 1px solid var(--border, #e2e8f0); border-radius: 12px;
+            max-height: min(360px, 46vh); overflow: auto;
+        }
+        #notas-boletas-modal .notas-bol-tabla { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 780px; }
+        #notas-boletas-modal .notas-bol-tabla th {
+            position: sticky; top: 0; z-index: 1;
+            padding: 0.75rem 0.85rem; background: #f8fafc;
+            box-shadow: inset 0 -1px 0 var(--border, #e2e8f0);
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+            color: #64748b; text-align: left; white-space: nowrap;
+        }
+        #notas-boletas-modal .notas-bol-tabla td {
+            padding: 0.7rem 0.85rem; font-size: 0.84rem; color: #334155;
+            border-bottom: 1px solid #f1f5f9; vertical-align: top;
+        }
+        #notas-boletas-modal .notas-bol-tabla tr:last-child td { border-bottom: none; }
+        #notas-boletas-modal .notas-bol-tabla tr:hover td { background: #f8fafc; }
+        #notas-boletas-modal .notas-bol-fecha { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 650; color: #0f172a; }
+        #notas-boletas-modal .notas-bol-motivo { font-weight: 650; color: #0f172a; }
+        #notas-boletas-modal .notas-bol-puntos {
+            font-weight: 800; color: #b91c1c; font-variant-numeric: tabular-nums; white-space: nowrap;
+        }
+        #notas-boletas-modal .notas-bol-docente { font-weight: 600; color: #334155; white-space: nowrap; }
+        #notas-boletas-modal .notas-bol-desc { color: #64748b; font-size: 0.8rem; line-height: 1.45; }
+        #notas-boletas-modal .notas-bol-pill {
+            display: inline-flex; align-items: center; font-size: 0.72rem; font-weight: 700;
+            padding: 3px 8px; border-radius: 8px; white-space: nowrap;
+        }
+        #notas-boletas-modal .notas-bol-pill.pendiente { background: #fef3c7; color: #92400e; }
+        #notas-boletas-modal .notas-bol-pill.enproceso { background: #dbeafe; color: #1e40af; }
+        #notas-boletas-modal .notas-bol-pill.resuelto { background: #dcfce7; color: #166534; }
+        #notas-boletas-modal .notas-bol-pill.apelado { background: #f3e8ff; color: #6b21a8; }
+        #notas-boletas-modal .notas-bol-estado { color: #64748b; font-size: 0.84rem; }
+        @media (max-width: 720px) {
+            #notas-boletas-modal .notas-bol-kpis { grid-template-columns: repeat(2, 1fr); }
+            #notas-boletas-modal .notas-bol-kpi:nth-child(odd) { border-right: 1px solid var(--border, #e2e8f0); }
+            #notas-boletas-modal .notas-bol-kpi:nth-child(even) { border-right: none; }
+            #notas-boletas-modal .notas-bol-kpi:nth-child(-n+4) { border-bottom: 1px solid var(--border, #e2e8f0); }
+            #notas-boletas-modal .notas-bol-filtro { align-items: flex-end; }
+        }
+    </style>
+
+    <template x-if="boletaPeriodo && seleccionado">
+        <div class="modal-backdrop" role="presentation" @click.self="cerrarBoletas()"
+             @keydown.escape.window="cerrarBoletas()">
+            <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="notas-boletas-titulo">
+                <div class="modal-header">
+                    <div class="notas-bol-heading">
+                        <h3 class="modal-title" id="notas-boletas-titulo">Boletas</h3>
+                        <p class="notas-bol-sub"
+                           x-text="'Detalle de ' + boletaPeriodo.etiqueta + '. Los puntos se restan de la nota de conducta.'"></p>
+                    </div>
+                    <button type="button" class="close-btn" aria-label="Cerrar" @click="cerrarBoletas()">&times;</button>
+                </div>
+                <div class="notas-bol-toolbar">
+                    <div class="notas-bol-student">
+                        <span class="notas-bol-avatar" :style="'background:' + seleccionado.color"
+                              x-text="seleccionado.iniciales"></span>
+                        <div>
+                            <div class="notas-bol-name" x-text="seleccionado.nombre"></div>
+                            <div class="notas-bol-meta"
+                                 x-text="seleccionado.cedula + ' · Sección ' + grupoDe(seleccionado)"></div>
+                        </div>
+                    </div>
+                    <div class="notas-bol-filtro">
+                        <span class="notas-bol-filtro-label">Período</span>
+                        <div class="notas-bol-periodos-col">
+                            <button type="button" class="btn-primary btn-sm">Enviar</button>
+                            <div class="notas-bol-periodos" role="group" aria-label="Filtrar boletas por período">
+                                <template x-for="p in periodosDelAnio" :key="'bol-p-' + p.id">
+                                    <button type="button" class="notas-bol-periodo"
+                                            :class="{ 'is-on': esBoletaAbierta(p) }"
+                                            :aria-pressed="esBoletaAbierta(p)"
+                                            @click="abrirBoletas(p)"
+                                            x-text="p.etiqueta"></button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div id="notas-boletas-cuerpo">
+                        <p class="notas-bol-estado">Cargando…</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" @click="cerrarBoletas()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<div th:fragment="registros">
+    <div class="notas-bol-kpis" th:if="${error == null and boletas != null}">
+        <div class="notas-bol-kpi">
+            <span>Pendientes</span>
+            <strong th:text="${boletas.pendientes}">0</strong>
+        </div>
+        <div class="notas-bol-kpi">
+            <span>En proceso</span>
+            <strong th:text="${boletas.enProceso}">0</strong>
+        </div>
+        <div class="notas-bol-kpi">
+            <span>Resueltas</span>
+            <strong th:text="${boletas.resueltas}">0</strong>
+        </div>
+        <div class="notas-bol-kpi">
+            <span>Apeladas</span>
+            <strong th:text="${boletas.apeladas}">0</strong>
+        </div>
+        <div class="notas-bol-kpi puntos">
+            <span>Puntos</span>
+            <strong th:text="${boletas.puntos}">0</strong>
+        </div>
+    </div>
+    <div class="notas-bol-tabla-wrap">
+        <table class="notas-bol-tabla">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Falta</th>
+                    <th>Puntos</th>
+                    <th>Sanción</th>
+                    <th>Docente</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${error != null}">
+                    <td class="notas-bol-estado" colspan="6" th:text="${error}">No se pudo cargar.</td>
+                </tr>
+                <tr th:if="${error == null and (boletas == null or boletas.registros.isEmpty)}">
+                    <td class="notas-bol-estado" colspan="6">Sin boletas en este período.</td>
+                </tr>
+                <th:block th:if="${boletas != null}">
+                    <tr th:each="r : ${boletas.registros}">
+                        <td class="notas-bol-fecha" th:text="${r.fecha}">01/01/2026</td>
+                        <td class="notas-bol-motivo" th:text="${r.motivo}">Falta</td>
+                        <td class="notas-bol-puntos" th:text="${r.puntos}">0</td>
+                        <td class="notas-bol-desc" th:text="${#strings.isEmpty(r.descripcion) ? '—' : r.descripcion}">—</td>
+                        <td class="notas-bol-docente" th:text="${#strings.isEmpty(r.docente) ? '—' : r.docente}">Docente</td>
+                        <td><span class="notas-bol-pill" th:classappend="${r.estadoClase}" th:text="${r.estado}">Pendiente</span></td>
+                    </tr>
+                </th:block>
+            </tbody>
+        </table>
+    </div>
+</div>

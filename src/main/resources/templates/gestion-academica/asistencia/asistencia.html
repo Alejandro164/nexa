@@ -79,7 +79,7 @@
         <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
         <div th:if="${avisoPeriodo == null}">
             <div class="table-container">
-                <table class="table">
+                <table class="table" id="tabla-asistencia">
                     <thead>
                         <tr>
                             <th>Estudiante</th>
@@ -100,7 +100,10 @@
                                      estadoTardia=${tardia and justificada ? 'TARDIA_JUSTIFICADA' : 'TARDIA'},
                                      tituloJustificacion=${justificada ? 'Quitar justificación' : 'Marcar como justificada'},
                                      baseJustificacion=${tardia ? 'TARDIA' : 'AUSENTE'}">
-                            <td style="font-weight:600;" th:text="${f.estudiante.nombre}">Nombre</td>
+                            <td class="asist-nombre-celda" th:data-estudiante-id="${f.estudiante.id}">
+                                <button type="button" class="asist-nombre"
+                                        th:text="${f.estudiante.nombre}">Nombre</button>
+                            </td>
                             <td>
                                 <div class="asist-estados">
                                     <button type="button" class="btn asist-estado"
@@ -163,6 +166,33 @@
         </div>
     </div>
     <style>
+        #tabla-asistencia td.asist-nombre-celda {
+            padding: 0;
+            cursor: pointer;
+        }
+        .asist-nombre {
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 1rem 1.5rem;
+            white-space: normal;
+            border: 0;
+            background: transparent;
+            font: inherit;
+            font-weight: 600;
+            color: inherit;
+            text-align: left;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .asist-nombre:hover,
+        .asist-nombre:focus-visible {
+            text-decoration: none;
+            outline: none;
+        }
         .asist-estados { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .asist-estados > .asist-estado {
             padding: 4px 10px;
@@ -238,6 +268,107 @@
         }
     </style>
     <script>
+        (function () {
+            var tabla = document.getElementById('tabla-asistencia');
+            if (!tabla) {
+                return;
+            }
+            tabla.addEventListener('click', function (event) {
+                var celda = event.target.closest('td.asist-nombre-celda');
+                if (!celda || !tabla.contains(celda)) {
+                    return;
+                }
+                abrirDetalleAsistencia(celda.dataset.estudianteId, event.target.closest('button') || celda);
+            });
+        })();
+
+        function abrirDetalleAsistencia(estudianteId, origen) {
+            var modal = document.getElementById('detalle-asistencia-modal');
+            var cuerpo = document.getElementById('detalle-asistencia-cuerpo');
+            if (!modal || !cuerpo || !estudianteId) {
+                return;
+            }
+            modal._foco = origen || null;
+            modal.classList.add('is-abierto');
+            cuerpo.innerHTML = '<p class="asist-det-vacio">Cargando…</p>';
+            var dialogo = modal.querySelector('.modal-dialog');
+            if (dialogo) {
+                dialogo.focus();
+            }
+            htmx.ajax('GET', '/gestion-academica/asistencia/detalle?estudianteId=' + encodeURIComponent(estudianteId), {
+                target: '#detalle-asistencia-cuerpo',
+                swap: 'innerHTML'
+            });
+        }
+
+        function seleccionarPeriodoAsistencia(clave) {
+            var modal = document.getElementById('detalle-asistencia-modal');
+            if (!modal) {
+                return;
+            }
+            var botones = modal.querySelectorAll('.asist-det-periodo-btn');
+            for (var i = 0; i < botones.length; i++) {
+                var activo = botones[i].dataset.periodo === clave;
+                botones[i].classList.toggle('is-on', activo);
+                botones[i].setAttribute('aria-pressed', activo ? 'true' : 'false');
+            }
+            var secciones = modal.querySelectorAll('.asist-det-periodo');
+            for (var j = 0; j < secciones.length; j++) {
+                secciones[j].hidden = secciones[j].dataset.periodo !== clave;
+            }
+        }
+
+        function cerrarDetalleAsistencia() {
+            var modal = document.getElementById('detalle-asistencia-modal');
+            if (!modal || !modal.classList.contains('is-abierto')) {
+                return;
+            }
+            modal.classList.remove('is-abierto');
+            if (modal._foco && modal._foco.isConnected) {
+                modal._foco.focus();
+            }
+        }
+
+        (function () {
+            var modal = document.getElementById('detalle-asistencia-modal');
+            if (modal && !modal.dataset.enlazado) {
+                modal.dataset.enlazado = '1';
+                modal.addEventListener('click', function (event) {
+                    var periodo = event.target.closest('.asist-det-periodo-btn');
+                    if (periodo && modal.contains(periodo)) {
+                        seleccionarPeriodoAsistencia(periodo.dataset.periodo);
+                        return;
+                    }
+                    if (event.target.closest('[data-cerrar]')) {
+                        cerrarDetalleAsistencia();
+                        return;
+                    }
+                    if (event.target.classList.contains('modal-backdrop')) {
+                        cerrarDetalleAsistencia();
+                    }
+                });
+            }
+            if (!window.detalleAsistenciaTecla) {
+                window.detalleAsistenciaTecla = true;
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        cerrarDetalleAsistencia();
+                    }
+                });
+                document.body.addEventListener('htmx:afterSwap', function (event) {
+                    var target = event.detail && event.detail.target;
+                    if (!target || target.id !== 'detalle-asistencia-cuerpo') {
+                        return;
+                    }
+                    var marcado = target.querySelector('.asist-det-periodo-btn.is-on')
+                        || target.querySelector('.asist-det-periodo-btn');
+                    if (marcado) {
+                        seleccionarPeriodoAsistencia(marcado.dataset.periodo);
+                    }
+                });
+            }
+        })();
+
         function alternarJustificacion(btn, estudianteId, nivelId, materiaId, numeroLeccion, fecha, justificada, base) {
             if (btn.disabled) {
                 return;

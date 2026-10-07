@@ -7,7 +7,9 @@ public enum RolClase {
     // Pertenece a la sección: comenta y entrega tareas
     ESTUDIANTE,
     // Admin/Director de la dirección que no imparte la clase: solo lectura
-    SUPERVISOR;
+    SUPERVISOR,
+    // Padre o madre: ve la clase de sus hijos, sin entregar ni revisar compañeros
+    PADRE;
 
     public boolean isDocente() {
         return this == DOCENTE;
@@ -19,5 +21,14 @@ public enum RolClase {
 
     public boolean isSupervisor() {
         return this == SUPERVISOR;
+    }
+
+    public boolean isPadre() {
+        return this == PADRE;
+    }
+
+    /** Docente y supervisión ven las entregas de toda la sección. */
+    public boolean isRevision() {
+        return this == DOCENTE || this == SUPERVISOR;
     }
 }

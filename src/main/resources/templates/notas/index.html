@@ -493,6 +493,41 @@
             .notas-final.regular { color: #92400e; }
             .notas-final.deficiente { color: #991b1b; }
             .notas-final.aplazado { color: #991b1b; }
+            .notas-conducta-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 3.6rem;
+                min-height: 1.85rem;
+                padding: 0.12rem 0.5rem;
+                border: 1px solid #cbd5e1;
+                border-radius: 7px;
+                background: #fff;
+                font: inherit;
+                font-variant-numeric: tabular-nums;
+                font-weight: 800;
+                line-height: 1.2;
+                cursor: pointer;
+                box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+                transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s;
+            }
+            .notas-conducta-btn:hover {
+                background: rgba(45, 90, 135, 0.08);
+                border-color: var(--primary);
+            }
+            .notas-conducta-btn:focus-visible {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.18);
+            }
+            .notas-conducta-btn:active {
+                background: rgba(45, 90, 135, 0.14);
+            }
+            .notas-conducta-btn.is-on {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff;
+            }
             .notas-bar {
                 height: 4px;
                 border-radius: 99px;
@@ -505,6 +540,125 @@
             .notas-bar-fill {
                 height: 100%;
                 border-radius: inherit;
+            }
+            .notas-seguimiento {
+                flex-shrink: 0;
+                margin: 0;
+                padding: 0.95rem 1.15rem 1.05rem;
+                border-top: 1px solid var(--border);
+                background: linear-gradient(180deg, #f8fafc 0%, #fff 70%);
+            }
+            .notas-seguimiento-label {
+                margin: 0 0 0.65rem;
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: #64748b;
+            }
+            .notas-seguimiento-botones {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.7rem;
+            }
+            .notas-seguimiento-fila {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                min-height: 58px;
+                padding: 0.7rem 0.9rem;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                background: #fff;
+                box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            }
+            .notas-seguimiento-ico {
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                display: grid;
+                place-items: center;
+                flex-shrink: 0;
+            }
+            .notas-seguimiento-fila--llamada .notas-seguimiento-ico {
+                background: #fff7ed;
+                color: #c2410c;
+            }
+            .notas-seguimiento-fila--boleta .notas-seguimiento-ico {
+                background: #fef2f2;
+                color: #b91c1c;
+            }
+            .notas-seguimiento-texto {
+                flex: 1;
+                min-width: 0;
+                font-size: 0.86rem;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            .notas-seguimiento-periodos {
+                margin-left: auto;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                gap: 0.35rem;
+            }
+            .notas-seguimiento-chip {
+                min-width: 4.4rem;
+                padding: 0.28rem 0.5rem 0.32rem;
+                border-radius: 8px;
+                border: 1px solid #e2e8f0;
+                background: #fff;
+                text-align: center;
+                font-family: inherit;
+                cursor: pointer;
+                box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+                transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+            }
+            .notas-seguimiento-chip:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+            }
+            .notas-seguimiento-chip:focus-visible {
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.18);
+            }
+            .notas-seguimiento-chip.is-on {
+                background: var(--primary);
+                border-color: var(--primary);
+            }
+            .notas-seguimiento-chip.is-on .notas-seguimiento-chip-eti,
+            .notas-seguimiento-fila--llamada .notas-seguimiento-chip.is-on .notas-seguimiento-chip-n,
+            .notas-seguimiento-fila--llamada .notas-seguimiento-chip.is-on .notas-seguimiento-chip-n.is-cero,
+            .notas-seguimiento-fila--boleta .notas-seguimiento-chip.is-on .notas-seguimiento-chip-n,
+            .notas-seguimiento-fila--boleta .notas-seguimiento-chip.is-on .notas-seguimiento-chip-n.is-cero {
+                color: #fff;
+            }
+            .notas-seguimiento-fila--llamada .notas-seguimiento-chip:hover { border-color: #fdba74; }
+            .notas-seguimiento-fila--boleta .notas-seguimiento-chip:hover { border-color: #fca5a5; }
+            .notas-seguimiento-chip-eti {
+                display: block;
+                font-size: 0.62rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: #64748b;
+                line-height: 1.2;
+            }
+            .notas-seguimiento-chip-n {
+                display: block;
+                margin-top: 1px;
+                font-size: 0.95rem;
+                font-weight: 800;
+                font-variant-numeric: tabular-nums;
+                line-height: 1.15;
+            }
+            .notas-seguimiento-chip-n.is-cero { color: #94a3b8; font-weight: 700; }
+            .notas-seguimiento-fila--llamada .notas-seguimiento-chip-n { color: #c2410c; }
+            .notas-seguimiento-fila--boleta .notas-seguimiento-chip-n { color: #b91c1c; }
+            .notas-seguimiento-fila--llamada .notas-seguimiento-chip-n.is-cero,
+            .notas-seguimiento-fila--boleta .notas-seguimiento-chip-n.is-cero { color: #94a3b8; }
+            @media (max-width: 640px) {
+                .notas-seguimiento-botones { grid-template-columns: 1fr; }
             }
             .notas-ausencias {
                 flex-shrink: 0;
@@ -615,19 +769,6 @@
                 opacity: 0.6;
                 cursor: default;
             }
-            .notas-legend {
-                display: flex;
-                flex-wrap: wrap;
-                flex-shrink: 0;
-                gap: 0.75rem 1.25rem;
-                padding: 0.75rem 1.25rem;
-                border-top: 1px solid var(--border);
-                background: #f8fafc;
-                font-size: 0.72rem;
-                color: #64748b;
-            }
-            .notas-legend b { color: #334155; font-weight: 700; }
-
             @media (max-width: 1100px) {
                 .notas-kpis { grid-template-columns: repeat(2, 1fr); }
                 .notas-kpi:nth-child(2) { border-right: none; }
@@ -828,13 +969,33 @@
                                                 </td>
                                                 <template x-for="p in periodosDelAnio" :key="m.id + '-' + p.id">
                                                     <td class="num">
-                                                        <div class="notas-final" :class="nivel(pctDe(notaDe(m, p.id)))"
+                                                        <button type="button" x-show="esConducta(m)"
+                                                                class="notas-final notas-conducta-btn"
+                                                                :class="[nivel(pctDe(notaDe(m, p.id))), { 'is-on': esConductaPeriodo(p) }]"
+                                                                :aria-pressed="esConductaPeriodo(p)"
+                                                                aria-haspopup="dialog"
+                                                                :aria-label="'Detalle de conducta de ' + p.etiqueta + ': ' + fmtNota(notaDe(m, p.id))"
+                                                                :title="'Ver detalle de conducta de ' + p.etiqueta"
+                                                                @click="abrirConducta(p)"
+                                                                x-text="fmtNota(notaDe(m, p.id))"></button>
+                                                        <div x-show="!esConducta(m)" class="notas-final"
+                                                             :class="nivel(pctDe(notaDe(m, p.id)))"
                                                              x-text="fmtNota(notaDe(m, p.id))"></div>
                                                     </td>
                                                 </template>
                                                 <td class="num notas-col-anio">
                                                     <div class="notas-celda">
-                                                        <div class="notas-final" :class="nivel(pctDe(resumenDe(m)))"
+                                                        <button type="button" x-show="esConducta(m)"
+                                                                class="notas-final notas-conducta-btn"
+                                                                :class="[nivel(pctDe(resumenDe(m))), { 'is-on': esConductaAnio() }]"
+                                                                :aria-pressed="esConductaAnio()"
+                                                                aria-haspopup="dialog"
+                                                                :aria-label="'Detalle de conducta del año: ' + fmtNota(resumenDe(m))"
+                                                                title="Ver detalle de conducta del año"
+                                                                @click="abrirConductaAnio()"
+                                                                x-text="fmtNota(resumenDe(m))"></button>
+                                                        <div x-show="!esConducta(m)" class="notas-final"
+                                                             :class="nivel(pctDe(resumenDe(m)))"
                                                              x-text="fmtNota(resumenDe(m))"></div>
                                                         <div class="notas-bar" x-show="pctDe(resumenDe(m)) != null">
                                                             <div class="notas-bar-fill" :style="barraDe(resumenDe(m))"></div>
@@ -852,11 +1013,66 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="notas-legend" x-show="tieneMaterias(seleccionado)">
-                                <span>La nota es el promedio ponderado del período, según la distribución de la materia y la asistencia.</span>
-                                <span><b>Conducta</b> inicia en 100. Solo las boletas del período descuentan puntos.</span>
-                                <span><b>Año</b> es el promedio de los períodos que tienen nota.</span>
-                            </div>
+                            <section class="notas-seguimiento" x-show="tieneMaterias(seleccionado)"
+                                     aria-label="Seguimiento de conducta">
+                                <p class="notas-seguimiento-label">Seguimiento</p>
+                                <div class="notas-seguimiento-botones">
+                                    <div class="notas-seguimiento-fila notas-seguimiento-fila--llamada">
+                                        <span class="notas-seguimiento-ico" aria-hidden="true">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path>
+                                                <path d="M13.7 21a2 2 0 0 1-3.4 0"></path>
+                                            </svg>
+                                        </span>
+                                        <span class="notas-seguimiento-texto">Llamadas de atención</span>
+                                        <span class="notas-seguimiento-periodos">
+                                            <template x-for="p in periodosDelAnio" :key="'lla-' + p.id">
+                                                <button type="button" class="notas-seguimiento-chip"
+                                                        :class="{ 'is-on': esLlamadaAbierta(p) }"
+                                                        :aria-pressed="esLlamadaAbierta(p)"
+                                                        aria-haspopup="dialog"
+                                                        :aria-label="'Llamadas de atención de ' + p.etiqueta + ': ' + conteoSeguimientoPeriodo('llamadas', p)"
+                                                        :title="p.titulo"
+                                                        @click="abrirLlamadas(p)">
+                                                    <span class="notas-seguimiento-chip-eti" x-text="p.etiqueta"></span>
+                                                    <span class="notas-seguimiento-chip-n"
+                                                          :class="{ 'is-cero': conteoSeguimientoPeriodo('llamadas', p) === 0 }"
+                                                          x-text="conteoSeguimientoPeriodo('llamadas', p)"></span>
+                                                </button>
+                                            </template>
+                                        </span>
+                                    </div>
+                                    <div class="notas-seguimiento-fila notas-seguimiento-fila--boleta">
+                                        <span class="notas-seguimiento-ico" aria-hidden="true">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <line x1="8" y1="13" x2="16" y2="13"></line>
+                                                <line x1="8" y1="17" x2="13" y2="17"></line>
+                                            </svg>
+                                        </span>
+                                        <span class="notas-seguimiento-texto">Boletas</span>
+                                        <span class="notas-seguimiento-periodos">
+                                            <template x-for="p in periodosDelAnio" :key="'bol-' + p.id">
+                                                <button type="button" class="notas-seguimiento-chip"
+                                                        :class="{ 'is-on': esBoletaAbierta(p) }"
+                                                        :aria-pressed="esBoletaAbierta(p)"
+                                                        aria-haspopup="dialog"
+                                                        :aria-label="'Boletas de ' + p.etiqueta + ': ' + conteoSeguimientoPeriodo('boletas', p)"
+                                                        :title="p.titulo"
+                                                        @click="abrirBoletas(p)">
+                                                    <span class="notas-seguimiento-chip-eti" x-text="p.etiqueta"></span>
+                                                    <span class="notas-seguimiento-chip-n"
+                                                          :class="{ 'is-cero': conteoSeguimientoPeriodo('boletas', p) === 0 }"
+                                                          x-text="conteoSeguimientoPeriodo('boletas', p)"></span>
+                                                </button>
+                                            </template>
+                                        </span>
+                                    </div>
+                                </div>
+                            </section>
                             <div class="notas-ausencias">
                                 <table class="notas-ausencias-table">
                                     <thead>
@@ -924,12 +1140,17 @@
                 </section>
             </div>
             <div th:replace="~{notas/detalle-por-componente :: desglose}"></div>
+            <div th:replace="~{notas/detalle-por-materia :: detalle}"></div>
             <div th:replace="~{notas/detalle-ausencias :: detalle}"></div>
+            <div th:replace="~{notas/detalle-llamadas :: detalle}"></div>
+            <div th:replace="~{notas/detalle-boletas :: detalle}"></div>
+            <div th:replace="~{notas/detalle-conducta :: detalle}"></div>
         </div>
 
         <script th:inline="javascript">
             var NOTAS_CATALOGO = /*[[${notasCatalogo}]]*/ {};
             var NOTAS_ESCALA = /*[[${escala.tramos}]]*/ [];
+            var NOTAS_CON_ASISTENCIA = /*[[${conAsistencia}]]*/ true;
 
             function notasModulo() {
                 const catalogo = NOTAS_CATALOGO || {};
@@ -961,8 +1182,16 @@
                     guardandoObs: null,
                     desglosePeriodo: null,
                     desgloseCtrl: null,
+                    detalleMateria: null,
+                    detalleCtrl: null,
                     ausenciaPeriodo: null,
                     ausenciaCtrl: null,
+                    llamadaPeriodo: null,
+                    llamadaCtrl: null,
+                    boletaPeriodo: null,
+                    boletaCtrl: null,
+                    conductaPeriodo: null,
+                    conductaCtrl: null,
                     anios: catalogo.anios || [],
                     periodos: catalogo.periodos || [],
                     filasAusencia: [
@@ -1040,7 +1269,11 @@
                     },
                     abrirDesglose(periodo) {
                         if (!this.seleccionado || !periodo) return;
+                        this.cerrarDetalleMateria();
                         this.cerrarAusencias();
+                        this.cerrarLlamadas();
+                        this.cerrarBoletas();
+                        this.cerrarConducta();
                         const estudianteId = this.seleccionado.id;
                         const periodoId = periodo.id;
                         this.desglosePeriodo = periodo;
@@ -1053,7 +1286,8 @@
                             const cuerpo = document.getElementById('notas-desglose-cuerpo');
                             if (cuerpo) cuerpo.innerHTML = html;
                         };
-                        const cargando = '<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="7">Cargando…</td></tr>';
+                        const columnas = NOTAS_CON_ASISTENCIA ? 7 : 6;
+                        const cargando = '<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="' + columnas + '">Cargando…</td></tr>';
                         this.$nextTick(() => {
                             pintar(cargando);
                             fetch('/notas/desglose?estudianteId=' + estudianteId + '&periodoId=' + periodoId, { signal: ctrl.signal })
@@ -1064,18 +1298,92 @@
                                 .then((html) => pintar(html))
                                 .catch((e) => {
                                     if (e && e.name === 'AbortError') return;
-                                    pintar('<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="7">No se pudo cargar el desglose.</td></tr>');
+                                    pintar('<tr class="notas-desglose-fila"><td class="notas-desglose-estado" colspan="' + columnas + '">No se pudo cargar el desglose.</td></tr>');
                                 });
                         });
                     },
                     cerrarDesglose() {
+                        this.cerrarDetalleMateria();
                         if (this.desgloseCtrl) this.desgloseCtrl.abort();
                         this.desgloseCtrl = null;
                         this.desglosePeriodo = null;
                     },
+                    etiquetaClave(clave) {
+                        switch (clave) {
+                            case 'COTIDIANO': return 'Cotidiano';
+                            case 'TAREA': return 'Tareas';
+                            case 'PROYECTO': return 'Proyecto';
+                            case 'EXAMEN': return 'Pruebas';
+                            case 'ASISTENCIA': return 'Asistencia';
+                            default: return 'Componente';
+                        }
+                    },
+                    abrirDetalleMateria(event) {
+                        const origen = event.target && event.target.closest ? event.target : (event.target && event.target.parentElement);
+                        const btn = origen ? origen.closest('.notas-desglose-nota') : null;
+                        if (!btn || !this.seleccionado || !this.desglosePeriodo) return;
+                        const materiaId = btn.getAttribute('data-materia-id');
+                        const clave = btn.getAttribute('data-clave');
+                        if (!materiaId || !clave) return;
+                        const estudianteId = this.seleccionado.id;
+                        const periodoId = this.desglosePeriodo.id;
+                        this.detalleMateria = {
+                            materiaId: materiaId,
+                            clave: clave,
+                            materia: btn.getAttribute('data-materia') || 'Materia',
+                            componente: this.etiquetaClave(clave),
+                            docente: btn.getAttribute('data-docente') || ''
+                        };
+                        if (this.detalleCtrl) this.detalleCtrl.abort();
+                        const ctrl = new AbortController();
+                        this.detalleCtrl = ctrl;
+                        const cargando = '<p class="notas-mat-estado">Cargando…</p>';
+                        const pintar = (html) => {
+                            if (this.detalleCtrl !== ctrl) return;
+                            if (!this.detalleMateria || String(this.detalleMateria.materiaId) !== String(materiaId) || this.detalleMateria.clave !== clave) return;
+                            if (!this.seleccionado || this.seleccionado.id !== estudianteId || !this.desglosePeriodo || String(this.desglosePeriodo.id) !== String(periodoId)) return;
+                            const cuerpo = document.getElementById('notas-materia-cuerpo');
+                            if (cuerpo) cuerpo.innerHTML = html;
+                        };
+                        const pedir = () => {
+                            pintar(cargando);
+                            const url = '/notas/detalle-materia?estudianteId=' + encodeURIComponent(estudianteId)
+                                + '&periodoId=' + encodeURIComponent(periodoId)
+                                + '&materiaId=' + encodeURIComponent(materiaId)
+                                + '&clave=' + encodeURIComponent(clave);
+                            fetch(url, { signal: ctrl.signal })
+                                .then((res) => {
+                                    if (res.redirected || !res.ok) throw new Error('respuesta');
+                                    return res.text();
+                                })
+                                .then((html) => pintar(html))
+                                .catch((e) => {
+                                    if (e && e.name === 'AbortError') return;
+                                    pintar('<p class="notas-mat-estado">No se pudo cargar el detalle.</p>');
+                                });
+                        };
+                        const cuerpoYa = document.getElementById('notas-materia-cuerpo');
+                        if (cuerpoYa) cuerpoYa.innerHTML = cargando;
+                        this.$nextTick(pedir);
+                    },
+                    cerrarDetalleMateria() {
+                        if (this.detalleCtrl) this.detalleCtrl.abort();
+                        this.detalleCtrl = null;
+                        this.detalleMateria = null;
+                    },
+                    escapeDesglose() {
+                        if (this.detalleMateria) {
+                            this.cerrarDetalleMateria();
+                            return;
+                        }
+                        this.cerrarDesglose();
+                    },
                     abrirAusencias(periodo) {
                         if (!this.seleccionado || !periodo) return;
                         this.cerrarDesglose();
+                        this.cerrarLlamadas();
+                        this.cerrarBoletas();
+                        this.cerrarConducta();
                         const estudianteId = this.seleccionado.id;
                         const periodoId = periodo.id;
                         this.ausenciaPeriodo = periodo;
@@ -1108,9 +1416,177 @@
                         this.ausenciaCtrl = null;
                         this.ausenciaPeriodo = null;
                     },
+                    abrirLlamadas(periodo) {
+                        if (!this.seleccionado || !periodo) return;
+                        this.cerrarDesglose();
+                        this.cerrarAusencias();
+                        this.cerrarBoletas();
+                        this.cerrarConducta();
+                        const estudianteId = this.seleccionado.id;
+                        const periodoId = periodo.id;
+                        this.llamadaPeriodo = periodo;
+                        if (this.llamadaCtrl) this.llamadaCtrl.abort();
+                        const ctrl = new AbortController();
+                        this.llamadaCtrl = ctrl;
+                        const pintar = (html) => {
+                            if (this.llamadaCtrl !== ctrl) return;
+                            if (!this.seleccionado || this.seleccionado.id !== estudianteId || !this.esLlamadaAbierta(periodo)) return;
+                            const cuerpo = document.getElementById('notas-llamadas-cuerpo');
+                            if (cuerpo) cuerpo.innerHTML = html;
+                        };
+                        const cargando = '<p class="notas-lla-estado">Cargando…</p>';
+                        this.$nextTick(() => {
+                            pintar(cargando);
+                            fetch('/notas/llamadas?estudianteId=' + estudianteId + '&periodoId=' + periodoId, { signal: ctrl.signal })
+                                .then((res) => {
+                                    if (res.redirected || !res.ok) throw new Error('respuesta');
+                                    return res.text();
+                                })
+                                .then((html) => pintar(html))
+                                .catch((e) => {
+                                    if (e && e.name === 'AbortError') return;
+                                    pintar('<p class="notas-lla-estado">No se pudieron cargar las llamadas de atención.</p>');
+                                });
+                        });
+                    },
+                    cerrarLlamadas() {
+                        if (this.llamadaCtrl) this.llamadaCtrl.abort();
+                        this.llamadaCtrl = null;
+                        this.llamadaPeriodo = null;
+                    },
+                    abrirBoletasAnio() {
+                        const periodos = this.periodosDelAnio;
+                        if (!periodos.length) return;
+                        this.abrirBoletas(periodos[periodos.length - 1]);
+                    },
+                    abrirBoletas(periodo) {
+                        if (!this.seleccionado || !periodo) return;
+                        this.cerrarDesglose();
+                        this.cerrarAusencias();
+                        this.cerrarLlamadas();
+                        this.cerrarConducta();
+                        const estudianteId = this.seleccionado.id;
+                        const periodoId = periodo.id;
+                        this.boletaPeriodo = periodo;
+                        if (this.boletaCtrl) this.boletaCtrl.abort();
+                        const ctrl = new AbortController();
+                        this.boletaCtrl = ctrl;
+                        const pintar = (html) => {
+                            if (this.boletaCtrl !== ctrl) return;
+                            if (!this.seleccionado || this.seleccionado.id !== estudianteId || !this.esBoletaAbierta(periodo)) return;
+                            const cuerpo = document.getElementById('notas-boletas-cuerpo');
+                            if (cuerpo) cuerpo.innerHTML = html;
+                        };
+                        const cargando = '<p class="notas-bol-estado">Cargando…</p>';
+                        this.$nextTick(() => {
+                            pintar(cargando);
+                            fetch('/notas/boletas?estudianteId=' + estudianteId + '&periodoId=' + periodoId, { signal: ctrl.signal })
+                                .then((res) => {
+                                    if (res.redirected || !res.ok) throw new Error('respuesta');
+                                    return res.text();
+                                })
+                                .then((html) => pintar(html))
+                                .catch((e) => {
+                                    if (e && e.name === 'AbortError') return;
+                                    pintar('<p class="notas-bol-estado">No se pudieron cargar las boletas.</p>');
+                                });
+                        });
+                    },
+                    cerrarBoletas() {
+                        if (this.boletaCtrl) this.boletaCtrl.abort();
+                        this.boletaCtrl = null;
+                        this.boletaPeriodo = null;
+                    },
+                    abrirConductaAnio() {
+                        this.abrirConducta({ id: 'anio', etiqueta: 'Año lectivo', titulo: 'Año lectivo' });
+                    },
+                    historialConducta(event) {
+                        const cuerpo = document.getElementById('notas-conducta-cuerpo');
+                        if (!cuerpo) return;
+                        const volver = event.target.closest('[data-volver]');
+                        const fila = event.target.closest('[data-historial]');
+                        if (!volver && !fila) return;
+                        const resumenes = cuerpo.querySelectorAll('[data-vista="resumen"]');
+                        const listas = cuerpo.querySelectorAll('[data-vista="historial"]');
+                        const pie = cuerpo.querySelector('[data-vista="pie"]');
+                        if (volver) {
+                            listas.forEach(function (nodo) { nodo.hidden = true; });
+                            resumenes.forEach(function (nodo) { nodo.hidden = false; });
+                            if (pie) pie.hidden = false;
+                            return;
+                        }
+                        const seccion = fila.closest('section');
+                        const panel = seccion && seccion.querySelector(
+                            '[data-vista="historial"][data-clave="' + fila.getAttribute('data-historial') + '"]');
+                        if (!panel) return;
+                        event.preventDefault();
+                        resumenes.forEach(function (nodo) { nodo.hidden = true; });
+                        listas.forEach(function (nodo) { nodo.hidden = true; });
+                        if (pie) pie.hidden = true;
+                        panel.hidden = false;
+                    },
+                    abrirConducta(periodo) {
+                        if (!this.seleccionado || !periodo) return;
+                        this.cerrarDesglose();
+                        this.cerrarAusencias();
+                        this.cerrarLlamadas();
+                        this.cerrarBoletas();
+                        const estudianteId = this.seleccionado.id;
+                        const delAnio = periodo.id === 'anio';
+                        this.conductaPeriodo = periodo;
+                        if (this.conductaCtrl) this.conductaCtrl.abort();
+                        const ctrl = new AbortController();
+                        this.conductaCtrl = ctrl;
+                        const pintar = (html) => {
+                            if (this.conductaCtrl !== ctrl) return;
+                            if (!this.seleccionado || this.seleccionado.id !== estudianteId) return;
+                            if (delAnio ? !this.esConductaAnio() : !this.esConductaPeriodo(periodo)) return;
+                            const cuerpo = document.getElementById('notas-conducta-cuerpo');
+                            if (cuerpo) cuerpo.innerHTML = html;
+                        };
+                        const url = delAnio
+                            ? '/notas/conducta?estudianteId=' + estudianteId + '&anio=' + encodeURIComponent(this.anio)
+                            : '/notas/conducta?estudianteId=' + estudianteId + '&periodoId=' + periodo.id;
+                        this.$nextTick(() => {
+                            pintar('<p class="notas-con-estado">Cargando…</p>');
+                            fetch(url, { signal: ctrl.signal })
+                                .then((res) => {
+                                    if (res.redirected || !res.ok) throw new Error('respuesta');
+                                    return res.text();
+                                })
+                                .then((html) => pintar(html))
+                                .catch((e) => {
+                                    if (e && e.name === 'AbortError') return;
+                                    pintar('<p class="notas-con-estado">No se pudo cargar el detalle de conducta.</p>');
+                                });
+                        });
+                    },
+                    cerrarConducta() {
+                        if (this.conductaCtrl) this.conductaCtrl.abort();
+                        this.conductaCtrl = null;
+                        this.conductaPeriodo = null;
+                    },
+                    esConductaPeriodo(periodo) {
+                        return !!(this.conductaPeriodo && periodo
+                            && String(this.conductaPeriodo.id) === String(periodo.id));
+                    },
+                    esConductaAnio() {
+                        return !!(this.conductaPeriodo && this.conductaPeriodo.id === 'anio');
+                    },
                     cerrarDetalle() {
                         this.cerrarDesglose();
                         this.cerrarAusencias();
+                        this.cerrarLlamadas();
+                        this.cerrarBoletas();
+                        this.cerrarConducta();
+                    },
+                    esBoletaAbierta(periodo) {
+                        return !!(this.boletaPeriodo && periodo
+                            && String(this.boletaPeriodo.id) === String(periodo.id));
+                    },
+                    esLlamadaAbierta(periodo) {
+                        return !!(this.llamadaPeriodo && periodo
+                            && String(this.llamadaPeriodo.id) === String(periodo.id));
                     },
                     esAusenciaAbierta(periodo) {
                         return !!(this.ausenciaPeriodo && periodo
@@ -1123,13 +1599,14 @@
                     promedioPeriodo(est, periodo) {
                         if (!est || !periodo) return null;
                         const notas = this.materiasDe(est)
+                            .filter((m) => !this.esConducta(m))
                             .map((m) => this.pctDe(this.notaDe(m, periodo.id)))
                             .filter((n) => n != null);
                         if (!notas.length) return null;
-                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(1);
+                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(2);
                     },
                     fmtPeriodo(n) {
-                        return n == null ? '—' : Number(n).toFixed(1);
+                        return n == null ? '—' : Number(n).toFixed(2);
                     },
                     etiquetaAnio() {
                         const n = this.periodosDelAnio.length;
@@ -1149,7 +1626,7 @@
                         });
                         const conPct = notas.filter(function (n) { return n.porcentaje != null; });
                         if (!conPct.length) return null;
-                        const pct = +(conPct.reduce(function (acc, n) { return acc + Number(n.porcentaje); }, 0) / conPct.length).toFixed(1);
+                        const pct = +(conPct.reduce(function (acc, n) { return acc + Number(n.porcentaje); }, 0) / conPct.length).toFixed(2);
                         return { porcentaje: pct };
                     },
                     pctDe(n) {
@@ -1157,7 +1634,17 @@
                     },
                     fmtNota(n) {
                         const pct = this.pctDe(n);
-                        return pct == null ? '—' : pct.toFixed(1);
+                        return pct == null ? '—' : pct.toFixed(2);
+                    },
+                    conteoSeguimientoPeriodo(tipo, periodo) {
+                        const lista = this.seleccionado && this.seleccionado.seguimiento;
+                        if (!lista || !periodo) return 0;
+                        const item = lista.find(function (s) {
+                            return String(s.periodoId) === String(periodo.id);
+                        });
+                        if (!item) return 0;
+                        const n = tipo === 'boletas' ? item.boletas : item.llamadas;
+                        return n == null ? 0 : Number(n);
                     },
                     valorAusencia(fila, periodo) {
                         const lista = this.seleccionado && this.seleccionado.ausencias;
@@ -1261,7 +1748,7 @@
                             .map((m) => this.pctDe(this.resumenDe(m)))
                             .filter((n) => n != null);
                         if (!notas.length) return null;
-                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(1);
+                        return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(2);
                     },
                     conteo(est, aprobadas) {
                         const umbral = this.corte();
@@ -1275,6 +1762,7 @@
                         if (!est || !periodo) return 0;
                         const umbral = this.corte();
                         return this.materiasDe(est).filter((m) => {
+                            if (this.esConducta(m)) return false;
                             const n = this.pctDe(this.notaDe(m, periodo.id));
                             if (n == null) return false;
                             return aprobadas ? n >= umbral : n < umbral;
@@ -1329,7 +1817,7 @@
                 var el = document.getElementById('notas-root');
                 if (!el || !window.Alpine) return;
                 var data = el._x_dataStack && el._x_dataStack[0];
-                if (data && typeof data.promedioDe === 'function' && el._x_dataStack.length === 1) return;
+                if (data && typeof data.promedioDe === 'function') return;
                 if (el._x_dataStack) {
                     Alpine.destroyTree(el);
                     delete el._x_dataStack;

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,15 +22,25 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import com.chavescr.nexa.dto.DiaCalendarioDTO;
 import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
+import com.chavescr.nexa.dto.FilaPromedio;
+import com.chavescr.nexa.dto.NotasConductaDetalle;
+import com.chavescr.nexa.dto.NotasConductaDetalle.Cuenta;
+import com.chavescr.nexa.dto.NotasConductaDetalle.Linea;
+import com.chavescr.nexa.dto.NotasConductaDetalle.Registro;
+import com.chavescr.nexa.dto.NotasDesgloseFila;
+import com.chavescr.nexa.dto.VistaEscala;
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.DiaLaboral;
+import com.chavescr.nexa.entity.DistribucionPorcentual;
 import com.chavescr.nexa.entity.EscalaNotas;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.RebajaConducta;
 import com.chavescr.nexa.entity.Recordatorio;
+import com.chavescr.nexa.entity.TipoComponente;
 import com.chavescr.nexa.entity.Usuario;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -128,6 +139,7 @@ class ProyectoApplicationTests {
 		context.setVariable("almuerzos", configJornada.almuerzos());
 		context.setVariable("configJornada", configJornada);
 		context.setVariable("escalaNotas", EscalaNotas.predeterminada());
+		context.setVariable("rebajaConducta", RebajaConducta.predeterminada());
 		context.setVariable("franja", configJornada.franjas().get(1));
 		context.setVariable("diasCatalogo", DiaLaboral.CATALOGO);
 		context.setVariable("horario", Map.of("1-LUNES", List.of(leccion)));
@@ -184,9 +196,182 @@ class ProyectoApplicationTests {
 		String escalaRenderizada = templateEngine.process(
 				"configuracion-institucional/escala-notas/escala-notas", context);
 		assertTrue(escalaRenderizada.contains("/configuracion-institucional/escala-notas"));
+		assertTrue(escalaRenderizada.contains("/configuracion-institucional/escala-notas/rebajas"));
 		assertTrue(escalaRenderizada.contains("Guardar escala"));
+		assertTrue(escalaRenderizada.contains("Guardar rebajas"));
+		assertTrue(escalaRenderizada.contains("data-rebajas"));
+		assertTrue(escalaRenderizada.contains("data-quien-puntos-boleta=\"PROFESOR_GUIA\""));
+		assertTrue(escalaRenderizada.contains("data-destino-rebaja=\"CONDUCTA\""));
 		assertTrue(escalaRenderizada.contains("Excelente"));
 		assertTrue(escalaRenderizada.contains("data-nota-aprobacion=\"70\""));
+	}
+
+	@Test
+	void promedioMuestraLaAsistenciaSoloSiRebajaElComponente() {
+		Materia materia = new Materia();
+		materia.setId(1L);
+		materia.setNombre("Matemáticas");
+
+		NivelAcademico nivel = new NivelAcademico();
+		nivel.setId(1L);
+		nivel.setGrado(7);
+		nivel.setSeccion("A");
+
+		TipoComponente cotidiano = new TipoComponente();
+		cotidiano.setNombre("Cotidiano");
+
+		Usuario estudiante = new Usuario();
+		estudiante.setId(1L);
+		estudiante.setNombre("Ana Mora");
+
+		Context context = new Context();
+		context.setVariable("materias", List.of(materia));
+		context.setVariable("niveles", List.of(nivel));
+		context.setVariable("materiaId", 1L);
+		context.setVariable("nivelId", 1L);
+		context.setVariable("tiposComponente", List.of(cotidiano));
+		context.setVariable("filas", List.of(new FilaPromedio(estudiante, List.of(80.0), 63, 78.2)));
+		context.setVariable("escala", new VistaEscala(List.of(
+				new VistaEscala.Tramo("Aprobado", 70, "bueno"),
+				new VistaEscala.Tramo("Aplazado", 0, "aplazado"))));
+		context.setVariable("esDocente", false);
+		context.setVariable("notasEnviadas", false);
+		context.setVariable("estudiantesEvaluados", 1);
+		context.setVariable("promedioGrupo", 78.2);
+		context.setVariable("notaMasAlta", 78.2);
+		context.setVariable("notaMasBaja", 78.2);
+
+		context.setVariable("conAsistencia", true);
+		context.setVariable("columnasPromedio", 4);
+		String conAsistencia = templateEngine.process("gestion-academica/promedio/promedio", context);
+		assertTrue(conAsistencia.contains("<th>Asistencia</th>"));
+		assertTrue(conAsistencia.contains("63.00") || conAsistencia.contains("63,00"));
+
+		context.setVariable("conAsistencia", false);
+		context.setVariable("columnasPromedio", 3);
+		String sinAsistencia = templateEngine.process("gestion-academica/promedio/promedio", context);
+		assertFalse(sinAsistencia.contains("Asistencia"));
+		assertFalse(sinAsistencia.contains(">63<"));
+		assertTrue(sinAsistencia.contains("Ana Mora"));
+		assertTrue(sinAsistencia.contains("Promedio Final"));
+	}
+
+	@Test
+	void distribucionPideLaAsistenciaSoloSiRebajaElComponente() {
+		PeriodoAcademico periodo = new PeriodoAcademico();
+		periodo.setId(1L);
+		periodo.setCodigo("2026-II");
+
+		Materia materia = new Materia();
+		materia.setId(1L);
+		materia.setNombre("Ciencias");
+
+		DistribucionPorcentual distribucion = new DistribucionPorcentual();
+		distribucion.setCotidiano(40);
+		distribucion.setTareas(15);
+		distribucion.setProyectos(20);
+		distribucion.setExamenes(20);
+		distribucion.setAsistencia(5);
+
+		Context context = new Context();
+		context.setVariable("periodos", List.of(periodo));
+		context.setVariable("materias", List.of(materia));
+		context.setVariable("periodoId", 1L);
+		context.setVariable("materiaId", 1L);
+		context.setVariable("distribucion", distribucion);
+
+		context.setVariable("conAsistencia", true);
+		String conAsistencia = templateEngine.process("gestion-academica/distribucion/distribucion", context);
+		assertTrue(conAsistencia.contains("name=\"asistencia\""));
+		assertTrue(conAsistencia.contains("data-asistencia=\"5\""));
+
+		context.setVariable("conAsistencia", false);
+		String sinAsistencia = templateEngine.process("gestion-academica/distribucion/distribucion", context);
+		assertFalse(sinAsistencia.contains("name=\"asistencia\""));
+		assertTrue(sinAsistencia.contains("data-asistencia=\"0\""));
+		assertTrue(sinAsistencia.contains("Las ausencias y tardías rebajan la conducta"));
+	}
+
+	@Test
+	void desgloseDeNotasMuestraLaAsistenciaSoloSiRebajaElComponente() {
+		TemplateSpec filas = new TemplateSpec("notas/detalle-por-componente", Set.of("filas"),
+				(org.thymeleaf.templatemode.TemplateMode) null, null);
+		Context context = new Context();
+		context.setVariable("escala", new VistaEscala(List.of(
+				new VistaEscala.Tramo("Aprobado", 70, "bueno"),
+				new VistaEscala.Tramo("Aplazado", 0, "aplazado"))));
+		context.setVariable("filas", new ArrayList<>(List.of(
+				new NotasDesgloseFila(1L, "Ciencias", "Prof. Laura", 80, null, null, null, 63, 78.2))));
+
+		context.setVariable("conAsistencia", true);
+		String conAsistencia = templateEngine.process(filas, context);
+		assertTrue(conAsistencia.contains("data-clave=\"ASISTENCIA\""));
+		assertTrue(conAsistencia.contains("63.00"));
+		assertTrue(conAsistencia.contains("80.00"));
+		assertTrue(conAsistencia.contains("78.20"));
+
+		context.setVariable("conAsistencia", false);
+		String sinAsistencia = templateEngine.process(filas, context);
+		assertFalse(sinAsistencia.contains("ASISTENCIA"));
+		assertFalse(sinAsistencia.contains("63.00"));
+		assertTrue(sinAsistencia.contains("78.20"));
+
+		context.setVariable("filas", new ArrayList<>());
+		assertTrue(templateEngine.process(filas, context).contains("colspan=\"6\""));
+
+		TemplateSpec modal = new TemplateSpec("notas/detalle-por-componente", Set.of("desglose"),
+				(org.thymeleaf.templatemode.TemplateMode) null, null);
+		context.setVariable("conAsistencia", true);
+		String modalConAsistencia = templateEngine.process(modal, context);
+		assertTrue(modalConAsistencia.contains("<th>Asistencia</th>"));
+		assertTrue(modalConAsistencia.contains("colspan=\"7\""));
+		assertTrue(modalConAsistencia.contains("proyecto, pruebas y asistencia."));
+
+		context.setVariable("conAsistencia", false);
+		String modalSinAsistencia = templateEngine.process(modal, context);
+		assertFalse(modalSinAsistencia.contains("<th>Asistencia</th>"));
+		assertTrue(modalSinAsistencia.contains("colspan=\"6\""));
+		assertTrue(modalSinAsistencia.contains("las ausencias y tardías rebajan la conducta."));
+	}
+
+	@Test
+	void detalleDeConductaListaCadaAusenciaSoloSiRebajaLaConducta() {
+		TemplateSpec registros = new TemplateSpec("notas/detalle-conducta", Set.of("registros"),
+				(org.thymeleaf.templatemode.TemplateMode) null, null);
+		Context context = new Context();
+		context.setVariable("detalle", new NotasConductaDetalle(false, true, "73.0", new ArrayList<>(List.of(
+				new Cuenta("2026-I", new ArrayList<>(List.of(
+						new Linea("Boletas", 1, 10),
+						new Linea("Ausencias injustificadas", 2, 10, "ausencia-injustificada"))),
+						new ArrayList<>(List.of(new Registro("02/03/2026", "Ciencias", "Ausencia injustificada", 5,
+								"ausencia-injustificada"))),
+						85, 100, null)))));
+
+		String conConducta = templateEngine.process(registros, context);
+		assertTrue(conConducta.contains("Ausencias injustificadas"));
+		assertTrue(conConducta.contains("−10"));
+		assertTrue(conConducta.contains("Ciencias"));
+		assertTrue(conConducta.contains("−5"));
+		assertTrue(conConducta.contains("data-vista=\"historial\" hidden"));
+		assertFalse(conConducta.contains("Cada ausencia y tardía"));
+		assertTrue(conConducta.contains("73.0"));
+		assertTrue(conConducta.contains("100.00"));
+		assertFalse(conConducta.contains("rebajan el componente"));
+
+		String shell = templateEngine.process(
+				new TemplateSpec("notas/detalle-conducta", Set.of("detalle"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null),
+				new Context());
+		assertTrue(shell.contains("notas-con-periodo-btn"));
+		assertTrue(shell.contains("periodosDelAnio"));
+
+		context.setVariable("detalle", new NotasConductaDetalle(false, false, "90.0", new ArrayList<>(List.of(
+				new Cuenta("2026-I", new ArrayList<>(List.of(new Linea("Boletas", 1, 10))),
+						new ArrayList<>(), 90, 100, null)))));
+		String alComponente = templateEngine.process(registros, context);
+		assertTrue(alComponente.contains("rebajan el componente"));
+		assertFalse(alComponente.contains("Ausencias injustificadas"));
+		assertFalse(alComponente.contains("Cada ausencia"));
 	}
 
 	@Test

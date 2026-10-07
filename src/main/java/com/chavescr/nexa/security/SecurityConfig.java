@@ -97,7 +97,8 @@ public class SecurityConfig {
 
                         // ── Administración: Config. Académica e Institucional para ADMIN y DIRECTOR.
                         //    Configuración, Usuarios, Seguridad e Instituciones solo para System Config. ──
-                        .requestMatchers("/configuracion-academica/**", "/configuracion-institucional/**")
+                        .requestMatchers("/configuracion-academica/**", "/grupos-por-area/**",
+                                "/configuracion-institucional/**")
                                 .hasAnyAuthority(ADMIN, DIRECTOR)
                         .requestMatchers("/configuracion", "/configuracion/**", "/usuarios", "/usuarios/**",
                                 "/seguridad", "/seguridad/**", "/direcciones", "/direcciones/**")
@@ -115,13 +116,18 @@ public class SecurityConfig {
                         .requestMatchers("/agenda/actividad/**").hasAnyAuthority(ADMIN, DIRECTOR)
                         .requestMatchers("/agenda/**").hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
 
-                        // ── Portal Padres: ya reforzado en el controller, se agrega también aquí ──
-                        .requestMatchers("/portal-padres/**").hasAnyAuthority(ADMIN, PADRE)
+                        // ── Estudiante: consulta de nube.
+                        //    Classroom, horario y el calendario de agenda se declaran en sus bloques.
+                        //    Contacto, Conducta y Notas quedan solo para administrador, director y docente. ──
+                        .requestMatchers(HttpMethod.GET, "/nube-nexa/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
+                        .requestMatchers("/rendimiento-academico/**")
+                        .hasAnyAuthority(ADMIN, ESTUDIANTE, PADRE)
 
-                        // ── Estudiantes / Padres: lectura para staff, edición solo ADMIN/DIRECTOR ──
-                        .requestMatchers(HttpMethod.GET, "/estudiantes/**", "/padres/**")
+                        // ── Estudiantes: lectura para staff, edición solo ADMIN/DIRECTOR ──
+                        .requestMatchers(HttpMethod.GET, "/estudiantes/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
-                        .requestMatchers("/estudiantes/**", "/padres/**").hasAnyAuthority(ADMIN, DIRECTOR)
+                        .requestMatchers("/estudiantes/**").hasAnyAuthority(ADMIN, DIRECTOR)
 
                         // ── Resto de módulos operativos: abiertos a todo el staff (ADMIN/DIRECTOR/DOCENTE) ──
                         .requestMatchers("/docentes/**", "/control-de-acceso/**", "/gestion-academica/**",
@@ -137,13 +143,18 @@ public class SecurityConfig {
 
                         // ── Classroom: docentes y estudiantes de cada clase; ADMIN/DIRECTOR en solo lectura.
                         //    La pertenencia a cada clase la valida ClassroomService ──
+                        .requestMatchers(HttpMethod.GET, "/classroom/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
                         .requestMatchers("/classroom/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
 
-                        // ── Horario: consulta de la semana. El alcance (propio, sección o toda la
+                        // ── Horario: consulta de la semana. El alcance (propio, hijos o toda la
                         //    dirección) lo aplica HorarioConsultaService ──
                         .requestMatchers("/horario/**")
-                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE)
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
+
+                        .requestMatchers("/horario-periferica/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
 
                         // ── Comunicación: visible para todos los roles (declarado explícito) ──
                         .requestMatchers("/comunicacion/**")

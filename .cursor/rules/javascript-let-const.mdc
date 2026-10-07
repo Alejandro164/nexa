@@ -1,0 +1,35 @@
+---
+description: JavaScript uses const and let, never var
+globs: "**/*.{js,html}"
+alwaysApply: false
+---
+
+# JavaScript: const y let
+
+No escribas `var` en JavaScript nuevo ni al editar un script. `const` es el valor por defecto. `let` solo si la variable se reasigna.
+
+```javascript
+// Incorrecto
+var modal = document.getElementById('conducta-detalle-modal');
+var nombre = fila.dataset.estudianteId;
+nombre = nombre.trim();
+
+// Correcto
+const modal = document.getElementById('conducta-detalle-modal');
+let nombre = fila.dataset.estudianteId;
+nombre = nombre.trim();
+```
+
+Las funciones que un fragmento HTMX vuelve a cargar, y que un listener global llama por nombre, siguen como declaración `function`. No las pases a `const fn = () => {}`: al reinsertar el script, la declaración actualiza la función global.
+
+```javascript
+function cerrarDetalleConducta() {
+    const modal = document.getElementById('conducta-detalle-modal');
+    if (!modal) {
+        return;
+    }
+    modal.classList.remove('is-abierto');
+}
+```
+
+Si el script que estás editando todavía tiene `var`, cámbialo en ese cambio. No reescribas otros archivos solo para eliminar `var`.

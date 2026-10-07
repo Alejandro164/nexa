@@ -64,6 +64,7 @@ docker compose up    # Dev env: app on :8082, DB on :5433, debug on :5005
 - DTOs only when needed: mass-assignment risk, different create/edit validations, or need to flatten relationships. Otherwise bind directly to entity.
 - Template directories mirror controller names: controller `CursoController` with `@RequestMapping("/curso")` → templates go in `templates/curso/`.
 - No `GlobalExceptionHandler` exists yet. Services throw `IllegalArgumentException` directly. The `exception/` package in the design doc is aspirational.
+- **JavaScript** (inline in templates and files under `src/main/resources/static/js/`): do not use `var`. Use `const` by default and `let` only when the binding is reassigned. Keep `function nombre() {}` for functions that must stay global across HTMX fragment swaps. When editing a script that still has `var`, convert those declarations in the code you touch; do not leave new `var`.
 
 ## Security
 

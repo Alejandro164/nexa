@@ -1,385 +1,76 @@
-<div th:fragment="content" id="subgrupos-panel" xmlns:th="http://www.thymeleaf.org" x-data="distribucionSubgrupos()">
-<script>
-    function distribucionSubgrupos() {
-        var nombres = ['Carlos', 'Luis', 'José', 'Juan', 'Pedro', 'Miguel', 'Fernando', 'Ricardo', 'Eduardo', 'Alberto',
-            'María', 'Ana', 'Laura', 'Carmen', 'Patricia', 'Silvia', 'Mónica', 'Adriana', 'Gabriela', 'Daniela',
-            'Andrea', 'Paola', 'Karla', 'Vanessa', 'Melissa', 'Tatiana', 'Ivannia', 'Yendry', 'Priscilla', 'Natalia'];
-        var apellidos = ['Rodríguez', 'González', 'Hernández', 'Pérez', 'Sánchez', 'Ramírez', 'Torres', 'Flores',
-            'Rivera', 'Gómez', 'Díaz', 'Reyes', 'Morales', 'Cruz', 'Ortiz', 'Gutiérrez', 'Solís', 'Mora', 'Vargas', 'Rojas'];
-
-        function crearEstudiantes(bloques) {
-            var asignacion = [];
-            bloques.forEach(function (bloque) {
-                for (var n = 0; n < bloque[1]; n++) {
-                    asignacion.push(bloque[0]);
-                }
-            });
-            var lista = [];
-            for (var i = 0; i < nombres.length; i++) {
-                lista.push({
-                    id: i + 1,
-                    nombre: nombres[i] + ' ' + apellidos[i % apellidos.length] + ' ' + apellidos[(i + 8) % apellidos.length],
-                    subgrupo: asignacion[i] || null
-                });
-            }
-            return lista;
-        }
-
-        return {
-            abierto: null,
-            arrastrando: null,
-            columnaSobre: null,
-            lecciones: [
-                {
-                    id: 'idiomas',
-                    titulo: 'Inglés y Francés',
-                    meta: 'Lunes · Lección 3 · 08:20 – 09:00',
-                    columnas: [
-                        { id: 'ingles', nombre: 'Inglés', color: '#2563eb', detalle: 'Aula 201 · Laura Méndez' },
-                        { id: 'frances', nombre: 'Francés', color: '#7c3aed', detalle: 'Lab. de idiomas · Pierre Lambert' }
-                    ],
-                    estudiantes: crearEstudiantes([['ingles', 12], ['frances', 10]])
-                },
-                {
-                    id: 'deportes',
-                    titulo: 'Fútbol y Básquetbol',
-                    meta: 'Miércoles · Lección 6 · 10:40 – 11:20',
-                    columnas: [
-                        { id: 'futbol', nombre: 'Fútbol', color: '#16a34a', detalle: 'Cancha · Carlos Rojas' },
-                        { id: 'basquetbol', nombre: 'Básquetbol', color: '#ea580c', detalle: 'Gimnasio · Ana Solís' }
-                    ],
-                    estudiantes: crearEstudiantes([['futbol', 14], ['basquetbol', 9]])
-                }
-            ],
-            abrir(id) {
-                this.abierto = this.abierto === id ? null : id;
-                this.terminarArrastre();
-            },
-            deColumna(leccion, columnaId) {
-                return leccion.estudiantes.filter(function (estudiante) {
-                    return estudiante.subgrupo === columnaId;
-                });
-            },
-            pendientes(leccion) {
-                return leccion.estudiantes.filter(function (estudiante) {
-                    return !estudiante.subgrupo;
-                });
-            },
-            porcentaje(leccion, columnaId) {
-                return (this.deColumna(leccion, columnaId).length / leccion.estudiantes.length) * 100;
-            },
-            porcentajePendientes(leccion) {
-                return (this.pendientes(leccion).length / leccion.estudiantes.length) * 100;
-            },
-            iniciarArrastre(evento, leccionId, estudianteId) {
-                this.arrastrando = { leccionId: leccionId, estudianteId: estudianteId };
-                evento.dataTransfer.effectAllowed = 'move';
-                evento.dataTransfer.setData('text/plain', leccionId + ':' + estudianteId);
-            },
-            permitirSoltar(evento, clave) {
-                if (!this.arrastrando) {
-                    return;
-                }
-                evento.preventDefault();
-                evento.dataTransfer.dropEffect = 'move';
-                this.columnaSobre = clave;
-            },
-            soltar(evento, leccionId, subgrupoId) {
-                evento.preventDefault();
-                var origen = this.arrastrando;
-                if (!origen || origen.leccionId !== leccionId) {
-                    this.terminarArrastre();
-                    return;
-                }
-                var leccion = this.lecciones.find(function (item) { return item.id === leccionId; });
-                var estudiante = leccion.estudiantes.find(function (item) { return item.id === origen.estudianteId; });
-                if (estudiante) {
-                    estudiante.subgrupo = subgrupoId;
-                }
-                this.terminarArrastre();
-            },
-            terminarArrastre() {
-                this.arrastrando = null;
-                this.columnaSobre = null;
-            }
-        };
-    }
-
-    document.addEventListener('htmx:load', function (evento) {
-        var raiz = evento.detail && evento.detail.elt;
-        if (!raiz || !window.Alpine || typeof Alpine.initTree !== 'function') {
-            return;
-        }
-        var panel = raiz.id === 'subgrupos-panel' ? raiz : (raiz.querySelector && raiz.querySelector('#subgrupos-panel'));
-        if (panel && !panel._x_dataStack) {
-            Alpine.initTree(panel);
-        }
-    });
-</script>
+<div th:fragment="content" id="subgrupos-panel" xmlns:th="http://www.thymeleaf.org" style="position: relative;">
+    <div id="subgrupos-loading" class="htmx-indicator panel-loading-overlay">
+        <div class="spinner"></div>
+        <span>Cargando...</span>
+    </div>
     <style>
-        #subgrupos-panel .card-header {
-            align-items: flex-start;
-            flex-wrap: nowrap;
-        }
-        #subgrupos-panel .card-header > div:first-child {
-            flex: 1 1 0%;
-            min-width: 0;
-        }
-        .subgrupo-filters {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
+        #subgrupos-panel .card-header { align-items: flex-start; }
+        #subgrupos-panel .card-header > div:first-child { flex: 1; min-width: 0; }
         .subgrupo-field {
-            width: 100%;
-            min-height: 38px;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--surface-solid);
-            color: var(--text-primary);
-            font-family: inherit;
-            font-size: 0.875rem;
+            width: 100%; min-height: 38px; padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border); border-radius: 8px;
+            background: var(--surface-solid); color: var(--text-primary);
+            font-family: inherit; font-size: 0.875rem;
         }
-        .subgrupo-field:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
-            outline: none;
-        }
-        .subgrupo-field[readonly] {
-            background: #f8fafc;
-            color: var(--text-secondary);
-        }
-        .subgrupo-body {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            padding: 1.25rem 1.5rem 1.5rem;
-        }
-        .subgrupo-titulo {
-            margin: 0;
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .subgrupo-meta,
-        .subgrupo-detalle {
-            margin: 0.2rem 0 0;
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-        }
-        .subgrupo-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-        }
+        .subgrupo-field[readonly] { background: #f8fafc; color: var(--text-secondary); }
+        .subgrupo-body { display: flex; flex-direction: column; gap: 1rem; padding: 1.25rem 1.5rem 1.5rem; }
+        .subgrupo-titulo { margin: 0; font-size: 1rem; font-weight: 700; }
+        .subgrupo-meta, .subgrupo-detalle { margin: 0.2rem 0 0; color: var(--text-secondary); font-size: 0.8rem; }
+        .subgrupo-list { display: flex; flex-direction: column; gap: 0.85rem; }
         .subgrupo-list-title {
-            margin: 0;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: var(--text-secondary);
+            margin: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;
+            text-transform: uppercase; color: var(--text-secondary);
         }
-        .subgrupo-card {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: white;
-            overflow: hidden;
-        }
-        .subgrupo-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-            padding: 1rem 1.1rem 0.85rem;
-        }
-        .subgrupo-head-side {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            flex-shrink: 0;
-        }
-        .subgrupo-bar {
-            display: flex;
-            height: 8px;
-            margin: 0 1.1rem;
-            border-radius: 999px;
-            overflow: hidden;
-            background: #e2e8f0;
-        }
-        .subgrupo-bar span {
-            display: block;
-            height: 100%;
-        }
-        .subgrupo-split {
-            display: flex;
-            align-items: stretch;
-            gap: 0.65rem;
-            padding: 0.85rem 1.1rem 1.05rem;
-        }
+        .subgrupo-card { border: 1px solid var(--border); border-radius: 12px; background: white; overflow: hidden; }
+        .subgrupo-head { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem 1.1rem 0.85rem; }
+        .subgrupo-head-side { display: flex; align-items: center; gap: 0.65rem; flex-shrink: 0; }
+        .subgrupo-guardado { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--success); }
+        .subgrupo-bar { display: flex; height: 8px; margin: 0 1.1rem; border-radius: 999px; overflow: hidden; background: #e2e8f0; }
+        .subgrupo-bar span { display: block; height: 100%; }
+        .subgrupo-split { display: flex; gap: 0.65rem; padding: 0.85rem 1.1rem 1.05rem; }
         .subgrupo-lado {
-            --subject-color: #2d5a87;
-            flex: 1;
-            min-width: 0;
-            padding: 0.85rem 0.9rem;
-            border-radius: 10px;
+            --subject-color: #2d5a87; flex: 1; min-width: 0; padding: 0.85rem 0.9rem; border-radius: 10px;
             border: 1px solid color-mix(in srgb, var(--subject-color) 22%, white);
             border-left: 4px solid var(--subject-color);
             background: color-mix(in srgb, var(--subject-color) 8%, white);
         }
-        .subgrupo-lado-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 0.75rem;
-        }
-        .subgrupo-cantidad {
-            font-size: 1.55rem;
-            font-weight: 800;
-            line-height: 1;
-            color: var(--subject-color);
-            font-variant-numeric: tabular-nums;
-            text-align: right;
-        }
-        .subgrupo-cantidad small {
-            display: block;
-            margin-top: 0.2rem;
-            font-size: 0.68rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        .subgrupo-sync {
-            width: 92px;
-            flex: 0 0 92px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.35rem;
-            text-align: center;
-        }
-        .subgrupo-sync-line {
-            width: 1px;
-            flex: 1;
-            min-height: 10px;
-            background: var(--border);
-        }
-        .subgrupo-sync-label {
-            font-size: 0.65rem;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: var(--primary);
-            line-height: 1.25;
-        }
-        .subgrupo-tablero {
-            display: flex;
-            gap: 0.75rem;
-            align-items: stretch;
-            overflow-x: auto;
-            padding: 0 1.1rem 1.1rem;
-        }
+        .subgrupo-lado-top { display: flex; justify-content: space-between; gap: 0.75rem; }
+        .subgrupo-cantidad { font-size: 1.55rem; font-weight: 800; line-height: 1; color: var(--subject-color); text-align: right; }
+        .subgrupo-cantidad small { display: block; margin-top: 0.2rem; font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); }
+        .subgrupo-buscar, .subgrupo-ayuda, .subgrupo-tablero { display: none; }
+        .subgrupo-buscar.is-abierto, .subgrupo-ayuda.is-abierto { display: block; }
+        .subgrupo-tablero.is-abierto { display: flex; }
+        .subgrupo-buscar { padding: 0 1.1rem; }
+        .subgrupo-buscar .subgrupo-field { max-width: 320px; }
+        .subgrupo-ayuda { margin: 0.7rem 1.1rem 0.75rem; color: var(--text-secondary); font-size: 0.78rem; }
+        .subgrupo-tablero { gap: 0.75rem; overflow-x: auto; padding: 0 1.1rem 1.1rem; }
         .subgrupo-columna {
-            --subject-color: #64748b;
-            flex: 1 1 220px;
-            min-width: 210px;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: #f8fafc;
-            min-height: 280px;
-            max-height: 440px;
+            --subject-color: #64748b; flex: 1 1 240px; min-width: 230px; display: flex; flex-direction: column;
+            min-height: 280px; max-height: 460px; border: 1px solid var(--border); border-radius: 12px; background: #f8fafc;
         }
-        .subgrupo-columna.is-sobre {
-            border-color: var(--subject-color);
-            box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--subject-color) 45%, white);
-            background: color-mix(in srgb, var(--subject-color) 8%, white);
-        }
-        .subgrupo-columna-pendiente {
-            background: white;
-            border-style: dashed;
-        }
-        .subgrupo-columna-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 0.5rem;
-            padding: 0.75rem 0.8rem 0.55rem;
-            border-bottom: 1px solid var(--border);
-        }
-        .subgrupo-columna-head strong {
-            display: block;
-            font-size: 0.84rem;
-        }
-        .subgrupo-columna-count {
-            font-size: 1.15rem;
-            font-weight: 800;
-            font-variant-numeric: tabular-nums;
-            color: var(--subject-color);
-            line-height: 1;
-        }
-        .subgrupo-columna-lista {
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-            padding: 0.5rem;
-            overflow-y: auto;
-            flex: 1;
-            min-height: 140px;
-        }
+        .subgrupo-columna.is-sobre { border-color: var(--subject-color); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--subject-color) 45%, white); }
+        .subgrupo-columna-pendiente { background: white; border-style: dashed; }
+        .subgrupo-columna-head { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.75rem 0.8rem 0.55rem; border-bottom: 1px solid var(--border); }
+        .subgrupo-columna-count { font-size: 1.15rem; font-weight: 800; color: var(--subject-color); }
+        .subgrupo-columna-lista { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem; overflow-y: auto; flex: 1; }
         .subgrupo-estudiante {
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.42rem 0.55rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: white;
-            color: var(--text-primary);
-            font-size: 0.78rem;
-            font-weight: 600;
-            cursor: grab;
-            user-select: none;
+            display: flex; align-items: center; gap: 0.4rem; margin: 0;
+            padding: 0.28rem 0.35rem 0.28rem 0.45rem;
+            border: 1px solid var(--border); border-radius: 8px; background: white; font-size: 0.78rem; font-weight: 600;
         }
-        .subgrupo-estudiante:active {
-            cursor: grabbing;
+        .subgrupo-estudiante.is-oculto { display: none; }
+        .subgrupo-arrastre { display: flex; align-items: center; gap: 0.45rem; min-width: 0; flex: 1; cursor: grab; }
+        .subgrupo-nombre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .subgrupo-agarre { color: #94a3b8; letter-spacing: -0.12em; }
+        .subgrupo-mover {
+            max-width: 8.2rem; min-height: 28px; border: 1px solid var(--border); border-radius: 6px;
+            background: white; color: var(--text-secondary); font: inherit; font-size: 0.68rem; font-weight: 700;
         }
-        .subgrupo-estudiante.is-arrastrando {
-            opacity: 0.4;
-        }
-        .subgrupo-agarre {
-            color: #94a3b8;
-            font-size: 0.85rem;
-            letter-spacing: -0.12em;
-            flex-shrink: 0;
-        }
-        .subgrupo-vacio {
-            margin: auto;
-            padding: 0.8rem 0.4rem;
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.75rem;
-        }
-        .subgrupo-ayuda-arrastre {
-            margin: 0 1.1rem 0.75rem;
-            color: var(--text-secondary);
-            font-size: 0.78rem;
-        }
+        .subgrupo-vacio { margin: auto; padding: 0.8rem; text-align: center; color: var(--text-secondary); font-size: 0.75rem; }
+        .subgrupo-accion { margin-top: 0.9rem; }
         @media (max-width: 800px) {
-            #subgrupos-panel .card-header {
-                flex-wrap: wrap;
-            }
-            .subgrupo-filters,
-            .subgrupo-split {
-                grid-template-columns: 1fr;
-                flex-direction: column;
-            }
-            .subgrupo-sync {
-                display: none;
-            }
-            .subgrupo-head {
-                flex-direction: column;
-            }
+            .subgrupo-split, .subgrupo-head, .subgrupo-tablero.is-abierto { flex-direction: column; }
+            .subgrupo-columna { max-height: none; }
         }
     </style>
 
@@ -387,135 +78,228 @@
         <div class="card-header">
             <div>
                 <h3 class="card-title">Subgrupos</h3>
-                <p class="academic-help">En una misma lección el grupo se divide para recibir materias distintas al mismo tiempo. Distribuir abre las columnas para arrastrar a cada estudiante a su subgrupo.</p>
+                <p class="academic-help">La sección ya relaciona al estudiante con las materias del horario. Si una lección tiene dos materias a la vez, aquí eliges a cuál asiste. Horario, asistencia, clases y notas usan esa elección.</p>
             </div>
+            <span class="badge badge-primary" th:if="${vista.configurado}"
+                  th:text="${#lists.size(vista.franjas) == 1} ? '1 reparto' : |${#lists.size(vista.franjas)} repartos|">0 repartos</span>
         </div>
 
-        <div class="schedule-filters subgrupo-filters">
+        <form id="subgrupos-filtros" class="schedule-filters">
             <div class="form-group">
                 <label class="form-label">Período</label>
-                <select class="form-input">
-                    <option value="2026-1" selected>2026-I - Primer período</option>
-                    <option value="2026-2">2026-II - Segundo período</option>
+                <select class="form-input" name="periodoId"
+                        hx-get="/configuracion-academica/subgrupos" hx-trigger="change"
+                        hx-target="#subgrupos-panel" hx-swap="outerHTML" hx-include="closest form"
+                        hx-indicator="#subgrupos-loading">
+                    <option value="" disabled hidden th:selected="${vista.periodoId == null}">Seleccione un período</option>
+                    <option th:each="periodo : ${vista.periodos}" th:value="${periodo.id}"
+                            th:selected="${periodo.id == vista.periodoId}"
+                            th:text="|${periodo.codigo} - ${periodo.descripcion}|">2026-I</option>
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Nivel / sección</label>
-                <select class="form-input">
-                    <option value="7a" selected>Sétimo - A</option>
-                    <option value="7b">Sétimo - B</option>
-                    <option value="8a">Octavo - A</option>
+                <select class="form-input" name="nivelId"
+                        hx-get="/configuracion-academica/subgrupos" hx-trigger="change"
+                        hx-target="#subgrupos-panel" hx-swap="outerHTML" hx-include="closest form"
+                        hx-indicator="#subgrupos-loading">
+                    <option value="" disabled hidden th:selected="${vista.nivelId == null}">Seleccione un nivel / sección</option>
+                    <option th:each="nivel : ${vista.niveles}" th:value="${nivel.id}"
+                            th:selected="${nivel.id == vista.nivelId}"
+                            th:text="${nivel.nombreCompleto}">7 - A</option>
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Estudiantes del grupo</label>
-                <input class="subgrupo-field" value="30" readonly>
+                <input class="subgrupo-field" th:value="${vista.totalEstudiantes}" readonly>
             </div>
-        </div>
+        </form>
 
         <div class="subgrupo-body">
-            <div class="subgrupo-list">
-                <p class="subgrupo-list-title">Lecciones divididas · Sétimo - A</p>
+            <div th:if="${!vista.configurado}" class="academic-empty academic-empty-block">
+                Debes registrar al menos un período activo y un nivel activo para repartir subgrupos.
+            </div>
+            <div th:if="${vista.configurado and vista.franjas.empty}" class="academic-empty academic-empty-block">
+                Esta sección no tiene lecciones con dos o más materias al mismo tiempo.
+                En Horario, asigna otra materia dentro de la misma lección y el reparto aparece aquí.
+                <div class="subgrupo-accion">
+                    <button type="button" class="btn-secondary"
+                            onclick="if (window.Alpine &amp;&amp; Alpine.store('academico')) { Alpine.store('academico').activeTab = 'horario'; } recargarHorarioAcademico();">
+                        Abrir horario
+                    </button>
+                </div>
+            </div>
 
-                <template x-for="leccion in lecciones" :key="leccion.id">
-                    <article class="subgrupo-card">
-                        <header class="subgrupo-head">
-                            <div>
-                                <h4 class="subgrupo-titulo" x-text="leccion.titulo">Inglés y Francés</h4>
-                                <p class="subgrupo-meta" x-text="leccion.meta">Lunes · Lección 3</p>
+            <div class="subgrupo-list" th:if="${vista.configurado and !vista.franjas.empty}">
+                <p class="subgrupo-list-title" th:text="|Lecciones divididas · ${vista.nivelNombre}|">Lecciones divididas</p>
+                <article class="subgrupo-card" th:each="franja : ${vista.franjas}">
+                    <header class="subgrupo-head">
+                        <div>
+                            <h4 class="subgrupo-titulo" th:text="${franja.titulo}">Inglés y Francés</h4>
+                            <p class="subgrupo-meta" th:each="horario : ${franja.horarios}" th:text="${horario}">Lunes · Lección 3</p>
+                            <p class="subgrupo-detalle" th:if="${#lists.size(franja.horarios) > 1}">Este reparto vale para todas estas lecciones.</p>
+                        </div>
+                        <div class="subgrupo-head-side">
+                            <span class="subgrupo-guardado" th:if="${guardado and vista.abierta == franja.clave}">Guardado</span>
+                            <span class="badge"
+                                  th:classappend="${franja.total == 0} ? 'badge-primary' : (${franja.pendientes.empty} ? 'badge-success' : 'badge-warning')"
+                                  th:text="|${franja.asignados} / ${franja.total}|">0 / 0</span>
+                            <a class="btn-secondary" style="text-decoration:none"
+                               th:if="${vista.abierta != franja.clave}"
+                               th:hx-get="@{/configuracion-academica/subgrupos(periodoId=${vista.periodoId}, nivelId=${vista.nivelId}, bloque=${franja.clave})}"
+                               hx-target="#subgrupos-panel" hx-swap="outerHTML" hx-indicator="#subgrupos-loading">Distribuir</a>
+                            <a class="btn-secondary" style="text-decoration:none"
+                               th:if="${vista.abierta == franja.clave}"
+                               th:hx-get="@{/configuracion-academica/subgrupos(periodoId=${vista.periodoId}, nivelId=${vista.nivelId})}"
+                               hx-target="#subgrupos-panel" hx-swap="outerHTML" hx-indicator="#subgrupos-loading">Cerrar</a>
+                        </div>
+                    </header>
+                    <div class="subgrupo-bar" aria-hidden="true">
+                        <span th:each="opcion : ${franja.opciones}" th:if="${!opcion.alumnos.empty}"
+                              th:style="|flex:${#lists.size(opcion.alumnos)} 1 0;background:${opcion.color}|"></span>
+                        <span th:if="${!franja.pendientes.empty}"
+                              th:style="|flex:${#lists.size(franja.pendientes)} 1 0;background:#cbd5e1|"></span>
+                    </div>
+                    <div class="subgrupo-split">
+                        <div class="subgrupo-lado" th:each="opcion : ${franja.opciones}" th:style="|--subject-color:${opcion.color}|">
+                            <div class="subgrupo-lado-top">
+                                <span class="subject-chip" th:text="${opcion.nombre}" th:style="|--subject-color:${opcion.color}|">Inglés</span>
+                                <strong class="subgrupo-cantidad">
+                                    <span th:text="${#lists.size(opcion.alumnos)}">0</span>
+                                    <small>estudiantes</small>
+                                </strong>
                             </div>
-                            <div class="subgrupo-head-side">
-                                <span class="badge"
-                                      :class="pendientes(leccion).length ? 'badge-warning' : 'badge-success'"
-                                      x-text="(leccion.estudiantes.length - pendientes(leccion).length) + ' / ' + leccion.estudiantes.length">22 / 30</span>
-                                <button type="button" class="btn-secondary"
-                                        @click="abrir(leccion.id)"
-                                        x-text="abierto === leccion.id ? 'Cerrar' : 'Distribuir'">Distribuir</button>
+                            <p class="subgrupo-detalle" th:text="${opcion.detalle}">Aula · Docente</p>
+                        </div>
+                    </div>
+
+                    <div class="subgrupo-buscar" th:classappend="${vista.abierta == franja.clave} ? 'is-abierto' : ''">
+                        <input class="subgrupo-field" type="search" placeholder="Buscar estudiante" autocomplete="off"
+                               aria-label="Buscar estudiante" oninput="filtrarSubgrupo(this.value)">
+                    </div>
+                    <p class="subgrupo-ayuda" th:classappend="${vista.abierta == franja.clave} ? 'is-abierto' : ''">
+                        Arrastra al estudiante o elige su materia. Quien queda en «Sin distribuir» sigue en la sección, pero todavía no asiste a ninguna de estas materias.
+                    </p>
+                    <div class="subgrupo-tablero" th:classappend="${vista.abierta == franja.clave} ? 'is-abierto' : ''">
+                        <section class="subgrupo-columna subgrupo-columna-pendiente"
+                                 th:data-bloque="${franja.clave}"
+                                 ondragover="event.preventDefault()" ondrop="soltarSubgrupo(event)">
+                            <header class="subgrupo-columna-head">
+                                <div>
+                                    <strong>Sin distribuir</strong>
+                                    <p class="subgrupo-detalle">Todavía sin materia</p>
+                                </div>
+                                <span class="subgrupo-columna-count" th:text="${#lists.size(franja.pendientes)}">0</span>
+                            </header>
+                            <div class="subgrupo-columna-lista">
+                                <form class="subgrupo-estudiante" th:each="alumno : ${franja.pendientes}"
+                                     th:data-nombre="${alumno.nombre}"
+                                     hx-post="/configuracion-academica/subgrupos/asignar"
+                                     hx-trigger="change" hx-target="#subgrupos-panel" hx-swap="outerHTML"
+                                     hx-indicator="#subgrupos-loading">
+                                    <input type="hidden" name="periodoId" th:value="${vista.periodoId}">
+                                    <input type="hidden" name="nivelId" th:value="${vista.nivelId}">
+                                    <input type="hidden" name="estudianteId" th:value="${alumno.id}">
+                                    <input type="hidden" name="bloque" th:value="${franja.clave}">
+                                    <div class="subgrupo-arrastre" draggable="true" th:data-estudiante="${alumno.id}"
+                                         th:data-bloque="${franja.clave}" ondragstart="arrastrarSubgrupo(event)">
+                                        <span class="subgrupo-agarre" aria-hidden="true">⋮⋮</span>
+                                        <span class="subgrupo-nombre" th:text="${alumno.nombre}">Estudiante</span>
+                                    </div>
+                                    <select class="subgrupo-mover" name="leccionId" th:attr="aria-label=|Mover ${alumno.nombre}|">
+                                        <option value="" selected>Sin distribuir</option>
+                                        <option th:each="opcion : ${franja.opciones}" th:value="${opcion.leccionId}" th:text="${opcion.nombre}">Inglés</option>
+                                    </select>
+                                </form>
+                                <p class="subgrupo-vacio" th:if="${franja.total == 0}">No hay estudiantes en esta sección.</p>
+                                <p class="subgrupo-vacio" th:if="${franja.total > 0 and franja.pendientes.empty}">Todos tienen materia.</p>
                             </div>
-                        </header>
-                        <div class="subgrupo-bar" aria-hidden="true">
-                            <template x-for="columna in leccion.columnas" :key="columna.id">
-                                <span :style="`width:${porcentaje(leccion, columna.id)}%;background:${columna.color}`"></span>
-                            </template>
-                            <span :style="`width:${porcentajePendientes(leccion)}%;background:#cbd5e1`"></span>
-                        </div>
-                        <div class="subgrupo-split">
-                            <template x-for="(columna, indice) in leccion.columnas" :key="columna.id">
-                                <div class="subgrupo-lado" :style="`--subject-color:${columna.color}`">
-                                    <div class="subgrupo-lado-top">
-                                        <span class="subject-chip" :style="`--subject-color:${columna.color}`" x-text="columna.nombre">Inglés</span>
-                                        <strong class="subgrupo-cantidad">
-                                            <span x-text="deColumna(leccion, columna.id).length">12</span>
-                                            <small>estudiantes</small>
-                                        </strong>
-                                    </div>
-                                    <p class="subgrupo-detalle" x-text="columna.detalle">Aula 201</p>
+                        </section>
+                        <section class="subgrupo-columna" th:each="opcion : ${franja.opciones}"
+                                 th:style="|--subject-color:${opcion.color}|"
+                                 th:data-leccion="${opcion.leccionId}" th:data-bloque="${franja.clave}"
+                                 ondragover="event.preventDefault()" ondrop="soltarSubgrupo(event)">
+                            <header class="subgrupo-columna-head">
+                                <div>
+                                    <span class="subject-chip" th:text="${opcion.nombre}" th:style="|--subject-color:${opcion.color}|">Inglés</span>
+                                    <p class="subgrupo-detalle" th:text="${opcion.detalle}">Aula</p>
                                 </div>
-                            </template>
-                        </div>
-
-                        <div class="subgrupo-ayuda-arrastre" x-show="abierto === leccion.id" x-cloak>
-                            Arrastra cada estudiante a un subgrupo. Quien se quede en «Sin distribuir» sigue en el grupo, pero todavía no tiene materia en esta lección.
-                        </div>
-                        <div class="subgrupo-tablero" x-show="abierto === leccion.id" x-cloak>
-                            <section class="subgrupo-columna subgrupo-columna-pendiente"
-                                     :class="{ 'is-sobre': columnaSobre === leccion.id + ':pendiente' }"
-                                     @dragover.prevent="permitirSoltar($event, leccion.id + ':pendiente')"
-                                     @drop.prevent="soltar($event, leccion.id, null)">
-                                <header class="subgrupo-columna-head">
-                                    <div>
-                                        <strong>Sin distribuir</strong>
-                                        <p class="subgrupo-detalle">Todavía sin subgrupo</p>
+                                <span class="subgrupo-columna-count" th:text="${#lists.size(opcion.alumnos)}">0</span>
+                            </header>
+                            <div class="subgrupo-columna-lista">
+                                <form class="subgrupo-estudiante" th:each="alumno : ${opcion.alumnos}"
+                                     th:data-nombre="${alumno.nombre}"
+                                     hx-post="/configuracion-academica/subgrupos/asignar"
+                                     hx-trigger="change" hx-target="#subgrupos-panel" hx-swap="outerHTML"
+                                     hx-indicator="#subgrupos-loading">
+                                    <input type="hidden" name="periodoId" th:value="${vista.periodoId}">
+                                    <input type="hidden" name="nivelId" th:value="${vista.nivelId}">
+                                    <input type="hidden" name="estudianteId" th:value="${alumno.id}">
+                                    <input type="hidden" name="bloque" th:value="${franja.clave}">
+                                    <div class="subgrupo-arrastre" draggable="true" th:data-estudiante="${alumno.id}"
+                                         th:data-leccion="${opcion.leccionId}" th:data-bloque="${franja.clave}"
+                                         ondragstart="arrastrarSubgrupo(event)">
+                                        <span class="subgrupo-agarre" aria-hidden="true">⋮⋮</span>
+                                        <span class="subgrupo-nombre" th:text="${alumno.nombre}">Estudiante</span>
                                     </div>
-                                    <span class="subgrupo-columna-count" x-text="pendientes(leccion).length">8</span>
-                                </header>
-                                <div class="subgrupo-columna-lista">
-                                    <template x-for="estudiante in pendientes(leccion)" :key="estudiante.id">
-                                        <div class="subgrupo-estudiante"
-                                             draggable="true"
-                                             :class="{ 'is-arrastrando': arrastrando && arrastrando.estudianteId === estudiante.id && arrastrando.leccionId === leccion.id }"
-                                             @dragstart="iniciarArrastre($event, leccion.id, estudiante.id)"
-                                             @dragend="terminarArrastre()">
-                                            <span class="subgrupo-agarre" aria-hidden="true">⋮⋮</span>
-                                            <span x-text="estudiante.nombre">Estudiante</span>
-                                        </div>
-                                    </template>
-                                    <p class="subgrupo-vacio" x-show="pendientes(leccion).length === 0">Todos tienen subgrupo.</p>
-                                </div>
-                            </section>
-
-                            <template x-for="columna in leccion.columnas" :key="'col-' + columna.id">
-                                <section class="subgrupo-columna"
-                                         :style="`--subject-color:${columna.color}`"
-                                         :class="{ 'is-sobre': columnaSobre === leccion.id + ':' + columna.id }"
-                                         @dragover.prevent="permitirSoltar($event, leccion.id + ':' + columna.id)"
-                                         @drop.prevent="soltar($event, leccion.id, columna.id)">
-                                    <header class="subgrupo-columna-head">
-                                        <div>
-                                            <span class="subject-chip" :style="`--subject-color:${columna.color}`" x-text="columna.nombre">Inglés</span>
-                                            <p class="subgrupo-detalle" x-text="columna.detalle">Aula</p>
-                                        </div>
-                                        <span class="subgrupo-columna-count" x-text="deColumna(leccion, columna.id).length">12</span>
-                                    </header>
-                                    <div class="subgrupo-columna-lista">
-                                        <template x-for="estudiante in deColumna(leccion, columna.id)" :key="estudiante.id">
-                                            <div class="subgrupo-estudiante"
-                                                 draggable="true"
-                                                 :class="{ 'is-arrastrando': arrastrando && arrastrando.estudianteId === estudiante.id && arrastrando.leccionId === leccion.id }"
-                                                 @dragstart="iniciarArrastre($event, leccion.id, estudiante.id)"
-                                                 @dragend="terminarArrastre()">
-                                                <span class="subgrupo-agarre" aria-hidden="true">⋮⋮</span>
-                                                <span x-text="estudiante.nombre">Estudiante</span>
-                                            </div>
-                                        </template>
-                                        <p class="subgrupo-vacio" x-show="deColumna(leccion, columna.id).length === 0">Suelta estudiantes aquí.</p>
-                                    </div>
-                                </section>
-                            </template>
-                        </div>
-                    </article>
-                </template>
+                                    <select class="subgrupo-mover" name="leccionId" th:attr="aria-label=|Mover ${alumno.nombre}|">
+                                        <option value="">Sin distribuir</option>
+                                        <option th:each="alternativa : ${franja.opciones}" th:value="${alternativa.leccionId}"
+                                                th:selected="${alternativa.leccionId == opcion.leccionId}"
+                                                th:text="${alternativa.nombre}">Inglés</option>
+                                    </select>
+                                </form>
+                                <p class="subgrupo-vacio" th:if="${franja.total > 0 and opcion.alumnos.empty}">Suelta estudiantes aquí.</p>
+                            </div>
+                        </section>
+                    </div>
+                </article>
             </div>
         </div>
     </div>
+    <script>
+        let subgrupoArrastre = null;
+
+        function filtrarSubgrupo(texto) {
+            const consulta = texto.trim().toLocaleLowerCase('es');
+            document.querySelectorAll('#subgrupos-panel .subgrupo-estudiante').forEach(function (fila) {
+                const nombre = (fila.dataset.nombre || '').toLocaleLowerCase('es');
+                fila.classList.toggle('is-oculto', consulta.length > 0 && !nombre.includes(consulta));
+            });
+        }
+
+        function arrastrarSubgrupo(evento) {
+            subgrupoArrastre = evento.currentTarget.dataset;
+            evento.dataTransfer.effectAllowed = 'move';
+            evento.dataTransfer.setData('text/plain', subgrupoArrastre.estudiante);
+        }
+
+        function soltarSubgrupo(evento) {
+            evento.preventDefault();
+            const origen = subgrupoArrastre;
+            subgrupoArrastre = null;
+            if (!origen) {
+                return;
+            }
+            const destino = evento.currentTarget.dataset.leccion || '';
+            if ((origen.leccion || '') === destino) {
+                return;
+            }
+            const filtros = document.getElementById('subgrupos-filtros');
+            const valores = {
+                periodoId: filtros.elements.periodoId.value,
+                nivelId: filtros.elements.nivelId.value,
+                estudianteId: origen.estudiante,
+                bloque: origen.bloque
+            };
+            if (destino) {
+                valores.leccionId = destino;
+            }
+            htmx.ajax('POST', '/configuracion-academica/subgrupos/asignar', {
+                target: '#subgrupos-panel',
+                swap: 'outerHTML',
+                values: valores
+            });
+        }
+    </script>
 </div>

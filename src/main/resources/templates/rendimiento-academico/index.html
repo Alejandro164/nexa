@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Rendimiento Académico — Nexa</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Rendimiento Académico</h2>
+    <p layout:fragment="page-subtitle">Notas, asistencia, llamadas de atención y boletas</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">Rendimiento Académico</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Notas, asistencia, llamadas de atención y boletas</p>
+    <main layout:fragment="content">
+        <style>
+            .rendimiento-menu {
+                margin-bottom: 1.25rem;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                gap: 6px;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+                scrollbar-width: none;
+            }
+            .rendimiento-menu::-webkit-scrollbar { display: none; }
+            .rendimiento-tab {
+                flex: 1 0 auto;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                min-height: 42px;
+                padding: 10px 16px;
+                border: none;
+                border-radius: 10px;
+                background: transparent;
+                color: var(--text-secondary);
+                font-family: inherit;
+                font-size: 0.85rem;
+                font-weight: 650;
+                line-height: 1;
+                white-space: nowrap;
+                cursor: pointer;
+                transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            }
+            .rendimiento-tab svg {
+                width: 16px;
+                height: 16px;
+                flex-shrink: 0;
+            }
+            .rendimiento-tab:hover {
+                color: var(--primary);
+                background: var(--input-bg);
+            }
+            .rendimiento-tab.is-active {
+                color: #fff;
+                background: var(--primary);
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .rendimiento-tab:focus-visible {
+                outline: 2px solid var(--primary);
+                outline-offset: 2px;
+            }
+            .rendimiento-tab.is-active:focus-visible {
+                outline-color: #fff;
+            }
+            .rendimiento-ayuda {
+                margin: 0 0 1rem;
+                color: var(--text-secondary);
+                font-size: 0.84rem;
+            }
+            .rendimiento-panel {
+                animation: rendimiento-fade 0.35s ease-out;
+            }
+            @keyframes rendimiento-fade {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .rendimiento-panel .card-title {
+                font-size: 1.05rem;
+            }
+            .rendimiento-panel .card-header p {
+                margin: 0.2rem 0 0;
+                color: var(--text-secondary);
+                font-size: 0.8rem;
+            }
+            @media (max-width: 720px) {
+                .rendimiento-tab { flex: 0 0 auto; }
+            }
+        </style>
+
+        <div class="rendimiento" x-data="{
+            tab: 'notas',
+            tabs: ['notas', 'asistencia', 'llamadas', 'boletas'],
+            textos: {
+                notas: 'Calificaciones por materia en el periodo.',
+                asistencia: 'Ausencias, tardías y lecciones registradas.',
+                llamadas: 'Llamadas de atención y su estado.',
+                boletas: 'Boletas, faltas y sanciones del periodo.'
+            },
+            ir(id) { this.tab = id },
+            mover(event) {
+                const delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+                if (!delta) return;
+                event.preventDefault();
+                const indice = this.tabs.indexOf(this.tab);
+                this.tab = this.tabs[(indice + delta + this.tabs.length) % this.tabs.length];
+                this.$nextTick(() => {
+                    const activo = this.$root.querySelector('.rendimiento-tab.is-active');
+                    if (activo) activo.focus();
+                });
+            }
+        }">
+            <div class="rendimiento-menu" role="tablist" aria-label="Rendimiento académico" @keydown="mover($event)">
+                <button type="button" class="rendimiento-tab" role="tab" id="tab-notas"
+                        :class="{ 'is-active': tab === 'notas' }"
+                        :aria-selected="tab === 'notas'"
+                        :tabindex="tab === 'notas' ? 0 : -1"
+                        aria-controls="panel-notas"
+                        @click="ir('notas')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                        <line x1="8" y1="12" x2="16" y2="12" />
+                        <line x1="8" y1="16" x2="13" y2="16" />
+                    </svg>
+                    Notas
+                </button>
+                <button type="button" class="rendimiento-tab" role="tab" id="tab-asistencia"
+                        :class="{ 'is-active': tab === 'asistencia' }"
+                        :aria-selected="tab === 'asistencia'"
+                        :tabindex="tab === 'asistencia' ? 0 : -1"
+                        aria-controls="panel-asistencia"
+                        @click="ir('asistencia')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                        <path d="M8 15l2 2 4-4" />
+                    </svg>
+                    Asistencia
+                </button>
+                <button type="button" class="rendimiento-tab" role="tab" id="tab-llamadas"
+                        :class="{ 'is-active': tab === 'llamadas' }"
+                        :aria-selected="tab === 'llamadas'"
+                        :tabindex="tab === 'llamadas' ? 0 : -1"
+                        aria-controls="panel-llamadas"
+                        @click="ir('llamadas')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    Llamadas de atención
+                </button>
+                <button type="button" class="rendimiento-tab" role="tab" id="tab-boletas"
+                        :class="{ 'is-active': tab === 'boletas' }"
+                        :aria-selected="tab === 'boletas'"
+                        :tabindex="tab === 'boletas' ? 0 : -1"
+                        aria-controls="panel-boletas"
+                        @click="ir('boletas')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 4h16v16H4z" />
+                        <path d="M8 8h8" />
+                        <path d="M8 12h8" />
+                        <path d="M8 16h5" />
+                    </svg>
+                    Boletas
+                </button>
+            </div>
+
+            <p class="rendimiento-ayuda" x-text="textos[tab]">Calificaciones por materia en el periodo.</p>
+
+            <div class="card rendimiento-panel" role="tabpanel" id="panel-notas" aria-labelledby="tab-notas"
+                 x-show="tab === 'notas'">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Notas</h3>
+                        <p>Resumen de calificaciones por materia.</p>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Materia</th>
+                                <th>Periodo</th>
+                                <th>Promedio</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4" class="table-empty">No hay notas registradas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card rendimiento-panel" role="tabpanel" id="panel-asistencia" aria-labelledby="tab-asistencia"
+                 x-show="tab === 'asistencia'" x-cloak>
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Asistencia</h3>
+                        <p>Ausencias y tardías por lección.</p>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Materia</th>
+                                <th>Lección</th>
+                                <th>Tipo</th>
+                                <th>Profesor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="table-empty">No hay registros de asistencia.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card rendimiento-panel" role="tabpanel" id="panel-llamadas" aria-labelledby="tab-llamadas"
+                 x-show="tab === 'llamadas'" x-cloak>
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Llamadas de atención</h3>
+                        <p>Avisos registrados y su seguimiento.</p>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Motivo</th>
+                                <th>Descripción</th>
+                                <th>Docente</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="table-empty">No hay llamadas de atención.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card rendimiento-panel" role="tabpanel" id="panel-boletas" aria-labelledby="tab-boletas"
+                 x-show="tab === 'boletas'" x-cloak>
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Boletas</h3>
+                        <p>Faltas, puntos y sanciones.</p>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Falta</th>
+                                <th>Puntos</th>
+                                <th>Sanción</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="table-empty">No hay boletas registradas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+    </th:block>
+
+</body>
+
+</html>

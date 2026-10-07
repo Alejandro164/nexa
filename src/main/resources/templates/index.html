@@ -77,6 +77,9 @@
             }
 
             // Enlaza solo lo que el script de la vista todavía no enlazó, sin repetir initTree.
+            // El body ya tiene x-data. Si un componente de la vista se enlazó en su propio script,
+            // hay que sacarlo antes de initTree: si no, los x-for dentro de <tr> vuelven a insertar
+            // las columnas (los períodos de notas y ausencias se veían duplicados).
             function montarAlpine(raiz) {
                 if (!raiz || raiz.nodeType !== 1 || !window.Alpine || typeof Alpine.initTree !== 'function') return;
                 if (raiz._x_dataStack) return;
@@ -84,7 +87,8 @@
                 raiz.querySelectorAll('[x-data]').forEach(function (el) {
                     if (!el._x_dataStack) return;
                     var padre = el.parentElement && el.parentElement.closest('[x-data]');
-                    if (padre && padre._x_dataStack) return;
+                    if (padre && padre._x_dataStack && raiz.contains(padre)) return;
+                    if (!el.parentNode) return;
                     var marca = document.createComment('nexa-alpine');
                     el.parentNode.insertBefore(marca, el);
                     el.remove();
@@ -92,6 +96,7 @@
                 });
                 Alpine.initTree(raiz);
                 sacados.forEach(function (item) {
+                    if (!item.marca.parentNode) return;
                     item.marca.parentNode.insertBefore(item.el, item.marca);
                     item.marca.remove();
                 });

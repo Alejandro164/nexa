@@ -72,6 +72,18 @@ public class AsistenciaController {
         return FRAGMENTO;
     }
 
+    @GetMapping("/detalle")
+    public String detalle(@RequestParam Long estudianteId, Model model, HttpSession session,
+            HttpServletRequest request) {
+        try {
+            model.addAttribute("detalle", service.detalleEstudiante(requerirDireccion(session), estudianteId,
+                    docenteIdSiAplica(request, session)));
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "gestion-academica/asistencia/detalle-asistencia :: cuerpo";
+    }
+
     @PostMapping("/registrar")
     public String registrar(@RequestParam Long estudianteId,
             @RequestParam Long nivelId,
@@ -304,7 +316,7 @@ public class AsistenciaController {
             return "Esta materia no tiene lección programada ese día en esta sección.";
         }
         if (filas.isEmpty()) {
-            return "No hay estudiantes activos en esta sección.";
+            return "No hay estudiantes asignados a esta materia en la lección.";
         }
         return null;
     }

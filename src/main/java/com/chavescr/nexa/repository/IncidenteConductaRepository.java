@@ -16,6 +16,19 @@ public interface IncidenteConductaRepository extends JpaRepository<IncidenteCond
     List<IncidenteConducta> findByDireccionIdAndPeriodoIdAndEstudianteId(
             Long direccionId, Long periodoId, Long estudianteId);
 
+    @Query("""
+            SELECT i FROM IncidenteConducta i
+            LEFT JOIN FETCH i.registradoPor
+            WHERE i.direccion.id = :direccionId
+              AND i.periodo.id = :periodoId
+              AND i.estudiante.id = :estudianteId
+              AND i.tipo = :tipo
+            ORDER BY i.fecha DESC, i.id DESC
+            """)
+    List<IncidenteConducta> findDeEstudianteEnPeriodo(@Param("direccionId") Long direccionId,
+            @Param("periodoId") Long periodoId, @Param("estudianteId") Long estudianteId,
+            @Param("tipo") TipoIncidente tipo);
+
     @Query("SELECT i.estudiante.id, i FROM IncidenteConducta i "
             + "WHERE i.direccion.id = :direccionId AND i.periodo.id = :periodoId "
             + "AND i.estudiante.id IN :estudianteIds")
@@ -53,6 +66,18 @@ public interface IncidenteConductaRepository extends JpaRepository<IncidenteCond
             + "WHERE i.id = :id AND i.direccion.id = :direccionId")
     Optional<IncidenteConducta> findByIdAndDireccionId(@Param("id") Long id,
             @Param("direccionId") Long direccionId);
+
+    @Query("""
+            SELECT i.estudiante.id, i.periodo.id, i.tipo, COUNT(i)
+            FROM IncidenteConducta i
+            WHERE i.direccion.id = :direccionId
+              AND i.periodo.id IN :periodoIds
+              AND i.estudiante.id IN :estudianteIds
+            GROUP BY i.estudiante.id, i.periodo.id, i.tipo
+            """)
+    List<Object[]> contarPorEstudiantePeriodoYTipo(@Param("direccionId") Long direccionId,
+            @Param("periodoIds") Collection<Long> periodoIds,
+            @Param("estudianteIds") Collection<Long> estudianteIds);
 
     @Query("""
             SELECT i.estudiante.id, i.periodo.id, SUM(i.puntosDescontados)

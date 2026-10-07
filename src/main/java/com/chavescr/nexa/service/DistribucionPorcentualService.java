@@ -19,12 +19,15 @@ public class DistribucionPorcentualService {
     private final DistribucionPorcentualRepository distribucionRepository;
     private final PeriodoAcademicoRepository periodoRepository;
     private final MateriaRepository materiaRepository;
+    private final RebajaConductaService rebajaConductaService;
 
     public DistribucionPorcentualService(DistribucionPorcentualRepository distribucionRepository,
-            PeriodoAcademicoRepository periodoRepository, MateriaRepository materiaRepository) {
+            PeriodoAcademicoRepository periodoRepository, MateriaRepository materiaRepository,
+            RebajaConductaService rebajaConductaService) {
         this.distribucionRepository = distribucionRepository;
         this.periodoRepository = periodoRepository;
         this.materiaRepository = materiaRepository;
+        this.rebajaConductaService = rebajaConductaService;
     }
 
     @Transactional(readOnly = true)
@@ -40,20 +43,15 @@ public class DistribucionPorcentualService {
     @Transactional(readOnly = true)
     public DistribucionPorcentual obtenerDistribucion(Long direccionId, Long periodoId, Long materiaId) {
         return distribucionRepository.findByDireccionIdAndPeriodoIdAndMateriaId(direccionId, periodoId, materiaId)
-                .orElseGet(() -> {
-                    DistribucionPorcentual nueva = new DistribucionPorcentual();
-                    nueva.setCotidiano(40);
-                    nueva.setTareas(15);
-                    nueva.setProyectos(20);
-                    nueva.setExamenes(20);
-                    nueva.setAsistencia(5);
-                    return nueva;
-                });
+                .orElseGet(() -> DistribucionPorcentual.predeterminada(
+                        rebajaConductaService.asistenciaRebajaComponente(direccionId)));
     }
 
+    /** Si las ausencias y tardías rebajan la conducta, la asistencia queda en 0 y no cuenta para el 100%. */
     public DistribucionPorcentual guardarDistribucion(Long direccionId, Long periodoId, Long materiaId,
             Integer cotidiano, Integer tareas, Integer proyectos, Integer examenes, Integer asistencia) {
-        int total = safe(cotidiano) + safe(tareas) + safe(proyectos) + safe(examenes) + safe(asistencia);
+        int pesoAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId) ? safe(asistencia) : 0;
+        int total = safe(cotidiano) + safe(tareas) + safe(proyectos) + safe(examenes) + pesoAsistencia;
         if (total != 100) {
             throw new IllegalArgumentException(
                     "La suma de los porcentajes debe ser exactamente 100% (actual: " + total + "%)");
@@ -73,7 +71,7 @@ public class DistribucionPorcentualService {
         distribucion.setTareas(safe(tareas));
         distribucion.setProyectos(safe(proyectos));
         distribucion.setExamenes(safe(examenes));
-        distribucion.setAsistencia(safe(asistencia));
+        distribucion.setAsistencia(pesoAsistencia);
         return distribucionRepository.save(distribucion);
     }
 

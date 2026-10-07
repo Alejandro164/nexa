@@ -19,8 +19,8 @@ import jakarta.persistence.Table;
 
 /**
  * Incidencia disciplinaria de un estudiante (llamada de atención o boleta).
- * Solo las boletas restan {@link #puntosDescontados} de 100.
- * Las llamadas de atención se registran para seguimiento y no bajan la nota.
+ * Las boletas restan {@link #puntosDescontados} de 100. Las llamadas de atención
+ * no guardan un monto propio: la nota usa la regla de rebaja de la institución.
  */
 @Entity
 @Table(name = "incidentes_conducta", indexes = {

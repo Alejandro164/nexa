@@ -13,6 +13,4 @@ public interface RetiroEstudianteRepository extends JpaRepository<RetiroEstudian
 
     List<RetiroEstudiante> findByDireccionIdAndFechaHoraSolicitudBetweenOrderByFechaHoraSolicitudDesc(
             Long direccionId, LocalDateTime inicio, LocalDateTime fin);
-
-    List<RetiroEstudiante> findByPadreIdOrderByFechaHoraSolicitudDesc(Long padreId);
 }
