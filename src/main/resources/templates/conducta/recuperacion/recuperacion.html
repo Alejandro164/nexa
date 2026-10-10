@@ -1,0 +1,258 @@
+<div th:fragment="content" id="recuperacion-panel" xmlns:th="http://www.thymeleaf.org"
+     x-data="{
+        periodo: '2026-II',
+        grado: '',
+        seccion: '',
+        filtro: '',
+        periodos: ['2026-II', '2026-I'],
+        catalogo: {
+            '2026-II': { '7': ['7-A'], '8': ['8-B'], '9': ['9-C'] },
+            '2026-I': { '6': ['6-A'] }
+        },
+        casos: [
+            {
+                id: 1, periodo: '2026-II', grado: '7', seccion: '7-A',
+                estudiante: 'Alberto Mora Rodríguez', cedula: '9-0049-9950', iniciales: 'AM', color: '#2d5a87',
+                trabajo: 'Reflexión escrita sobre la puntualidad', origen: 'Recupera la tardía del 18/08',
+                puntos: 4, entrega: '12/09/2026', estado: 'entregado', estadoLabel: 'Entregado',
+                estadoClase: 'badge-enproceso', acreditado: false
+            },
+            {
+                id: 2, periodo: '2026-II', grado: '7', seccion: '7-A',
+                estudiante: 'Diego Solís Vargas', cedula: '7-0088-1044', iniciales: 'DS', color: '#0f766e',
+                trabajo: 'Apoyo en biblioteca, 4 horas', origen: 'Recupera la boleta grave del 11/09',
+                puntos: 8, entrega: 'Límite 25/09/2026', estado: 'asignado', estadoLabel: 'Asignado',
+                estadoClase: 'badge-pendiente', acreditado: false
+            },
+            {
+                id: 3, periodo: '2026-II', grado: '9', seccion: '9-C',
+                estudiante: 'Mariana Quesada Solano', cedula: '9-1102-3341', iniciales: 'MQ', color: '#7c3aed',
+                trabajo: 'Exposición sobre convivencia', origen: 'Recupera la llamada del 20/08',
+                puntos: 3, entrega: '28/08/2026', estado: 'acreditado', estadoLabel: 'Acreditado',
+                estadoClase: 'badge-resuelto', acreditado: true
+            },
+            {
+                id: 4, periodo: '2026-II', grado: '8', seccion: '8-B',
+                estudiante: 'Sofía Chen Alvarado', cedula: '8-0142-2210', iniciales: 'SC', color: '#b45309',
+                trabajo: 'Informe de reparación del aula', origen: 'Recupera una llamada de atención',
+                puntos: 5, entrega: '05/09/2026', estado: 'acreditado', estadoLabel: 'Acreditado',
+                estadoClase: 'badge-resuelto', acreditado: true
+            },
+            {
+                id: 5, periodo: '2026-I', grado: '6', seccion: '6-A',
+                estudiante: 'Lucía Brenes Rojas', cedula: '6-2201-7788', iniciales: 'LB', color: '#be123c',
+                trabajo: 'Bitácora de responsabilidad', origen: 'Recupera ausencias del período',
+                puntos: 2, entrega: '02/09/2026', estado: 'rechazado', estadoLabel: 'No acreditado',
+                estadoClase: 'badge-deficiente', acreditado: false
+            }
+        ],
+        normalizar(valor) {
+            return (valor || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+        },
+        init() {
+            this.pintarFiltros();
+        },
+        pintarFiltros() {
+            const grupos = this.catalogo[this.periodo] || {};
+            const grados = Object.keys(grupos);
+            this.llenar(this.$refs.gradoSelect, grados, 'Todos los grados');
+            if (this.grado && !grados.includes(this.grado)) this.grado = '';
+            this.$refs.gradoSelect.value = this.grado;
+            const secciones = this.grado ? (grupos[this.grado] || []) : grados.flatMap((item) => grupos[item]);
+            this.llenar(this.$refs.seccionSelect, secciones, 'Todas las secciones');
+            if (this.seccion && !secciones.includes(this.seccion)) this.seccion = '';
+            this.$refs.seccionSelect.value = this.seccion;
+        },
+        llenar(select, items, vacio) {
+            select.replaceChildren();
+            const primera = document.createElement('option');
+            primera.value = '';
+            primera.textContent = vacio;
+            select.append(primera);
+            items.forEach((item) => {
+                const opcion = document.createElement('option');
+                opcion.value = item;
+                opcion.textContent = item;
+                select.append(opcion);
+            });
+        },
+        visibles() {
+            const consulta = this.normalizar(this.filtro.trim());
+            return this.casos.filter((caso) => {
+                if (caso.periodo !== this.periodo) return false;
+                if (this.grado && caso.grado !== this.grado) return false;
+                if (this.seccion && caso.seccion !== this.seccion) return false;
+                if (!consulta) return true;
+                return this.normalizar(caso.estudiante + ' ' + caso.cedula).includes(consulta);
+            });
+        },
+        porAcreditar() {
+            return this.visibles().filter((caso) => caso.estado === 'asignado' || caso.estado === 'entregado').length;
+        },
+        acreditados() {
+            return this.visibles().filter((caso) => caso.estado === 'acreditado').length;
+        },
+        puntosSumados() {
+            return this.visibles()
+                .filter((caso) => caso.estado === 'acreditado')
+                .reduce((total, caso) => total + caso.puntos, 0);
+        },
+        textoConteo() {
+            const total = new Set(this.visibles().map((caso) => caso.cedula)).size;
+            return total + (total === 1 ? ' estudiante' : ' estudiantes');
+        }
+     }">
+    <style>
+        #recuperacion-panel .conducta-stats {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        #recuperacion-panel .rec-origen {
+            display: block;
+            margin-top: 2px;
+            color: #64748b;
+            font-size: 0.75rem;
+        }
+        #recuperacion-panel .rec-puntos {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: #166534;
+        }
+        #recuperacion-panel .rec-puntos.is-off {
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        #recuperacion-panel .rec-leyenda {
+            margin: 0.85rem 0 0;
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+        @media (max-width: 900px) {
+            #recuperacion-panel .conducta-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+
+    <div class="conducta-stats">
+        <div class="stat-card">
+            <span class="stat-label">Trabajos</span>
+            <span class="stat-value" x-text="visibles().length">4</span>
+        </div>
+        <div class="stat-card pendiente">
+            <span class="stat-label">Por acreditar</span>
+            <span class="stat-value" x-text="porAcreditar()">2</span>
+        </div>
+        <div class="stat-card positiva">
+            <span class="stat-label">Acreditados</span>
+            <span class="stat-value" x-text="acreditados()">2</span>
+        </div>
+        <div class="stat-card positiva">
+            <span class="stat-label">Puntos sumados</span>
+            <span class="stat-value" x-text="'+' + puntosSumados()">+8</span>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="conducta-toolbar">
+            <div class="conducta-filters-row">
+                <label class="conducta-field">
+                    <span>Período</span>
+                    <select class="form-input" aria-label="Período" x-model="periodo" @change="pintarFiltros()">
+                        <option value="2026-II">2026-II</option>
+                        <option value="2026-I">2026-I</option>
+                    </select>
+                </label>
+                <label class="conducta-field">
+                    <span>Grado</span>
+                    <select class="form-input" aria-label="Grado" x-ref="gradoSelect" x-model="grado" @change="pintarFiltros()">
+                        <option value="">Todos los grados</option>
+                    </select>
+                </label>
+                <label class="conducta-field">
+                    <span>Sección</span>
+                    <select class="form-input" aria-label="Sección" x-ref="seccionSelect" x-model="seccion">
+                        <option value="">Todas las secciones</option>
+                    </select>
+                </label>
+                <span class="table-card-count" x-text="textoConteo()">4 estudiantes</span>
+            </div>
+            <div class="conducta-search-row">
+                <div class="conducta-search">
+                    <svg class="conducta-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input class="filter-input" type="search" x-model="filtro"
+                           placeholder="Nombre o cédula..."
+                           aria-label="Buscar estudiante" autocomplete="off">
+                </div>
+                <div class="conducta-actions">
+                    <button type="button" class="conducta-btn conducta-btn-secondary" onclick="window.print()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="conducta-table">
+                <thead>
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Sección</th>
+                        <th>Trabajo</th>
+                        <th>Puntos</th>
+                        <th>Entrega</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="caso in visibles()" :key="caso.id">
+                        <tr>
+                            <td>
+                                <div class="student-cell">
+                                    <div class="student-avatar" :style="'background:' + caso.color" x-text="caso.iniciales">AM</div>
+                                    <div>
+                                        <div style="font-weight:600;color:#0f172a;" x-text="caso.estudiante">Alberto Mora Rodríguez</div>
+                                        <div style="font-size:0.75rem;color:#64748b;" x-text="caso.cedula">9-0049-9950</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td x-text="caso.seccion">7-A</td>
+                            <td>
+                                <span x-text="caso.trabajo">Reflexión escrita sobre la puntualidad</span>
+                                <span class="rec-origen" x-text="caso.origen">Recupera la tardía del 18/08</span>
+                            </td>
+                            <td>
+                                <span class="rec-puntos" :class="{ 'is-off': caso.estado === 'rechazado' }"
+                                      x-text="'+' + caso.puntos">+4</span>
+                            </td>
+                            <td x-text="caso.entrega">12/09/2026</td>
+                            <td>
+                                <span class="badge-xs" :class="caso.estadoClase" x-text="caso.estadoLabel">Entregado</span>
+                            </td>
+                            <td class="actions-cell">
+                                <button type="button" class="btn-xs btn-ghost">Ver</button>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="visibles().length === 0">
+                        <td colspan="7" class="empty-state">No hay trabajos en el filtro seleccionado.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <p class="rec-leyenda">
+        Datos de ejemplo. El punto se suma a la nota de conducta solo cuando el trabajo queda acreditado. La boleta, la llamada o la tardía que originó la rebaja se mantiene.
+    </p>
+</div>

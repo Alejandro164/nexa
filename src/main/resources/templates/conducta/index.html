@@ -405,6 +405,10 @@
                             @click="activeTab = 'lecciones-guia'">
                         Lecciones Guía
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'recuperacion' }"
+                            @click="activeTab = 'recuperacion'">
+                        Recuperación
+                    </button>
                 </div>
             </div>
 
@@ -434,6 +438,10 @@
 
             <div x-show="activeTab === 'lecciones-guia'" class="tab-pane" x-cloak>
                 <div th:replace="~{conducta/lecciones-guia/lecciones-guia :: content}"></div>
+            </div>
+
+            <div x-show="activeTab === 'recuperacion'" class="tab-pane" x-cloak>
+                <div th:replace="~{conducta/recuperacion/recuperacion :: content}"></div>
             </div>
 
         </div>

@@ -118,7 +118,7 @@ public class SecurityConfig {
 
                         // ── Estudiante: consulta de nube.
                         //    Classroom, horario y el calendario de agenda se declaran en sus bloques.
-                        //    Contacto, Conducta y Notas quedan solo para administrador, director y docente. ──
+                        //    Contacto, Conducta, Notas, Ampliación y Apelaciones quedan solo para administrador, director y docente. ──
                         .requestMatchers(HttpMethod.GET, "/nube-nexa/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
                         .requestMatchers("/rendimiento-academico/**")
@@ -128,6 +128,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/estudiantes/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
                         .requestMatchers("/estudiantes/**").hasAnyAuthority(ADMIN, DIRECTOR)
+
+                        // ── Apelaciones y Ampliación: bandeja del staff. Padre y estudiante no entran ni por URL. ──
+                        .requestMatchers("/apelaciones", "/apelaciones/**", "/ampliacion", "/ampliacion/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
 
                         // ── Resto de módulos operativos: abiertos a todo el staff (ADMIN/DIRECTOR/DOCENTE) ──
                         .requestMatchers("/docentes/**", "/control-de-acceso/**", "/gestion-academica/**",

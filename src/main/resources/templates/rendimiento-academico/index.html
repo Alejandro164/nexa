@@ -9,11 +9,11 @@
 <body>
 
     <h2 layout:fragment="page-title">Rendimiento Académico</h2>
-    <p layout:fragment="page-subtitle">Notas, asistencia, llamadas de atención y boletas</p>
+    <p layout:fragment="page-subtitle">Notas, asistencia, llamadas de atención, boletas, conducta y apelaciones</p>
 
     <th:block th:fragment="htmx-content">
     <h2 id="topbar-page-title" hx-swap-oob="true">Rendimiento Académico</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Notas, asistencia, llamadas de atención y boletas</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Notas, asistencia, llamadas de atención, boletas, conducta y apelaciones</p>
     <main layout:fragment="content">
         <style>
             .rendimiento-menu {
@@ -97,13 +97,15 @@
         </style>
 
         <div class="rendimiento" x-data="{
-            tab: 'notas',
-            tabs: ['notas', 'asistencia', 'llamadas', 'boletas'],
+            tab: 'conducta',
+            tabs: ['conducta', 'notas', 'asistencia', 'llamadas', 'boletas', 'apelaciones'],
             textos: {
-                notas: 'Calificaciones por materia en el periodo.',
+                notas: 'Calificaciones de cada materia, por componente.',
                 asistencia: 'Ausencias, tardías y lecciones registradas.',
                 llamadas: 'Llamadas de atención y su estado.',
-                boletas: 'Boletas, faltas y sanciones del periodo.'
+                boletas: 'Boletas, faltas y sanciones del periodo.',
+                conducta: 'Nota de conducta del periodo y lo que la rebaja.',
+                apelaciones: 'Solicitudes para revisar una nota, una boleta o la conducta.'
             },
             ir(id) { this.tab = id },
             mover(event) {
@@ -119,6 +121,18 @@
             }
         }">
             <div class="rendimiento-menu" role="tablist" aria-label="Rendimiento académico" @keydown="mover($event)">
+                <button type="button" class="rendimiento-tab" role="tab" id="tab-conducta"
+                        :class="{ 'is-active': tab === 'conducta' }"
+                        :aria-selected="tab === 'conducta'"
+                        :tabindex="tab === 'conducta' ? 0 : -1"
+                        aria-controls="panel-conducta"
+                        @click="ir('conducta')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        <path d="M9 12l2 2 4-4" />
+                    </svg>
+                    Conducta
+                </button>
                 <button type="button" class="rendimiento-tab" role="tab" id="tab-notas"
                         :class="{ 'is-active': tab === 'notas' }"
                         :aria-selected="tab === 'notas'"
@@ -173,119 +187,54 @@
                     </svg>
                     Boletas
                 </button>
+                <button type="button" class="rendimiento-tab" role="tab" id="tab-apelaciones"
+                        :class="{ 'is-active': tab === 'apelaciones' }"
+                        :aria-selected="tab === 'apelaciones'"
+                        :tabindex="tab === 'apelaciones' ? 0 : -1"
+                        aria-controls="panel-apelaciones"
+                        @click="ir('apelaciones')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v18" />
+                        <path d="M8 21h8" />
+                        <path d="M5 8h4" />
+                        <path d="M15 8h4" />
+                        <path d="M7 8 5 14a3 3 0 0 0 6 0L9 8" />
+                        <path d="M17 8l-2 6a3 3 0 0 0 6 0l-2-6" />
+                    </svg>
+                    Apelaciones
+                </button>
             </div>
 
-            <p class="rendimiento-ayuda" x-text="textos[tab]">Calificaciones por materia en el periodo.</p>
+            <p class="rendimiento-ayuda" x-text="textos[tab]">Nota de conducta del periodo y lo que la rebaja.</p>
 
-            <div class="card rendimiento-panel" role="tabpanel" id="panel-notas" aria-labelledby="tab-notas"
-                 x-show="tab === 'notas'">
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">Notas</h3>
-                        <p>Resumen de calificaciones por materia.</p>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Materia</th>
-                                <th>Periodo</th>
-                                <th>Promedio</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="4" class="table-empty">No hay notas registradas.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="rendimiento-panel" role="tabpanel" id="panel-conducta" aria-labelledby="tab-conducta"
+                 x-show="tab === 'conducta'">
+                <div th:replace="~{rendimiento-academico/conducta/conducta :: content}"></div>
             </div>
 
-            <div class="card rendimiento-panel" role="tabpanel" id="panel-asistencia" aria-labelledby="tab-asistencia"
+            <div class="rendimiento-panel" role="tabpanel" id="panel-notas" aria-labelledby="tab-notas"
+                 x-show="tab === 'notas'" x-cloak>
+                <div th:replace="~{rendimiento-academico/notas/notas :: content}"></div>
+            </div>
+
+            <div class="rendimiento-panel" role="tabpanel" id="panel-asistencia" aria-labelledby="tab-asistencia"
                  x-show="tab === 'asistencia'" x-cloak>
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">Asistencia</h3>
-                        <p>Ausencias y tardías por lección.</p>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Materia</th>
-                                <th>Lección</th>
-                                <th>Tipo</th>
-                                <th>Profesor</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="5" class="table-empty">No hay registros de asistencia.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div th:replace="~{rendimiento-academico/asistencia/asistencia :: content}"></div>
             </div>
 
-            <div class="card rendimiento-panel" role="tabpanel" id="panel-llamadas" aria-labelledby="tab-llamadas"
+            <div class="rendimiento-panel" role="tabpanel" id="panel-llamadas" aria-labelledby="tab-llamadas"
                  x-show="tab === 'llamadas'" x-cloak>
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">Llamadas de atención</h3>
-                        <p>Avisos registrados y su seguimiento.</p>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Motivo</th>
-                                <th>Descripción</th>
-                                <th>Docente</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="5" class="table-empty">No hay llamadas de atención.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div th:replace="~{rendimiento-academico/llamadas/llamadas :: content}"></div>
             </div>
 
-            <div class="card rendimiento-panel" role="tabpanel" id="panel-boletas" aria-labelledby="tab-boletas"
+            <div class="rendimiento-panel" role="tabpanel" id="panel-boletas" aria-labelledby="tab-boletas"
                  x-show="tab === 'boletas'" x-cloak>
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">Boletas</h3>
-                        <p>Faltas, puntos y sanciones.</p>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Falta</th>
-                                <th>Puntos</th>
-                                <th>Sanción</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="5" class="table-empty">No hay boletas registradas.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div th:replace="~{rendimiento-academico/boletas/boletas :: content}"></div>
+            </div>
+
+            <div class="rendimiento-panel" role="tabpanel" id="panel-apelaciones" aria-labelledby="tab-apelaciones"
+                 x-show="tab === 'apelaciones'" x-cloak>
+                <div th:replace="~{rendimiento-academico/apelaciones/apelaciones :: content}"></div>
             </div>
         </div>
     </main>

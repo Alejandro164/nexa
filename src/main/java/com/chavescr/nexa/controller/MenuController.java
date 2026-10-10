@@ -81,6 +81,24 @@ public class MenuController {
         return htmxRequest ? "notas/index :: htmx-content" : "notas/index";
     }
 
+    @GetMapping("/apelaciones")
+    public String apelaciones(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            HttpSession session) {
+        if (session.getAttribute("SESSION_DIRECCION_ID") == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        return htmxRequest ? "apelaciones/index :: htmx-content" : "apelaciones/index";
+    }
+
+    @GetMapping("/ampliacion")
+    public String ampliacion(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            HttpSession session) {
+        if (session.getAttribute("SESSION_DIRECCION_ID") == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        return htmxRequest ? "ampliacion/index :: htmx-content" : "ampliacion/index";
+    }
+
     @GetMapping("/personal")
     public String personal(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "personal/index :: htmx-content" : "personal/index";

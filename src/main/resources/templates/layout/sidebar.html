@@ -138,6 +138,30 @@
             </svg>
             <span class="nav-item-text">Notas</span>
         </a>
+        <a href="/ampliacion" class="nav-item" x-show="ve('admin director docente')" hx-get="/ampliacion" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <path d="M12 18v-6" />
+                <path d="M9 15l3-3 3 3" />
+            </svg>
+            <span class="nav-item-text">Ampliación</span>
+        </a>
+        <a href="/apelaciones" class="nav-item" x-show="ve('admin director docente')" hx-get="/apelaciones" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v18" />
+                <path d="M8 21h8" />
+                <path d="M5 8h4" />
+                <path d="M15 8h4" />
+                <path d="M7 8 5 14a3 3 0 0 0 6 0L9 8" />
+                <path d="M17 8l-2 6a3 3 0 0 0 6 0l-2-6" />
+            </svg>
+            <span class="nav-item-text">Apelaciones</span>
+        </a>
         <a href="/classroom" class="nav-item" x-show="ve('director docente estudiante padre')" hx-get="/classroom" hx-target=".content-area" hx-swap="innerHTML"
             hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE', 'ROLE_PADRE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
