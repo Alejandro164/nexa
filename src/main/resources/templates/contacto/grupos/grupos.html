@@ -1,0 +1,27 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Grupos</h3>
+            <span class="badge badge-primary" th:text="${grupos != null ? #lists.size(grupos) : 0} + ' grupos'">0 grupos</span>
+        </div>
+        <div style="padding: 1.5rem;">
+            <div class="contact-search">
+                <input type="text" class="form-input" placeholder="Buscar grupo..." name="q"
+                       th:value="${qGrupos}"
+                       hx-get="/contacto/grupos"
+                       hx-trigger="keyup changed delay:400ms, search"
+                       hx-target="closest .card" hx-swap="outerHTML" />
+            </div>
+            <p th:if="${grupos == null or grupos.empty}" class="table-empty">No se encontraron grupos.</p>
+            <div class="contact-grid" th:unless="${grupos == null or grupos.empty}">
+                <div class="contact-card" th:each="g : ${grupos}">
+                    <div class="contact-avatar" th:text="${g.grado}">7</div>
+                    <div class="contact-info">
+                        <div class="contact-name" th:text="${g.nombreCompleto}">7 - 1</div>
+                        <div class="contact-detail">Grupo <span th:text="${g.grado}">7</span>, sección <span th:text="${g.seccion}">1</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

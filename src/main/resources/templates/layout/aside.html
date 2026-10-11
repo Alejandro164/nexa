@@ -365,7 +365,7 @@
                     }
                     var self = this;
                     window.addEventListener('nexa-modo', function (event) {
-                        if (event.detail) {
+                        if (event.detail && event.detail !== self.modo) {
                             self.elegir(event.detail, false);
                         }
                     });
@@ -436,6 +436,7 @@
                         sessionStorage.setItem('nexa-modo-menu', id);
                     }
                     this.pintarRol();
+                    window.dispatchEvent(new CustomEvent('nexa-modo', { detail: id }));
                     if (navegar === false) {
                         return;
                     }

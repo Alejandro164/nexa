@@ -20,6 +20,7 @@ public enum ModuloSistema {
     CONDUCTA("/conducta", "Conducta"),
     NOTAS("/notas", "Notas"),
     ENTREGAS_ACADEMICAS("/entregas-academicas", "Entregas académicas"),
+    IMPRESIONES("/impresiones", "Impresiones"),
     CLASSROOM("/classroom", "Classroom"),
     COMEDOR("/comedor", "Comedor"),
     NUBE("/nube-nexa", "Nube Nexa"),

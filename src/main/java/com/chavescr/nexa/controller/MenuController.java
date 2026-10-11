@@ -61,8 +61,29 @@ public class MenuController {
     }
 
     @GetMapping("/comedor")
-    public String comedor(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+    public String comedor(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            Model model, HttpServletRequest request) {
+        model.addAttribute("rolComedor", rolDeComedor(request));
+        model.addAttribute("puedePrevisualizar",
+                request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_SYSTEM_CONFIG"));
         return htmxRequest ? "comedor/index :: htmx-content" : "comedor/index";
+    }
+
+    /** Quien publica el menú es el administrador. La familia confirma; dirección y docencia consultan. */
+    private static String rolDeComedor(HttpServletRequest request) {
+        if (request.isUserInRole("ROLE_ADMIN")) {
+            return "admin";
+        }
+        if (request.isUserInRole("ROLE_DIRECTOR")) {
+            return "director";
+        }
+        if (request.isUserInRole("ROLE_DOCENTE")) {
+            return "docente";
+        }
+        if (request.isUserInRole("ROLE_ESTUDIANTE")) {
+            return "estudiante";
+        }
+        return "padre";
     }
 
     @GetMapping("/notas")
@@ -79,6 +100,24 @@ public class MenuController {
         model.addAttribute("escala", escalaNotasService.vista(direccionId));
         model.addAttribute("conAsistencia", rebajaConductaService.asistenciaRebajaComponente(direccionId));
         return htmxRequest ? "notas/index :: htmx-content" : "notas/index";
+    }
+
+    @GetMapping("/apelaciones")
+    public String apelaciones(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            HttpSession session) {
+        if (session.getAttribute("SESSION_DIRECCION_ID") == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        return htmxRequest ? "apelaciones/index :: htmx-content" : "apelaciones/index";
+    }
+
+    @GetMapping("/ampliacion")
+    public String ampliacion(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            HttpSession session) {
+        if (session.getAttribute("SESSION_DIRECCION_ID") == null) {
+            throw new DireccionNoSeleccionadaException();
+        }
+        return htmxRequest ? "ampliacion/index :: htmx-content" : "ampliacion/index";
     }
 
     @GetMapping("/personal")

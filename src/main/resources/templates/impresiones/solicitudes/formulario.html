@@ -1,0 +1,98 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" onclick="if (event.target === this) cerrarSolicitudModal()">
+        <div class="modal-dialog" style="max-width:640px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">Nueva solicitud</h3>
+                    <p class="academic-help">Envía un documento al departamento de impresión.</p>
+                </div>
+                <button type="button" class="close-btn" onclick="cerrarSolicitudModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form class="impresiones-form" onsubmit="return false;">
+                    <div class="impresiones-grid">
+                        <p class="impresiones-seccion">Documento</p>
+                        <div class="form-group span-2">
+                            <label class="form-label" for="solicitud-titulo">Título</label>
+                            <input id="solicitud-titulo" class="form-input" type="text" name="titulo" maxlength="200"
+                                   placeholder="Ej. Examen de matemáticas, I período">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="solicitud-tipo">Tipo</label>
+                            <select id="solicitud-tipo" class="form-input" name="tipo">
+                                <option value="" selected disabled hidden>Seleccionar</option>
+                                <option value="examen">Examen</option>
+                                <option value="guia">Guía</option>
+                                <option value="circular">Circular</option>
+                                <option value="oficio">Oficio</option>
+                                <option value="material">Material de clase</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="solicitud-archivo">Archivo</label>
+                            <input id="solicitud-archivo" class="form-input" type="file" name="archivo"
+                                   accept=".pdf,.doc,.docx,.ppt,.pptx">
+                        </div>
+
+                        <p class="impresiones-seccion">Cómo imprimirlo</p>
+                        <div class="form-group">
+                            <label class="form-label" for="solicitud-copias">Copias</label>
+                            <input id="solicitud-copias" class="form-input" type="number" name="copias" min="1" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="solicitud-tamano">Tamaño</label>
+                            <select id="solicitud-tamano" class="form-input" name="tamano">
+                                <option value="carta" selected>Carta</option>
+                                <option value="oficio">Oficio</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="solicitud-color">Color</label>
+                            <select id="solicitud-color" class="form-input" name="color">
+                                <option value="bn" selected>Blanco y negro</option>
+                                <option value="color">Color</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="solicitud-caras">Caras</label>
+                            <select id="solicitud-caras" class="form-input" name="caras">
+                                <option value="una" selected>Una cara</option>
+                                <option value="doble">Doble cara</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="solicitud-acabado">Acabado</label>
+                            <select id="solicitud-acabado" class="form-input" name="acabado">
+                                <option value="suelto" selected>Suelto</option>
+                                <option value="engrapado">Engrapado</option>
+                                <option value="anillado">Anillado</option>
+                            </select>
+                        </div>
+
+                        <p class="impresiones-seccion">Entrega</p>
+                        <div class="form-group">
+                            <label class="form-label" for="solicitud-fecha">Para cuándo</label>
+                            <input id="solicitud-fecha" class="form-input" type="date" name="fecha">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="solicitud-destino">Destino</label>
+                            <input id="solicitud-destino" class="form-input" type="text" name="destino" maxlength="200"
+                                   placeholder="Curso, oficina o persona que lo retira">
+                        </div>
+                        <div class="form-group span-2">
+                            <label class="form-label" for="solicitud-observaciones">Observaciones</label>
+                            <textarea id="solicitud-observaciones" class="form-textarea" name="observaciones" maxlength="1000"
+                                      placeholder="Indicaciones para quien imprime"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="cerrarSolicitudModal()">Cancelar</button>
+                        <button type="reset" class="btn btn-secondary">Limpiar</button>
+                        <button type="button" class="btn btn-primary">Enviar solicitud</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,77 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org"
+     x-data="{
+         q: '',
+         contactos: [
+             'Junta de Educación comisión de comedor junta@institucion.ed.cr',
+             'Transporte escolar ruta norte',
+             'Consultorio enfermería',
+             'Circuito escolar MEP supervisión'
+         ],
+         visible(texto) {
+             const filtro = this.q.trim().toLowerCase();
+             return filtro === '' || texto.toLowerCase().includes(filtro);
+         },
+         hayResultados() {
+             return this.contactos.some((texto) => this.visible(texto));
+         }
+     }">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Otros contactos</h3>
+        </div>
+        <div style="padding: 1.5rem;">
+            <div class="contact-search">
+                <input type="text" class="form-input" placeholder="Buscar otro contacto..." x-model="q">
+            </div>
+            <div class="contact-grid">
+                <div class="contact-card" x-show="visible('Junta de Educación comisión de comedor junta@institucion.ed.cr')">
+                    <div class="contact-avatar">J</div>
+                    <div class="contact-info">
+                        <div class="contact-name">Junta de Educación</div>
+                        <div class="contact-detail">Comisión de comedor y tesorería</div>
+                        <div class="contact-detail">📧 junta@institucion.ed.cr</div>
+                        <div class="contact-detail">📱 2222-1000</div>
+                    </div>
+                    <div class="contact-actions">
+                        <a class="btn btn-sm btn-secondary" href="mailto:junta@institucion.ed.cr" title="Enviar correo">✉️</a>
+                        <a class="btn btn-sm btn-secondary" href="tel:22221000" title="Llamar">📞</a>
+                    </div>
+                </div>
+                <div class="contact-card" x-show="visible('Transporte escolar ruta norte')">
+                    <div class="contact-avatar">T</div>
+                    <div class="contact-info">
+                        <div class="contact-name">Transporte escolar</div>
+                        <div class="contact-detail">Ruta norte, salida 6:15 a. m.</div>
+                        <div class="contact-detail">📱 8888-2211</div>
+                    </div>
+                    <div class="contact-actions">
+                        <a class="btn btn-sm btn-secondary" href="tel:88882211" title="Llamar">📞</a>
+                    </div>
+                </div>
+                <div class="contact-card" x-show="visible('Consultorio enfermería')">
+                    <div class="contact-avatar">C</div>
+                    <div class="contact-info">
+                        <div class="contact-name">Consultorio</div>
+                        <div class="contact-detail">Enfermería, horario de lecciones</div>
+                        <div class="contact-detail">📱 2222-3344</div>
+                    </div>
+                    <div class="contact-actions">
+                        <a class="btn btn-sm btn-secondary" href="tel:22223344" title="Llamar">📞</a>
+                    </div>
+                </div>
+                <div class="contact-card" x-show="visible('Circuito escolar MEP supervisión')">
+                    <div class="contact-avatar">M</div>
+                    <div class="contact-info">
+                        <div class="contact-name">Circuito escolar MEP</div>
+                        <div class="contact-detail">Supervisión del circuito</div>
+                        <div class="contact-detail">📧 circuito@mep.go.cr</div>
+                    </div>
+                    <div class="contact-actions">
+                        <a class="btn btn-sm btn-secondary" href="mailto:circuito@mep.go.cr" title="Enviar correo">✉️</a>
+                    </div>
+                </div>
+            </div>
+            <p class="table-empty" x-show="!hayResultados()" x-cloak>No se encontraron otros contactos.</p>
+        </div>
+    </div>
+</div>

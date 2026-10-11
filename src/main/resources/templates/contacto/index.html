@@ -9,13 +9,13 @@
 <body>
 
     <h2 layout:fragment="page-title">Contacto</h2>
-    <p layout:fragment="page-subtitle">Directorio de contactos de estudiantes, personal, padres de familia e direcciones</p>
+    <p layout:fragment="page-subtitle">Directorio de estudiantes, personal, padres de familia y encargados, otros contactos y grupos</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Contacto</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Directorio de contactos de estudiantes, personal, padres de familia e direcciones</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Directorio de estudiantes, personal, padres de familia y encargados, otros contactos y grupos</p>
     <main layout:fragment="content">
         <style>
             .config-tabs-container {
@@ -146,13 +146,17 @@
                             @click="activeTab = 'personal'">
                         👩‍🏫 Personal
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'padres' }"
+                    <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'padres' }"
                             @click="activeTab = 'padres'">
-                        👨‍👩‍👧 Padres de Familia
+                        👨‍👩‍👧 Padres de familia y encargados
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'direcciones' }"
-                            @click="activeTab = 'direcciones'">
-                        🏫 Direcciones
+                    <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'otros' }"
+                            @click="activeTab = 'otros'">
+                        📒 Otros
+                    </button>
+                    <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'grupos' }"
+                            @click="activeTab = 'grupos'">
+                        👥 Grupos
                     </button>
                 </div>
             </div>
@@ -169,8 +173,12 @@
                 <div th:replace="~{contacto/padres/padres :: content}"></div>
             </div>
 
-            <div x-show="activeTab === 'direcciones'" class="tab-pane" x-cloak>
-                <div th:replace="~{contacto/direcciones/direcciones :: content}"></div>
+            <div x-show="activeTab === 'otros'" class="tab-pane" x-cloak>
+                <div th:replace="~{contacto/otros/otros :: content}"></div>
+            </div>
+
+            <div x-show="activeTab === 'grupos'" class="tab-pane" x-cloak>
+                <div th:replace="~{contacto/grupos/grupos :: content}"></div>
             </div>
 
         </div>

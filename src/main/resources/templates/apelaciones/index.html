@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Apelaciones — Nexa</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Apelaciones</h2>
+    <p layout:fragment="page-subtitle">Solicitudes de los padres. Aceptar o rechazar deja constancia en el registro original.</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">Apelaciones</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Solicitudes de los padres. Aceptar o rechazar deja constancia en el registro original.</p>
+    <main layout:fragment="content">
+        <style>
+            .apelaciones {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .apel-kpis {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+            }
+            .apel-kpi {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                box-shadow: var(--shadow-sm);
+                padding: 1.1rem 1.25rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.2rem;
+            }
+            .apel-kpi span {
+                font-size: 0.75rem;
+                font-weight: 650;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: var(--text-secondary);
+            }
+            .apel-kpi strong {
+                font-size: 1.6rem;
+                font-weight: 700;
+                color: #0f172a;
+                font-variant-numeric: tabular-nums;
+            }
+            .apel-kpi strong.is-wait { color: #1e40af; }
+            .apel-kpi strong.is-ok { color: #15803d; }
+            .apel-kpi strong.is-risk { color: #b91c1c; }
+            .apel-card {
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                box-shadow: var(--shadow-sm);
+                overflow: hidden;
+            }
+            .apel-toolbar {
+                display: flex;
+                flex-direction: column;
+                gap: 0.85rem;
+                padding: 1rem 1.25rem;
+                border-bottom: 1px solid var(--border);
+                background: #f8fafc;
+            }
+            .apel-filtros {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            .apel-chip {
+                border: 1px solid var(--border);
+                background: #fff;
+                color: var(--text-secondary);
+                border-radius: 999px;
+                padding: 0.35rem 0.8rem;
+                font: inherit;
+                font-size: 0.78rem;
+                font-weight: 650;
+                cursor: pointer;
+            }
+            .apel-chip:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+            .apel-chip.is-on {
+                background: var(--primary);
+                border-color: var(--primary);
+                color: #fff;
+            }
+            .apel-tabla-wrap { overflow-x: auto; }
+            .apel-tabla {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 920px;
+            }
+            .apel-tabla th {
+                text-align: left;
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: var(--text-secondary);
+                padding: 0.75rem 1rem;
+                background: #fff;
+                border-bottom: 1px solid var(--border);
+                white-space: nowrap;
+            }
+            .apel-tabla td {
+                padding: 0.9rem 1rem;
+                border-bottom: 1px solid var(--border);
+                vertical-align: top;
+                font-size: 0.86rem;
+                color: #0f172a;
+            }
+            .apel-tabla tr:last-child td { border-bottom: none; }
+            .apel-persona { display: flex; align-items: center; gap: 0.7rem; min-width: 220px; }
+            .apel-avatar {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+                background: #2d5a87;
+                color: #fff;
+                font-size: 0.72rem;
+                font-weight: 700;
+                flex-shrink: 0;
+            }
+            .apel-nombre { font-weight: 700; }
+            .apel-meta { margin-top: 2px; color: var(--text-secondary); font-size: 0.75rem; }
+            .apel-asunto { font-weight: 700; }
+            .apel-sub { display: block; margin-top: 2px; color: var(--text-secondary); font-size: 0.75rem; font-weight: 500; }
+            .apel-motivo { max-width: 280px; color: #334155; line-height: 1.4; }
+            .apel-pill {
+                display: inline-flex;
+                align-items: center;
+                border-radius: 999px;
+                padding: 0.2rem 0.55rem;
+                font-size: 0.72rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
+            .apel-pill.tardia { background: #ffedd5; color: #9a3412; }
+            .apel-pill.nota { background: #dbeafe; color: #1e40af; }
+            .apel-pill.boleta { background: #fee2e2; color: #991b1b; }
+            .apel-pill.llamada { background: #fef3c7; color: #92400e; }
+            .apel-pill.conducta { background: #ede9fe; color: #5b21b6; }
+            .apel-pill.revision { background: #dbeafe; color: #1e40af; }
+            .apel-pill.aceptada { background: #dcfce7; color: #166534; }
+            .apel-pill.rechazada { background: #fee2e2; color: #991b1b; }
+            .apel-donde { color: var(--text-secondary); font-size: 0.8rem; font-weight: 650; white-space: nowrap; }
+            .apel-acciones { display: flex; gap: 0.4rem; justify-content: flex-end; }
+            .apel-acciones .btn { padding: 0.35rem 0.7rem; font-size: 0.78rem; font-weight: 700; }
+            .apel-btn-ok { background: #15803d; color: #fff; }
+            .apel-btn-ok:hover { background: #166534; }
+            .apel-resolucion { color: #334155; font-size: 0.8rem; line-height: 1.4; max-width: 220px; margin-left: auto; text-align: right; }
+            .apel-vacio {
+                padding: 2.5rem 1rem;
+                text-align: center;
+                color: var(--text-secondary);
+            }
+            .apel-leyenda {
+                margin: 0;
+                color: var(--text-secondary);
+                font-size: 0.8rem;
+            }
+            @media (max-width: 800px) {
+                .apel-kpis { grid-template-columns: 1fr; }
+            }
+        </style>
+
+        <div class="apelaciones" x-data="{
+            filtroTipo: 'todas',
+            filtroEstado: 'revision',
+            tipos: [
+                { id: 'todas', label: 'Todas' },
+                { id: 'tardia', label: 'Llegadas tardías' },
+                { id: 'nota', label: 'Notas' },
+                { id: 'boleta', label: 'Boletas' },
+                { id: 'llamada', label: 'Llamadas' },
+                { id: 'conducta', label: 'Conducta' }
+            ],
+            estados: [
+                { id: 'revision', label: 'Por resolver' },
+                { id: 'aceptada', label: 'Aceptadas' },
+                { id: 'rechazada', label: 'Rechazadas' },
+                { id: 'todas', label: 'Todas' }
+            ],
+            casos: [
+                {
+                    id: 1,
+                    fecha: '18/08/2026',
+                    estudiante: 'Alberto Mora Rodríguez',
+                    meta: '9-0049-9950 · 7-A',
+                    iniciales: 'AM',
+                    tipo: 'tardia',
+                    tipoLabel: 'Llegada tardía',
+                    asunto: 'Tardía del 18/08',
+                    detalle: 'Lección 1 · Injustificada',
+                    motivo: 'El encargado avisó en recepción esa mañana. El estudiante llegó a las 7:12.',
+                    donde: 'Asistencia',
+                    estado: 'revision',
+                    resolucion: '',
+                    alAceptar: 'La tardía quedó justificada en Asistencia.',
+                    alRechazar: 'La tardía se mantiene injustificada.'
+                },
+                {
+                    id: 2,
+                    fecha: '02/09/2026',
+                    estudiante: 'Sofía Chen Alvarado',
+                    meta: '8-0142-2210 · 8-B',
+                    iniciales: 'SC',
+                    tipo: 'nota',
+                    tipoLabel: 'Nota de materia',
+                    asunto: 'Matemáticas · Prueba',
+                    detalle: 'Calificación 74.00',
+                    motivo: 'La calificación no coincide con la rúbrica entregada en clase.',
+                    donde: 'Notas',
+                    estado: 'revision',
+                    resolucion: '',
+                    alAceptar: 'La prueba quedó en 82.00.',
+                    alRechazar: 'Se mantiene la nota de 74.00.'
+                },
+                {
+                    id: 3,
+                    fecha: '11/09/2026',
+                    estudiante: 'Diego Solís Vargas',
+                    meta: '7-0088-1044 · 7-A',
+                    iniciales: 'DS',
+                    tipo: 'boleta',
+                    tipoLabel: 'Boleta',
+                    asunto: 'Boleta grave',
+                    detalle: '11/09/2026 · 10 puntos',
+                    motivo: 'El estudiante no estaba presente en el momento del incidente.',
+                    donde: 'Boletas',
+                    estado: 'revision',
+                    resolucion: '',
+                    alAceptar: 'La boleta quedó anulada.',
+                    alRechazar: 'La boleta se mantiene.'
+                },
+                {
+                    id: 4,
+                    fecha: '20/08/2026',
+                    estudiante: 'Mariana Quesada Solano',
+                    meta: '9-1102-3341 · 9-C',
+                    iniciales: 'MQ',
+                    tipo: 'llamada',
+                    tipoLabel: 'Llamada de atención',
+                    asunto: 'Llamada del 20/08',
+                    detalle: 'Interrupción en clase',
+                    motivo: 'La observación corresponde a otro estudiante del mismo grupo.',
+                    donde: 'Llamadas de atención',
+                    estado: 'revision',
+                    resolucion: '',
+                    alAceptar: 'La llamada quedó sin efecto.',
+                    alRechazar: 'La llamada se mantiene.'
+                },
+                {
+                    id: 5,
+                    fecha: '15/08/2026',
+                    estudiante: 'Lucía Brenes Rojas',
+                    meta: '6-2201-7788 · 6-A',
+                    iniciales: 'LB',
+                    tipo: 'nota',
+                    tipoLabel: 'Nota de materia',
+                    asunto: 'Español · Ensayo',
+                    detalle: 'Calificación 70.00',
+                    motivo: 'Faltó sumar el punto de la cita bibliográfica.',
+                    donde: 'Notas',
+                    estado: 'aceptada',
+                    resolucion: 'El ensayo quedó en 85.00.',
+                    alAceptar: 'El ensayo quedó en 85.00.',
+                    alRechazar: 'Se mantiene la nota de 70.00.'
+                },
+                {
+                    id: 6,
+                    fecha: '04/09/2026',
+                    estudiante: 'Alberto Mora Rodríguez',
+                    meta: '9-0049-9950 · 7-A',
+                    iniciales: 'AM',
+                    tipo: 'conducta',
+                    tipoLabel: 'Nota de conducta',
+                    asunto: 'Conducta del período',
+                    detalle: 'Rebaja por tardía',
+                    motivo: 'La tardía del 18/08 ya estaba justificada por el encargado.',
+                    donde: 'Conducta',
+                    estado: 'rechazada',
+                    resolucion: 'La justificación llegó fuera de plazo.',
+                    alAceptar: 'Se quitó la rebaja de la tardía.',
+                    alRechazar: 'La justificación llegó fuera de plazo.'
+                }
+            ],
+            visibles() {
+                return this.casos.filter((caso) =>
+                    (this.filtroTipo === 'todas' || caso.tipo === this.filtroTipo) &&
+                    (this.filtroEstado === 'todas' || caso.estado === this.filtroEstado)
+                );
+            },
+            contar(estado) {
+                return this.casos.filter((caso) => caso.estado === estado).length;
+            },
+            aceptar(caso) {
+                caso.estado = 'aceptada';
+                caso.resolucion = caso.alAceptar;
+                if (typeof showNotification === 'function') showNotification(caso.alAceptar);
+            },
+            rechazar(caso) {
+                caso.estado = 'rechazada';
+                caso.resolucion = caso.alRechazar;
+                if (typeof showNotification === 'function') showNotification(caso.alRechazar);
+            }
+        }">
+            <div class="apel-kpis">
+                <div class="apel-kpi">
+                    <span>Por resolver</span>
+                    <strong class="is-wait" x-text="contar('revision')">4</strong>
+                </div>
+                <div class="apel-kpi">
+                    <span>Aceptadas</span>
+                    <strong class="is-ok" x-text="contar('aceptada')">1</strong>
+                </div>
+                <div class="apel-kpi">
+                    <span>Rechazadas</span>
+                    <strong class="is-risk" x-text="contar('rechazada')">1</strong>
+                </div>
+            </div>
+
+            <div class="apel-card">
+                <div class="apel-toolbar">
+                    <div class="apel-filtros" role="tablist" aria-label="Estado de la apelación">
+                        <template x-for="item in estados" :key="item.id">
+                            <button type="button" class="apel-chip"
+                                    :class="{ 'is-on': filtroEstado === item.id }"
+                                    @click="filtroEstado = item.id"
+                                    x-text="item.label">Por resolver</button>
+                        </template>
+                    </div>
+                    <div class="apel-filtros" role="tablist" aria-label="Tipo de apelación">
+                        <template x-for="item in tipos" :key="item.id">
+                            <button type="button" class="apel-chip"
+                                    :class="{ 'is-on': filtroTipo === item.id }"
+                                    @click="filtroTipo = item.id"
+                                    x-text="item.label">Todas</button>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="apel-tabla-wrap">
+                    <table class="apel-tabla">
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>Qué se apela</th>
+                                <th>Motivo del padre</th>
+                                <th>Se ve en</th>
+                                <th>Estado</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="caso in visibles()" :key="caso.id">
+                                <tr>
+                                    <td>
+                                        <div class="apel-persona">
+                                            <span class="apel-avatar" x-text="caso.iniciales">AM</span>
+                                            <div>
+                                                <div class="apel-nombre" x-text="caso.estudiante">Alberto Mora Rodríguez</div>
+                                                <div class="apel-meta">
+                                                    <span x-text="caso.fecha">18/08/2026</span>
+                                                    ·
+                                                    <span x-text="caso.meta">7-A</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="apel-pill" :class="caso.tipo" x-text="caso.tipoLabel">Llegada tardía</span>
+                                        <span class="apel-asunto" style="display:block; margin-top:0.4rem;" x-text="caso.asunto">Tardía del 18/08</span>
+                                        <span class="apel-sub" x-text="caso.detalle">Lección 1</span>
+                                    </td>
+                                    <td class="apel-motivo" x-text="caso.motivo">Motivo</td>
+                                    <td class="apel-donde" x-text="caso.donde">Asistencia</td>
+                                    <td>
+                                        <span class="apel-pill" :class="caso.estado"
+                                              x-text="caso.estado === 'revision' ? 'En revisión' : (caso.estado === 'aceptada' ? 'Aceptada' : 'Rechazada')">En revisión</span>
+                                    </td>
+                                    <td>
+                                        <div class="apel-acciones" x-show="caso.estado === 'revision'">
+                                            <button type="button" class="btn apel-btn-ok" @click="aceptar(caso)">Aceptar</button>
+                                            <button type="button" class="btn btn-secondary" @click="rechazar(caso)">Rechazar</button>
+                                        </div>
+                                        <p class="apel-resolucion" x-show="caso.estado !== 'revision'" x-text="caso.resolucion">Resolución</p>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="visibles().length === 0">
+                                <td colspan="6" class="apel-vacio">No hay apelaciones en este filtro.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <p class="apel-leyenda">Datos de ejemplo. Aceptar o rechazar solo cambia esta vista: todavía no modifica la asistencia, la nota, la boleta ni la llamada.</p>
+        </div>
+    </main>
+    </th:block>
+
+</body>
+
+</html>

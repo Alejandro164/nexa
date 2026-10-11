@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="content" class="tab-pane" x-data="{ filtro: 'proximas' }">
+    <style>
+        .reuniones-intro {
+            margin: 4px 0 0;
+            font-size: 0.82rem;
+            font-weight: 400;
+            color: #64748b;
+        }
+
+        .reuniones-filtros {
+            display: flex;
+            gap: 8px;
+            padding: 1rem 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .reuniones-filtro {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .reuniones-filtro.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+    </style>
+
+    <div class="module-card">
+        <div class="module-card-header">
+            <div>
+                <h3 class="module-card-title">Reuniones</h3>
+                <p class="reuniones-intro">Citas entre la familia, el docente y la dirección.</p>
+            </div>
+            <button class="btn-primary" type="button"
+                    hx-get="/agenda/reuniones/form"
+                    hx-target="#reuniones-modal-container" hx-swap="innerHTML"
+                    onclick="abrirReunionesModal()">+ Nueva reunión</button>
+        </div>
+
+        <div class="reuniones-filtros" role="tablist" aria-label="Estado de las reuniones">
+            <button type="button" class="reuniones-filtro" role="tab"
+                    :class="{ 'active': filtro === 'responder' }"
+                    :aria-selected="filtro === 'responder'"
+                    @click="filtro = 'responder'">Por responder</button>
+            <button type="button" class="reuniones-filtro" role="tab"
+                    :class="{ 'active': filtro === 'proximas' }"
+                    :aria-selected="filtro === 'proximas'"
+                    @click="filtro = 'proximas'">Próximas</button>
+            <button type="button" class="reuniones-filtro" role="tab"
+                    :class="{ 'active': filtro === 'historial' }"
+                    :aria-selected="filtro === 'historial'"
+                    @click="filtro = 'historial'">Historial</button>
+        </div>
+
+        <div id="reuniones-tabla-container" class="table-container"
+             th:insert="~{agenda/reuniones/reuniones :: tabla-reuniones}"></div>
+    </div>
+
+    <div id="reuniones-modal-container" style="display:none;"></div>
+</div>
+
+<th:block th:fragment="tabla-reuniones">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Con quién</th>
+                <th>Estudiante</th>
+                <th>Motivo</th>
+                <th>Fecha y hora</th>
+                <th>Modalidad</th>
+                <th>Estado</th>
+                <th style="text-align:right;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr x-show="filtro === 'responder'" x-cloak>
+                <td colspan="7" class="table-empty">No tienes solicitudes pendientes de respuesta.</td>
+            </tr>
+            <tr x-show="filtro === 'proximas'">
+                <td colspan="7" class="table-empty">No hay reuniones confirmadas.</td>
+            </tr>
+            <tr x-show="filtro === 'historial'" x-cloak>
+                <td colspan="7" class="table-empty">Todavía no hay reuniones realizadas o canceladas.</td>
+            </tr>
+        </tbody>
+    </table>
+</th:block>
+
+</body>
+</html>

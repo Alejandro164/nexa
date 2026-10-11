@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarReunionesModal()"
+         x-data="{ con: 'docente', modalidad: 'presencial' }">
+        <div class="modal-dialog" style="max-width:560px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">Nueva reunión</h3>
+                <button type="button" class="close-btn" onclick="cerrarReunionesModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="event.preventDefault();">
+                    <div class="form-group">
+                        <label class="form-label">Reunión con</label>
+                        <div style="display:flex; gap:1.5rem;">
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.88rem; font-weight:500; color:#334155;">
+                                <input type="radio" name="con" value="docente" x-model="con"
+                                       style="accent-color:var(--primary); width:15px; height:15px;">
+                                Docente
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.88rem; font-weight:500; color:#334155;">
+                                <input type="radio" name="con" value="direccion" x-model="con"
+                                       style="accent-color:var(--primary); width:15px; height:15px;">
+                                Dirección
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" x-text="con === 'docente' ? 'Docente' : 'Dirección'">Docente</label>
+                            <select class="form-input" name="personaId">
+                                <option value="" selected disabled hidden>Seleccionar</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Estudiante</label>
+                            <select class="form-input" name="estudianteId">
+                                <option value="" selected disabled hidden>Seleccionar</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Fecha</label>
+                            <input class="form-input" type="date" name="fecha">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Hora de inicio</label>
+                            <input class="form-input" type="time" name="horaInicio">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Hora de fin</label>
+                            <input class="form-input" type="time" name="horaFin">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Modalidad</label>
+                        <div style="display:flex; gap:1.5rem;">
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.88rem; font-weight:500; color:#334155;">
+                                <input type="radio" name="modalidad" value="presencial" x-model="modalidad"
+                                       style="accent-color:var(--primary); width:15px; height:15px;">
+                                Presencial
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.88rem; font-weight:500; color:#334155;">
+                                <input type="radio" name="modalidad" value="virtual" x-model="modalidad"
+                                       style="accent-color:var(--primary); width:15px; height:15px;">
+                                Virtual
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" x-show="modalidad === 'presencial'">
+                        <label class="form-label">Lugar</label>
+                        <input class="form-input" type="text" name="lugar" maxlength="200"
+                               placeholder="Aula, oficina o sala">
+                    </div>
+
+                    <div class="form-group" x-show="modalidad === 'virtual'" x-cloak>
+                        <label class="form-label">Enlace</label>
+                        <input class="form-input" type="url" name="enlace" maxlength="500"
+                               placeholder="https://">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Motivo</label>
+                        <textarea class="form-textarea" name="motivo" maxlength="1000"
+                                  placeholder="De qué quieren conversar"></textarea>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarReunionesModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Solicitar reunión</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

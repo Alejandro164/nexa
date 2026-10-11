@@ -1,0 +1,276 @@
+<div th:fragment="content" id="rendimiento-conducta-panel" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        #rendimiento-conducta-panel .rendimiento-vista-card {
+            background: #fff;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            background: #f8fafc;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-student {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 0;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: #2d5a87;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-meta {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 1px;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-filtro-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 0.3rem;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-periodos {
+            display: inline-flex;
+            padding: 3px;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 10px;
+            background: #fff;
+            gap: 2px;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-periodo {
+            min-height: 28px;
+            padding: 0 0.75rem;
+            border-radius: 7px;
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-periodo.is-on {
+            background: var(--primary, #2d5a87);
+            color: #fff;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-cuerpo {
+            padding: 1rem 1.25rem 1.15rem;
+            background: #f8fafc;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: #fff;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 0.85rem;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-kpi {
+            padding: 0.8rem 1rem;
+            border-right: 1px solid var(--border, #e2e8f0);
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-kpi:last-child { border-right: none; }
+        #rendimiento-conducta-panel .rendimiento-vista-kpi span {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-kpi strong {
+            display: block;
+            margin-top: 0.15rem;
+            font-size: 1.15rem;
+            font-weight: 750;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-kpi strong.bueno { color: #1e40af; }
+        #rendimiento-conducta-panel .rendimiento-vista-kpi strong.is-risk { color: #dc2626; }
+        #rendimiento-conducta-panel .rendimiento-vista-tabla-wrap {
+            background: #fff;
+            border: 1px solid var(--border, #e2e8f0);
+            border-radius: 12px;
+            overflow: auto;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-tabla {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 560px;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-tabla th {
+            padding: 0.85rem 0.75rem;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border, #e2e8f0);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #64748b;
+            text-align: left;
+            white-space: nowrap;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-tabla th:last-child,
+        #rendimiento-conducta-panel .rendimiento-vista-tabla td:last-child {
+            text-align: right;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-tabla th:first-child,
+        #rendimiento-conducta-panel .rendimiento-vista-tabla td:first-child { padding-left: 1rem; }
+        #rendimiento-conducta-panel .rendimiento-vista-tabla th:last-child,
+        #rendimiento-conducta-panel .rendimiento-vista-tabla td:last-child { padding-right: 1rem; }
+        #rendimiento-conducta-panel .rendimiento-vista-tabla td {
+            padding: 0.8rem 0.75rem;
+            font-size: 0.84rem;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-tabla tr:last-child td { border-bottom: none; }
+        #rendimiento-conducta-panel .rendimiento-vista-concepto {
+            font-weight: 700;
+            color: #0f172a;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-num {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+        #rendimiento-conducta-panel .rendimiento-vista-resta { color: #991b1b; }
+        #rendimiento-conducta-panel .rendimiento-vista-final td {
+            background: rgba(45, 90, 135, 0.05);
+            font-weight: 800;
+            color: #0f172a;
+        }
+        #rendimiento-conducta-panel .notas-pill {
+            display: inline-block;
+            margin-left: 0.45rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            vertical-align: middle;
+        }
+        #rendimiento-conducta-panel .notas-pill.bueno { background: #dbeafe; color: #1e40af; }
+        #rendimiento-conducta-panel .rendimiento-vista-leyenda {
+            margin: 0.7rem 0 0;
+            font-size: 0.75rem;
+            line-height: 1.45;
+            color: #64748b;
+        }
+        @media (max-width: 720px) {
+            #rendimiento-conducta-panel .rendimiento-vista-kpis { grid-template-columns: repeat(2, 1fr); }
+            #rendimiento-conducta-panel .rendimiento-vista-kpi:nth-child(2) { border-right: none; }
+            #rendimiento-conducta-panel .rendimiento-vista-kpi:nth-child(1),
+            #rendimiento-conducta-panel .rendimiento-vista-kpi:nth-child(2) {
+                border-bottom: 1px solid var(--border, #e2e8f0);
+            }
+        }
+    </style>
+
+    <div class="rendimiento-vista-card">
+        <div class="rendimiento-vista-toolbar">
+            <div class="rendimiento-vista-student">
+                <span class="rendimiento-vista-avatar">AM</span>
+                <div>
+                    <div class="rendimiento-vista-name">Alberto Mora Rodríguez</div>
+                    <div class="rendimiento-vista-meta">9-0049-9950 · Sección 7 - A</div>
+                </div>
+            </div>
+            <div>
+                <div class="rendimiento-vista-filtro-label">Período</div>
+                <div class="rendimiento-vista-periodos">
+                    <span class="rendimiento-vista-periodo">2026-I</span>
+                    <span class="rendimiento-vista-periodo is-on">2026-II</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="rendimiento-vista-cuerpo">
+            <div class="rendimiento-vista-kpis">
+                <div class="rendimiento-vista-kpi">
+                    <span>Nota</span>
+                    <strong class="bueno">92.00</strong>
+                </div>
+                <div class="rendimiento-vista-kpi">
+                    <span>Base</span>
+                    <strong>100</strong>
+                </div>
+                <div class="rendimiento-vista-kpi">
+                    <span>Rebajas</span>
+                    <strong class="is-risk">8</strong>
+                </div>
+                <div class="rendimiento-vista-kpi">
+                    <span>Tramo</span>
+                    <strong class="bueno">Bueno</strong>
+                </div>
+            </div>
+
+            <div class="rendimiento-vista-tabla-wrap">
+                <table class="rendimiento-vista-tabla">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Cantidad</th>
+                            <th>Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="rendimiento-vista-concepto">Nota base</span></td>
+                            <td class="rendimiento-vista-num">—</td>
+                            <td class="rendimiento-vista-num">100.00</td>
+                        </tr>
+                        <tr>
+                            <td><span class="rendimiento-vista-concepto">Ausencias injustificadas</span></td>
+                            <td class="rendimiento-vista-num">1</td>
+                            <td class="rendimiento-vista-num rendimiento-vista-resta">−5</td>
+                        </tr>
+                        <tr>
+                            <td><span class="rendimiento-vista-concepto">Tardías</span></td>
+                            <td class="rendimiento-vista-num">1</td>
+                            <td class="rendimiento-vista-num rendimiento-vista-resta">−1</td>
+                        </tr>
+                        <tr>
+                            <td><span class="rendimiento-vista-concepto">Boletas</span></td>
+                            <td class="rendimiento-vista-num">1</td>
+                            <td class="rendimiento-vista-num rendimiento-vista-resta">−2</td>
+                        </tr>
+                        <tr class="rendimiento-vista-final">
+                            <td>Nota del período</td>
+                            <td></td>
+                            <td>
+                                92.00
+                                <span class="notas-pill bueno">Bueno</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="rendimiento-vista-leyenda">
+                La conducta parte de 100. Cada ausencia injustificada, tardía o boleta resta puntos en el período.
+            </p>
+        </div>
+    </div>
+</div>

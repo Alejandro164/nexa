@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+    layout:decorate="~{index}">
+
+<head>
+    <title>Impresiones — Nexa</title>
+</head>
+
+<body>
+
+    <h2 layout:fragment="page-title">Impresiones</h2>
+    <p layout:fragment="page-subtitle">Departamento que imprime documentos de la institución</p>
+
+    <th:block th:fragment="htmx-content">
+    <h2 id="topbar-page-title" hx-swap-oob="true">Impresiones</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Departamento que imprime documentos de la institución</p>
+    <main layout:fragment="content">
+        <style>
+            .config-tabs-container {
+                margin-bottom: 2rem;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 6px;
+                display: flex;
+                width: 100%;
+                box-shadow: var(--shadow-sm);
+                overflow-x: auto;
+            }
+            .config-tabs-container::-webkit-scrollbar { display: none; }
+            .config-tabs {
+                display: flex;
+                width: 100%;
+                gap: 6px;
+            }
+            .config-tab-btn {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 12px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-decoration: none;
+                border-radius: 10px;
+                transition: all 0.25s ease;
+                cursor: pointer;
+                border: none;
+                background: transparent;
+                white-space: nowrap;
+            }
+            .config-tab-btn:hover {
+                color: var(--primary);
+                background-color: var(--input-bg);
+            }
+            .config-tab-btn.active {
+                color: white !important;
+                background-color: var(--primary) !important;
+                box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
+            }
+            .tab-pane { animation: fadeIn 0.35s ease-out; }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .academic-help {
+                color: var(--text-secondary);
+                font-size: 0.84rem;
+                margin-top: 0.3rem;
+            }
+            .impresiones-form {
+                padding: 0;
+            }
+            .impresiones-form .form-input,
+            .impresiones-form .form-select,
+            .impresiones-form .form-textarea {
+                padding-left: 0.75rem;
+            }
+            .impresiones-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+            }
+            .impresiones-grid .span-2 { grid-column: span 2; }
+            .impresiones-seccion {
+                grid-column: span 2;
+                margin: 0.25rem 0 0;
+                font-size: 0.78rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: #64748b;
+            }
+            @media (max-width: 768px) {
+                .impresiones-grid,
+                .impresiones-grid .span-2,
+                .impresiones-seccion {
+                    grid-template-columns: 1fr;
+                    grid-column: span 1;
+                }
+            }
+            .impresiones-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.75rem;
+                border-top: 1px solid var(--border);
+                padding-top: 1.25rem;
+                margin-top: 0.5rem;
+            }
+        </style>
+
+        <div x-data>
+            <div class="config-tabs-container">
+                <div class="config-tabs">
+                    <button type="button" class="config-tab-btn" :class="{ 'active': $store.impresiones.activeTab === 'imprimir' }"
+                            @click="$store.impresiones.activeTab = 'imprimir'"
+                            sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
+                        Imprimir
+                    </button>
+                    <button type="button" class="config-tab-btn" :class="{ 'active': $store.impresiones.activeTab === 'solicitudes' }"
+                            @click="$store.impresiones.activeTab = 'solicitudes'">
+                        Solicitudes
+                    </button>
+                </div>
+            </div>
+
+            <div x-show="$store.impresiones.activeTab === 'imprimir'" class="tab-pane"
+                 sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
+                <div th:replace="~{impresiones/imprimir/imprimir :: content}"></div>
+            </div>
+            <div x-show="$store.impresiones.activeTab === 'solicitudes'" class="tab-pane" x-cloak>
+                <div th:replace="~{impresiones/solicitudes/solicitudes :: content}"></div>
+            </div>
+        </div>
+
+        <div id="solicitudes-modal-container" style="display:none;">
+            <div th:replace="~{impresiones/solicitudes/formulario :: form-content}"></div>
+        </div>
+
+        <script th:inline="javascript">
+            (function asegurarStoreImpresiones() {
+                const tabInicial = /*[[${tabInicial}]]*/ 'solicitudes';
+
+                function crear() {
+                    if (!window.Alpine || typeof Alpine.store !== 'function') {
+                        return;
+                    }
+                    const actual = Alpine.store('impresiones');
+                    if (!actual || (actual.activeTab !== 'imprimir' && actual.activeTab !== 'solicitudes')) {
+                        Alpine.store('impresiones', { activeTab: tabInicial });
+                        return;
+                    }
+                    if (tabInicial !== 'imprimir' && actual.activeTab === 'imprimir') {
+                        actual.activeTab = 'solicitudes';
+                    }
+                }
+                crear();
+                document.addEventListener('alpine:init', crear);
+            })();
+        </script>
+    </main>
+    </th:block>
+
+</body>
+
+</html>
