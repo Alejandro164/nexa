@@ -672,7 +672,7 @@
                         </svg>
                         Ver Docentes
                     </a>
-                    <a href="/control-de-acceso" class="dash-action-btn"
+                    <a href="/control-de-acceso" class="dash-action-btn" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
                        hx-get="/control-de-acceso"
                        hx-target=".content-area"
                        hx-swap="innerHTML"

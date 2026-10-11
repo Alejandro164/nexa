@@ -147,8 +147,12 @@ public class SecurityConfig {
                         .requestMatchers("/comedor", "/comedor/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
 
+                        // ── Control de acceso: portería de la institución, solo administrador y director ──
+                        .requestMatchers("/control-de-acceso", "/control-de-acceso/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR)
+
                         // ── Resto de módulos operativos: abiertos a todo el staff (ADMIN/DIRECTOR/DOCENTE) ──
-                        .requestMatchers("/docentes/**", "/control-de-acceso/**", "/gestion-academica/**",
+                        .requestMatchers("/docentes/**", "/gestion-academica/**",
                                 "/gestion-especial/**", "/evaluacion-academica/**", "/conducta/**", "/notas/**",
                                 "/entregas-academicas/**",
                                 "/reportes/**", "/contacto/**", "/mis-cursos/**", "/nube-nexa/**", "/archivos/**")
