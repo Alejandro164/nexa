@@ -1,0 +1,33 @@
+<div th:fragment="content" id="impresiones-solicitudes-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Solicitudes</h3>
+                <p class="academic-help">Pedidos enviados al departamento de impresión.</p>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="abrirSolicitudModal()">+ Nueva solicitud</button>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Tipo</th>
+                        <th>Copias</th>
+                        <th>Tamaño</th>
+                        <th>Color</th>
+                        <th>Caras</th>
+                        <th>Acabado</th>
+                        <th>Para cuándo</th>
+                        <th>Destino</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="9" class="table-empty">No hay solicitudes.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
     layout:decorate="~{index}">
 
 <head>
@@ -9,13 +10,13 @@
 <body>
 
     <h2 layout:fragment="page-title">Módulo de Comedor</h2>
-    <p layout:fragment="page-subtitle">Gestiona el menú diario de alimentación, control de asistencia al comedor y restricciones de salud</p>
+    <p layout:fragment="page-subtitle">Gestiona el menú, los tickets de almuerzo, la asistencia al comedor y las restricciones de salud</p>
 
     <th:block th:fragment="htmx-content">
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Módulo de Comedor</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestiona el menú diario de alimentación, control de asistencia al comedor y restricciones de salud</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Gestiona el menú, los tickets de almuerzo, la asistencia al comedor y las restricciones de salud</p>
     <main layout:fragment="content">
         <style>
             .config-tabs-container {
@@ -68,18 +69,123 @@
                 from { opacity: 0; transform: translateY(6px); }
                 to { opacity: 1; transform: translateY(0); }
             }
+            .menu-nota {
+                color: var(--text-secondary);
+                font-size: 0.84rem;
+                line-height: 1.45;
+                margin: 0 0 1rem;
+            }
+            .menu-alcance, .menu-opciones {
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+            .menu-alcance button, .menu-opcion {
+                border: 1px solid var(--border);
+                background: var(--surface-solid, #fff);
+                color: var(--text-main);
+                border-radius: 10px;
+                padding: 0.55rem 0.9rem;
+                font: inherit;
+                font-size: 0.84rem;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .menu-alcance button.is-active, .menu-opcion.is-active {
+                color: white;
+                background: var(--primary);
+                border-color: var(--primary);
+            }
+            .menu-editor, .menu-semana {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+            .menu-dia {
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 1rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+            .menu-dia h4 {
+                margin: 0;
+                font-weight: 600;
+                color: var(--primary);
+            }
+            .menu-dia p, .menu-plazo {
+                margin: 0;
+                font-size: 0.85rem;
+                color: var(--text-secondary);
+                line-height: 1.4;
+            }
+            .menu-campo {
+                width: 100%;
+                min-height: 5.5rem;
+                padding: 0.65rem 0.75rem;
+                border: 1px solid var(--border-solid);
+                border-radius: 8px;
+                background: var(--surface-solid, #fff);
+                color: var(--text-main);
+                font: inherit;
+                font-size: 0.85rem;
+                resize: vertical;
+            }
+            .menu-campo:focus, .menu-select:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
+            }
+            .menu-select {
+                width: 100%;
+                max-width: 280px;
+                padding: 0.55rem 0.75rem;
+                border: 1px solid var(--border-solid);
+                border-radius: 8px;
+                background: var(--surface-solid, #fff);
+                color: var(--text-main);
+                font: inherit;
+                font-size: 0.875rem;
+            }
+            .menu-acciones {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 1rem;
+            }
+            .menu-aviso {
+                margin: 1rem 0 0;
+                font-size: 0.84rem;
+                font-weight: 600;
+                color: var(--primary);
+            }
+            .menu-confirma {
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 1.25rem;
+                margin-bottom: 1.25rem;
+                background: #fff;
+            }
+            .menu-confirma h3 {
+                margin: 0.35rem 0;
+                font-size: 1.15rem;
+            }
         </style>
 
         <div x-data="{ activeTab: 'registro' }">
             <div class="config-tabs-container">
                 <div class="config-tabs">
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'registro' }" @click="activeTab = 'registro'">
+                    <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'registro' }" @click="activeTab = 'registro'">
                         📋 Registro Diario
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'menu' }" @click="activeTab = 'menu'">
+                    <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'tickets' }" @click="activeTab = 'tickets'">
+                        🎟️ Tickets de almuerzo
+                    </button>
+                    <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'menu' }" @click="activeTab = 'menu'">
                         🍽️ Menú del Comedor
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'restricciones' }" @click="activeTab = 'restricciones'">
+                    <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'restricciones' }" @click="activeTab = 'restricciones'">
                         ⚠️ Restricciones Alimentarias
                     </button>
                 </div>
@@ -109,10 +215,129 @@
                                 <tbody>
                                     <tr>
                                         <td>1-1892-0245</td>
-                                        <td style="font-weight:600;">Sofia Alpizar Soto</td>
-                                        <td>Sección 7-1</td>
-                                        <td>11:45 AM</td>
+                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
+                                        <td>7-1</td>
+                                        <td>11:45 a. m.</td>
                                         <td><span class="badge badge-success">Consumido</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>1-2044-1180</td>
+                                        <td style="font-weight:600;">Diego Ramírez Vargas</td>
+                                        <td>7-1</td>
+                                        <td>11:52 a. m.</td>
+                                        <td><span class="badge badge-success">Consumido</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>1-1766-3302</td>
+                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
+                                        <td>8-2</td>
+                                        <td>—</td>
+                                        <td><span class="badge badge-warning">Pendiente</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>1-2210-8841</td>
+                                        <td style="font-weight:600;">Valeria Solano Mora</td>
+                                        <td>9-3</td>
+                                        <td>12:05 p. m.</td>
+                                        <td><span class="badge badge-success">Consumido</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>1-1988-5520</td>
+                                        <td style="font-weight:600;">Kevin Araya Castro</td>
+                                        <td>8-1</td>
+                                        <td>—</td>
+                                        <td><span class="badge badge-secondary">No asistió</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>1-2331-0094</td>
+                                        <td style="font-weight:600;">Fernanda Quesada Brenes</td>
+                                        <td>10-2</td>
+                                        <td>12:18 p. m.</td>
+                                        <td><span class="badge badge-success">Consumido</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tickets de almuerzo -->
+            <div x-show="activeTab === 'tickets'" class="tab-pane" x-cloak>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Tickets de almuerzo</h3>
+                        <button type="button" class="btn btn-primary">+ Emitir ticket</button>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Ticket</th>
+                                        <th>Estudiante</th>
+                                        <th>Sección</th>
+                                        <th>Fecha</th>
+                                        <th>Tipo</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>TAL-1048</td>
+                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
+                                        <td>7-1</td>
+                                        <td>Vie 10 oct</td>
+                                        <td>Subsidio MEP</td>
+                                        <td><span class="badge badge-primary">Canjeado</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>TAL-1049</td>
+                                        <td style="font-weight:600;">Diego Ramírez Vargas</td>
+                                        <td>7-1</td>
+                                        <td>Vie 10 oct</td>
+                                        <td>Subsidio MEP</td>
+                                        <td><span class="badge badge-success">Vigente</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>TAL-1050</td>
+                                        <td style="font-weight:600;">Mateo Quirós Vargas</td>
+                                        <td>8-2</td>
+                                        <td>Vie 10 oct</td>
+                                        <td>Subsidio MEP · sin gluten</td>
+                                        <td><span class="badge badge-success">Vigente</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>TAL-1051</td>
+                                        <td style="font-weight:600;">Valeria Solano Mora</td>
+                                        <td>9-3</td>
+                                        <td>Vie 10 oct</td>
+                                        <td>Pagado</td>
+                                        <td><span class="badge badge-primary">Canjeado</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>TAL-1052</td>
+                                        <td style="font-weight:600;">Fernanda Quesada Brenes</td>
+                                        <td>10-2</td>
+                                        <td>Vie 10 oct</td>
+                                        <td>Pagado · vegetariano</td>
+                                        <td><span class="badge badge-primary">Canjeado</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>TAL-0988</td>
+                                        <td style="font-weight:600;">Kevin Araya Castro</td>
+                                        <td>8-1</td>
+                                        <td>Lun 6 oct</td>
+                                        <td>Subsidio MEP</td>
+                                        <td><span class="badge badge-secondary">Vencido</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>TAL-1101</td>
+                                        <td style="font-weight:600;">Andrés Mata Rojas</td>
+                                        <td>10-1</td>
+                                        <td>Vie 10 oct</td>
+                                        <td>Pagado</td>
+                                        <td><span class="badge badge-danger">Anulado</span></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -123,20 +348,75 @@
 
             <!-- Menú del Comedor -->
             <div x-show="activeTab === 'menu'" class="tab-pane" x-cloak>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Menú de Alimentación Semanal</h3>
-                        <button class="btn btn-primary">+ Actualizar Menú</button>
-                    </div>
-                    <div style="padding: 2rem;">
-                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:1rem;">
-                            <div style="border:1px solid var(--border); padding:1rem; border-radius:10px;">
-                                <h4 style="font-weight:600; color:var(--primary);">Lunes</h4>
-                                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px;">Gallo pinto con huevo, tortilla de maíz, queso y maduro. Fresco natural.</p>
+                <div class="menu-comedor" x-data="menuComedor()" x-init="iniciar()"
+                     th:data-rol="${rolComedor}" th:data-preview="${puedePrevisualizar}">
+
+                    <div sec:authorize="hasAuthority('ROLE_ADMIN')" x-show="rol === 'admin'" x-cloak>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Publicar menú</h3>
                             </div>
-                            <div style="border:1px solid var(--border); padding:1rem; border-radius:10px;">
-                                <h4 style="font-weight:600; color:var(--primary);">Martes</h4>
-                                <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px;">Casado costarricense (Arroz, frijoles, carne mechada, ensalada y plátano frito).</p>
+                            <div style="padding: 1.5rem;">
+                                <p class="menu-nota">La semana se publica completa. Si un día cambia, se reemplaza solo ese día y el resto queda igual. Las familias confirman únicamente el almuerzo del día siguiente, hasta las 6:00 p. m.</p>
+                                <div class="menu-alcance">
+                                    <button type="button" :class="{ 'is-active': alcance === 'semanal' }" @click="alcance = 'semanal'; aviso = ''">Semana completa</button>
+                                    <button type="button" :class="{ 'is-active': alcance === 'diario' }" @click="alcance = 'diario'; aviso = ''">Solo un día</button>
+                                </div>
+                                <div x-show="alcance === 'diario'" style="margin-top: 1rem;">
+                                    <select class="menu-select" x-model="diaSeleccionado" @change="aviso = ''">
+                                        <template x-for="item in dias" :key="item.id">
+                                            <option :value="item.id" x-text="item.nombre + ' ' + item.fecha"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="menu-editor">
+                                    <template x-for="item in dias" :key="item.id">
+                                        <label class="menu-dia" x-show="alcance === 'semanal' || item.id === diaSeleccionado">
+                                            <h4 x-text="item.nombre + ' ' + item.fecha"></h4>
+                                            <textarea class="menu-campo" x-model="item.plato" @input="aviso = ''"></textarea>
+                                        </label>
+                                    </template>
+                                </div>
+                                <p class="menu-aviso" x-show="aviso" x-text="aviso"></p>
+                                <div class="menu-acciones">
+                                    <button type="button" class="btn btn-primary" @click="publicar()">Publicar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="height: 1rem;"></div>
+                    </div>
+
+                    <div sec:authorize="hasAnyAuthority('ROLE_PADRE', 'ROLE_ESTUDIANTE', 'ROLE_ADMIN')" x-show="rol === 'padre' || rol === 'estudiante'" x-cloak>
+                        <div class="menu-confirma">
+                            <span class="badge badge-warning">Confirmación abierta</span>
+                            <h3>Lunes 12 de octubre</h3>
+                            <p class="menu-plazo" x-text="rol === 'padre' ? 'Almuerzo de Sofía Alpízar Soto, 7-1.' : 'Tu almuerzo del lunes.'"></p>
+                            <p class="menu-plazo" style="margin-top: 0.35rem;" x-text="platoAbierto()"></p>
+                            <p class="menu-plazo" style="margin-top: 0.75rem;">Hay que confirmarlo un día antes. El plazo cierra el domingo 11 a las 6:00 p. m. Después de esa hora la cocina ya no cambia el conteo.</p>
+                            <div class="menu-opciones" style="margin-top: 1rem;">
+                                <button type="button" class="menu-opcion" :class="{ 'is-active': confirmacion === 'asiste' }" @click="confirmacion = 'asiste'" x-text="rol === 'padre' ? 'Sí, almuerza' : 'Sí, almuerzo'"></button>
+                                <button type="button" class="menu-opcion" :class="{ 'is-active': confirmacion === 'no-asiste' }" @click="confirmacion = 'no-asiste'">No asiste</button>
+                            </div>
+                            <p class="menu-aviso" x-show="confirmacion === 'asiste'">Respuesta guardada: sí almuerza el lunes. Podés cambiarla hasta el domingo a las 6:00 p. m.</p>
+                            <p class="menu-aviso" x-show="confirmacion === 'no-asiste'">Respuesta guardada: no asiste el lunes. Podés cambiarla hasta el domingo a las 6:00 p. m.</p>
+                        </div>
+                    </div>
+
+                    <div class="card" x-show="rol !== 'admin'" x-cloak>
+                        <div class="card-header">
+                            <h3 class="card-title">Menú de la semana</h3>
+                        </div>
+                        <div style="padding: 1.5rem;">
+                            <p class="menu-nota" x-show="rol === 'padre' || rol === 'estudiante'">Solo el lunes está abierto para confirmar. Martes a viernes se confirman el día anterior.</p>
+                            <p class="menu-nota" x-show="rol === 'docente'">La familia confirma el almuerzo del día siguiente. Esta vista es de consulta.</p>
+                            <div class="menu-semana">
+                                <template x-for="item in dias" :key="item.id">
+                                    <div class="menu-dia">
+                                        <h4 x-text="item.nombre"></h4>
+                                        <span class="badge" :class="item.id === 'lunes' ? 'badge-warning' : 'badge-secondary'" x-text="item.id === 'lunes' ? 'Se confirma hoy' : 'Día anterior'"></span>
+                                        <p x-text="item.plato"></p>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -164,9 +444,27 @@
                                 <tbody>
                                     <tr>
                                         <td style="font-weight:600;">Mateo Quirós Vargas</td>
-                                        <td>Sección 8-2</td>
-                                        <td><span class="badge badge-danger">Intolerancia Severa al Gluten (Celiaquía)</span></td>
-                                        <td>Preparar plato alternativo libre de harinas de trigo.</td>
+                                        <td>8-2</td>
+                                        <td><span class="badge badge-danger">Celiaquía</span></td>
+                                        <td>Plato sin harinas de trigo.</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Sofía Alpízar Soto</td>
+                                        <td>7-1</td>
+                                        <td><span class="badge badge-danger">Alergia al maní</span></td>
+                                        <td>Separar utensilios y evitar salsas con maní.</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Andrés Mata Rojas</td>
+                                        <td>10-1</td>
+                                        <td><span class="badge badge-warning">Intolerancia a la lactosa</span></td>
+                                        <td>Sustituir lácteos por la opción sin leche.</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight:600;">Fernanda Quesada Brenes</td>
+                                        <td>10-2</td>
+                                        <td><span class="badge badge-info">Dieta vegetariana</span></td>
+                                        <td>Cambiar la proteína animal por huevo o frijoles.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -176,6 +474,72 @@
             </div>
 
         </div>
+        <script>
+            function menuComedor() {
+                return {
+                    alcance: 'semanal',
+                    diaSeleccionado: 'lunes',
+                    confirmacion: 'pendiente',
+                    aviso: '',
+                    rol: 'padre',
+                    dias: [
+                        { id: 'lunes', nombre: 'Lunes', fecha: '12 oct', plato: 'Gallo pinto con huevo, tortilla de maíz, queso y maduro. Fresco natural.' },
+                        { id: 'martes', nombre: 'Martes', fecha: '13 oct', plato: 'Casado costarricense: arroz, frijoles, carne mechada, ensalada y plátano frito.' },
+                        { id: 'miercoles', nombre: 'Miércoles', fecha: '14 oct', plato: 'Sopa de verduras, arroz con pollo, ensalada y fresco de cas.' },
+                        { id: 'jueves', nombre: 'Jueves', fecha: '15 oct', plato: 'Picadillo de papa, arroz, frijoles, huevo duro y fruta de temporada.' },
+                        { id: 'viernes', nombre: 'Viernes', fecha: '16 oct', plato: 'Arroz con atún, puré de papa, ensalada rusa y gelatina.' }
+                    ],
+                    iniciar() {
+                        this.rol = this.$el.dataset.rol || 'padre';
+                        if (this.$el.dataset.preview !== 'true') {
+                            return;
+                        }
+                        const guardado = sessionStorage.getItem('nexa-modo-menu');
+                        if (guardado) {
+                            this.aplicarModo(guardado);
+                        }
+                        if (window.__menuComedorModo) {
+                            window.removeEventListener('nexa-modo', window.__menuComedorModo);
+                        }
+                        const componente = this;
+                        window.__menuComedorModo = function (event) {
+                            if (event.detail) {
+                                componente.aplicarModo(event.detail);
+                            }
+                        };
+                        window.addEventListener('nexa-modo', window.__menuComedorModo);
+                    },
+                    aplicarModo(modo) {
+                        const conocidos = ['admin', 'director', 'docente', 'estudiante', 'padre'];
+                        this.rol = conocidos.includes(modo) ? modo : 'docente';
+                        this.aviso = '';
+                    },
+                    platoAbierto() {
+                        const lunes = this.dias.find(function (item) { return item.id === 'lunes'; });
+                        return lunes ? lunes.plato : '';
+                    },
+                    publicar() {
+                        if (this.alcance === 'diario') {
+                            const elegido = this.dias.find(function (item) { return item.id === this.diaSeleccionado; }, this);
+                            if (!elegido || !elegido.plato.trim()) {
+                                this.aviso = 'Escribí el plato de ese día antes de publicarlo.';
+                                return;
+                            }
+                            elegido.plato = elegido.plato.trim();
+                            this.aviso = 'Publicaste solo el ' + elegido.nombre.toLowerCase() + '. Los demás días siguen igual.';
+                            return;
+                        }
+                        const incompleto = this.dias.some(function (item) { return !item.plato.trim(); });
+                        if (incompleto) {
+                            this.aviso = 'Completá los cinco días antes de publicar la semana.';
+                            return;
+                        }
+                        this.dias.forEach(function (item) { item.plato = item.plato.trim(); });
+                        this.aviso = 'Semana publicada. Las familias confirman el lunes hasta el domingo a las 6:00 p. m.';
+                    }
+                };
+            }
+        </script>
     </main>
     </th:block>
 

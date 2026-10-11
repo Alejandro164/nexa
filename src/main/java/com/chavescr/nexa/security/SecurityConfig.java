@@ -109,10 +109,13 @@ public class SecurityConfig {
                         .requestMatchers("/personal/solicitudes/**").hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
                         .requestMatchers("/personal/**").hasAnyAuthority(ADMIN, DIRECTOR)
 
-                        // ── Agenda: calendario abierto a todos; crear actividad ya reforzado a DIRECTOR/ADMIN;
+                        // ── Agenda: calendario abierto a todos; reuniones entre familia y staff;
+                        //    crear actividad ya reforzado a DIRECTOR/ADMIN;
                         //    el resto (tareas, recordatorios, proyectos, participación) es herramienta interna de staff ──
                         .requestMatchers(HttpMethod.GET, "/agenda", "/agenda/calendario/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, PADRE, ESTUDIANTE)
+                        .requestMatchers("/agenda/reuniones", "/agenda/reuniones/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, PADRE)
                         .requestMatchers("/agenda/actividad/**").hasAnyAuthority(ADMIN, DIRECTOR)
                         .requestMatchers("/agenda/**").hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
 
@@ -133,11 +136,21 @@ public class SecurityConfig {
                         .requestMatchers("/apelaciones", "/apelaciones/**", "/ampliacion", "/ampliacion/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
 
+                        // ── Impresiones: la cola de imprimir es del director y el administrador.
+                        //    Solicitudes las usa también docente, estudiante y padre. ──
+                        .requestMatchers("/impresiones/imprimir", "/impresiones/imprimir/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR)
+                        .requestMatchers("/impresiones", "/impresiones/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
+
+                        // ── Comedor: consulta del menú y del registro para la comunidad escolar ──
+                        .requestMatchers("/comedor", "/comedor/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, ESTUDIANTE, PADRE)
+
                         // ── Resto de módulos operativos: abiertos a todo el staff (ADMIN/DIRECTOR/DOCENTE) ──
                         .requestMatchers("/docentes/**", "/control-de-acceso/**", "/gestion-academica/**",
                                 "/gestion-especial/**", "/evaluacion-academica/**", "/conducta/**", "/notas/**",
                                 "/entregas-academicas/**",
-                                "/comedor/**",
                                 "/reportes/**", "/contacto/**", "/mis-cursos/**", "/nube-nexa/**", "/archivos/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE)
 

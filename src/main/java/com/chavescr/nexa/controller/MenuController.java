@@ -61,8 +61,29 @@ public class MenuController {
     }
 
     @GetMapping("/comedor")
-    public String comedor(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+    public String comedor(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            Model model, HttpServletRequest request) {
+        model.addAttribute("rolComedor", rolDeComedor(request));
+        model.addAttribute("puedePrevisualizar",
+                request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_SYSTEM_CONFIG"));
         return htmxRequest ? "comedor/index :: htmx-content" : "comedor/index";
+    }
+
+    /** Quien publica el menú es el administrador. La familia confirma; dirección y docencia consultan. */
+    private static String rolDeComedor(HttpServletRequest request) {
+        if (request.isUserInRole("ROLE_ADMIN")) {
+            return "admin";
+        }
+        if (request.isUserInRole("ROLE_DIRECTOR")) {
+            return "director";
+        }
+        if (request.isUserInRole("ROLE_DOCENTE")) {
+            return "docente";
+        }
+        if (request.isUserInRole("ROLE_ESTUDIANTE")) {
+            return "estudiante";
+        }
+        return "padre";
     }
 
     @GetMapping("/notas")

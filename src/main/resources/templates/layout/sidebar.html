@@ -72,7 +72,7 @@
     </div>
 
     <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente estudiante padre')">
-        <div class="nav-section-title">Academia y Servicios</div>
+        <div class="nav-section-title">Academia</div>
         <a href="/gestion-academica" class="nav-item" x-show="ve('director docente')" hx-get="/gestion-academica" hx-target=".content-area"
             hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -193,19 +193,23 @@
             </svg>
             <span class="nav-item-text">Horario Periférica</span>
         </a>
-        <a href="/entregas-academicas" class="nav-item" x-show="ve('director docente')" hx-get="/entregas-academicas" hx-target=".content-area"
-            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+
+    </div>
+
+    <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('admin director docente estudiante padre')">
+        <div class="nav-section-title">Servicios</div>
+        <a href="/impresiones" class="nav-item" x-show="ve('admin director docente estudiante padre')" hx-get="/impresiones" hx-target=".content-area"
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE', 'ROLE_PADRE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <path d="M12 18v-6" />
-                <path d="M9 15l3 3 3-3" />
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
             </svg>
-            <span class="nav-item-text">Entregas académicas</span>
+            <span class="nav-item-text">Impresiones</span>
         </a>
-        <a href="/comedor" class="nav-item" x-show="ve('admin')" hx-get="/comedor" hx-target=".content-area" hx-swap="innerHTML"
-            hx-push-url="true" sec:authorize="hasAuthority('ROLE_ADMIN')">
+        <a href="/comedor" class="nav-item" x-show="ve('admin director docente estudiante padre')" hx-get="/comedor" hx-target=".content-area" hx-swap="innerHTML"
+            hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE', 'ROLE_ESTUDIANTE', 'ROLE_PADRE')">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
@@ -216,7 +220,6 @@
             </svg>
             <span class="nav-item-text">Comedor</span>
         </a>
-
     </div>
 
     <div class="nav-section" th:unless="${sinDireccionAdmin}" x-show="ve('director docente estudiante padre')">
@@ -250,6 +253,17 @@
                 <path d="M9 14l2 2 4-4" />
             </svg>
             <span class="nav-item-text">Documentos Oficiales</span>
+        </a>
+        <a href="/entregas-academicas" class="nav-item" x-show="ve('director docente')" hx-get="/entregas-academicas" hx-target=".content-area"
+            hx-swap="innerHTML" hx-push-url="true" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <path d="M12 18v-6" />
+                <path d="M9 15l3 3 3-3" />
+            </svg>
+            <span class="nav-item-text">Entregas académicas</span>
         </a>
     </div>
 

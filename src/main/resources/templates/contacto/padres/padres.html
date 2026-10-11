@@ -1,18 +1,18 @@
 <div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Directorio de Padres de Familia</h3>
+            <h3 class="card-title">Padres de familia y encargados</h3>
             <span class="badge badge-primary" th:text="${padres != null ? #lists.size(padres) : 0} + ' contactos'">0 contactos</span>
         </div>
         <div style="padding: 1.5rem;">
             <div class="contact-search">
-                <input type="text" class="form-input" placeholder="Buscar padre de familia..." name="q"
+                <input type="text" class="form-input" placeholder="Buscar padre de familia o encargado..." name="q"
                        th:value="${qPadres}"
                        hx-get="/contacto/padres"
                        hx-trigger="keyup changed delay:400ms, search"
                        hx-target="closest .card" hx-swap="outerHTML" />
             </div>
-            <p th:if="${padres == null or padres.empty}" class="table-empty">No se encontraron padres de familia.</p>
+            <p th:if="${padres == null or padres.empty}" class="table-empty">No se encontraron padres de familia ni encargados.</p>
             <div class="contact-grid" th:unless="${padres == null or padres.empty}">
                 <div class="contact-card" th:each="p : ${padres}"
                      th:with="hijos=${estudiantesPorPadre.get(p.id)}">

@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.ContactoExterno;
+import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.repository.UsuarioRepository;
+import com.chavescr.nexa.service.ConfiguracionAcademicaService;
 import com.chavescr.nexa.service.ContactoExternoService;
 import com.chavescr.nexa.service.PersonalService;
 import com.chavescr.nexa.service.UsuarioService;
@@ -46,6 +48,9 @@ public class ContactoController {
     @Autowired
     private ContactoExternoService contactoExternoService;
 
+    @Autowired
+    private ConfiguracionAcademicaService configuracionAcademicaService;
+
     @GetMapping
     public String contacto(Model model, HttpSession session, HttpServletRequest request) {
         Long direccionId = direccionId(session);
@@ -53,7 +58,7 @@ public class ContactoController {
             cargarEstudiantes(model, direccionId, null);
             cargarPersonal(model, direccionId, null);
             cargarPadres(model, direccionId, null);
-            cargarDirecciones(model, direccionId, null);
+            cargarGrupos(model, direccionId, null);
         }
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "contacto/index :: htmx-content";
@@ -83,6 +88,14 @@ public class ContactoController {
     public String padres(@RequestParam(required = false) String q, Model model, HttpSession session) {
         cargarPadres(model, direccionId(session), q);
         return "contacto/padres/padres :: content";
+    }
+
+    // ─── GRUPOS ──────────────────────────────────────────────────
+
+    @GetMapping("/grupos")
+    public String grupos(@RequestParam(required = false) String q, Model model, HttpSession session) {
+        cargarGrupos(model, direccionId(session), q);
+        return "contacto/grupos/grupos :: content";
     }
 
     // ─── DIRECCIONES (contactos externos) ─────────────────────
@@ -181,6 +194,21 @@ public class ContactoController {
         model.addAttribute("padres", padres);
         model.addAttribute("estudiantesPorPadre", estudiantesPorPadre);
         model.addAttribute("qPadres", q);
+    }
+
+    private void cargarGrupos(Model model, Long direccionId, String q) {
+        List<NivelAcademico> grupos = direccionId == null ? List.of()
+                : configuracionAcademicaService.listarNivelesActivos(direccionId);
+        if (q != null && !q.isBlank()) {
+            String filtro = normalizar(q.trim());
+            grupos = grupos.stream()
+                    .filter(grupo -> normalizar(grupo.getNombreCompleto()).contains(filtro)
+                            || normalizar(grupo.getSeccion()).contains(filtro)
+                            || normalizar(String.valueOf(grupo.getGrado())).contains(filtro))
+                    .toList();
+        }
+        model.addAttribute("grupos", grupos);
+        model.addAttribute("qGrupos", q);
     }
 
     private void cargarDirecciones(Model model, Long direccionId, String q) {

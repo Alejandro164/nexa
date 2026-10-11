@@ -145,6 +145,18 @@ public class AgendaController {
         return "agenda/tareas/tareas :: tabla-tareas";
     }
 
+    @GetMapping("/reuniones")
+    public String reuniones(HttpSession session) {
+        requerirDireccion(session);
+        return "agenda/reuniones/reuniones :: content";
+    }
+
+    @GetMapping("/reuniones/form")
+    public String reunionesForm(HttpSession session) {
+        requerirDireccion(session);
+        return "agenda/reuniones/formulario :: form-content";
+    }
+
     @GetMapping("/tareas/form")
     public String tareaFormCrear(@RequestParam(required = false) Long miembroId,
                                  Model model, HttpSession session) {

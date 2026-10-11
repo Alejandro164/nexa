@@ -559,6 +559,57 @@ function cerrarRecordatoriosModal() {
     }, 180);
 }
 
+function abrirReunionesModal() {
+    const el = document.getElementById('reuniones-modal-container');
+    if (!el) {
+        return;
+    }
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarReunionesModal() {
+    const el = document.getElementById('reuniones-modal-container');
+    if (!el) {
+        return;
+    }
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
+    }, 180);
+}
+
+function abrirSolicitudModal() {
+    const el = document.getElementById('solicitudes-modal-container');
+    if (!el) {
+        return;
+    }
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarSolicitudModal() {
+    const el = document.getElementById('solicitudes-modal-container');
+    if (!el) {
+        return;
+    }
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+    }, 180);
+}
+
 function abrirActividadModal() {
     var el = document.getElementById('actividad-modal-container');
     if (!el) return;
