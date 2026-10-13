@@ -1,16 +1,610 @@
-<div th:fragment="content" id="comunicacion-content" class="tab-pane" xmlns:th="http://www.thymeleaf.org">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Comunicados Institucionales</h3>
+<!--
+    Comunicados: los oficios emitidos vistos por sus destinatarios internos (personas y grupos).
+    Fragmentos:
+      content         vista completa (panel de destinatarios + oficios). Destino de la pestaña "Comunicados".
+      lista           panel de destinatarios (solo administración y dirección).
+      panel           destinatario elegido: cabecera, filtros y oficios.
+      oficios-lista   solo los oficios (se vuelve a pedir al cambiar búsqueda, tipo o año).
+      vacio           nada elegido (y cuerpo de las respuestas de error).
+      icono(clave)    icono del grupo.
+-->
+
+<div th:fragment="content" id="comunicacion-content" class="cm"
+     th:classappend="${soloPropios ? ' solo' : ''} + ${panel != null ? ' abierta' : ''}"
+     data-filtro="todos" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        .cm {
+            display: flex;
+            height: calc(100dvh - var(--topbar-height) - 6.9rem);
+            min-height: 28rem;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+
+        /* ── Panel de destinatarios ──────────────────────────────── */
+        .cm-side {
+            width: 340px;
+            max-width: 40%;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            background: var(--input-bg);
+            min-height: 0;
+        }
+        .cm.solo .cm-side { display: none; }
+        .cm-side-head { padding: 16px 16px 10px; flex-shrink: 0; }
+        .cm-side-head h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+        .cm-side-head p { margin: 2px 0 0; font-size: 0.78rem; color: var(--text-secondary); }
+        .cm-buscar { position: relative; padding: 0 16px 10px; flex-shrink: 0; }
+        .cm-buscar svg {
+            position: absolute;
+            left: 28px;
+            top: 50%;
+            width: 15px;
+            height: 15px;
+            transform: translateY(calc(-50% - 5px));
+            color: var(--text-light);
+        }
+        .cm-buscar input {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 12px 8px 34px;
+            font: inherit;
+            font-size: 0.86rem;
+            color: var(--text-primary);
+            outline: none;
+        }
+        .cm-buscar input:focus { border-color: var(--primary); }
+        .cm-filtros { display: flex; gap: 6px; padding: 0 16px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .cm-filtro {
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: #fff;
+            color: var(--text-secondary);
+            font: inherit;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .cm-filtro.activo { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .cm[data-filtro="grupos"] .cm-item[data-tipo="persona"],
+        .cm[data-filtro="personas"] .cm-item[data-tipo="grupo"],
+        .cm[data-filtro="grupos"] .cm-seccion.personas,
+        .cm[data-filtro="personas"] .cm-seccion.grupos { display: none; }
+
+        .cm-lista { flex: 1; overflow-y: auto; min-height: 0; padding: 8px; }
+        .cm-seccion {
+            padding: 10px 8px 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-light);
+        }
+        .cm-vacio-lista { padding: 18px 14px; text-align: center; color: var(--text-secondary); font-size: 0.84rem; }
+        .cm-item {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            text-align: left;
+            font: inherit;
+            color: inherit;
+            cursor: pointer;
+        }
+        .cm-item:hover { background: #fff; }
+        .cm-item.activa { background: #fff; border-color: var(--border); box-shadow: var(--shadow-sm); }
+        .cm-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .cm-avatar svg { width: 20px; height: 20px; }
+        .cm-avatar.sm { width: 38px; height: 38px; border-radius: 10px; font-size: 0.78rem; }
+        .cm-avatar.grupo { background: rgba(45, 90, 135, 0.12); color: var(--primary); }
+        .cm-avatar.familia { background: #dbeafe; color: #1e4d73; }
+        .cm-avatar.docente { background: #dcfce7; color: #166534; }
+        .cm-avatar.institucion { background: #ede9fe; color: #5b21b6; }
+        .cm-avatar.estudiante { background: #fef3c7; color: #92400e; }
+        .cm-item-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+        .cm-nombre { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cm-detalle { font-size: 0.76rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cm-cuenta {
+            min-width: 24px;
+            height: 22px;
+            padding: 0 7px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            color: #475569;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .cm-cuenta.nuevo { background: var(--primary); color: #fff; }
+
+        /* ── Panel de oficios ───────────────────────────────────── */
+        .cm-stage { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+        .cm-panel { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+        .cm-vacio {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 8px;
+            padding: 2rem;
+        }
+        .cm-vacio-icono {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            background: rgba(45, 90, 135, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 6px;
+        }
+        .cm-vacio-icono svg { width: 30px; height: 30px; }
+        .cm-vacio h3 { margin: 0; font-size: 1.1rem; color: var(--text-primary); }
+        .cm-vacio p { margin: 0; max-width: 380px; font-size: 0.88rem; color: var(--text-secondary); }
+
+        .cm-cabecera { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .cm-volver {
+            display: none;
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            padding: 0;
+        }
+        .cm-volver:hover { background: var(--input-bg); }
+        .cm-volver svg { width: 20px; height: 20px; }
+        .cm-quien { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+        .cm-quien strong { font-size: 0.98rem; color: var(--text-primary); }
+        .cm-quien small { font-size: 0.78rem; color: var(--text-secondary); }
+        .cm-resumen { display: flex; gap: 18px; flex-shrink: 0; }
+        .cm-dato { display: flex; flex-direction: column; align-items: flex-end; }
+        .cm-dato b { font-size: 1.1rem; color: var(--text-primary); line-height: 1.1; }
+        .cm-dato span { font-size: 0.7rem; color: var(--text-secondary); }
+
+        .cm-herramientas { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; margin: 0; }
+        .cm-herramientas .cm-buscar-o { position: relative; flex: 1; min-width: 180px; }
+        .cm-herramientas .cm-buscar-o svg { position: absolute; left: 11px; top: 50%; width: 15px; height: 15px; transform: translateY(-50%); color: var(--text-light); }
+        .cm-herramientas input[type="search"] {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px 8px 33px;
+            font: inherit;
+            font-size: 0.86rem;
+            outline: none;
+        }
+        .cm-herramientas input[type="search"]:focus { border-color: var(--primary); }
+        .cm-herramientas select {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font: inherit;
+            font-size: 0.84rem;
+            background: #fff;
+            color: var(--text-primary);
+        }
+
+        .cm-oficios { flex: 1 1 auto; overflow-y: auto; min-height: 0; padding: 4px 20px 20px; }
+        .cm-sin-oficios { padding: 2.5rem 1rem; text-align: center; color: var(--text-secondary); font-size: 0.88rem; }
+        .cm-mes {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 0 10px;
+            color: var(--text-light);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .cm-mes::before, .cm-mes::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+        .cm-oficio {
+            position: relative;
+            margin-bottom: 12px;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .cm-oficio:hover { border-color: rgba(45, 90, 135, 0.4); box-shadow: var(--shadow-sm); }
+        .cm-oficio.nuevo { border-left: 3px solid var(--primary); }
+        .cm-oficio.resaltado { animation: cm-resalta 2.6s ease-out; }
+        @keyframes cm-resalta {
+            0%, 40% { box-shadow: 0 0 0 4px rgba(45, 90, 135, 0.28); }
+            100% { box-shadow: 0 0 0 0 rgba(45, 90, 135, 0); }
+        }
+        .cm-linea1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .cm-numero {
+            padding: 2px 9px;
+            border-radius: 6px;
+            background: rgba(45, 90, 135, 0.1);
+            color: var(--primary);
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .cm-circular { padding: 2px 9px; border-radius: 6px; background: #fef3c7; color: #92400e; font-size: 0.74rem; font-weight: 700; }
+        .cm-etiqueta-nuevo {
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.66rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .cm-estado {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.12);
+            color: #15803d;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .cm-estado svg { width: 12px; height: 12px; }
+        .cm-asunto { margin: 10px 0 4px; font-size: 1rem; font-weight: 600; color: var(--text-primary); line-height: 1.35; }
+        .cm-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.78rem; color: var(--text-secondary); }
+        .cm-meta > span { display: inline-flex; align-items: center; gap: 5px; }
+        .cm-meta svg { width: 13px; height: 13px; color: var(--text-light); }
+        .cm-pie { margin-top: 14px; }
+        .cm-archivo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--input-bg);
+        }
+        .cm-archivo-icono {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .cm-archivo-icono.word { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+        .cm-archivo-icono svg { width: 17px; height: 17px; }
+        .cm-archivo-texto { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+        .cm-archivo-texto strong { font-size: 0.82rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cm-archivo-texto small { font-size: 0.72rem; color: var(--text-secondary); }
+        .cm-botones { display: flex; gap: 4px; flex-shrink: 0; }
+        .cm-btn {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0;
+            text-decoration: none;
+        }
+        .cm-btn:hover { border-color: var(--primary); color: var(--primary); background: rgba(45, 90, 135, 0.06); }
+        .cm-btn svg { width: 16px; height: 16px; }
+        .cm-lectura { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 0.76rem; color: var(--text-secondary); }
+        .cm-barra { flex: 0 0 140px; height: 6px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+        .cm-barra i { display: block; height: 100%; border-radius: 999px; background: var(--primary); }
+        .cm-lectura b { color: var(--text-primary); }
+        .cm-lectura .ok { color: #15803d; font-weight: 600; }
+        .cm-lectura .pendiente { color: #b45309; font-weight: 600; }
+
+        @media (max-width: 800px) {
+            .cm { height: calc(100dvh - var(--topbar-height) - 5.9rem); min-height: 24rem; }
+            .cm-side { width: 100%; max-width: none; border-right: none; }
+            .cm:not(.abierta) .cm-stage { display: none; }
+            .cm.abierta .cm-side { display: none; }
+            .cm.solo .cm-stage { display: flex; }
+            .cm-volver { display: inline-flex; }
+            .cm.solo .cm-volver { display: none; }
+            .cm-resumen { display: none; }
+            .cm-cabecera, .cm-herramientas, .cm-oficios { padding-left: 16px; padding-right: 16px; }
+        }
+    </style>
+
+    <script>
+        // Utilidades de Comunicados. Se definen siempre (el contenido se vuelve a pedir al cambiar de pestaña).
+        window.cmSeleccionada = function () {
+            var panel = document.getElementById('cm-panel');
+            return panel ? panel.dataset.clave : '';
+        };
+        window.cmFiltro = function (valor) {
+            var raiz = document.querySelector('.cm');
+            raiz.dataset.filtro = valor;
+            raiz.querySelectorAll('.cm-filtro').forEach(function (boton) {
+                boton.classList.toggle('activo', boton.dataset.filtro === valor);
+            });
+        };
+        window.cmVolver = function () {
+            document.querySelector('.cm').classList.remove('abierta');
+        };
+        // Abrir o descargar el documento cuenta como lectura: se refleja de inmediato en la tarjeta.
+        window.cmLeido = function (enlace) {
+            var tarjeta = enlace.closest('.cm-oficio');
+            if (!tarjeta) {
+                return;
+            }
+            tarjeta.classList.remove('nuevo');
+            var etiqueta = tarjeta.querySelector('.cm-etiqueta-nuevo');
+            if (etiqueta) {
+                etiqueta.remove();
+            }
+            var pendiente = tarjeta.querySelector('.cm-lectura.persona .pendiente');
+            if (pendiente) {
+                pendiente.className = 'ok';
+                pendiente.textContent = 'Leído ahora';
+            }
+        };
+        window.cmResaltar = function () {
+            var marca = document.getElementById('cm-resaltar');
+            if (!marca || !marca.dataset.id) {
+                return;
+            }
+            var tarjeta = document.getElementById('oficio-' + marca.dataset.id);
+            if (tarjeta) {
+                tarjeta.scrollIntoView({ block: 'center' });
+            }
+        };
+        window.setTimeout(window.cmResaltar, 60);
+
+        // Bandera propia: el listener se instala una sola vez por carga de página.
+        if (!window.cmListo) {
+            window.cmListo = true;
+            document.addEventListener('htmx:afterSwap', function (e) {
+                var destino = e.detail && e.detail.target;
+                if (destino && destino.id === 'cm-stage') {
+                    var raiz = document.querySelector('.cm');
+                    if (raiz) {
+                        raiz.classList.add('abierta');
+                    }
+                }
+            });
+        }
+    </script>
+
+    <div id="cm-resaltar" th:data-id="${resaltarId}" hidden></div>
+
+    <aside class="cm-side" th:unless="${soloPropios}">
+        <header class="cm-side-head">
+            <h3>Destinatarios</h3>
+            <p>Elige una persona o un grupo para ver los oficios que se le enviaron.</p>
+        </header>
+        <div class="cm-buscar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="search" name="q" placeholder="Buscar persona o grupo" aria-label="Buscar destinatario" autocomplete="off"
+                   th:hx-get="@{/comunicacion/comunicados/destinatarios}" hx-trigger="keyup changed delay:300ms, search"
+                   hx-vals="js:{d: cmSeleccionada()}" hx-target="#cm-lista" hx-swap="outerHTML">
         </div>
-        <div style="padding: 1.5rem;">
-            <div class="premium-list-item">
-                <div>
-                    <h4 style="font-weight:600; font-size:0.9rem;">Suspensión de lecciones por mantenimiento eléctrico</h4>
-                    <p style="font-size:0.8rem; color:var(--text-secondary);">Dirección • Para toda la comunidad educativa • Incluye circular en PDF</p>
-                </div>
-                <span style="font-size:0.75rem; color:var(--text-light);">Hace 1 hora</span>
-            </div>
+        <div class="cm-filtros">
+            <button type="button" class="cm-filtro activo" data-filtro="todos" onclick="cmFiltro('todos')">Todos</button>
+            <button type="button" class="cm-filtro" data-filtro="grupos" onclick="cmFiltro('grupos')">Grupos</button>
+            <button type="button" class="cm-filtro" data-filtro="personas" onclick="cmFiltro('personas')">Personas</button>
         </div>
+        <div th:replace="~{:: lista}"></div>
+    </aside>
+
+    <div class="cm-stage" id="cm-stage">
+        <th:block th:if="${panel != null}"><section th:replace="~{:: panel}"></section></th:block>
+        <th:block th:unless="${panel != null}"><section th:replace="~{:: vacio}"></section></th:block>
     </div>
+</div>
+
+<!-- Panel de destinatarios: grupos primero, luego personas. -->
+<div th:fragment="lista" id="cm-lista" class="cm-lista" xmlns:th="http://www.thymeleaf.org">
+    <div class="cm-vacio-lista" th:if="${destinatarios == null or destinatarios.empty}">
+        Todavía no hay oficios emitidos con destinatarios internos. Cuando se emita uno aparecerá aquí.
+    </div>
+
+    <div class="cm-seccion grupos" th:if="${destinatarios != null and !destinatarios.?[grupo()].empty}">Grupos</div>
+    <th:block th:each="d : ${destinatarios}" th:if="${d.grupo()}">
+        <button type="button" class="cm-item" data-tipo="grupo" th:classappend="${d.clave() == seleccionada} ? ' activa'"
+                th:hx-get="@{/comunicacion/comunicados/panel(d=${d.clave()})}" hx-target="#cm-stage" hx-swap="innerHTML">
+            <span class="cm-avatar" th:classappend="${d.claseRol()}" aria-hidden="true"><th:block th:replace="~{:: icono(${d.clave()})}"></th:block></span>
+            <span class="cm-item-cuerpo">
+                <strong class="cm-nombre" th:text="${d.nombre()}">Toda la comunidad</strong>
+                <span class="cm-detalle" th:text="${d.detalle()}">Docentes, familias y estudiantes</span>
+            </span>
+            <span class="cm-cuenta" th:classappend="${d.pendiente()} ? ' nuevo'" th:text="${d.oficios()}"
+                  th:title="${d.pendiente()} ? 'Con lectura pendiente' : ''">3</span>
+        </button>
+    </th:block>
+
+    <div class="cm-seccion personas" th:if="${destinatarios != null and !destinatarios.?[!grupo()].empty}">Personas</div>
+    <th:block th:each="d : ${destinatarios}" th:if="${!d.grupo()}">
+        <button type="button" class="cm-item" data-tipo="persona" th:classappend="${d.clave() == seleccionada} ? ' activa'"
+                th:hx-get="@{/comunicacion/comunicados/panel(d=${d.clave()})}" hx-target="#cm-stage" hx-swap="innerHTML">
+            <span class="cm-avatar" th:classappend="${d.claseRol()}" th:text="${d.iniciales()}">AB</span>
+            <span class="cm-item-cuerpo">
+                <strong class="cm-nombre" th:text="${d.nombre()}">Nombre</strong>
+                <span class="cm-detalle" th:text="${d.detalle()}">Rol</span>
+            </span>
+            <span class="cm-cuenta" th:classappend="${d.pendiente()} ? ' nuevo'" th:text="${d.oficios()}"
+                  th:title="${d.pendiente()} ? 'Tiene oficios sin leer' : ''">1</span>
+        </button>
+    </th:block>
+</div>
+
+<section th:fragment="vacio" class="cm-vacio" xmlns:th="http://www.thymeleaf.org">
+    <div class="cm-vacio-icono" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+    </div>
+    <h3>Selecciona un destinatario</h3>
+    <p>Aquí verás los oficios y circulares que se han enviado a esa persona o grupo, con su documento y el estado de lectura.</p>
+</section>
+
+<th:block th:fragment="icono(clave)" xmlns:th="http://www.thymeleaf.org">
+    <svg th:if="${clave == 'DOCENTES'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10L12 5 2 10l10 5 10-5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+    </svg>
+    <svg th:if="${clave == 'FAMILIAS' or clave.startsWith('SECCION-')}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+    <svg th:if="${clave != 'DOCENTES' and clave != 'FAMILIAS' and !clave.startsWith('SECCION-')}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    </svg>
+</th:block>
+
+<section th:fragment="panel" id="cm-panel" class="cm-panel" th:data-clave="${panel.clave()}" xmlns:th="http://www.thymeleaf.org">
+    <header class="cm-cabecera">
+        <button type="button" class="cm-volver" title="Destinatarios" aria-label="Volver a los destinatarios" onclick="cmVolver()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <span class="cm-avatar sm" th:classappend="${panel.claseRol()}">
+            <th:block th:if="${panel.grupo()}"><th:block th:replace="~{:: icono(${panel.clave()})}"></th:block></th:block>
+            <th:block th:unless="${panel.grupo()}" th:text="${panel.iniciales()}">AB</th:block>
+        </span>
+        <div class="cm-quien">
+            <strong th:text="${panel.titulo()}">Destinatario</strong>
+            <small th:text="${panel.subtitulo()}">Grupo</small>
+        </div>
+        <div class="cm-resumen">
+            <div class="cm-dato"><b th:text="${panel.total()}">3</b><span th:text="${panel.total() == 1 ? 'oficio' : 'oficios'}">oficios</span></div>
+            <div class="cm-dato"><b th:text="${panel.sinLeer()}">1</b><span th:text="${panel.etiquetaSinLeer()}">sin leer</span></div>
+        </div>
+    </header>
+
+    <form class="cm-herramientas" onsubmit="return false">
+        <input type="hidden" name="d" th:value="${panel.clave()}">
+        <div class="cm-buscar-o">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="search" name="q" th:value="${panel.busqueda()}" placeholder="Buscar por asunto o número" aria-label="Buscar oficio" autocomplete="off"
+                   th:hx-get="@{/comunicacion/comunicados/oficios}" hx-trigger="keyup changed delay:300ms, search"
+                   hx-include="closest form" hx-target="#cm-oficios" hx-swap="outerHTML">
+        </div>
+        <select name="tipo" aria-label="Tipo" th:hx-get="@{/comunicacion/comunicados/oficios}" hx-trigger="change"
+                hx-include="closest form" hx-target="#cm-oficios" hx-swap="outerHTML">
+            <option value="" th:selected="${panel.tipo().isEmpty()}">Todos los tipos</option>
+            <option value="OFICIO" th:selected="${panel.tipo() == 'OFICIO'}">Oficios</option>
+            <option value="CIRCULAR" th:selected="${panel.tipo() == 'CIRCULAR'}">Circulares</option>
+        </select>
+        <select name="anio" aria-label="Año" th:hx-get="@{/comunicacion/comunicados/oficios}" hx-trigger="change"
+                hx-include="closest form" hx-target="#cm-oficios" hx-swap="outerHTML">
+            <option value="" th:selected="${panel.anio() == null}">Todos los años</option>
+            <option th:each="a : ${panel.anios()}" th:value="${a}" th:text="${a}" th:selected="${panel.anio() == a}">2026</option>
+        </select>
+    </form>
+
+    <div th:replace="~{:: oficios-lista}"></div>
+</section>
+
+<div th:fragment="oficios-lista" id="cm-oficios" class="cm-oficios" xmlns:th="http://www.thymeleaf.org">
+    <div class="cm-sin-oficios" th:if="${panel.oficios().empty}"
+         th:text="${panel.busqueda().isEmpty() and panel.tipo().isEmpty() and panel.anio() == null
+                    ? 'Todavía no hay oficios para mostrar aquí.' : 'Ningún oficio coincide con la búsqueda.'}">
+        Todavía no hay oficios para mostrar aquí.
+    </div>
+
+    <th:block th:each="o, st : ${panel.oficios()}">
+        <div class="cm-mes" th:if="${st.first or panel.oficios()[st.index - 1].mes() != o.mes()}" th:text="${o.mes()}">Octubre 2026</div>
+
+        <article class="cm-oficio" th:id="'oficio-' + ${o.id()}"
+                 th:classappend="${o.nuevo() ? ' nuevo' : ''} + ${resaltarId != null and resaltarId == o.id() ? ' resaltado' : ''}">
+            <div class="cm-linea1">
+                <span class="cm-numero" th:text="${o.numero()}">OF-2026-045</span>
+                <span class="cm-circular" th:if="${o.circular() != null}" th:text="${o.circular()}">CIR-2026-012</span>
+                <span class="cm-etiqueta-nuevo" th:if="${o.nuevo()}">Nuevo</span>
+                <span class="cm-estado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>Emitido</span>
+            </div>
+            <h4 class="cm-asunto" th:text="${o.asunto()}">Asunto del oficio</h4>
+            <div class="cm-meta">
+                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span th:text="${o.redactor()}">Dirección</span></span>
+                <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><span th:text="${o.cuando()}">12 oct 2026 · 08:15</span></span>
+            </div>
+
+            <div class="cm-pie" th:if="${o.archivo() != null}">
+                <div class="cm-archivo">
+                    <span class="cm-archivo-icono" th:classappend="${o.archivo().word()} ? ' word'" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></span>
+                    <span class="cm-archivo-texto">
+                        <strong th:text="${o.archivo().nombre()}">Oficio.pdf</strong>
+                        <small th:text="${o.archivo().tamano()}">186 KB</small>
+                    </span>
+                    <div class="cm-botones">
+                        <a class="cm-btn" title="Ver oficio" aria-label="Ver oficio" target="_blank" rel="noopener"
+                           th:href="@{/comunicacion/comunicados/oficio/{id}/documento(id=${o.id()})}" onclick="cmLeido(this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </a>
+                        <a class="cm-btn" title="Descargar" aria-label="Descargar documento" download
+                           th:href="@{/comunicacion/comunicados/oficio/{id}/documento(id=${o.id()}, descargar=true)}" onclick="cmLeido(this)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cm-lectura" th:if="${o.lectura().grupo()}">
+                <span class="cm-barra"><i th:style="'width: ' + ${o.lectura().porcentaje()} + '%'"></i></span>
+                <span th:if="${o.lectura().completa()}" class="ok"
+                      th:text="${o.lectura().total() == 1} ? 'Leído por la persona' : 'Leído por las ' + ${o.lectura().total()} + ' personas'">Leído por todas las personas</span>
+                <th:block th:unless="${o.lectura().completa()}">
+                    <span><b th:text="${o.lectura().leidos()} + ' de ' + ${o.lectura().total()}">251 de 412</b> personas lo han leído</span>
+                    <span class="pendiente" th:text="'· ' + ${o.lectura().pendientes()} + (${o.lectura().pendientes() == 1} ? ' pendiente' : ' pendientes')">· 161 pendientes</span>
+                </th:block>
+            </div>
+            <div class="cm-lectura persona" th:unless="${o.lectura().grupo()}">
+                <span th:if="${o.lectura().leido()}" class="ok" th:text="'Leído el ' + ${o.lectura().fecha()}">Leído el 29 sep 2026</span>
+                <span th:unless="${o.lectura().leido()}" class="pendiente"
+                      th:text="${panel.propio()} ? 'Aún no lo has leído' : 'Aún no lo ha leído'">Aún no lo ha leído</span>
+            </div>
+        </article>
+    </th:block>
 </div>

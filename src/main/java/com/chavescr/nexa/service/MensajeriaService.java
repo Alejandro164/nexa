@@ -1,7 +1,6 @@
 package com.chavescr.nexa.service;
 
 import java.io.IOException;
-import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -58,8 +57,6 @@ public class MensajeriaService {
     private static final long MAX_ARCHIVO = 15L * 1024 * 1024;
 
     private static final List<String> ROLES_PERSONAL = List.of("ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_DOCENTE");
-    private static final List<String> ORDEN_ROLES = List.of("ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_DOCENTE",
-            "ROLE_PADRE", "ROLE_ESTUDIANTE");
 
     private static final Map<String, String> IMAGENES = Map.of(
             "jpg", "image/jpeg", "jpeg", "image/jpeg", "png", "image/png", "gif", "image/gif", "webp",
@@ -121,9 +118,9 @@ public class MensajeriaService {
             Mensaje ultimo = ultimos.get(c.getId());
             String preview = ultimo == null ? "Conversación nueva" : vistaPrevia(ultimo, usuarioId);
             LocalDateTime cuando = ultimo == null ? c.getFechaCreacion() : ultimo.getFecha();
-            String rol = rolPrincipal(otro);
-            resumenes.add(new MensajeriaVista.Resumen(c.getId(), otro.getNombre(), iniciales(otro.getNombre()),
-                    etiquetaRol(rol), claseRol(rol), preview, horaLista(cuando, ahora),
+            String rol = RolVista.principal(otro);
+            resumenes.add(new MensajeriaVista.Resumen(c.getId(), otro.getNombre(), RolVista.iniciales(otro.getNombre()),
+                    RolVista.etiqueta(rol), RolVista.clase(rol), preview, horaLista(cuando, ahora),
                     noLeidos.getOrDefault(c.getId(), 0L), otraDireccion(c, direccionId)));
         }
         return resumenes;
@@ -186,16 +183,16 @@ public class MensajeriaService {
         for (Mensaje m : mensajes) {
             vista.add(vistaMensaje(m, usuarioId, otroLeido, reacciones.getOrDefault(m.getId(), List.of()), ahora));
         }
-        String rol = rolPrincipal(otro);
-        return new MensajeriaVista.Hilo(conversacion.getId(), otro.getNombre(), iniciales(otro.getNombre()),
-                etiquetaRol(rol), claseRol(rol), otraDireccion(conversacion, direccionActivaId), vista,
+        String rol = RolVista.principal(otro);
+        return new MensajeriaVista.Hilo(conversacion.getId(), otro.getNombre(), RolVista.iniciales(otro.getNombre()),
+                RolVista.etiqueta(rol), RolVista.clase(rol), otraDireccion(conversacion, direccionActivaId), vista,
                 firma(conversacion, usuarioId));
     }
 
     private MensajeriaVista.Mensaje vistaMensaje(Mensaje m, Long usuarioId, Long otroLeido,
             List<MensajeReaccion> reacciones, LocalDateTime ahora) {
         boolean mio = m.getAutor().getId().equals(usuarioId);
-        String rol = rolPrincipal(m.getAutor());
+        String rol = RolVista.principal(m.getAutor());
 
         MensajeriaVista.Cita cita = null;
         Mensaje citado = m.getRespuestaA();
@@ -206,7 +203,7 @@ public class MensajeriaService {
                     : citado.getAutor().getNombre(), recortar(textoCitado, 140));
         }
         MensajeriaVista.Archivo archivo = m.tieneArchivo()
-                ? new MensajeriaVista.Archivo(m.getId(), m.getArchivoNombre(), tamano(m.getArchivoTamano()),
+                ? new MensajeriaVista.Archivo(m.getId(), m.getArchivoNombre(), FormatoVista.tamano(m.getArchivoTamano()),
                         Boolean.TRUE.equals(m.getArchivoImagen()))
                 : null;
 
@@ -221,7 +218,7 @@ public class MensajeriaService {
         });
 
         return new MensajeriaVista.Mensaje(m.getId(), mio, mio ? "Tú" : m.getAutor().getNombre(),
-                iniciales(m.getAutor().getNombre()), mio ? "yo" : claseRol(rol), etiquetaDia(m.getFecha(), ahora),
+                RolVista.iniciales(m.getAutor().getNombre()), mio ? "yo" : RolVista.clase(rol), etiquetaDia(m.getFecha(), ahora),
                 m.getFecha().format(DateTimeFormatter.ofPattern("HH:mm")), m.getTexto(), cita, archivo, chips,
                 mio && m.getId() <= otroLeido);
     }
@@ -372,17 +369,17 @@ public class MensajeriaService {
 
         // Los familiares directos van primero para que el tope de resultados no los deje fuera.
         Set<Long> familiaresIds = familiares(yo).stream().map(Usuario::getId).collect(Collectors.toSet());
-        String filtro = normalizar(busqueda);
+        String filtro = FormatoVista.normalizar(busqueda);
         return candidatos.values().stream()
-                .filter(u -> filtro.isEmpty() || normalizar(u.getNombre()).contains(filtro)
-                        || normalizar(u.getEmail()).contains(filtro))
+                .filter(u -> filtro.isEmpty() || FormatoVista.normalizar(u.getNombre()).contains(filtro)
+                        || FormatoVista.normalizar(u.getEmail()).contains(filtro))
                 .sorted(Comparator.<Usuario, Boolean>comparing(u -> !familiaresIds.contains(u.getId()))
-                        .thenComparing(u -> normalizar(u.getNombre())))
+                        .thenComparing(u -> FormatoVista.normalizar(u.getNombre())))
                 .limit(MAX_CONTACTOS)
                 .map(u -> {
-                    String rol = rolPrincipal(u);
-                    return new MensajeriaVista.Contacto(u.getId(), u.getNombre(), iniciales(u.getNombre()),
-                            etiquetaRol(rol), claseRol(rol));
+                    String rol = RolVista.principal(u);
+                    return new MensajeriaVista.Contacto(u.getId(), u.getNombre(), RolVista.iniciales(u.getNombre()),
+                            RolVista.etiqueta(rol), RolVista.clase(rol));
                 })
                 .toList();
     }
@@ -485,42 +482,6 @@ public class MensajeriaService {
         return direccion.getId().equals(direccionActivaId) ? null : direccion.getPresentacion();
     }
 
-    private static String rolPrincipal(Usuario usuario) {
-        Set<String> nombres = usuario.getRoles().stream().map(Rol::getNombre).collect(Collectors.toSet());
-        return ORDEN_ROLES.stream().filter(nombres::contains).findFirst().orElse("");
-    }
-
-    private static String etiquetaRol(String rol) {
-        return switch (rol) {
-            case "ROLE_ADMIN" -> "Administración";
-            case "ROLE_DIRECTOR" -> "Dirección";
-            case "ROLE_DOCENTE" -> "Docente";
-            case "ROLE_PADRE" -> "Familia";
-            case "ROLE_ESTUDIANTE" -> "Estudiante";
-            default -> "";
-        };
-    }
-
-    private static String claseRol(String rol) {
-        return switch (rol) {
-            case "ROLE_ADMIN", "ROLE_DIRECTOR" -> "institucion";
-            case "ROLE_DOCENTE" -> "docente";
-            case "ROLE_PADRE" -> "familia";
-            case "ROLE_ESTUDIANTE" -> "estudiante";
-            default -> "";
-        };
-    }
-
-    static String iniciales(String nombre) {
-        if (nombre == null || nombre.isBlank()) {
-            return "?";
-        }
-        String[] partes = nombre.strip().split("\\s+");
-        String primera = partes[0].substring(0, 1);
-        String segunda = partes.length > 1 ? partes[1].substring(0, 1) : "";
-        return (primera + segunda).toUpperCase(ES);
-    }
-
     private String vistaPrevia(Mensaje mensaje, Long usuarioId) {
         String cuerpo;
         if (mensaje.getTexto() != null && !mensaje.getTexto().isBlank()) {
@@ -550,7 +511,7 @@ public class MensajeriaService {
             return "Ayer";
         }
         if (dia.isAfter(hoy.minusDays(7))) {
-            return capitalizar(fecha.format(DateTimeFormatter.ofPattern("EEE", ES)).replace(".", ""));
+            return FormatoVista.capitalizar(fecha.format(DateTimeFormatter.ofPattern("EEE", ES)).replace(".", ""));
         }
         return fecha.format(DateTimeFormatter.ofPattern("dd/MM/yy"));
     }
@@ -564,11 +525,7 @@ public class MensajeriaService {
         if (dia.equals(hoy.minusDays(1))) {
             return "Ayer";
         }
-        return capitalizar(fecha.format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", ES)));
-    }
-
-    private static String capitalizar(String texto) {
-        return texto.isEmpty() ? texto : texto.substring(0, 1).toUpperCase(ES) + texto.substring(1);
+        return FormatoVista.capitalizar(fecha.format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", ES)));
     }
 
     private static String tituloReaccion(String emoji, long cantidad, boolean yo) {
@@ -578,19 +535,6 @@ public class MensajeriaService {
                             + emoji;
         }
         return cantidad + (cantidad == 1 ? " persona reaccionó con " : " personas reaccionaron con ") + emoji;
-    }
-
-    private static String tamano(Long bytes) {
-        if (bytes == null) {
-            return "";
-        }
-        if (bytes < 1024) {
-            return bytes + " B";
-        }
-        if (bytes < 1024 * 1024) {
-            return Math.round(bytes / 1024.0) + " KB";
-        }
-        return String.format(ES, "%.1f MB", bytes / (1024.0 * 1024.0));
     }
 
     private static String extension(String nombre) {
@@ -609,10 +553,4 @@ public class MensajeriaService {
         return recortar(limpio.substring(limpio.lastIndexOf('/') + 1), 200);
     }
 
-    private static String normalizar(String texto) {
-        if (texto == null) {
-            return "";
-        }
-        return Normalizer.normalize(texto, Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(ES).strip();
-    }
 }
