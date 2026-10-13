@@ -27,6 +27,13 @@ public class NotificacionController {
         return "layout/notificaciones-dropdown :: dropdown-content";
     }
 
+    /** Solo el punto de la campanita; el topbar lo sondea para enterarse de mensajes nuevos sin recargar. */
+    @GetMapping("/contador")
+    public String contador(@AuthenticationPrincipal CustomUserDetails usuario, Model model) {
+        model.addAttribute("hayNuevas", notificacionService.contarNoLeidas(usuario.getId()) > 0);
+        return "layout/notificaciones-dropdown :: punto(hayNuevas=${hayNuevas}, oob=false)";
+    }
+
     @PostMapping("/{id}/leer")
     public String marcarLeida(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails usuario, Model model) {
         notificacionService.marcarLeida(id);

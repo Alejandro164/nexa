@@ -2,10 +2,16 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 
 <body>
+    <!-- Indicador de la campanita. Se vuelve a pedir solo cada 20 s (mientras la pestaña esté visible) para que
+         los mensajes nuevos aparezcan sin recargar; "oob" lo usa el desplegable para sincronizarlo al abrirse. -->
+    <span th:fragment="punto(hayNuevas, oob)" id="notification-dot" class="notification-dot"
+          th:classappend="${hayNuevas} ? '' : ' notification-dot-hidden'"
+          th:attr="hx-swap-oob=${oob} ? 'true' : null"
+          hx-get="/notificaciones/contador" hx-trigger="every 20s [document.visibilityState === 'visible']"
+          hx-swap="outerHTML"></span>
+
     <div th:fragment="dropdown-content">
-        <span id="notification-dot" class="notification-dot"
-              th:classappend="${notificaciones == null or notificaciones.empty} ? ' notification-dot-hidden' : ''"
-              hx-swap-oob="true"></span>
+        <span th:replace="~{:: punto(${notificaciones != null and !notificaciones.empty}, true)}"></span>
 
         <div class="dropdown-header">
             <div class="dropdown-user-name">Notificaciones</div>
@@ -18,7 +24,12 @@
         </div>
 
         <div th:each="n : ${notificaciones}" class="notif-item">
-            <div style="flex: 1; min-width: 0;">
+            <div style="flex: 1; min-width: 0;"
+                 th:attr="hx-get=${n.enlace}, hx-target=${n.enlace != null} ? '.content-area' : null,
+                          hx-swap=${n.enlace != null} ? 'innerHTML' : null,
+                          hx-push-url=${n.enlace != null} ? 'true' : null"
+                 th:style="${n.enlace != null} ? 'flex: 1; min-width: 0; cursor: pointer;' : 'flex: 1; min-width: 0;'"
+                 @click="open = false">
                 <p style="font-size: 0.85rem; color: var(--text-primary); margin: 0; line-height: 1.4;" th:text="${n.mensaje}">Mensaje</p>
                 <p style="font-size: 0.72rem; color: var(--text-light); margin: 4px 0 0;"
                    th:text="${#temporals.format(n.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</p>

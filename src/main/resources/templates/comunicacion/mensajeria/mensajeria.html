@@ -1,156 +1,221 @@
-<div th:fragment="content" id="comunicacion-content" class="wa" xmlns:th="http://www.thymeleaf.org">
+<!--
+    Mensajería directa. Fragmentos:
+      content            vista completa (lista + panel). Es el destino de la pestaña "Mensajes".
+      lista(oob)         lista de conversaciones; se repinta sola cada 10 s y también como OOB junto a un hilo.
+      hilo               conversación abierta (cabecera, mensajes y redactor).
+      hilo-respuesta     hilo + lista OOB: respuesta al hacer clic en una conversación.
+      mensajes-contenido los mensajes (lo que vive dentro de #ms-mensajes).
+      mensajes           mensajes + lista OOB: respuesta de enviar, reaccionar y del sondeo.
+      contactos          resultados del selector "Nuevo".
+      vacio              panel sin conversación elegida (y cuerpo de las respuestas 204/404).
+-->
+
+<div th:fragment="content" id="comunicacion-content" class="ms" th:classappend="${hilo != null} ? ' abierta'"
+     data-filtro="todos" xmlns:th="http://www.thymeleaf.org">
     <style>
-        .wa {
-            --wa-tinta: #e7eef5;
-            --wa-papel: #f0f4f8;
+        .ms {
             display: flex;
-            height: calc(100dvh - var(--topbar-height) - 8.6rem);
+            height: calc(100dvh - var(--topbar-height) - 6.9rem);
             min-height: 28rem;
             background: #fff;
-            border: 1px solid var(--border-solid);
-            border-radius: 12px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
             overflow: hidden;
             box-shadow: var(--shadow-sm);
             position: relative;
         }
-        .wa-radio {
+        .ms-aviso {
             position: absolute;
-            width: 1px;
-            height: 1px;
-            margin: -1px;
-            padding: 0;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            max-width: 90%;
+            padding: 9px 16px;
+            border-radius: 10px;
+            background: #1e293b;
+            color: #fff;
+            font-size: 0.85rem;
+            box-shadow: var(--shadow-lg);
         }
-        .wa-side {
-            width: 380px;
+
+        /* ── Panel de conversaciones ─────────────────────────────── */
+        .ms-side {
+            width: 340px;
             max-width: 40%;
             min-width: 280px;
             display: flex;
             flex-direction: column;
-            background: #fff;
-            border-right: 1px solid var(--border-solid);
+            border-right: 1px solid var(--border);
+            background: var(--input-bg);
             min-height: 0;
         }
-        .wa-top {
+        .ms-side-head {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
-            height: 60px;
-            padding: 10px 16px;
-            background: #fff;
-            border-bottom: 1px solid var(--border-solid);
+            padding: 16px 16px 10px;
             flex-shrink: 0;
         }
-        .wa-top h3 {
-            margin: 0;
-            flex: 1;
-            font-size: 1.05rem;
-            color: var(--text-primary);
-        }
-        .wa-icono {
-            width: 40px;
-            height: 40px;
-            border: none;
-            border-radius: 50%;
-            background: transparent;
-            color: var(--text-secondary);
+        .ms-side-head h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+        .ms-nuevo-wrap { position: relative; }
+        .ms-nuevo {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            padding: 0;
+            gap: 6px;
+            padding: 7px 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: #fff;
+            font: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
         }
-        .wa-icono svg { width: 22px; height: 22px; }
-        .wa-buscar {
-            position: relative;
-            padding: 8px 12px;
-            flex-shrink: 0;
-        }
-        .wa-buscar svg {
+        .ms-nuevo svg { width: 14px; height: 14px; }
+        .ms-nuevo-panel {
             position: absolute;
-            left: 24px;
-            top: 50%;
-            width: 16px;
-            height: 16px;
-            transform: translateY(-50%);
-            color: var(--text-light);
+            top: calc(100% + 8px);
+            right: 0;
+            z-index: 25;
+            width: 300px;
+            max-width: calc(100vw - 40px);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
         }
-        .wa-buscar input {
+        .ms-nuevo-panel input {
             width: 100%;
             border: none;
-            background: var(--input-bg);
-            border-radius: 8px;
-            padding: 9px 12px 9px 36px;
+            border-bottom: 1px solid var(--border);
+            padding: 11px 14px;
             font: inherit;
-            font-size: 0.9rem;
+            font-size: 0.86rem;
+            outline: none;
+        }
+        #ms-contactos { max-height: 280px; overflow-y: auto; padding: 6px; }
+        .ms-contacto {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            text-align: left;
+            font: inherit;
+            cursor: pointer;
+        }
+        .ms-contacto:hover { background: var(--input-bg); }
+        .ms-contacto-nombre { flex: 1; min-width: 0; font-size: 0.86rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ms-vacio-lista { padding: 18px 14px; text-align: center; color: var(--text-secondary); font-size: 0.84rem; }
+
+        .ms-buscar { position: relative; padding: 0 16px 10px; flex-shrink: 0; }
+        .ms-buscar svg {
+            position: absolute;
+            left: 28px;
+            top: 50%;
+            width: 15px;
+            height: 15px;
+            transform: translateY(calc(-50% - 5px));
+            color: var(--text-light);
+        }
+        .ms-buscar input {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 12px 8px 34px;
+            font: inherit;
+            font-size: 0.86rem;
             color: var(--text-primary);
             outline: none;
         }
-        .wa-chats { flex: 1; overflow-y: auto; min-height: 0; }
-        .wa-chat {
+        .ms-buscar input:focus { border-color: var(--primary); }
+        .ms-filtros {
+            display: flex;
+            gap: 6px;
+            padding: 0 16px 12px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .ms-filtro {
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: #fff;
+            color: var(--text-secondary);
+            font: inherit;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .ms-filtro.activo { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+        .ms-lista { flex: 1; overflow-y: auto; min-height: 0; padding: 8px; }
+        .ms-item {
+            position: relative;
             width: 100%;
             display: flex;
-            align-items: center;
             gap: 12px;
-            padding: 10px 14px;
-            border: none;
+            padding: 12px 12px 12px 14px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            border: 1px solid transparent;
             background: transparent;
             text-align: left;
-            cursor: pointer;
             font: inherit;
+            cursor: pointer;
             color: inherit;
         }
-        .wa-chat:hover { background: var(--input-bg); }
-        #wa-laura:checked ~ .wa-side label[for="wa-laura"],
-        #wa-carlos:checked ~ .wa-side label[for="wa-carlos"],
-        #wa-direccion:checked ~ .wa-side label[for="wa-direccion"],
-        #wa-sofia:checked ~ .wa-side label[for="wa-sofia"] {
-            background: rgba(45, 90, 135, 0.1);
+        .ms-item[hidden] { display: none; }
+        .ms-item:hover { background: #fff; }
+        .ms-item.nuevo::before {
+            content: "";
+            position: absolute;
+            left: 4px;
+            top: 16px;
+            bottom: 16px;
+            width: 3px;
+            border-radius: 3px;
+            background: var(--primary);
         }
-        #wa-carlos:checked ~ .wa-side label[for="wa-carlos"] .wa-badge,
-        #wa-direccion:checked ~ .wa-side label[for="wa-direccion"] .wa-badge {
-            display: none;
-        }
-        .wa-avatar {
-            width: 49px;
-            height: 49px;
-            border-radius: 50%;
-            color: #fff;
+        .ms-item.activa { background: #fff; border-color: var(--border); box-shadow: var(--shadow-sm); }
+        .ms-item.activa::before { display: none; }
+
+        .ms-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             flex-shrink: 0;
+            background: #e2e8f0;
+            color: #475569;
         }
-        .wa-avatar.sm { width: 40px; height: 40px; font-size: 0.82rem; }
-        .wa-avatar.a { background: #2d5a87; }
-        .wa-avatar.b { background: #1e4d73; }
-        .wa-avatar.c { background: #3d6f99; }
-        .wa-avatar.d { background: #1e3a5f; }
-        .wa-chat-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-        .wa-linea { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .wa-nombre {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .wa-chat time { font-size: 0.72rem; color: var(--text-light); flex-shrink: 0; }
-        .wa-chat time.nuevo { color: var(--primary); font-weight: 700; }
-        .wa-preview {
-            font-size: 0.82rem;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .wa-preview.medio { font-style: italic; }
-        .wa-badge {
+        .ms-avatar.sm { width: 38px; height: 38px; border-radius: 10px; font-size: 0.78rem; }
+        .ms-avatar.familia { background: #dbeafe; color: #1e4d73; }
+        .ms-avatar.docente { background: #dcfce7; color: #166534; }
+        .ms-avatar.institucion { background: #ede9fe; color: #5b21b6; }
+        .ms-avatar.estudiante { background: #fef3c7; color: #92400e; }
+        .ms-avatar.yo { background: var(--primary); color: #fff; }
+
+        .ms-item-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+        .ms-linea { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .ms-nombre { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ms-item time { font-size: 0.72rem; color: var(--text-light); flex-shrink: 0; }
+        .ms-item.nuevo time { color: var(--primary); font-weight: 700; }
+        .ms-preview { font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ms-item.nuevo .ms-preview { color: var(--text-primary); font-weight: 500; }
+        .ms-contador {
             min-width: 20px;
             height: 20px;
             padding: 0 6px;
@@ -164,620 +229,1093 @@
             justify-content: center;
             flex-shrink: 0;
         }
-        .wa-stage {
+        .ms-rol {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .ms-rol.familia { background: #dbeafe; color: #1e4d73; }
+        .ms-rol.docente { background: #dcfce7; color: #166534; }
+        .ms-rol.institucion { background: #ede9fe; color: #5b21b6; }
+        .ms-rol.estudiante { background: #fef3c7; color: #92400e; }
+        .ms-dir {
+            display: inline-block;
+            max-width: 100%;
+            padding: 1px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text-secondary);
+            font-size: 0.68rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ── Escenario / hilo ───────────────────────────────────── */
+        .ms-stage {
             flex: 1 1 auto;
             min-width: 0;
             min-height: 0;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: var(--wa-tinta);
+            background: #fff;
         }
-        .wa-vacio, .wa-hilo { display: none; width: 100%; min-height: 0; }
-        #wa-ninguno:checked ~ .wa-stage .wa-vacio,
-        #wa-laura:checked ~ .wa-stage .wa-hilo-laura,
-        #wa-carlos:checked ~ .wa-stage .wa-hilo-carlos,
-        #wa-direccion:checked ~ .wa-stage .wa-hilo-direccion,
-        #wa-sofia:checked ~ .wa-stage .wa-hilo-sofia {
+        .ms-hilo { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; width: 100%; }
+        .ms-vacio {
+            flex: 1;
             display: flex;
-            flex: 1 1 auto;
-            flex-direction: column;
-            min-height: 0;
-            overflow: hidden;
-        }
-        .wa-vacio {
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             gap: 8px;
             padding: 2rem;
-            background:
-                radial-gradient(rgba(45, 90, 135, 0.06) 1px, transparent 1px),
-                linear-gradient(#f8fafc, #f8fafc);
-            background-size: 18px 18px, auto;
-            border-bottom: 6px solid var(--primary);
         }
-        .wa-vacio-icono {
-            width: 88px;
-            height: 88px;
-            border-radius: 50%;
+        .ms-vacio-icono {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
             background: rgba(45, 90, 135, 0.1);
             color: var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
-        .wa-vacio-icono svg { width: 42px; height: 42px; }
-        .wa-vacio h3 { margin: 0; color: var(--text-primary); font-size: 1.35rem; font-weight: 400; }
-        .wa-vacio p { margin: 0; max-width: 440px; color: var(--text-secondary); font-size: 0.92rem; }
-        .wa-hilo { flex-direction: column; min-height: 0; height: 100%; }
-        .wa-quien { min-width: 0; display: flex; flex-direction: column; }
-        .wa-quien strong {
-            color: var(--text-primary);
-            font-size: 1rem;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .wa-quien small { color: var(--text-secondary); font-size: 0.75rem; }
-        .wa-volver { display: none; cursor: pointer; }
-        .wa-historial {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            min-height: 0;
-            padding: 12px 7% 8px;
-            background-color: var(--wa-tinta);
-            background-image: radial-gradient(rgba(45, 90, 135, 0.075) 1.1px, transparent 1.1px);
-            background-size: 22px 22px;
-        }
-        .wa-dia { display: flex; justify-content: center; margin: 8px 0 10px; }
-        .wa-dia span {
-            background: #fff;
-            color: var(--text-secondary);
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-sm);
-        }
-        .wa-fila { display: flex; margin: 2px 0; }
-        .wa-fila.mio { justify-content: flex-end; }
-        .wa-burbuja {
-            position: relative;
-            max-width: min(65%, 480px);
-            padding: 6px 8px 5px 9px;
-            border-radius: 8px;
-            box-shadow: 0 1px 0.5px rgba(15, 23, 42, 0.13);
-            margin: 0 8px;
-        }
-        .wa-burbuja.suyo { background: #fff; color: var(--text-primary); border-top-left-radius: 0; }
-        .wa-burbuja.mio { background: var(--primary); color: #fff; border-top-right-radius: 0; }
-        .wa-burbuja.suyo::after, .wa-burbuja.mio::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            border-style: solid;
-        }
-        .wa-burbuja.suyo::after {
-            left: -8px;
-            border-width: 0 8px 10px 0;
-            border-color: transparent #fff transparent transparent;
-        }
-        .wa-burbuja.mio::after {
-            right: -8px;
-            border-width: 0 0 10px 8px;
-            border-color: transparent transparent transparent var(--primary);
-        }
-        .wa-texto {
-            white-space: pre-wrap;
-            word-break: break-word;
-            font-size: 0.92rem;
-            line-height: 1.35;
-        }
-        .wa-meta {
-            float: right;
-            margin: 4px 0 -2px 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            color: var(--text-light);
-            font-size: 0.68rem;
-            position: relative;
-            top: 5px;
-        }
-        .wa-burbuja.mio .wa-meta { color: rgba(255, 255, 255, 0.78); }
-        .wa-checks { width: 16px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-        .wa-burbuja.mio .wa-checks.leido { color: #dbeafe; }
-        .wa-foto {
-            display: block;
-            width: 280px;
-            max-width: 100%;
-            height: 168px;
-            margin-bottom: 4px;
-            border-radius: 6px;
-            overflow: hidden;
-            background: #d7e3ef;
-        }
-        .wa-foto svg { width: 100%; height: 100%; display: block; }
-        .wa-doc {
+        .ms-vacio-icono svg { width: 30px; height: 30px; }
+        .ms-vacio h3 { margin: 0; color: var(--text-primary); font-size: 1.1rem; }
+        .ms-vacio p { margin: 0; max-width: 380px; color: var(--text-secondary); font-size: 0.88rem; }
+
+        .ms-cabecera {
             display: flex;
             align-items: center;
-            gap: 10px;
-            min-width: 230px;
-            margin-bottom: 4px;
-            padding: 8px;
-            border-radius: 6px;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .ms-volver {
+            display: none;
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            padding: 0;
+        }
+        .ms-volver:hover { background: var(--input-bg); }
+        .ms-volver svg { width: 20px; height: 20px; }
+        .ms-quien { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; }
+        .ms-quien strong { color: var(--text-primary); font-size: 0.98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .ms-historial { flex: 1 1 auto; overflow-y: auto; min-height: 0; padding: 8px 20px 12px; }
+        .ms-sin-mensajes { padding: 2.5rem 1rem; text-align: center; color: var(--text-secondary); font-size: 0.88rem; }
+        .ms-dia {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 14px 0 6px;
+            color: var(--text-light);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .ms-dia::before, .ms-dia::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+        .ms-msg { position: relative; display: flex; gap: 12px; padding: 10px 12px; margin: 2px -12px; border-radius: 10px; }
+        .ms-msg:hover { background: var(--input-bg); }
+        .ms-msg.yo { background: rgba(45, 90, 135, 0.06); }
+        .ms-msg-cuerpo { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+        .ms-msg-cab { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+        .ms-msg-cab strong { font-size: 0.88rem; color: var(--text-primary); }
+        .ms-msg-cab time { font-size: 0.72rem; color: var(--text-light); }
+        .ms-leido { margin-left: auto; font-size: 0.7rem; font-weight: 600; color: var(--text-light); }
+        .ms-leido.si { color: var(--primary); }
+        .ms-texto { white-space: pre-wrap; word-break: break-word; font-size: 0.92rem; line-height: 1.5; color: var(--text-primary); }
+        .ms-foto {
+            display: block;
+            width: 300px;
+            max-width: 100%;
+            margin: 4px 0;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .ms-foto img { display: block; width: 100%; max-height: 320px; object-fit: cover; }
+        .ms-foto figcaption { padding: 6px 10px; font-size: 0.74rem; color: var(--text-secondary); border-top: 1px solid var(--border); }
+        .ms-archivo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 340px;
+            max-width: 100%;
+            margin: 4px 0;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
             text-decoration: none;
             color: inherit;
-            background: var(--input-bg);
         }
-        .wa-burbuja.mio .wa-doc { background: rgba(255, 255, 255, 0.16); }
-        .wa-doc-icono {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            background: var(--primary);
-            color: #fff;
+        .ms-archivo:hover { border-color: var(--primary); }
+        .ms-archivo-icono {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(45, 90, 135, 0.1);
+            color: var(--primary);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
         }
-        .wa-burbuja.mio .wa-doc-icono { background: rgba(255, 255, 255, 0.22); }
-        .wa-doc-icono svg { width: 18px; height: 18px; }
-        .wa-doc-texto { min-width: 0; display: flex; flex-direction: column; }
-        .wa-doc-texto strong { font-size: 0.84rem; font-weight: 600; }
-        .wa-doc-texto small { font-size: 0.72rem; opacity: 0.8; }
-        .wa-composer {
-            display: flex;
-            align-items: flex-end;
-            gap: 8px;
-            padding: 6px 16px 8px;
-            background: var(--wa-papel);
-            flex-shrink: 0;
-        }
-        .wa-caja {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            align-items: flex-end;
-            background: #fff;
+        .ms-archivo-icono svg { width: 19px; height: 19px; }
+        .ms-archivo-texto { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+        .ms-archivo-texto strong { font-size: 0.84rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ms-archivo-texto small { font-size: 0.72rem; color: var(--text-secondary); }
+        .ms-archivo-bajar { width: 18px; height: 18px; color: var(--text-light); flex-shrink: 0; }
+
+        /* Botón de opciones de cada mensaje (estilo Teams): abre un menú con reacciones y "Responder" */
+        .ms-opciones { position: absolute; top: 6px; right: 12px; z-index: 5; }
+        .ms-opciones-btn {
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 0 6px;
+            background: #fff;
+            color: var(--text-secondary);
+            box-shadow: var(--shadow-sm);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
         }
-        .wa-caja textarea {
-            flex: 1;
+        .ms-opciones-btn svg { width: 18px; height: 18px; }
+        .ms-opciones-btn:hover, .ms-opciones.abierto .ms-opciones-btn { color: var(--primary); border-color: var(--primary); }
+        /* Visible solo con el cursor sobre el mensaje o con el menú abierto; en táctil (sin hover) siempre, discreto. */
+        .ms-msg:hover .ms-opciones-btn, .ms-opciones.abierto .ms-opciones-btn { display: inline-flex; }
+        @media (hover: none) { .ms-opciones-btn { display: inline-flex; opacity: 0.75; } }
+        .ms-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            width: 232px;
+            padding: 6px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+        .ms-menu.arriba { top: auto; bottom: calc(100% + 6px); }
+        .ms-menu-reacciones { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
+        .ms-menu-reacciones button {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .ms-menu-reacciones button:hover { background: var(--input-bg); transform: scale(1.15); }
+        .ms-menu-sep { height: 1px; margin: 6px 2px; background: var(--border); }
+        .ms-menu-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-primary);
+            font: inherit;
+            font-size: 0.86rem;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+        }
+        .ms-menu-item:hover { background: var(--input-bg); color: var(--primary); }
+        .ms-menu-item svg { width: 16px; height: 16px; color: var(--text-secondary); }
+        .ms-menu-item:hover svg { color: var(--primary); }
+
+        .ms-reacciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+        .ms-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 9px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: #fff;
+            font: inherit;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            cursor: pointer;
+            transition: background-color 0.15s, border-color 0.15s;
+        }
+        .ms-chip b { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); }
+        .ms-chip:hover { border-color: var(--primary); }
+        .ms-chip.yo { background: rgba(45, 90, 135, 0.12); border-color: var(--primary); }
+        .ms-chip.yo b { color: var(--primary); }
+
+        .ms-cita {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            margin-bottom: 4px;
+            padding: 6px 10px;
+            border-left: 3px solid var(--primary);
+            border-radius: 0 8px 8px 0;
+            background: rgba(45, 90, 135, 0.08);
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            max-width: 460px;
+        }
+        .ms-cita strong { font-size: 0.78rem; color: var(--primary); }
+        .ms-cita span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* ── Redactor ────────────────────────────────────────────── */
+        .ms-composer { padding: 0 20px 16px; flex-shrink: 0; }
+        .ms-redactor { border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+        .ms-redactor:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12); }
+        .ms-redactor textarea {
+            display: block;
+            width: 100%;
             border: none;
             resize: none;
-            height: 42px;
-            max-height: 120px;
-            padding: 11px 8px;
+            height: 64px;
+            max-height: 160px;
+            padding: 12px 14px 4px;
             font: inherit;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: var(--text-primary);
             outline: none;
             background: transparent;
         }
-        .wa-adjuntar { position: relative; }
-        .wa-adjuntar summary { list-style: none; cursor: pointer; }
-        .wa-adjuntar summary::-webkit-details-marker { display: none; }
-        .wa-menu {
-            position: absolute;
-            bottom: 50px;
-            right: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            min-width: 190px;
-            padding: 8px;
-            background: #fff;
-            border-radius: 14px;
-            box-shadow: var(--shadow-lg);
-        }
-        .wa-menu label {
+        .ms-responder {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 6px 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.92rem;
-            font-weight: 600;
-            color: var(--text-primary);
+            padding: 8px 10px 8px 14px;
+            border-bottom: 1px solid var(--border);
+            border-left: 3px solid var(--primary);
+            background: rgba(45, 90, 135, 0.06);
+            border-radius: 12px 12px 0 0;
         }
-        .wa-menu label:hover { background: var(--input-bg); }
-        .wa-menu input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
-        .wa-menu-icono {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            color: #fff;
+        .ms-responder > svg { width: 16px; height: 16px; color: var(--primary); flex-shrink: 0; }
+        .ms-responder-texto { min-width: 0; flex: 1; display: flex; flex-direction: column; font-size: 0.8rem; }
+        .ms-responder-texto small { color: var(--text-secondary); font-size: 0.74rem; }
+        .ms-responder-texto small strong { color: var(--primary); }
+        .ms-responder-texto span { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ms-responder-quitar {
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            padding: 0;
         }
-        .wa-menu-icono svg { width: 18px; height: 18px; }
-        .wa-menu-icono.doc { background: #1e3a5f; }
-        .wa-menu-icono.foto { background: #2d5a87; }
-        .wa-enviar {
-            width: 42px;
-            height: 42px;
+        .ms-responder-quitar:hover { background: #fff; color: var(--text-primary); }
+        .ms-responder-quitar svg { width: 14px; height: 14px; }
+        .ms-barra { display: flex; align-items: center; gap: 6px; padding: 8px 10px; }
+        .ms-adjuntar {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            font: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .ms-adjuntar:hover, .ms-adjuntar.activo { background: var(--input-bg); color: var(--primary); }
+        .ms-adjuntar svg { width: 16px; height: 16px; }
+        .ms-adjuntar input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+        .ms-adjuntos-resumen {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 4px 3px 10px;
+            border-radius: 999px;
+            background: rgba(45, 90, 135, 0.1);
+            color: var(--primary);
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+        .ms-adjuntos-resumen button {
+            width: 20px;
+            height: 20px;
             border: none;
             border-radius: 50%;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .ms-enviar {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
             background: var(--primary);
+            color: #fff;
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .ms-enviar:disabled { opacity: 0.45; cursor: not-allowed; }
+        .ms-enviar svg { width: 15px; height: 15px; }
+
+        .ms-emoji { position: relative; }
+        .ms-emoji-panel {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 0;
+            width: 340px;
+            max-width: calc(100vw - 48px);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            z-index: 20;
+            overflow: hidden;
+        }
+        .ms-emoji-tabs.config-tabs-container { margin: 8px 8px 0; width: auto; padding: 4px; border-radius: 10px; box-shadow: none; }
+        .ms-emoji-tabs .config-tabs { gap: 4px; }
+        .ms-emoji-tabs .config-tab-btn { padding: 7px 8px; font-size: 0.78rem; border-radius: 8px; }
+        .ms-emoji-tabs .config-tab-btn.active { box-shadow: 0 2px 8px rgba(45, 90, 135, 0.25); }
+        .ms-emoji-vistas { display: grid; }
+        .ms-emoji-vistas > .ms-emoji-grid { grid-area: 1 / 1; }
+        .ms-fx { transition: opacity 0.2s ease, transform 0.2s ease; }
+        .ms-fx-fuera { opacity: 0; transform: translateY(8px); }
+        .ms-fx-dentro { opacity: 1; transform: translateY(0); }
+        .ms-emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            padding: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .ms-emoji-grid button {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            font-size: 1.3rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .ms-emoji-grid button:hover { background: var(--input-bg); transform: scale(1.15); }
+
+        .ms-foto a { cursor: zoom-in; }
+        .ms-visor {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 64px 24px 24px;
+            background: rgba(15, 23, 42, 0.88);
+            /* Cerrado: invisible y sin clics. "visibility" se retrasa para que el fundido de salida se vea completo. */
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+        }
+        .ms-visor.abierto {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition: opacity 0.22s ease, visibility 0s;
+        }
+        .ms-visor img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+            transform: scale(0.92) translateY(12px);
+            transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .ms-visor.abierto img { transform: scale(1) translateY(0); }
+        .ms-visor-barra {
+            transform: translateY(-8px);
+            opacity: 0;
+            transition: transform 0.26s ease, opacity 0.26s ease;
+        }
+        .ms-visor.abierto .ms-visor-barra { transform: translateY(0); opacity: 1; }
+        @media (prefers-reduced-motion: reduce) {
+            .ms-visor, .ms-visor.abierto, .ms-visor img, .ms-visor-barra { transition: none; }
+        }
+        .ms-visor-barra {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+        }
+        .ms-visor-nombre {
+            flex: 1;
+            min-width: 0;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ms-visor-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.14);
             color: #fff;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
             cursor: pointer;
+            flex-shrink: 0;
+            padding: 0;
         }
-        .wa-enviar svg { width: 20px; height: 20px; margin-left: 2px; }
+        .ms-visor-btn:hover { background: rgba(255, 255, 255, 0.28); }
+        .ms-visor-btn svg { width: 20px; height: 20px; }
+
         @media (max-width: 800px) {
-            .wa { height: calc(100dvh - var(--topbar-height) - 7.5rem); min-height: 24rem; }
-            .wa-side { width: 100%; max-width: none; border-right: none; }
-            .wa-stage { display: none; }
-            .wa-volver { display: inline-flex; cursor: pointer; }
-            #wa-laura:checked ~ .wa-side,
-            #wa-carlos:checked ~ .wa-side,
-            #wa-direccion:checked ~ .wa-side,
-            #wa-sofia:checked ~ .wa-side { display: none; }
-            #wa-laura:checked ~ .wa-stage,
-            #wa-carlos:checked ~ .wa-stage,
-            #wa-direccion:checked ~ .wa-stage,
-            #wa-sofia:checked ~ .wa-stage { display: flex; }
-            .wa-historial { padding-left: 16px; padding-right: 16px; }
+            .ms { height: calc(100dvh - var(--topbar-height) - 5.9rem); min-height: 24rem; }
+            .ms-side { width: 100%; max-width: none; border-right: none; }
+            .ms:not(.abierta) .ms-stage { display: none; }
+            .ms.abierta .ms-side { display: none; }
+            .ms-volver { display: inline-flex; }
+            .ms-cabecera, .ms-historial { padding-left: 16px; padding-right: 16px; }
+            .ms-composer { padding: 0 16px 12px; }
         }
     </style>
 
-    <input class="wa-radio" type="radio" name="wa-chat" id="wa-ninguno">
-    <input class="wa-radio" type="radio" name="wa-chat" id="wa-laura" checked>
-    <input class="wa-radio" type="radio" name="wa-chat" id="wa-carlos">
-    <input class="wa-radio" type="radio" name="wa-chat" id="wa-direccion">
-    <input class="wa-radio" type="radio" name="wa-chat" id="wa-sofia">
+    <script>
+        // Estas funciones se definen una sola vez; el contenido se vuelve a pedir al cambiar de pestaña.
+        window.msMensaje = window.msMensaje || function () {
+            return {
+                mas: false,
+                arriba: false,
+                alternar: function () {
+                    this.mas = !this.mas;
+                    if (!this.mas) {
+                        return;
+                    }
+                    // El menú abre hacia abajo; si no cabe en el historial y hay espacio arriba, abre hacia arriba.
+                    var self = this;
+                    this.arriba = false;
+                    this.$nextTick(function () {
+                        var menu = self.$root.querySelector('.ms-menu');
+                        var historial = self.$root.closest('.ms-historial');
+                        if (!menu || !historial) {
+                            return;
+                        }
+                        var m = menu.getBoundingClientRect();
+                        var h = historial.getBoundingClientRect();
+                        var boton = self.$root.querySelector('.ms-opciones-btn').getBoundingClientRect();
+                        var faltaAbajo = m.bottom > h.bottom - 8;
+                        var cabeArriba = boton.top - h.top > m.height + 14;
+                        self.arriba = faltaAbajo && cabeArriba;
+                    });
+                },
+                responder: function () {
+                    var cab = this.$root.querySelector('.ms-msg-cab strong');
+                    var texto = this.$root.querySelector('.ms-texto');
+                    var archivo = this.$root.querySelector('.ms-archivo-texto strong, .ms-foto figcaption');
+                    this.mas = false;
+                    window.dispatchEvent(new CustomEvent('ms-responder', {
+                        detail: {
+                            hilo: this.$root.closest('.ms-hilo'),
+                            id: this.$root.dataset.id,
+                            autor: cab ? cab.textContent : '',
+                            texto: texto ? texto.textContent.trim() : (archivo ? archivo.textContent.trim() : 'Archivo adjunto')
+                        }
+                    }));
+                }
+            };
+        };
 
-    <aside class="wa-side">
-        <header class="wa-top">
-            <h3>Mensajes</h3>
-            <span class="wa-icono" title="Nuevo chat" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-            </span>
+        window.msEmojis = window.msEmojis || function () {
+            return {
+                abierto: false,
+                categoria: 0,
+                texto: '',
+                adjuntos: 0,
+                respuesta: null,
+                hilo: null,
+                categorias: [
+                    { nombre: 'Caritas', icono: '😀', lista: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🙂', '😉', '😊', '😍', '🥰', '😘', '😎', '🤗', '🤔', '😐', '😴', '😢', '😭', '😮', '😱', '😡', '🥳'] },
+                    { nombre: 'Gestos', icono: '👍', lista: ['👍', '👎', '👏', '🙌', '🙏', '💪', '👌', '✌️', '🤝', '👋', '🤞', '👀', '❤️', '💙', '💯', '🔥', '⭐', '✨', '🎉', '🎊', '✅', '❌', '⚠️', '❗'] },
+                    { nombre: 'Escuela', icono: '📚', lista: ['📚', '📖', '📝', '✏️', '📏', '🎒', '🏫', '🎓', '🧪', '🔬', '🎨', '🎵', '⚽', '🏆', '🥇', '📅', '⏰', '📌', '📎', '📢', '🔔', '💡', '🍎', '🚌'] }
+                ],
+                init: function () {
+                    this.hilo = this.$root.closest('.ms-hilo');
+                },
+                alResponder: function (evento) {
+                    if (evento.detail.hilo !== this.hilo) {
+                        return;
+                    }
+                    this.respuesta = { id: evento.detail.id, autor: evento.detail.autor, texto: evento.detail.texto };
+                    this.$refs.texto.focus();
+                },
+                puedeEnviar: function () {
+                    return this.texto.trim().length > 0 || this.adjuntos > 0;
+                },
+                contarAdjuntos: function () {
+                    this.adjuntos = this.$refs.documento.files.length + this.$refs.fotos.files.length;
+                },
+                quitarAdjuntos: function () {
+                    this.$refs.documento.value = '';
+                    this.$refs.fotos.value = '';
+                    this.adjuntos = 0;
+                },
+                enter: function (evento) {
+                    if (evento.shiftKey || evento.isComposing) {
+                        return;
+                    }
+                    evento.preventDefault();
+                    if (this.puedeEnviar()) {
+                        this.$root.requestSubmit();
+                    }
+                },
+                alEnviado: function (evento) {
+                    if (evento.target !== this.$root || !evento.detail.successful) {
+                        return;
+                    }
+                    this.texto = '';
+                    this.respuesta = null;
+                    this.abierto = false;
+                    this.quitarAdjuntos();
+                },
+                alternar: function () {
+                    this.abierto = !this.abierto;
+                },
+                insertar: function (emoji) {
+                    var caja = this.$refs.texto;
+                    var inicio = caja.selectionStart;
+                    var fin = caja.selectionEnd;
+                    this.texto = this.texto.slice(0, inicio) + emoji + this.texto.slice(fin);
+                    var cursor = inicio + emoji.length;
+                    this.$nextTick(function () {
+                        caja.focus();
+                        caja.setSelectionRange(cursor, cursor);
+                    });
+                }
+            };
+        };
+
+        // Sondeos y utilidades de la lista (JS plano: la lista se reemplaza sola y no lleva Alpine).
+        window.msVivo = function () {
+            var hilo = document.getElementById('ms-hilo');
+            return document.visibilityState === 'visible' && !!hilo && hilo.offsetParent !== null;
+        };
+        window.msFirma = function () {
+            var firma = document.getElementById('ms-firma');
+            return firma ? firma.dataset.firma : '';
+        };
+        window.msSeleccionada = function () {
+            var hilo = document.getElementById('ms-hilo');
+            return hilo ? hilo.dataset.id : '';
+        };
+        window.msAlFondo = function () {
+            var historial = document.getElementById('ms-historial');
+            if (historial) {
+                historial.scrollTop = historial.scrollHeight;
+            }
+        };
+        window.msNormalizar = function (texto) {
+            return (texto || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        };
+        window.msFiltrar = function () {
+            var raiz = document.querySelector('.ms');
+            if (!raiz) {
+                return;
+            }
+            var entrada = raiz.querySelector('.ms-buscar input');
+            var busqueda = window.msNormalizar(entrada ? entrada.value.trim() : '');
+            var soloNuevas = raiz.dataset.filtro === 'nuevos';
+            raiz.querySelectorAll('.ms-item').forEach(function (item) {
+                var coincide = !busqueda || window.msNormalizar(item.dataset.texto).indexOf(busqueda) !== -1;
+                var visible = coincide && (!soloNuevas || item.dataset.nuevo === 'true');
+                item.hidden = !visible;
+            });
+        };
+        window.msFiltro = function (valor) {
+            var raiz = document.querySelector('.ms');
+            raiz.dataset.filtro = valor;
+            raiz.querySelectorAll('.ms-filtro').forEach(function (boton) {
+                boton.classList.toggle('activo', boton.dataset.filtro === valor);
+            });
+            window.msFiltrar();
+        };
+        window.msVolver = function () {
+            document.querySelector('.ms').classList.remove('abierta');
+        };
+        // Devuelve true si abrió el visor (el enlace usa ese valor para cancelar la navegación).
+        window.msAbrirVisor = function (enlace, evento) {
+            var visor = document.getElementById('ms-visor');
+            if (!visor || (evento && (evento.ctrlKey || evento.metaKey || evento.shiftKey || evento.button > 0))) {
+                return false;
+            }
+            var nombre = enlace.closest('.ms-foto').querySelector('figcaption');
+            document.getElementById('ms-visor-img').src = enlace.href;
+            document.getElementById('ms-visor-nombre').textContent = nombre ? nombre.textContent : '';
+            var bajar = document.getElementById('ms-visor-bajar');
+            bajar.href = enlace.href;
+            bajar.setAttribute('download', nombre ? nombre.textContent : '');
+            window.clearTimeout(window.msVisorTemporizador);
+            visor.setAttribute('aria-hidden', 'false');
+            // Leer offsetWidth fuerza al navegador a calcular el estado "cerrado" antes de añadir la clase;
+            // sin eso no hay transición. Es síncrono, así que no depende de que la pestaña esté pintando.
+            void visor.offsetWidth;
+            visor.classList.add('abierto');
+            document.getElementById('ms-visor-cerrar').focus({ preventScroll: true });
+            return true;
+        };
+        window.msCerrarVisor = function () {
+            var visor = document.getElementById('ms-visor');
+            if (visor && visor.classList.contains('abierto')) {
+                visor.classList.remove('abierto');
+                visor.setAttribute('aria-hidden', 'true');
+                // La foto se quita cuando termina el fundido de salida, no antes.
+                window.clearTimeout(window.msVisorTemporizador);
+                window.msVisorTemporizador = window.setTimeout(function () {
+                    if (!visor.classList.contains('abierto')) {
+                        document.getElementById('ms-visor-img').removeAttribute('src');
+                    }
+                }, 320);
+            }
+        };
+
+        if (!window.msEscuchando) {
+            window.msEscuchando = true;
+            document.addEventListener('htmx:beforeSwap', function (e) {
+                var destino = e.detail && e.detail.target;
+                if (destino && destino.id === 'ms-mensajes') {
+                    var historial = document.getElementById('ms-historial');
+                    window.msPegado = !historial
+                        || (historial.scrollHeight - historial.scrollTop - historial.clientHeight) < 80;
+                }
+            });
+            document.addEventListener('htmx:afterSwap', function (e) {
+                var destino = e.detail && e.detail.target;
+                if (!destino) {
+                    return;
+                }
+                if (destino.id === 'ms-mensajes') {
+                    var envio = e.detail.elt && e.detail.elt.tagName === 'FORM';
+                    if (envio || window.msPegado) {
+                        window.msAlFondo();
+                    }
+                }
+                if (destino.id === 'ms-stage') {
+                    window.msPegado = true;
+                    window.msAlFondo();
+                    var raiz = document.querySelector('.ms');
+                    if (raiz) {
+                        raiz.classList.add('abierta');
+                    }
+                }
+                window.msFiltrar();
+            });
+            document.addEventListener('htmx:oobAfterSwap', function () {
+                window.msFiltrar();
+            });
+        }
+
+        // Bandera propia: así el visor se activa aunque la página ya tuviera instalados los listeners de arriba
+        // con una versión anterior del script (volver a abrir Mensajes no recarga la página completa).
+        if (!window.msVisorListo) {
+            window.msVisorListo = true;
+            // El clic en la foto y en el fondo del visor van con onclick en el propio HTML (no dependen de este bloque).
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    window.msCerrarVisor();
+                }
+            });
+        }
+    </script>
+
+    <div class="ms-aviso" th:if="${error != null}" th:text="${error}" x-data x-init="setTimeout(function () { $el.remove(); }, 6000)">Aviso</div>
+
+    <aside class="ms-side">
+        <header class="ms-side-head">
+            <h3>Conversaciones</h3>
+            <div class="ms-nuevo-wrap" x-data="{ abierto: false }" @click.outside="abierto = false" @keydown.escape="abierto = false">
+                <button type="button" class="ms-nuevo"
+                        @click="abierto = !abierto; if (abierto) $nextTick(function () { $refs.buscar.focus(); })">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Nuevo
+                </button>
+                <div class="ms-nuevo-panel" x-show="abierto" x-cloak style="display: none;">
+                    <input type="search" name="q" x-ref="buscar" placeholder="Buscar persona…" aria-label="Buscar persona" autocomplete="off"
+                           th:hx-get="@{/comunicacion/mensajeria/contactos}" hx-trigger="focus once, keyup changed delay:250ms, search"
+                           hx-target="#ms-contactos" hx-swap="innerHTML">
+                    <div id="ms-contactos"></div>
+                </div>
+            </div>
         </header>
-        <div class="wa-buscar">
+        <div class="ms-buscar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <input type="search" placeholder="Buscar un chat" aria-label="Buscar un chat">
+            <input type="search" placeholder="Buscar por nombre o mensaje" aria-label="Buscar conversación" oninput="msFiltrar()">
         </div>
-        <div class="wa-chats">
-            <label class="wa-chat" for="wa-laura">
-                <span class="wa-avatar a">LS</span>
-                <span class="wa-chat-cuerpo">
-                    <span class="wa-linea">
-                        <strong class="wa-nombre">Laura Soto</strong>
-                        <time>10:41</time>
-                    </span>
-                    <span class="wa-linea">
-                        <span class="wa-preview">Tú: Perfecto, gracias. Queda anotado.</span>
-                    </span>
-                </span>
-            </label>
-            <label class="wa-chat" for="wa-carlos">
-                <span class="wa-avatar b">CL</span>
-                <span class="wa-chat-cuerpo">
-                    <span class="wa-linea">
-                        <strong class="wa-nombre">Carlos López</strong>
-                        <time class="nuevo">09:15</time>
-                    </span>
-                    <span class="wa-linea">
-                        <span class="wa-preview">¿Podemos mover el examen para el viernes?</span>
-                        <span class="wa-badge">2</span>
-                    </span>
-                </span>
-            </label>
-            <label class="wa-chat" for="wa-direccion">
-                <span class="wa-avatar c">DI</span>
-                <span class="wa-chat-cuerpo">
-                    <span class="wa-linea">
-                        <strong class="wa-nombre">Dirección</strong>
-                        <time class="nuevo">Ayer</time>
-                    </span>
-                    <span class="wa-linea">
-                        <span class="wa-preview medio">Documento</span>
-                        <span class="wa-badge">1</span>
-                    </span>
-                </span>
-            </label>
-            <label class="wa-chat" for="wa-sofia">
-                <span class="wa-avatar d">SA</span>
-                <span class="wa-chat-cuerpo">
-                    <span class="wa-linea">
-                        <strong class="wa-nombre">Sofía Alpízar</strong>
-                        <time>lun</time>
-                    </span>
-                    <span class="wa-linea">
-                        <span class="wa-preview medio">Foto</span>
-                    </span>
-                </span>
-            </label>
+        <div class="ms-filtros">
+            <button type="button" class="ms-filtro activo" data-filtro="todos" onclick="msFiltro('todos')">Todos</button>
+            <button type="button" class="ms-filtro" data-filtro="nuevos" onclick="msFiltro('nuevos')">No leídos</button>
         </div>
+        <div th:replace="~{:: lista(false)}"></div>
     </aside>
 
-    <div class="wa-stage">
-        <section class="wa-vacio">
-            <div class="wa-vacio-icono" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    <div class="ms-stage" id="ms-stage">
+        <th:block th:if="${hilo != null}"><section th:replace="~{:: hilo}"></section></th:block>
+        <th:block th:unless="${hilo != null}"><section th:replace="~{:: vacio}"></section></th:block>
+    </div>
+
+    <!-- Visor de fotos: vive fuera del hilo para que el sondeo no lo cierre al repintar los mensajes. -->
+    <div id="ms-visor" class="ms-visor" role="dialog" aria-modal="true" aria-label="Vista previa de la foto" aria-hidden="true"
+         onclick="if (event.target === this) { msCerrarVisor(); }">
+        <div class="ms-visor-barra">
+            <span class="ms-visor-nombre" id="ms-visor-nombre"></span>
+            <a class="ms-visor-btn" id="ms-visor-bajar" download title="Descargar" aria-label="Descargar foto">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-            </div>
-            <h3>Mensajería</h3>
-            <p>Envía y recibe mensajes, fotos y documentos. Elegí un chat para continuar la conversación.</p>
-        </section>
-
-        <section class="wa-hilo wa-hilo-laura">
-            <header class="wa-top">
-                <label class="wa-icono wa-volver" for="wa-ninguno" title="Chats">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                </label>
-                <span class="wa-avatar a sm">LS</span>
-                <div class="wa-quien">
-                    <strong>Laura Soto</strong>
-                    <small>Madre de Sofía · en línea</small>
-                </div>
-            </header>
-            <div class="wa-historial">
-                <div class="wa-hilo-cuerpo">
-                <div class="wa-dia"><span>Hoy</span></div>
-                <div class="wa-fila">
-                    <div class="wa-burbuja suyo">
-                        <span class="wa-texto">Hola Licda. María, quería consultar si Sofía puede llevar la maqueta el lunes.</span>
-                        <span class="wa-meta"><time>10:12</time></span>
-                    </div>
-                </div>
-                <div class="wa-fila mio">
-                    <div class="wa-burbuja mio">
-                        <span class="wa-texto">Sí, puede traerla. La revisamos en la primera lección.</span>
-                        <span class="wa-meta">
-                            <time>10:18</time>
-                            <svg class="wa-checks leido" viewBox="0 0 18 11" aria-label="Leído">
-                                <polyline points="1.2 6 4.5 9.2 11 1.8"></polyline>
-                                <polyline points="6.2 6 9.5 9.2 16.2 1.8"></polyline>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-                <div class="wa-fila">
-                    <div class="wa-burbuja suyo">
-                        <span class="wa-foto" role="img" aria-label="Foto de la maqueta">
-                            <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
-                                <rect width="320" height="180" fill="#d5e4f2"></rect>
-                                <circle cx="248" cy="42" r="18" fill="#f4e3b2"></circle>
-                                <path d="M0 130 L70 78 L120 112 L190 60 L320 128 L320 180 L0 180 Z" fill="#7fa0c4"></path>
-                                <path d="M0 150 L90 108 L150 136 L220 96 L320 146 L320 180 L0 180 Z" fill="#2d5a87"></path>
-                                <rect x="118" y="96" width="46" height="34" rx="3" fill="#f7f1e4"></rect>
-                                <rect x="126" y="102" width="14" height="12" fill="#8fb4d4"></rect>
-                                <rect x="144" y="102" width="14" height="12" fill="#8fb4d4"></rect>
-                            </svg>
-                        </span>
-                        <span class="wa-texto">Así va quedando.</span>
-                        <span class="wa-meta"><time>10:32</time></span>
-                    </div>
-                </div>
-                <div class="wa-fila">
-                    <div class="wa-burbuja suyo">
-                        <a class="wa-doc" href="#circular-mantenimiento">
-                            <span class="wa-doc-icono" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                </svg>
-                            </span>
-                            <span class="wa-doc-texto">
-                                <strong>Circular-mantenimiento.pdf</strong>
-                                <small>PDF · 186 KB</small>
-                            </span>
-                        </a>
-                        <span class="wa-meta"><time>10:33</time></span>
-                    </div>
-                </div>
-                <div class="wa-fila mio">
-                    <div class="wa-burbuja mio">
-                        <span class="wa-texto">Perfecto, gracias. Queda anotado.</span>
-                        <span class="wa-meta">
-                            <time>10:41</time>
-                            <svg class="wa-checks leido" viewBox="0 0 18 11" aria-label="Leído">
-                                <polyline points="1.2 6 4.5 9.2 11 1.8"></polyline>
-                                <polyline points="6.2 6 9.5 9.2 16.2 1.8"></polyline>
-                            </svg>
-                        </span>
-                    </div>
-                </div>
-                </div>
-            </div>
-            <div class="wa-composer" th:replace="~{comunicacion/mensajeria/mensajeria :: composer}"></div>
-        </section>
-
-        <section class="wa-hilo wa-hilo-carlos">
-            <header class="wa-top">
-                <label class="wa-icono wa-volver" for="wa-ninguno" title="Chats">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                </label>
-                <span class="wa-avatar b sm">CL</span>
-                <div class="wa-quien">
-                    <strong>Carlos López</strong>
-                    <small>Docente · hace 2 h</small>
-                </div>
-            </header>
-            <div class="wa-historial">
-                <div class="wa-hilo-cuerpo">
-                <div class="wa-dia"><span>Hoy</span></div>
-                <div class="wa-fila">
-                    <div class="wa-burbuja suyo">
-                        <span class="wa-texto">Buen día. El grupo de 8-2 pide cambiar la fecha del examen de Estudios Sociales.</span>
-                        <span class="wa-meta"><time>09:02</time></span>
-                    </div>
-                </div>
-                <div class="wa-fila">
-                    <div class="wa-burbuja suyo">
-                        <span class="wa-texto">¿Podemos mover el examen para el viernes?</span>
-                        <span class="wa-meta"><time>09:15</time></span>
-                    </div>
-                </div>
-                </div>
-            </div>
-            <div class="wa-composer" th:replace="~{comunicacion/mensajeria/mensajeria :: composer}"></div>
-        </section>
-
-        <section class="wa-hilo wa-hilo-direccion">
-            <header class="wa-top">
-                <label class="wa-icono wa-volver" for="wa-ninguno" title="Chats">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                </label>
-                <span class="wa-avatar c sm">DI</span>
-                <div class="wa-quien">
-                    <strong>Dirección</strong>
-                    <small>Institución</small>
-                </div>
-            </header>
-            <div class="wa-historial">
-                <div class="wa-hilo-cuerpo">
-                <div class="wa-dia"><span>Ayer</span></div>
-                <div class="wa-fila">
-                    <div class="wa-burbuja suyo">
-                        <span class="wa-texto">Le comparto el horario ajustado por el mantenimiento eléctrico del lunes.</span>
-                        <span class="wa-meta"><time>16:20</time></span>
-                    </div>
-                </div>
-                <div class="wa-fila">
-                    <div class="wa-burbuja suyo">
-                        <a class="wa-doc" href="#horario-ajustado">
-                            <span class="wa-doc-icono" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                </svg>
-                            </span>
-                            <span class="wa-doc-texto">
-                                <strong>Horario-lunes.docx</strong>
-                                <small>Documento · 84 KB</small>
-                            </span>
-                        </a>
-                        <span class="wa-meta"><time>16:21</time></span>
-                    </div>
-                </div>
-                </div>
-            </div>
-            <div class="wa-composer" th:replace="~{comunicacion/mensajeria/mensajeria :: composer}"></div>
-        </section>
-
-        <section class="wa-hilo wa-hilo-sofia">
-            <header class="wa-top">
-                <label class="wa-icono wa-volver" for="wa-ninguno" title="Chats">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                </label>
-                <span class="wa-avatar d sm">SA</span>
-                <div class="wa-quien">
-                    <strong>Sofía Alpízar</strong>
-                    <small>Estudiante · 8-2</small>
-                </div>
-            </header>
-            <div class="wa-historial">
-                <div class="wa-hilo-cuerpo">
-                <div class="wa-dia"><span>Lunes</span></div>
-                <div class="wa-fila">
-                    <div class="wa-burbuja suyo">
-                        <span class="wa-foto" role="img" aria-label="Foto de la tarea">
-                            <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
-                                <rect width="320" height="180" fill="#efe6d6"></rect>
-                                <rect x="36" y="28" width="248" height="124" rx="6" fill="#fff"></rect>
-                                <rect x="52" y="48" width="120" height="8" rx="2" fill="#2d5a87"></rect>
-                                <rect x="52" y="68" width="200" height="6" rx="2" fill="#d5dee8"></rect>
-                                <rect x="52" y="82" width="180" height="6" rx="2" fill="#d5dee8"></rect>
-                                <rect x="52" y="96" width="150" height="6" rx="2" fill="#d5dee8"></rect>
-                            </svg>
-                        </span>
-                        <span class="wa-texto">Profe, ¿así está bien la portada?</span>
-                        <span class="wa-meta"><time>14:05</time></span>
-                    </div>
-                </div>
-                <div class="wa-fila mio">
-                    <div class="wa-burbuja mio">
-                        <span class="wa-texto">Sí. Agregá el nombre del colegio en el encabezado y la entregás mañana.</span>
-                        <span class="wa-meta">
-                            <time>14:22</time>
-                            <svg class="wa-checks" viewBox="0 0 18 11" aria-label="Enviado">
-                            <polyline points="1.2 6 4.5 9.2 11 1.8"></polyline>
-                        </svg>
-                        </span>
-                    </div>
-                </div>
-                </div>
-            </div>
-            <div class="wa-composer" th:replace="~{comunicacion/mensajeria/mensajeria :: composer}"></div>
-        </section>
+            </a>
+            <button type="button" class="ms-visor-btn" id="ms-visor-cerrar" title="Cerrar (Esc)" aria-label="Cerrar vista previa" onclick="msCerrarVisor()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <img id="ms-visor-img" alt="">
     </div>
 </div>
 
-<div th:fragment="composer" class="wa-composer">
-    <div class="wa-caja">
-        <span class="wa-icono" title="Emoji" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                <line x1="15" y1="9" x2="15.01" y2="9"></line>
-            </svg>
+<!-- Lista de conversaciones. Con oob=true viaja junto a la respuesta de un hilo para actualizar contadores. -->
+<div th:fragment="lista(oob)" id="ms-lista" class="ms-lista" xmlns:th="http://www.thymeleaf.org"
+     th:attr="hx-swap-oob=${oob} ? 'true' : null"
+     th:hx-get="@{/comunicacion/mensajeria/lista}" hx-trigger="every 10s [document.visibilityState === 'visible']"
+     hx-vals="js:{c: msSeleccionada()}" hx-swap="outerHTML">
+    <div class="ms-vacio-lista" th:if="${conversaciones == null or conversaciones.empty}">
+        Aún no tienes conversaciones. Usa <strong>Nuevo</strong> para escribirle a alguien.
+    </div>
+    <button type="button" class="ms-item" th:each="c : ${conversaciones}"
+            th:classappend="${c.nueva() ? ' nuevo' : ''} + ${c.id() == seleccionadaId ? ' activa' : ''}"
+            th:hx-get="@{/comunicacion/mensajeria/{id}(id=${c.id()})}" hx-target="#ms-stage" hx-swap="innerHTML"
+            th:data-nuevo="${c.nueva()}" th:data-texto="${c.nombre() + ' ' + c.preview()}">
+        <span class="ms-avatar" th:classappend="${c.claseRol()}" th:text="${c.iniciales()}">AB</span>
+        <span class="ms-item-cuerpo">
+            <span class="ms-linea">
+                <strong class="ms-nombre" th:text="${c.nombre()}">Nombre</strong>
+                <time th:text="${c.hora()}">10:41</time>
+            </span>
+            <span class="ms-linea" th:if="${!c.rol().isEmpty()}">
+                <span class="ms-rol" th:classappend="${c.claseRol()}" th:text="${c.rol()}">Rol</span>
+            </span>
+            <span class="ms-linea" th:if="${c.direccion() != null}">
+                <span class="ms-dir" th:text="${c.direccion()}">Otra dirección</span>
+            </span>
+            <span class="ms-linea">
+                <span class="ms-preview" th:text="${c.preview()}">Vista previa</span>
+                <span class="ms-contador" th:if="${c.nueva()}" th:text="${c.noLeidos()}">2</span>
+            </span>
         </span>
-        <textarea rows="1" placeholder="Escribe un mensaje" aria-label="Escribe un mensaje"></textarea>
-        <details class="wa-adjuntar">
-            <summary class="wa-icono" title="Adjuntar">
+    </button>
+</div>
+
+<section th:fragment="vacio" class="ms-vacio" xmlns:th="http://www.thymeleaf.org">
+    <div class="ms-vacio-icono" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+    </div>
+    <h3>Selecciona una conversación</h3>
+    <p>Envía y recibe mensajes, fotos y documentos con familias, docentes y la dirección.</p>
+</section>
+
+<th:block th:fragment="hilo-respuesta" xmlns:th="http://www.thymeleaf.org">
+    <section th:replace="~{:: hilo}"></section>
+    <div th:replace="~{:: lista(true)}"></div>
+</th:block>
+
+<th:block th:fragment="mensajes" xmlns:th="http://www.thymeleaf.org">
+    <th:block th:replace="~{:: mensajes-contenido}"></th:block>
+    <div th:replace="~{:: lista(true)}"></div>
+</th:block>
+
+<section th:fragment="hilo" id="ms-hilo" class="ms-hilo" th:data-id="${hilo.id()}" xmlns:th="http://www.thymeleaf.org">
+    <header class="ms-cabecera">
+        <button type="button" class="ms-volver" title="Conversaciones" aria-label="Volver a las conversaciones" onclick="msVolver()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        </button>
+        <span class="ms-avatar sm" th:classappend="${hilo.claseRol()}" th:text="${hilo.iniciales()}">AB</span>
+        <div class="ms-quien">
+            <strong th:text="${hilo.nombre()}">Nombre</strong>
+            <span class="ms-rol" th:if="${!hilo.rol().isEmpty()}" th:classappend="${hilo.claseRol()}" th:text="${hilo.rol()}">Rol</span>
+            <span class="ms-dir" th:if="${hilo.direccion() != null}" th:text="${hilo.direccion()}">Otra dirección</span>
+        </div>
+    </header>
+
+    <div class="ms-historial" id="ms-historial">
+        <!-- Sondeo cada 4 s: el servidor responde 204 mientras no haya cambios (ver "firma"). -->
+        <div id="ms-mensajes" hx-target="this" hx-swap="innerHTML"
+             th:hx-get="@{/comunicacion/mensajeria/{id}/mensajes(id=${hilo.id()})}"
+             hx-trigger="every 4s [msVivo()]" hx-vals="js:{firma: msFirma()}">
+            <th:block th:replace="~{:: mensajes-contenido}"></th:block>
+        </div>
+    </div>
+
+    <form class="ms-composer" x-data="msEmojis()" enctype="multipart/form-data"
+          th:hx-post="@{/comunicacion/mensajeria/{id}/enviar(id=${hilo.id()})}"
+          hx-target="#ms-mensajes" hx-swap="innerHTML" hx-encoding="multipart/form-data"
+          @keydown.escape="abierto = false" @ms-responder.window="alResponder($event)"
+          @htmx:before-request="if (!puedeEnviar()) $event.preventDefault()"
+          @htmx:after-request="alEnviado($event)">
+        <div class="ms-redactor">
+            <input type="hidden" name="respuestaA" :value="respuesta ? respuesta.id : ''">
+            <div class="ms-responder" x-show="respuesta" x-cloak style="display: none;" x-transition.opacity.duration.150ms>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    <polyline points="9 14 4 9 9 4"></polyline>
+                    <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
                 </svg>
-            </summary>
-            <div class="wa-menu">
-                <label>
-                    <input type="file" accept=".pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
-                    <span class="wa-menu-icono doc" aria-hidden="true">
+                <div class="ms-responder-texto">
+                    <small>Respondiendo a <strong x-text="respuesta && respuesta.autor"></strong></small>
+                    <span x-text="respuesta && respuesta.texto"></span>
+                </div>
+                <button type="button" class="ms-responder-quitar" title="Cancelar respuesta" aria-label="Cancelar respuesta" @click="respuesta = null">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <textarea x-ref="texto" x-model="texto" name="texto" rows="2" maxlength="4000" placeholder="Escribe un mensaje…"
+                      aria-label="Escribe un mensaje" @keydown.enter="enter($event)"></textarea>
+            <div class="ms-barra">
+                <div class="ms-emoji" @click.outside="abierto = false">
+                    <button type="button" class="ms-adjuntar" :class="{ 'activo': abierto }" title="Emojis"
+                            aria-haspopup="true" :aria-expanded="abierto" @click="alternar()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                        Emojis
+                    </button>
+                    <div class="ms-emoji-panel" x-show="abierto" x-cloak style="display: none;" x-transition.opacity.duration.120ms>
+                        <div class="config-tabs-container ms-emoji-tabs">
+                            <div class="config-tabs" role="tablist">
+                                <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                    <button type="button" role="tab" class="config-tab-btn"
+                                            :class="{ 'active': categoria === i }" :aria-selected="categoria === i"
+                                            @click="categoria = i" x-text="cat.icono + ' ' + cat.nombre"></button>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="ms-emoji-vistas">
+                            <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                <div class="ms-emoji-grid" role="tabpanel" x-show="categoria === i"
+                                     x-transition:enter="ms-fx" x-transition:enter-start="ms-fx-fuera"
+                                     x-transition:enter-end="ms-fx-dentro" x-transition:leave="ms-fx"
+                                     x-transition:leave-start="ms-fx-dentro" x-transition:leave-end="ms-fx-fuera">
+                                    <template x-for="emoji in cat.lista" :key="emoji">
+                                        <button type="button" @click="insertar(emoji)" x-text="emoji"></button>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                <label class="ms-adjuntar" title="Adjuntar documento">
+                    <input type="file" name="archivos" x-ref="documento" accept=".pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx" @change="contarAdjuntos()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                    Documento
+                </label>
+                <label class="ms-adjuntar" title="Adjuntar fotos">
+                    <input type="file" name="archivos" x-ref="fotos" accept="image/jpeg,image/png,image/gif,image/webp" multiple @change="contarAdjuntos()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    Fotos
+                </label>
+                <span class="ms-adjuntos-resumen" x-show="adjuntos > 0" x-cloak style="display: none;">
+                    <span x-text="adjuntos + (adjuntos === 1 ? ' archivo' : ' archivos')"></span>
+                    <button type="button" title="Quitar archivos" aria-label="Quitar archivos" @click="quitarAdjuntos()">&times;</button>
+                </span>
+                <button type="submit" class="ms-enviar" :disabled="!puedeEnviar()">
+                    Enviar
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </form>
+    <script>window.msAlFondo();</script>
+</section>
+
+<!-- Mensajes del hilo. Lo que está dentro de #ms-mensajes; "ms-firma" le dice al sondeo si algo cambió. -->
+<th:block th:fragment="mensajes-contenido" xmlns:th="http://www.thymeleaf.org">
+    <div id="ms-firma" th:data-firma="${hilo.firma()}" hidden></div>
+    <div class="ms-sin-mensajes" th:if="${hilo.mensajes().empty}">
+        Aún no hay mensajes. Escribe el primero para empezar la conversación.
+    </div>
+
+    <th:block th:each="m, st : ${hilo.mensajes()}">
+        <div class="ms-dia" th:if="${st.first or hilo.mensajes()[st.index - 1].dia() != m.dia()}" th:text="${m.dia()}">Hoy</div>
+
+        <article class="ms-msg" th:classappend="${m.mio()} ? ' yo'" th:data-id="${m.id()}"
+                 x-data="msMensaje()" @keydown.escape="mas = false">
+            <div class="ms-opciones" :class="{ 'abierto': mas }" @click.outside="mas = false">
+                <button type="button" class="ms-opciones-btn" title="Opciones del mensaje" aria-label="Opciones del mensaje"
+                        aria-haspopup="menu" :aria-expanded="mas" @click="alternar()">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <circle cx="5" cy="12" r="1.8"></circle>
+                        <circle cx="12" cy="12" r="1.8"></circle>
+                        <circle cx="19" cy="12" r="1.8"></circle>
+                    </svg>
+                </button>
+                <div class="ms-menu" role="menu" :class="{ 'arriba': arriba }" x-show="mas" x-cloak style="display: none;"
+                     x-transition.opacity.duration.120ms>
+                    <div class="ms-menu-reacciones">
+                        <button type="button" th:each="e : ${reaccionesRapidas}" th:text="${e}" th:data-emoji="${e}"
+                                th:title="'Reaccionar con ' + ${e}" @click="mas = false"
+                                th:hx-post="@{/comunicacion/mensajeria/mensaje/{id}/reaccion(id=${m.id()})}"
+                                hx-vals="js:{emoji: event.target.closest('[data-emoji]').dataset.emoji}"></button>
+                    </div>
+                    <div class="ms-menu-sep" aria-hidden="true"></div>
+                    <button type="button" class="ms-menu-item" role="menuitem" @click="responder()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="9 14 4 9 9 4"></polyline>
+                            <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                        </svg>
+                        Responder
+                    </button>
+                </div>
+            </div>
+
+            <span class="ms-avatar sm" th:classappend="${m.claseRol()}" th:text="${m.iniciales()}">AB</span>
+            <div class="ms-msg-cuerpo">
+                <div class="ms-msg-cab">
+                    <strong th:text="${m.autor()}">Nombre</strong>
+                    <time th:text="${m.hora()}">10:12</time>
+                    <span class="ms-leido" th:if="${m.mio()}" th:classappend="${m.leido()} ? ' si'"
+                          th:text="${m.leido()} ? 'Leído' : 'Enviado'">Enviado</span>
+                </div>
+                <div class="ms-cita" th:if="${m.cita() != null}">
+                    <strong th:text="${m.cita().autor()}">Autor</strong>
+                    <span th:text="${m.cita().texto()}">Texto citado</span>
+                </div>
+                <span class="ms-texto" th:if="${m.texto() != null and !m.texto().isBlank()}" th:text="${m.texto()}">Texto</span>
+
+                <figure class="ms-foto" th:if="${m.archivo() != null and m.archivo().imagen()}">
+                    <a th:href="@{/comunicacion/mensajeria/archivo/{id}(id=${m.archivo().mensajeId()})}" target="_blank" rel="noopener"
+                       onclick="return window.msAbrirVisor ? !msAbrirVisor(this, event) : true">
+                        <img th:src="@{/comunicacion/mensajeria/archivo/{id}(id=${m.archivo().mensajeId()})}"
+                             th:alt="${m.archivo().nombre()}"
+                             onload="if (window.msPegado !== false) { msAlFondo(); }">
+                    </a>
+                    <figcaption th:text="${m.archivo().nombre()}">foto.jpg</figcaption>
+                </figure>
+                <a class="ms-archivo" th:if="${m.archivo() != null and !m.archivo().imagen()}"
+                   th:href="@{/comunicacion/mensajeria/archivo/{id}(id=${m.archivo().mensajeId()})}" download>
+                    <span class="ms-archivo-icono" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                         </svg>
                     </span>
-                    Documento
-                </label>
-                <label>
-                    <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
-                    <span class="wa-menu-icono foto" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
+                    <span class="ms-archivo-texto">
+                        <strong th:text="${m.archivo().nombre()}">Documento.pdf</strong>
+                        <small th:text="${m.archivo().tamano()}">186 KB</small>
                     </span>
-                    Fotos
-                </label>
+                    <svg class="ms-archivo-bajar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </a>
+
+                <div class="ms-reacciones" th:if="${!m.reacciones().empty}">
+                    <button type="button" class="ms-chip" th:each="r : ${m.reacciones()}"
+                            th:classappend="${r.yo()} ? ' yo'" th:title="${r.titulo()}" th:attr="aria-label=${r.titulo()}"
+                            th:data-emoji="${r.emoji()}"
+                            th:hx-post="@{/comunicacion/mensajeria/mensaje/{id}/reaccion(id=${m.id()})}"
+                            hx-vals="js:{emoji: event.target.closest('[data-emoji]').dataset.emoji}">
+                        <span th:text="${r.emoji()}">👍</span><b th:text="${r.cantidad()}">1</b>
+                    </button>
+                </div>
             </div>
-        </details>
-    </div>
-    <button type="button" class="wa-enviar" title="Enviar">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M3.4 20.6l17.8-8.2c.9-.4.9-1.7 0-2.1L3.4 2.1c-.8-.4-1.7.3-1.5 1.2L3.6 10l9.4 1.4L3.6 12.8l-1.7 6.6c-.2.9.7 1.6 1.5 1.2z"></path>
-        </svg>
+        </article>
+    </th:block>
+
+    <div class="ms-aviso" th:if="${error != null}" th:text="${error}" x-data x-init="setTimeout(function () { $el.remove(); }, 6000)">Aviso</div>
+</th:block>
+
+<div th:fragment="contactos" xmlns:th="http://www.thymeleaf.org">
+    <div class="ms-vacio-lista" th:if="${contactos.empty}">No hay personas que coincidan.</div>
+    <button type="button" class="ms-contacto" th:each="p : ${contactos}" th:data-id="${p.id()}"
+            th:hx-post="@{/comunicacion/mensajeria/nueva}"
+            hx-vals="js:{usuarioId: event.target.closest('[data-id]').dataset.id}"
+            hx-target="#comunicacion-content" hx-swap="outerHTML">
+        <span class="ms-avatar sm" th:classappend="${p.claseRol()}" th:text="${p.iniciales()}">AB</span>
+        <span class="ms-contacto-nombre" th:text="${p.nombre()}">Nombre</span>
+        <span class="ms-rol" th:if="${!p.rol().isEmpty()}" th:classappend="${p.claseRol()}" th:text="${p.rol()}">Rol</span>
     </button>
 </div>
