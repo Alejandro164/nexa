@@ -2,7 +2,10 @@ package com.chavescr.nexa.controller;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -22,7 +25,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Oficio;
+import com.chavescr.nexa.entity.TipoDestinatario;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
+import com.chavescr.nexa.service.ComunicadoService;
 import com.chavescr.nexa.service.OficioService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +40,9 @@ public class OficioController {
 
     @Autowired
     private OficioService oficioService;
+
+    @Autowired
+    private ComunicadoService comunicadoService;
 
     @GetMapping
     public String oficios(Model model, HttpSession session, HttpServletRequest request) {
@@ -56,10 +64,11 @@ public class OficioController {
 
     @GetMapping("/form")
     public String formCrear(Model model, HttpSession session) {
-        requerirDireccion(session);
+        Long direccionId = requerirDireccion(session);
         model.addAttribute("oficio", new Oficio());
         model.addAttribute("destinatarioIdSeleccionado", null);
         cargarOpcionesDestinatario(model);
+        cargarDestinatariosInternos(model, direccionId, Set.of(), false);
         return "oficios/formulario :: form-content";
     }
 
@@ -68,24 +77,28 @@ public class OficioController {
         Long direccionId = requerirDireccion(session);
         Oficio oficio = oficioService.obtenerPorId(direccionId, id);
         model.addAttribute("oficio", oficio);
-        model.addAttribute("destinatarioIdSeleccionado", oficio.getDestinatarioDireccion().getId());
+        model.addAttribute("destinatarioIdSeleccionado",
+                oficio.getDestinatarioDireccion() != null ? oficio.getDestinatarioDireccion().getId() : null);
         cargarOpcionesDestinatario(model);
+        cargarDestinatariosInternos(model, direccionId, comunicadoService.clavesDe(oficio),
+                "EMITIDO".equals(oficio.getEstado()));
         return "oficios/formulario :: form-content";
     }
 
     @PostMapping
     public String guardar(@RequestParam(required = false) Long id,
             @RequestParam String asunto,
-            @RequestParam Long destinatarioDireccionId,
+            @RequestParam(required = false) Long destinatarioDireccionId,
             @RequestParam(required = false) String numeroCircular,
+            @RequestParam(name = "destinatarios", required = false) List<String> destinatarios,
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
             if (id == null) {
                 Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-                oficioService.crear(direccionId, usuarioId, asunto, destinatarioDireccionId, numeroCircular);
+                oficioService.crear(direccionId, usuarioId, asunto, destinatarioDireccionId, numeroCircular, destinatarios);
             } else {
-                oficioService.actualizar(direccionId, id, asunto, destinatarioDireccionId, numeroCircular);
+                oficioService.actualizar(direccionId, id, asunto, destinatarioDireccionId, numeroCircular, destinatarios);
             }
             cargarLista(model, direccionId, null);
             return "oficios/lista :: content";
@@ -100,8 +113,18 @@ public class OficioController {
             model.addAttribute("oficio", oficio);
             model.addAttribute("destinatarioIdSeleccionado", destinatarioDireccionId);
             cargarOpcionesDestinatario(model);
+            cargarDestinatariosInternos(model, direccionId,
+                    destinatarios == null ? Set.of() : new LinkedHashSet<>(destinatarios), esEmitido(direccionId, id));
             return "oficios/formulario :: form-content";
         }
+    }
+
+    /** Búsqueda de personas para elegirlas como destinatarias (la usa el formulario mientras se escribe). */
+    @GetMapping("/personas")
+    public String personas(@RequestParam(name = "q", required = false) String busqueda, Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("personasEncontradas", comunicadoService.buscarPersonas(direccionId, busqueda));
+        return "oficios/formulario :: personas";
     }
 
     @PostMapping("/direcciones")
@@ -224,6 +247,27 @@ public class OficioController {
 
     private void cargarOpcionesDestinatario(Model model) {
         model.addAttribute("direccionesDestinatario", oficioService.listarDireccionesActivas());
+    }
+
+    /** Lo que el formulario necesita para elegir destinatarios internos (grupos, secciones y personas ya elegidas). */
+    private void cargarDestinatariosInternos(Model model, Long direccionId, Set<String> seleccion, boolean bloqueado) {
+        model.addAttribute("gruposSimples", Arrays.stream(TipoDestinatario.values())
+                .filter(TipoDestinatario::esGrupoSimple).toList());
+        model.addAttribute("secciones", comunicadoService.secciones(direccionId));
+        model.addAttribute("seleccion", seleccion);
+        model.addAttribute("personasElegidas", comunicadoService.personasElegidas(direccionId, seleccion));
+        model.addAttribute("destinatariosBloqueados", bloqueado);
+    }
+
+    private boolean esEmitido(Long direccionId, Long id) {
+        if (id == null) {
+            return false;
+        }
+        try {
+            return "EMITIDO".equals(oficioService.obtenerPorId(direccionId, id).getEstado());
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     private Long direccionId(HttpSession session) {

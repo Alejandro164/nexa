@@ -72,6 +72,23 @@ public class NotificacionService {
         return notificacionRepository.countByUsuarioIdAndLeidaFalse(usuarioId);
     }
 
+    /**
+     * Deja una sola notificación sin leer por enlace: la anterior se marca como leída y se crea una
+     * nueva con el texto actualizado. Así una ráfaga de mensajes no llena la campanita de avisos.
+     */
+    public void reemplazarPorEnlace(Usuario usuario, String mensaje, String enlace) {
+        notificacionRepository.findFirstByUsuarioIdAndEnlaceAndLeidaFalse(usuario.getId(), enlace)
+                .ifPresent(anterior -> {
+                    anterior.setLeida(true);
+                    notificacionRepository.save(anterior);
+                });
+        notificacionRepository.save(nueva(usuario, mensaje, enlace));
+    }
+
+    public void marcarLeidasPorEnlace(Long usuarioId, String enlace) {
+        notificacionRepository.marcarLeidasPorEnlace(usuarioId, enlace);
+    }
+
     public void marcarLeida(Long notificacionId) {
         notificacionRepository.findById(notificacionId).ifPresent(n -> {
             n.setLeida(true);

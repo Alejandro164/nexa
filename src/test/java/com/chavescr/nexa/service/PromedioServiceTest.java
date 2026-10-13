@@ -70,6 +70,9 @@ class PromedioServiceTest {
     @Mock
     private RebajaConductaService rebajaConductaService;
 
+    @Mock
+    private SubgrupoService subgrupoService;
+
     private PromedioService service;
     private PeriodoAcademico periodo;
     private TipoComponente cotidiano;
@@ -78,7 +81,7 @@ class PromedioServiceTest {
     void setUp() {
         service = new PromedioService(usuarioRepository, nivelRepository, materiaRepository, periodoRepository,
                 resultadoRepository, asistenciaRepository, distribucionService, componenteService,
-                rebajaConductaService);
+                rebajaConductaService, subgrupoService);
 
         periodo = new PeriodoAcademico();
         periodo.setId(PERIODO);
@@ -110,6 +113,9 @@ class PromedioServiceTest {
         when(periodoRepository.findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(DIRECCION))
                 .thenReturn(List.of(periodo));
         when(usuarioRepository.findEstudiantesActivosByNivelId(NIVEL)).thenReturn(List.of(estudiante));
+        // Sin subgrupos configurados, la materia incluye a toda la sección.
+        when(subgrupoService.deMateria(DIRECCION, PERIODO, NIVEL, MATERIA, List.of(estudiante)))
+                .thenReturn(List.of(estudiante));
         when(resultadoRepository.findByComponente_Direccion_IdAndComponente_Nivel_IdAndComponente_Materia_IdAndPeriodo_Id(
                 DIRECCION, NIVEL, MATERIA, PERIODO)).thenReturn(List.of(resultado));
         when(distribucionService.obtenerDistribucion(DIRECCION, PERIODO, MATERIA)).thenReturn(distribucion);

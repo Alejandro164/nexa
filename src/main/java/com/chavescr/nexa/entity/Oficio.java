@@ -1,7 +1,11 @@
 package com.chavescr.nexa.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -39,9 +44,12 @@ public class Oficio {
     @Column(nullable = false, length = 300)
     private String asunto;
 
-    /** El oficio siempre se dirige a una dirección registrada. */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "destinatario_direccion_id", nullable = false)
+    /**
+     * Dirección externa a la que se envía el documento por correo al emitir. Es opcional: un oficio puede
+     * dirigirse solo a personas o grupos internos ({@link #destinatarios}) y verse en Comunicados.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "destinatario_direccion_id")
     private Direccion destinatarioDireccion;
 
     @Column(name = "numero_circular", length = 30)
@@ -57,6 +65,14 @@ public class Oficio {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nube_nodo_id")
     private NubeNodo nubeNodo;
+
+    /** Momento exacto de la emisión; {@link #fecha} solo guarda el día. */
+    @Column(name = "fecha_emision")
+    private LocalDateTime fechaEmision;
+
+    /** Personas y grupos internos que ven el oficio en Comunicados una vez emitido. */
+    @OneToMany(mappedBy = "oficio", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OficioDestinatario> destinatarios = new ArrayList<>();
 
     @PrePersist
     void alPersistir() {
@@ -135,6 +151,22 @@ public class Oficio {
 
     public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
+    }
+
+    public LocalDateTime getFechaEmision() {
+        return fechaEmision;
+    }
+
+    public void setFechaEmision(LocalDateTime fechaEmision) {
+        this.fechaEmision = fechaEmision;
+    }
+
+    public List<OficioDestinatario> getDestinatarios() {
+        return destinatarios;
+    }
+
+    public void setDestinatarios(List<OficioDestinatario> destinatarios) {
+        this.destinatarios = destinatarios;
     }
 
     public NubeNodo getNubeNodo() {

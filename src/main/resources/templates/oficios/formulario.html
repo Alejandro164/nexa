@@ -9,7 +9,7 @@
                 <form th:action="@{/oficios}" method="post"
                       hx-post="/oficios"
                       hx-target="#oficios-lista-content" hx-swap="outerHTML"
-                      hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
+                      hx-on:htmx:after-request="if(event.target === this &amp;&amp; event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
                     <input type="hidden" name="id" th:value="${oficio.id}">
 
                     <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
@@ -36,13 +36,22 @@
                                  document.getElementById('error-nueva-direccion').innerHTML = '';
                              }
                          }">
-                        <label class="form-label">Dirección destinataria *</label>
+                        <label class="form-label">Dirección externa (opcional)</label>
+                        <p style="margin:0 0 0.4rem; font-size:0.8rem; color:var(--text-secondary);">
+                            Si eliges una, al emitir se le envía el documento por correo. Las que no tienen correo
+                            registrado no se pueden elegir; si el oficio es solo para personas o grupos de la
+                            institución, déjalo en «Sin envío por correo».
+                        </p>
 
                         <div id="wrap-destinatario-direccion" th:fragment="wrap-destinatario-direccion">
-                            <select class="form-input" id="destinatario-direccion" name="destinatarioDireccionId" required>
-                                <option value="" disabled th:selected="${destinatarioIdSeleccionado == null}">Seleccione una dirección...</option>
-                                <option th:each="i : ${direccionesDestinatario}" th:value="${i.id}" th:text="${i.nombre}"
-                                        th:selected="${destinatarioIdSeleccionado != null and destinatarioIdSeleccionado == i.id}">Dirección</option>
+                            <select class="form-input" id="destinatario-direccion" name="destinatarioDireccionId">
+                                <option value="" th:selected="${destinatarioIdSeleccionado == null}">Sin envío por correo</option>
+                                <option th:each="i : ${direccionesDestinatario}" th:value="${i.id}"
+                                        th:with="sinCorreo=${i.email == null or i.email.isBlank()},
+                                                 elegida=${destinatarioIdSeleccionado != null and destinatarioIdSeleccionado == i.id}"
+                                        th:text="${i.nombre + (sinCorreo ? ' (sin correo registrado)' : '')}"
+                                        th:disabled="${sinCorreo and !elegida}"
+                                        th:selected="${elegida}">Dirección</option>
                             </select>
                         </div>
 
@@ -98,6 +107,56 @@
                                th:value="${oficio.numeroCircular}" placeholder="Ej. CIR-2026-012">
                     </div>
 
+                    <div class="form-group dest-internos">
+                        <label class="form-label">Destinatarios en Comunicados</label>
+                        <p class="dest-ayuda">
+                            Quienes verán este oficio en la pestaña Comunicados cuando se emita, y a quienes les llega un aviso.
+                            Elige al menos uno aquí o una dirección externa.
+                        </p>
+                        <p th:if="${destinatariosBloqueados}" class="dest-aviso">
+                            Este oficio ya fue emitido: sus destinatarios internos no se pueden cambiar.
+                        </p>
+                        <fieldset class="dest-caja" th:disabled="${destinatariosBloqueados}">
+                            <label class="dest-check" th:each="g : ${gruposSimples}">
+                                <input type="checkbox" name="destinatarios" th:value="${g.name()}"
+                                       th:checked="${seleccion.contains(g.name())}">
+                                <span><strong th:text="${g.etiqueta}">Toda la comunidad</strong>
+                                    <small th:text="${g.descripcion}">Docentes, familias y estudiantes</small></span>
+                            </label>
+
+                            <details th:if="${!secciones.empty}" class="dest-bloque dest-plegable"
+                                     th:open="${!seleccion.?[startsWith('SECCION-')].empty}">
+                                <summary class="dest-subtitulo">Familias de una sección
+                                    <span class="dest-contador" th:text="${seleccion.?[startsWith('SECCION-')].size()} + ' elegidas'"
+                                          th:if="${!seleccion.?[startsWith('SECCION-')].empty}">1 elegidas</span>
+                                </summary>
+                                <div class="dest-secciones">
+                                    <label class="dest-pastilla" th:each="n : ${secciones}">
+                                        <input type="checkbox" name="destinatarios" th:value="'SECCION-' + ${n.id}"
+                                               th:checked="${seleccion.contains('SECCION-' + n.id)}">
+                                        <span th:text="${n.nombreCompleto}">8 - 2</span>
+                                    </label>
+                                </div>
+                            </details>
+
+                            <div class="dest-bloque">
+                                <p class="dest-subtitulo">Personas</p>
+                                <div id="dest-personas" class="dest-chips">
+                                    <span class="dest-chip" th:each="p : ${personasElegidas}">
+                                        <input type="hidden" name="destinatarios" th:value="'PERSONA-' + ${p.id}">
+                                        <span th:text="${p.nombre}">Persona</span>
+                                        <button type="button" title="Quitar" onclick="this.parentElement.remove()">&times;</button>
+                                    </span>
+                                </div>
+                                <input class="form-input" type="search" name="q" id="dest-buscar" autocomplete="off"
+                                       placeholder="Buscar una persona para agregarla…"
+                                       hx-get="/oficios/personas" hx-trigger="focus once, keyup changed delay:250ms, search"
+                                       hx-target="#dest-resultados" hx-swap="innerHTML">
+                                <div id="dest-resultados" class="dest-resultados"></div>
+                            </div>
+                        </fieldset>
+                    </div>
+
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary" @click="$dispatch('close-modal')">Cancelar</button>
                         <button type="submit" class="btn-primary" th:text="${oficio.id == null ? 'Crear Oficio' : 'Guardar Cambios'}">Crear Oficio</button>
@@ -106,7 +165,67 @@
             </div>
         </div>
     </div>
+    <style>
+        .dest-ayuda { margin: 0 0 0.6rem; font-size: 0.8rem; color: var(--text-secondary); }
+        .dest-aviso { margin: 0 0 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px; background: #fef3c7; color: #92400e; font-size: 0.8rem; }
+        .dest-caja { border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+        .dest-caja:disabled { opacity: 0.65; }
+        .dest-check { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0.5rem; border-radius: 8px; cursor: pointer; }
+        .dest-check:hover { background: var(--input-bg); }
+        .dest-check input { margin-top: 0.2rem; }
+        .dest-check strong { display: block; font-size: 0.86rem; color: var(--text-primary); }
+        .dest-check small { font-size: 0.76rem; color: var(--text-secondary); }
+        .dest-bloque { border-top: 1px solid var(--border); padding-top: 0.6rem; }
+        .dest-subtitulo { margin: 0 0 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-light); }
+        .dest-plegable > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0; }
+        .dest-plegable > summary::-webkit-details-marker { display: none; }
+        .dest-plegable > summary::before { content: "▸"; font-size: 0.8rem; transition: transform 0.15s; }
+        .dest-plegable[open] > summary::before { transform: rotate(90deg); }
+        .dest-plegable[open] > summary { margin-bottom: 0.5rem; }
+        .dest-contador { padding: 1px 8px; border-radius: 999px; background: rgba(45, 90, 135, 0.12); color: var(--primary); font-size: 0.7rem; letter-spacing: 0; text-transform: none; }
+        .dest-plegable .dest-secciones { max-height: 150px; overflow-y: auto; padding: 2px; }
+        .dest-secciones, .dest-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .dest-chips:not(:empty) { margin-bottom: 0.5rem; }
+        .dest-pastilla { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.7rem; border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; cursor: pointer; }
+        .dest-pastilla:has(input:checked) { background: rgba(45, 90, 135, 0.1); border-color: var(--primary); color: var(--primary); font-weight: 600; }
+        .dest-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.3rem 0.2rem 0.7rem; border-radius: 999px; background: rgba(45, 90, 135, 0.1); color: var(--primary); font-size: 0.8rem; font-weight: 600; }
+        .dest-chip button { width: 20px; height: 20px; border: none; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; line-height: 1; }
+        .dest-chip button:hover { background: rgba(45, 90, 135, 0.18); }
+        .dest-resultados { max-height: 180px; overflow-y: auto; margin-top: 0.4rem; }
+        .dest-resultado { width: 100%; display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.5rem; border: none; border-radius: 8px; background: transparent; text-align: left; font: inherit; cursor: pointer; }
+        .dest-resultado:hover { background: var(--input-bg); }
+        .dest-resultado .dest-av { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; background: #e2e8f0; color: #475569; flex-shrink: 0; }
+        .dest-resultado b { display: block; font-size: 0.84rem; color: var(--text-primary); }
+        .dest-resultado small { font-size: 0.74rem; color: var(--text-secondary); }
+    </style>
     <script>
+        // Agrega la persona elegida como destinataria (un campo oculto + una etiqueta que se puede quitar).
+        window.agregarPersonaOficio = function (boton) {
+            var contenedor = document.getElementById('dest-personas');
+            var valor = 'PERSONA-' + boton.dataset.id;
+            var existe = Array.prototype.some.call(contenedor.querySelectorAll('input[type=hidden]'), function (i) {
+                return i.value === valor;
+            });
+            if (existe) {
+                return;
+            }
+            var chip = document.createElement('span');
+            chip.className = 'dest-chip';
+            var oculto = document.createElement('input');
+            oculto.type = 'hidden';
+            oculto.name = 'destinatarios';
+            oculto.value = valor;
+            var nombre = document.createElement('span');
+            nombre.textContent = boton.dataset.nombre;
+            var quitar = document.createElement('button');
+            quitar.type = 'button';
+            quitar.title = 'Quitar';
+            quitar.textContent = '×';
+            quitar.addEventListener('click', function () { chip.remove(); });
+            chip.append(oculto, nombre, quitar);
+            contenedor.appendChild(chip);
+        };
+
         function normalizarIdentificacionHaciendaOficio(cedula) {
             var digits = (cedula || '').replace(/\D/g, '');
             if (digits.length < 9 || digits.length > 12) {
@@ -166,4 +285,13 @@
             });
         };
     </script>
+</div>
+
+<div th:fragment="personas" xmlns:th="http://www.thymeleaf.org">
+    <p th:if="${personasEncontradas.empty}" style="margin:0.4rem 0; font-size:0.8rem; color:var(--text-secondary);">No hay personas que coincidan.</p>
+    <button type="button" class="dest-resultado" th:each="p : ${personasEncontradas}"
+            th:data-id="${p.id}" th:data-nombre="${p.nombre}" onclick="agregarPersonaOficio(this)">
+        <span class="dest-av" th:text="${p.iniciales}">AB</span>
+        <span><b th:text="${p.nombre}">Nombre</b><small th:text="${p.detalle}">Rol</small></span>
+    </button>
 </div>

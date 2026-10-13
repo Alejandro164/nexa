@@ -6,7 +6,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -45,11 +47,13 @@ public class OficioService {
     private final NubeNodoRepository nubeNodoRepository;
     private final NubeNodoAccesoRepository nubeNodoAccesoRepository;
     private final EmailService emailService;
+    private final ComunicadoService comunicadoService;
 
     public OficioService(OficioRepository oficioRepository, DireccionRepository direccionRepository,
             DireccionService direccionService, UsuarioRepository usuarioRepository,
             NubeNodoService nubeNodoService, NubeNodoRepository nubeNodoRepository,
-            NubeNodoAccesoRepository nubeNodoAccesoRepository, EmailService emailService) {
+            NubeNodoAccesoRepository nubeNodoAccesoRepository, EmailService emailService,
+            ComunicadoService comunicadoService) {
         this.oficioRepository = oficioRepository;
         this.direccionRepository = direccionRepository;
         this.direccionService = direccionService;
@@ -58,6 +62,7 @@ public class OficioService {
         this.nubeNodoRepository = nubeNodoRepository;
         this.nubeNodoAccesoRepository = nubeNodoAccesoRepository;
         this.emailService = emailService;
+        this.comunicadoService = comunicadoService;
     }
 
     @Transactional(readOnly = true)
@@ -75,7 +80,8 @@ public class OficioService {
     }
 
     private String nombreDestinatario(Oficio oficio) {
-        return oficio.getDestinatarioDireccion() != null ? oficio.getDestinatarioDireccion().getNombre() : "";
+        String externo = oficio.getDestinatarioDireccion() != null ? oficio.getDestinatarioDireccion().getNombre() : "";
+        return (externo + " " + comunicadoService.resumen(oficio)).trim();
     }
 
     @Transactional(readOnly = true)
@@ -96,10 +102,11 @@ public class OficioService {
     }
 
     public Oficio crear(Long direccionId, Long usuarioId, String asunto, Long destinatarioDireccionId,
-            String numeroCircular) {
+            String numeroCircular, List<String> destinatarios) {
         if (asunto == null || asunto.isBlank()) {
             throw new IllegalArgumentException("El asunto es obligatorio");
         }
+        exigirDestinatario(destinatarioDireccionId, destinatarios);
 
         Direccion direccion = direccionRepository.findById(direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
@@ -110,6 +117,7 @@ public class OficioService {
         oficio.setAsunto(asunto.trim());
         oficio.setDestinatarioDireccion(resolverDireccionDestinataria(destinatarioDireccionId));
         oficio.setNumeroCircular(numeroCircular != null && !numeroCircular.isBlank() ? numeroCircular.trim() : null);
+        comunicadoService.asignarDestinatarios(oficio, direccionId, destinatarios);
         oficio.setEstado("BORRADOR");
         oficio.setFecha(LocalDate.now());
         if (usuarioId != null) {
@@ -123,24 +131,40 @@ public class OficioService {
 
     /** Edita el asunto/destinatario/circular de un oficio existente. El número, estado y documento no cambian aquí. */
     public Oficio actualizar(Long direccionId, Long id, String asunto, Long destinatarioDireccionId,
-            String numeroCircular) {
+            String numeroCircular, List<String> destinatarios) {
         if (asunto == null || asunto.isBlank()) {
             throw new IllegalArgumentException("El asunto es obligatorio");
         }
 
         Oficio oficio = obtenerPorId(direccionId, id);
+        // Una vez emitido, los avisos ya salieron: los destinatarios internos no se cambian.
+        boolean emitido = "EMITIDO".equals(oficio.getEstado());
+        exigirDestinatario(destinatarioDireccionId,
+                emitido ? new ArrayList<>(comunicadoService.clavesDe(oficio)) : destinatarios);
         oficio.setAsunto(asunto.trim());
         oficio.setDestinatarioDireccion(resolverDireccionDestinataria(destinatarioDireccionId));
         oficio.setNumeroCircular(numeroCircular != null && !numeroCircular.isBlank() ? numeroCircular.trim() : null);
+        if (!emitido) {
+            comunicadoService.asignarDestinatarios(oficio, direccionId, destinatarios);
+        }
 
         Oficio guardado = oficioRepository.save(oficio);
         log.info("Oficio editado: id={}, numero={}", guardado.getId(), guardado.getNumero());
         return guardado;
     }
 
+    /** Un oficio necesita al menos un destino: una dirección externa (correo) o personas y grupos internos. */
+    private void exigirDestinatario(Long destinatarioDireccionId, List<String> destinatarios) {
+        boolean sinInternos = destinatarios == null || destinatarios.stream().noneMatch(d -> d != null && !d.isBlank());
+        if (destinatarioDireccionId == null && sinInternos) {
+            throw new IllegalArgumentException(
+                    "Elige al menos un destinatario: una dirección externa o personas y grupos internos.");
+        }
+    }
+
     private Direccion resolverDireccionDestinataria(Long destinatarioDireccionId) {
         if (destinatarioDireccionId == null) {
-            throw new IllegalArgumentException("La dirección destinataria es obligatoria");
+            return null;
         }
         return direccionRepository.findById(destinatarioDireccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Dirección destinataria no encontrada"));
@@ -202,33 +226,41 @@ public class OficioService {
             throw new IllegalStateException("Solo se puede emitir un oficio en estado Pendiente");
         }
 
-        String destinatarioEmail = oficio.getDestinatarioDireccion().getEmail();
-        String destinatarioNombre = oficio.getDestinatarioDireccion().getNombre();
-        if (destinatarioEmail == null || destinatarioEmail.isBlank()) {
-            throw new IllegalStateException("El destinatario no tiene un correo electrónico configurado");
-        }
+        // El correo solo se envía si el oficio tiene una dirección externa. Si falla, la excepción se propaga
+        // antes de tocar el estado ni avisar a nadie: el oficio sigue en PENDIENTE.
+        String destinoCorreo = null;
+        if (oficio.getDestinatarioDireccion() != null) {
+            String destinatarioEmail = oficio.getDestinatarioDireccion().getEmail();
+            String destinatarioNombre = oficio.getDestinatarioDireccion().getNombre();
+            if (destinatarioEmail == null || destinatarioEmail.isBlank()) {
+                throw new IllegalStateException("El destinatario no tiene un correo electrónico configurado");
+            }
 
-        NubeNodo documento = oficio.getNubeNodo();
-        byte[] pdf;
-        try {
-            Path rutaArchivo = Paths.get(nubeNodoService.getRutaRecursos()).resolve(documento.getUrlArchivo());
-            pdf = Files.readAllBytes(rutaArchivo);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo leer el documento del oficio: " + e.getMessage());
-        }
+            NubeNodo documento = oficio.getNubeNodo();
+            byte[] pdf;
+            try {
+                Path rutaArchivo = Paths.get(nubeNodoService.getRutaRecursos()).resolve(documento.getUrlArchivo());
+                pdf = Files.readAllBytes(rutaArchivo);
+            } catch (IOException e) {
+                throw new IllegalStateException("No se pudo leer el documento del oficio: " + e.getMessage());
+            }
 
-        try {
-            emailService.enviarOficioEmitido(destinatarioEmail, destinatarioNombre,
-                    oficio.getDireccion().getNombre(), oficio.getNumero(), oficio.getAsunto(),
-                    pdf, documento.getNombre());
-        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
-            throw new IllegalStateException("No se pudo enviar el correo: " + e.getMessage());
+            try {
+                emailService.enviarOficioEmitido(destinatarioEmail, destinatarioNombre,
+                        oficio.getDireccion().getNombre(), oficio.getNumero(), oficio.getAsunto(),
+                        pdf, documento.getNombre());
+            } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+                throw new IllegalStateException("No se pudo enviar el correo: " + e.getMessage());
+            }
+            destinoCorreo = destinatarioEmail;
         }
 
         oficio.setEstado("EMITIDO");
+        oficio.setFechaEmision(LocalDateTime.now());
         Oficio guardado = oficioRepository.save(oficio);
-        log.info("Oficio emitido y enviado por correo: id={}, numero={}, destinatario={}",
-                guardado.getId(), guardado.getNumero(), destinatarioEmail);
+        int avisados = comunicadoService.publicar(guardado);
+        log.info("Oficio emitido: id={}, numero={}, correo={}, personas avisadas en Comunicados={}",
+                guardado.getId(), guardado.getNumero(), destinoCorreo, avisados);
         return guardado;
     }
 

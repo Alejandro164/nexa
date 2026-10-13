@@ -117,6 +117,13 @@ public class DataInitializer implements ApplicationRunner {
                 Set.of(rolAdmin, rolSystemConfig), Set.of(instAlpha, instBeta, instGamma));
         asegurarRol(admin, rolSystemConfig);
 
+        Usuario aaron = crearUsuarioSiNoExiste(
+                "Aaron Alfaro Zamora", "aaronalfarozamora@gmail.com", "aaron",
+                "1-1111-1111", "aaron1234", true,
+                Set.of(rolAdmin, rolSystemConfig), Set.of(instAlpha, instBeta, instGamma));
+        asegurarRol(aaron, rolAdmin);
+        asegurarRol(aaron, rolSystemConfig);
+
         Usuario usuarioDirector = crearUsuarioSiNoExiste(
                 "María González", "maria@empresa.com", "director",
                 "2-3456-7890", "123", true,

@@ -56,6 +56,8 @@ class AsistenciaDetalleTest {
     private AlcanceDocenteService alcanceDocenteService;
     @Mock
     private RebajaConductaService rebajaConductaService;
+    @Mock
+    private SubgrupoService subgrupoService;
 
     private AsistenciaService service;
     private PeriodoAcademico primero;
@@ -65,7 +67,7 @@ class AsistenciaDetalleTest {
     void setUp() {
         service = new AsistenciaService(asistenciaRepository, nivelAcademicoRepository, materiaRepository,
                 usuarioRepository, periodoRepository, horarioLeccionRepository, almacenamientoService,
-                alcanceDocenteService, rebajaConductaService);
+                alcanceDocenteService, rebajaConductaService, subgrupoService);
         primero = periodo(1L, "2026-I", LocalDate.of(2026, 2, 1), LocalDate.of(2026, 6, 30));
         segundo = periodo(6L, "2026-II", LocalDate.of(2026, 7, 1), LocalDate.of(2026, 11, 30));
     }

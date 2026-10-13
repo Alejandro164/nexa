@@ -125,21 +125,6 @@ public class MenuController {
         return htmxRequest ? "personal/index :: htmx-content" : "personal/index";
     }
 
-    @GetMapping("/comunicacion")
-    public String comunicacion(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
-        return htmxRequest ? "comunicacion/index :: htmx-content" : "comunicacion/index";
-    }
-
-    @GetMapping("/comunicacion/mensajeria")
-    public String comunicacionMensajeria() {
-        return "comunicacion/mensajeria/mensajeria :: content";
-    }
-
-    @GetMapping("/comunicacion/comunicados")
-    public String comunicacionComunicados() {
-        return "comunicacion/comunicados/comunicados :: content";
-    }
-
     @GetMapping("/agenda")
     public String agenda(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
         return htmxRequest ? "agenda/index :: htmx-content" : "agenda/index";

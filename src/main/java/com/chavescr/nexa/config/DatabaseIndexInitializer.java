@@ -54,6 +54,20 @@ public class DatabaseIndexInitializer {
         eliminarAmonestacionesConducta();
         eliminarExtraclase();
         copiarRubrosAComponentes();
+        permitirOficiosSinDireccionDestinataria();
+    }
+
+    /**
+     * La dirección destinataria externa pasó a ser opcional (un oficio puede ir solo a personas o grupos
+     * internos). Hibernate (ddl-auto=update) no quita un NOT NULL ya existente, así que se hace aquí;
+     * en prod lo hace docker/migraciones/2026-10-13-comunicados.sql.
+     */
+    private void permitirOficiosSinDireccionDestinataria() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE oficios ALTER COLUMN destinatario_direccion_id DROP NOT NULL");
+        } catch (Exception e) {
+            log.warn("No se pudo permitir oficios sin dirección destinataria: {}", e.getMessage());
+        }
     }
 
     /** TARDIA_JUSTIFICADA no cabe en varchar(15) ni en el check anterior. */

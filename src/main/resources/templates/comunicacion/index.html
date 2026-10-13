@@ -19,7 +19,7 @@
     <main layout:fragment="content">
         <style>
             .config-tabs-container {
-                margin-bottom: 2rem;
+                margin-bottom: 15px;
                 background: #ffffff;
                 border: 1px solid var(--border);
                 border-radius: 14px;
@@ -81,7 +81,7 @@
             }
         </style>
 
-        <div x-data="{ activeTab: 'mensajeria' }">
+        <div th:attr="x-data=|{ activeTab: '${pestana == 'comunicados' ? 'comunicados' : 'mensajeria'}' }|">
             <div class="config-tabs-container">
                 <div class="config-tabs">
                     <button type="button" class="config-tab-btn" :class="{ 'active': activeTab === 'mensajeria' }"
@@ -97,7 +97,8 @@
                 </div>
             </div>
 
-            <div id="comunicacion-content" th:replace="~{comunicacion/mensajeria/mensajeria :: content}"></div>
+            <div id="comunicacion-content"
+                 th:replace="${pestana == 'comunicados'} ? ~{comunicacion/comunicados/comunicados :: content} : ~{comunicacion/mensajeria/mensajeria :: content}"></div>
         </div>
     </main>
     </th:block>
