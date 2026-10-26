@@ -250,22 +250,65 @@ public class AgendaController {
     }
 
     @GetMapping("/actividad")
-    public String actividad(@RequestParam(required = false) Integer mes,
+    public String actividad(Model model, HttpSession session, HttpServletRequest request) {
+        cargarActividadesInstitucion(model, requerirDireccion(session), null, null, null, request);
+        return "agenda/actividad/actividad :: content";
+    }
+
+    @GetMapping("/actividad/institucion")
+    public String actividadInstitucion(@RequestParam(required = false) Integer mes,
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) String filtro,
             Model model, HttpSession session, HttpServletRequest request) {
-        Long direccionId = requerirDireccion(session);
-        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(direccionId, mes, categoria, filtro));
-        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(direccionId));
-        model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
-        model.addAttribute("mesSel", mes);
-        model.addAttribute("categoriaSel", categoria);
-        model.addAttribute("filtro", filtro);
-        model.addAttribute("puedeCrearActividad", esDirectorOAdmin(request));
-        if ("actividad-tabla-container".equals(request.getHeader("HX-Target"))) {
-            return "agenda/actividad/actividad :: eventos-tabla-con-contador";
+        cargarActividadesInstitucion(model, requerirDireccion(session), mes, categoria, filtro, request);
+        if ("actividad-institucion-tabla".equals(request.getHeader("HX-Target"))) {
+            return "agenda/actividad/institucion/institucion :: tabla-con-contador";
         }
-        return "agenda/actividad/actividad :: content";
+        return "agenda/actividad/institucion/institucion :: content";
+    }
+
+    @GetMapping("/actividad/mep")
+    public String actividadMep(@RequestParam(required = false) Integer mes,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String filtro,
+            Model model, HttpSession session, HttpServletRequest request) {
+        exigirDirectorOAdmin(request);
+        cargarActividadesMep(model, requerirDireccion(session), mes, categoria, filtro, request);
+        if ("actividad-mep-tabla".equals(request.getHeader("HX-Target"))) {
+            return "agenda/actividad/mep/mep :: tabla-con-contador";
+        }
+        return "agenda/actividad/mep/mep :: content";
+    }
+
+    @PostMapping("/actividad/mep/{id}/seleccion")
+    public String actividadMepSeleccionar(@PathVariable String id,
+            @RequestParam(required = false) Integer mes,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String filtro,
+            Model model, HttpSession session, HttpServletRequest request) {
+        exigirDirectorOAdmin(request);
+        Long direccionId = requerirDireccion(session);
+        actividadInstitucionalService.seleccionarEventoMep(direccionId, requerirUsuario(session), id);
+        cargarActividadesMep(model, direccionId, mes, categoria, filtro, request);
+        return "agenda/actividad/mep/mep :: tabla-con-contador";
+    }
+
+    @DeleteMapping("/actividad/mep/{id}/seleccion")
+    public String actividadMepQuitar(@PathVariable String id,
+            @RequestParam(required = false) Integer mes,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String filtro,
+            Model model, HttpSession session, HttpServletRequest request) {
+        exigirDirectorOAdmin(request);
+        Long direccionId = requerirDireccion(session);
+        actividadInstitucionalService.quitarEventoMep(direccionId, id);
+        // Se puede quitar desde la tabla de la institución o desde la del MEP.
+        if ("actividad-institucion-tabla".equals(request.getHeader("HX-Target"))) {
+            cargarActividadesInstitucion(model, direccionId, mes, categoria, filtro, request);
+            return "agenda/actividad/institucion/institucion :: tabla-con-contador";
+        }
+        cargarActividadesMep(model, direccionId, mes, categoria, filtro, request);
+        return "agenda/actividad/mep/mep :: tabla-con-contador";
     }
 
     @GetMapping("/actividad/detalle/{id}")
@@ -310,10 +353,7 @@ public class AgendaController {
         try {
             actividadInstitucionalService.guardarActividadPropia(direccionId, usuarioId, id,
                     titulo, descripcion, fechaInicio, fechaFin, categoria, enlace);
-            model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(direccionId, null, null, null));
-            model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(direccionId));
-            model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
-            model.addAttribute("puedeCrearActividad", true);
+            cargarActividadesInstitucion(model, direccionId, null, null, null, request);
             return "agenda/actividad/actividad :: content";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#actividad-modal-container");
@@ -338,10 +378,7 @@ public class AgendaController {
         exigirDirectorOAdmin(request);
         Long direccionId = requerirDireccion(session);
         actividadInstitucionalService.eliminarActividadPropia(direccionId, id);
-        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(direccionId, null, null, null));
-        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(direccionId));
-        model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
-        model.addAttribute("puedeCrearActividad", true);
+        cargarActividadesInstitucion(model, direccionId, null, null, null, request);
         return "agenda/actividad/actividad :: content";
     }
 
@@ -579,6 +616,29 @@ public class AgendaController {
         Long id = (Long) session.getAttribute("SESSION_USUARIO_ID");
         if (id == null) throw new IllegalArgumentException("No hay usuario en sesión");
         return id;
+    }
+
+    private void cargarActividadesInstitucion(Model model, Long direccionId, Integer mes, String categoria,
+            String filtro, HttpServletRequest request) {
+        model.addAttribute("eventos", actividadInstitucionalService.buscarEventosInstitucion(direccionId, mes, categoria, filtro));
+        model.addAttribute("categorias", actividadInstitucionalService.listarCategoriasInstitucion(direccionId));
+        cargarFiltrosActividad(model, mes, categoria, filtro, request);
+    }
+
+    private void cargarActividadesMep(Model model, Long direccionId, Integer mes, String categoria,
+            String filtro, HttpServletRequest request) {
+        model.addAttribute("eventos", actividadInstitucionalService.buscarEventosMep(direccionId, mes, categoria, filtro));
+        model.addAttribute("categorias", actividadInstitucionalService.listarCategoriasMep());
+        cargarFiltrosActividad(model, mes, categoria, filtro, request);
+    }
+
+    private void cargarFiltrosActividad(Model model, Integer mes, String categoria, String filtro,
+            HttpServletRequest request) {
+        model.addAttribute("meses", ActividadInstitucionalService.MESES);
+        model.addAttribute("mesSel", mes);
+        model.addAttribute("categoriaSel", categoria);
+        model.addAttribute("filtro", filtro);
+        model.addAttribute("puedeCrearActividad", esDirectorOAdmin(request));
     }
 
     private boolean esDirectorOAdmin(HttpServletRequest request) {

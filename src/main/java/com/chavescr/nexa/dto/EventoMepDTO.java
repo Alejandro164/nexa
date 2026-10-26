@@ -30,6 +30,7 @@ public class EventoMepDTO implements Serializable {
     private List<String> subcategorias;
     private String destacado;
     private boolean propia;
+    private boolean seleccionada;
 
     /** Convierte una actividad creada manualmente al mismo formato usado para los eventos del MEP. */
     public static EventoMepDTO deActividadPropia(ActividadInstitucionalPropia a) {
@@ -45,6 +46,24 @@ public class EventoMepDTO implements Serializable {
         dto.subcategorias = List.of();
         dto.propia = true;
         return dto;
+    }
+
+    /** Copia del evento (la lista del MEP es compartida entre instituciones) marcada como elegida o no. */
+    public EventoMepDTO conSeleccion(boolean seleccionada) {
+        EventoMepDTO copia = new EventoMepDTO();
+        copia.id = id;
+        copia.titulo = titulo;
+        copia.descripcion = descripcion;
+        copia.link = link;
+        copia.link2 = link2;
+        copia.fechaInicio = fechaInicio;
+        copia.fechaFin = fechaFin;
+        copia.nombreCategoria = nombreCategoria;
+        copia.subcategorias = subcategorias;
+        copia.destacado = destacado;
+        copia.propia = propia;
+        copia.seleccionada = seleccionada;
+        return copia;
     }
 
     /** true si el id corresponde a una actividad propia (creada en Nexa) y no a un evento del MEP. */
@@ -77,6 +96,8 @@ public class EventoMepDTO implements Serializable {
     public void setSubcategorias(List<String> subcategorias) { this.subcategorias = subcategorias; }
     public String getDestacado() { return destacado; }
     public void setDestacado(String destacado) { this.destacado = destacado; }
+    public boolean isSeleccionada() { return seleccionada; }
+    public void setSeleccionada(boolean seleccionada) { this.seleccionada = seleccionada; }
     public boolean isPropia() { return propia; }
     public void setPropia(boolean propia) { this.propia = propia; }
 
