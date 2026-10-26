@@ -654,29 +654,6 @@ function toggleCalendarioTipo(tipo, visible) {
     document.querySelectorAll('.cal-event.event-' + tipo).forEach(function (el) {
         animarEvento(el, visible);
     });
-    if (tipo === 'general') {
-        document.querySelectorAll('.cal-bandas-wrapper').forEach(function (wrapper) {
-            if (visible) {
-                var expandido = wrapper.classList.contains('expanded');
-                wrapper.style.maxHeight = (expandido ? wrapper.dataset.expandedHeight : wrapper.dataset.collapsedHeight) + 'px';
-            } else {
-                wrapper.style.maxHeight = '0px';
-            }
-        });
-        document.querySelectorAll('.cal-banda-mas').forEach(function (btn) {
-            btn.classList.toggle('oculto', !visible);
-        });
-    }
-}
-
-function toggleBandasSemana(btn) {
-    var wrapper = btn.previousElementSibling;
-    if (!wrapper || !wrapper.classList.contains('cal-bandas-wrapper')) return;
-    var expandido = wrapper.classList.toggle('expanded');
-    wrapper.style.maxHeight = (expandido ? wrapper.dataset.expandedHeight : wrapper.dataset.collapsedHeight) + 'px';
-    btn.classList.toggle('expanded', expandido);
-    var label = btn.querySelector('span');
-    if (label) label.textContent = expandido ? 'Ver menos' : btn.dataset.masLabel;
 }
 
 function mostrarDetalleEvento(el, evt) {

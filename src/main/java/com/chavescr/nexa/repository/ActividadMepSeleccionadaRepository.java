@@ -1,6 +1,7 @@
 package com.chavescr.nexa.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -10,7 +11,7 @@ public interface ActividadMepSeleccionadaRepository extends JpaRepository<Activi
 
     List<ActividadMepSeleccionada> findByDireccionIdAndAnioIn(Long direccionId, List<Integer> anios);
 
-    boolean existsByDireccionIdAndAnioAndMepEventoId(Long direccionId, int anio, String mepEventoId);
+    Optional<ActividadMepSeleccionada> findByDireccionIdAndAnioAndMepEventoId(Long direccionId, int anio, String mepEventoId);
 
     void deleteByDireccionIdAndAnioAndMepEventoId(Long direccionId, int anio, String mepEventoId);
 }

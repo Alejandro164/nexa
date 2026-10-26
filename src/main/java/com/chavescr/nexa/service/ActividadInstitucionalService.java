@@ -6,13 +6,12 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,9 +134,9 @@ public class ActividadInstitucionalService {
     /** Todas las actividades del MEP del año, marcando cuáles ya eligió la institución. */
     @Transactional(readOnly = true)
     public List<EventoMepDTO> buscarEventosMep(Long direccionId, Integer mes, String categoria, String texto) {
-        Set<String> elegidas = idsSeleccionados(direccionId, List.of(anioActual()));
+        Map<String, String> elegidas = titulosSeleccionados(direccionId, List.of(anioActual()));
         List<EventoMepDTO> base = listarEventosDelAnio(anioActual()).stream()
-                .map(e -> e.conSeleccion(elegidas.contains(e.getId())))
+                .map(e -> e.conSeleccion(elegidas.containsKey(e.getId()), elegidas.get(e.getId())))
                 .toList();
         return filtrar(base, mes, categoria, texto);
     }
@@ -185,11 +184,11 @@ public class ActividadInstitucionalService {
             return actividadPropiaRepository.findByIdAndDireccionId(EventoMepDTO.idNumericoPropia(id), direccionId)
                     .map(EventoMepDTO::deActividadPropia);
         }
-        Set<String> elegidas = idsSeleccionados(direccionId, List.of(anioActual()));
+        Map<String, String> elegidas = titulosSeleccionados(direccionId, List.of(anioActual()));
         return listarEventosDelAnio(anioActual()).stream()
                 .filter(e -> id.equals(e.getId()))
                 .findFirst()
-                .map(e -> e.conSeleccion(elegidas.contains(e.getId())));
+                .map(e -> e.conSeleccion(elegidas.containsKey(e.getId()), elegidas.get(e.getId())));
     }
 
     /** Eventos de la institución cuyo rango de fechas se solapa con [desde, hasta], sin importar el año. */
@@ -207,40 +206,52 @@ public class ActividadInstitucionalService {
     }
 
     private List<EventoMepDTO> listarInstitucionales(Long direccionId, List<Integer> anios) {
-        Set<String> elegidas = idsSeleccionados(direccionId, anios);
+        Map<String, String> elegidas = titulosSeleccionados(direccionId, anios);
         List<EventoMepDTO> eventos = new ArrayList<>();
         for (int anio : anios) {
             listarEventosDelAnio(anio).stream()
-                    .filter(e -> elegidas.contains(e.getId()))
-                    .map(e -> e.conSeleccion(true))
+                    .filter(e -> elegidas.containsKey(e.getId()))
+                    .map(e -> e.conSeleccion(true, elegidas.get(e.getId())))
                     .forEach(eventos::add);
         }
         eventos.addAll(listarPropias(direccionId));
         return eventos;
     }
 
-    private Set<String> idsSeleccionados(Long direccionId, List<Integer> anios) {
-        return seleccionRepository.findByDireccionIdAndAnioIn(direccionId, anios).stream()
-                .map(ActividadMepSeleccionada::getMepEventoId)
-                .collect(Collectors.toSet());
+    /** Id del evento del MEP -> título personalizado (null si la institución no le puso uno). */
+    private Map<String, String> titulosSeleccionados(Long direccionId, List<Integer> anios) {
+        Map<String, String> titulos = new HashMap<>();
+        for (ActividadMepSeleccionada s : seleccionRepository.findByDireccionIdAndAnioIn(direccionId, anios)) {
+            titulos.put(s.getMepEventoId(), s.getTituloPersonalizado());
+        }
+        return titulos;
     }
 
     // ─── Selección de actividades del MEP ───────
 
-    public void seleccionarEventoMep(Long direccionId, Long usuarioId, String eventoId) {
+    /** Agrega la actividad del MEP al calendario de la institución, o actualiza su título si ya estaba. */
+    public void seleccionarEventoMep(Long direccionId, Long usuarioId, String eventoId, String tituloPersonalizado) {
         int anio = anioActual();
         boolean existeEnMep = listarEventosDelAnio(anio).stream().anyMatch(e -> eventoId.equals(e.getId()));
         if (!existeEnMep) {
             throw new IllegalArgumentException("La actividad del MEP no existe");
         }
-        if (seleccionRepository.existsByDireccionIdAndAnioAndMepEventoId(direccionId, anio, eventoId)) {
-            return;
+        String titulo = tituloPersonalizado != null && !tituloPersonalizado.isBlank()
+                ? tituloPersonalizado.trim() : null;
+        if (titulo != null && titulo.length() > 200) {
+            throw new IllegalArgumentException("El título no puede superar los 200 caracteres");
         }
-        ActividadMepSeleccionada seleccion = new ActividadMepSeleccionada();
-        seleccion.setDireccion(obtenerDireccion(direccionId));
-        seleccion.setSeleccionadoPor(obtenerUsuario(usuarioId));
-        seleccion.setAnio(anio);
-        seleccion.setMepEventoId(eventoId);
+        ActividadMepSeleccionada seleccion = seleccionRepository
+                .findByDireccionIdAndAnioAndMepEventoId(direccionId, anio, eventoId)
+                .orElseGet(() -> {
+                    ActividadMepSeleccionada nueva = new ActividadMepSeleccionada();
+                    nueva.setDireccion(obtenerDireccion(direccionId));
+                    nueva.setSeleccionadoPor(obtenerUsuario(usuarioId));
+                    nueva.setAnio(anio);
+                    nueva.setMepEventoId(eventoId);
+                    return nueva;
+                });
+        seleccion.setTituloPersonalizado(titulo);
         seleccionRepository.save(seleccion);
         log.info("Actividad MEP seleccionada: direccion={}, evento={}", direccionId, eventoId);
     }

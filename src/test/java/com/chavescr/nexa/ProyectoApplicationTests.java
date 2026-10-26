@@ -1,5 +1,6 @@
 package com.chavescr.nexa;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -433,7 +434,7 @@ class ProyectoApplicationTests {
 		context.setVariable("eventos", List.of(destacado, enRango));
 
 		String html = templateEngine.process(
-				new TemplateSpec("agenda/actividad/actividad", Set.of("eventos-tabla"),
+				new TemplateSpec("agenda/actividad/mep/mep", Set.of("tabla"),
 						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
 
 		assertTrue(html.contains("Inicio de curso lectivo para Colegios Científicos Costarricenses."));
@@ -445,9 +446,43 @@ class ProyectoApplicationTests {
 
 		context.setVariable("eventos", List.of());
 		String htmlVacio = templateEngine.process(
-				new TemplateSpec("agenda/actividad/actividad", Set.of("eventos-tabla"),
+				new TemplateSpec("agenda/actividad/mep/mep", Set.of("tabla"),
 						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
-		assertTrue(htmlVacio.contains("No se encontraron actividades institucionales"));
+		assertTrue(htmlVacio.contains("No se encontraron actividades del MEP"));
+	}
+
+	@Test
+	void actividadesDeLaInstitucionUsanElTituloPersonalizadoYUnNombreGenericoSiFaltaElTitulo() {
+		EventoMepDTO conTitulo = new EventoMepDTO();
+		conTitulo.setId("7");
+		conTitulo.setTitulo("Aplicación de la II prueba de ampliación para todos los niveles educativos.");
+		conTitulo.setFechaInicio(LocalDate.of(2026, 2, 9));
+		conTitulo.setFechaFin(LocalDate.of(2026, 2, 13));
+		conTitulo.setNombreCategoria("Pruebas de Ampliación");
+		EventoMepDTO personalizado = conTitulo.conSeleccion(true, "Pruebas de ampliación");
+
+		EventoMepDTO sinTitulo = new EventoMepDTO();
+		sinTitulo.setId("8");
+		sinTitulo.setTitulo(" ");
+		sinTitulo.setFechaInicio(LocalDate.of(2026, 3, 1));
+		sinTitulo.setFechaFin(LocalDate.of(2026, 3, 1));
+		sinTitulo.setNombreCategoria("Otros");
+
+		assertEquals("Pruebas de ampliación", personalizado.getTituloCalendario());
+		assertEquals(conTitulo.getTitulo(), conTitulo.conSeleccion(true, "  ").getTituloCalendario());
+		assertEquals("Actividad MEP", sinTitulo.getTituloCalendario());
+
+		Context context = new Context();
+		context.setVariable("eventos", List.of(personalizado, sinTitulo.conSeleccion(true, null)));
+		context.setVariable("puedeCrearActividad", true);
+
+		String html = templateEngine.process(
+				new TemplateSpec("agenda/actividad/institucion/institucion", Set.of("tabla"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+
+		assertTrue(html.contains("Pruebas de ampliación"));
+		assertTrue(html.contains("Aplicación de la II prueba de ampliación para todos los niveles educativos."));
+		assertTrue(html.contains("Actividad MEP"));
 	}
 
 	@Test
@@ -485,9 +520,14 @@ class ProyectoApplicationTests {
 	}
 
 	@Test
-	void calendarioVistaMesRenderaEventosConTopeBandasYLabelsEnEspanol() {
+	void calendarioVistaMesRenderaEventosConTopeYEventosDeVariosDiasPorDia() {
 		LocalDate lunes = LocalDate.of(2026, 7, 6);
 
+		LocalDate martes = lunes.plusDays(1);
+		LocalDate jueves = lunes.plusDays(3);
+		// Evento de varios días (martes a jueves): se muestra como una etiqueta en cada día.
+		java.util.function.Function<LocalDate, EventoCalendarioDTO> examenes = dia -> EventoCalendarioDTO
+				.deInstitucional("Semana de Exámenes", "desc", dia, null, martes, jueves);
 		List<EventoCalendarioDTO> eventosLunes = List.of(
 				EventoCalendarioDTO.deTarea("Tarea 1", "desc", lunes),
 				EventoCalendarioDTO.deTarea("Tarea 2", "desc", lunes),
@@ -495,22 +535,21 @@ class ProyectoApplicationTests {
 				EventoCalendarioDTO.deTarea("Tarea 4", "desc", lunes));
 		DiaCalendarioDTO diaLunes = new DiaCalendarioDTO(lunes, false, true, eventosLunes);
 
-		DiaCalendarioDTO diaMartes = new DiaCalendarioDTO(lunes.plusDays(1), false, false,
-				List.of(EventoCalendarioDTO.deRecordatorio("Enviar reporte", "desc", lunes.plusDays(1),
-						java.time.LocalTime.of(16, 30))));
+		DiaCalendarioDTO diaMartes = new DiaCalendarioDTO(martes, false, false,
+				List.of(EventoCalendarioDTO.deRecordatorio("Enviar reporte", "desc", martes,
+						java.time.LocalTime.of(16, 30)), examenes.apply(martes)));
 
 		DiaCalendarioDTO diaMiercoles = new DiaCalendarioDTO(lunes.plusDays(2), false, false,
-				List.of(EventoCalendarioDTO.deInstitucional("Feriado", "desc", lunes.plusDays(2), null, false)));
+				List.of(EventoCalendarioDTO.deInstitucional("Feriado", "desc", lunes.plusDays(2), null,
+						lunes.plusDays(2), lunes.plusDays(2)), examenes.apply(lunes.plusDays(2))));
 
 		List<DiaCalendarioDTO> dias = new java.util.ArrayList<>(List.of(diaLunes, diaMartes, diaMiercoles));
-		for (int i = 3; i < 7; i++) {
+		dias.add(new DiaCalendarioDTO(jueves, false, false, List.of(examenes.apply(jueves))));
+		for (int i = 4; i < 7; i++) {
 			dias.add(new DiaCalendarioDTO(lunes.plusDays(i), false, false, List.of()));
 		}
 
-		List<com.chavescr.nexa.dto.BandaEventoDTO> bandas = List.of(
-				new com.chavescr.nexa.dto.BandaEventoDTO("Semana de Exámenes", "desc", null, 1, 4, 0),
-				new com.chavescr.nexa.dto.BandaEventoDTO("Feria Científica", "desc", null, 2, 3, 1));
-		com.chavescr.nexa.dto.SemanaCalendarioDTO semana = new com.chavescr.nexa.dto.SemanaCalendarioDTO(dias, bandas);
+		com.chavescr.nexa.dto.SemanaCalendarioDTO semana = new com.chavescr.nexa.dto.SemanaCalendarioDTO(dias);
 
 		Context context = new Context();
 		context.setVariable("vista", "mes");
@@ -537,12 +576,10 @@ class ProyectoApplicationTests {
 		assertTrue(html.contains("event-recordatorio"));
 		assertTrue(html.contains("event-general"));
 		assertTrue(html.contains("16:30"));
-		assertTrue(html.contains("cal-banda"));
-		assertTrue(html.contains("Semana de Exámenes"));
-		assertTrue(html.contains("Feria Científica"));
-		assertTrue(html.contains("grid-column:1 / 5"));
-		assertTrue(html.contains("grid-row:1"));
-		assertTrue(html.contains("grid-row:2"));
+		assertFalse(html.contains("cal-banda"));
+		// Aparece una vez por cada día (martes, miércoles y jueves) y el detalle muestra el rango completo.
+		assertEquals(3, html.split("data-titulo=\"Semana de Exámenes\"", -1).length - 1);
+		assertTrue(html.contains("Del 7 de julio al 9 de julio de 2026"));
 		assertFalse(html.contains("Marcar No Disponible"));
 		assertFalse(html.contains("Salas Virtuales"));
 	}

@@ -68,80 +68,6 @@
             flex-direction: column;
         }
 
-        /* Banda de eventos de varios días (estilo Outlook/Teams) */
-        .cal-bandas-wrapper {
-            overflow: hidden;
-            transition: max-height 0.25s ease;
-        }
-
-        .cal-bandas-row {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-            padding: 3px 2px 0;
-        }
-
-        .cal-banda {
-            background: var(--primary);
-            color: #ffffff;
-            font-size: 0.72rem;
-            font-weight: 600;
-            line-height: 16px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            cursor: pointer;
-            transition: filter 0.2s;
-            min-width: 0;
-        }
-
-        .cal-banda:hover {
-            filter: brightness(0.92);
-        }
-
-        .cal-banda-mas {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            padding: 0 2px 2px;
-            background: none;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            width: 100%;
-            text-align: left;
-            cursor: pointer;
-            font-family: inherit;
-            max-height: 20px;
-            opacity: 1;
-            overflow: hidden;
-            transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
-        }
-
-        .cal-banda-mas:hover {
-            color: var(--primary);
-            text-decoration: underline;
-        }
-
-        .cal-banda-mas.oculto {
-            max-height: 0;
-            opacity: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-        }
-
-        .cal-banda-mas-arrow {
-            flex-shrink: 0;
-            transition: transform 0.25s ease;
-        }
-
-        .cal-banda-mas.expanded .cal-banda-mas-arrow {
-            transform: rotate(180deg);
-        }
-
         .cal-dias-row {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -754,33 +680,12 @@
                 </div>
                 <div class="cal-mes-body">
                     <div th:each="semana : ${semanas}" class="cal-semana-bloque">
-                        <div class="cal-bandas-wrapper" th:if="${semana.filasBandas > 0}"
-                             th:style="'max-height:' + ${semana.alturaColapsadaPx} + 'px;'"
-                             th:attr="data-collapsed-height=${semana.alturaColapsadaPx}, data-expanded-height=${semana.alturaExpandidaPx}">
-                            <div class="cal-bandas-row"
-                                 th:style="'grid-template-rows: repeat(' + ${semana.filasBandas} + ', 22px);'">
-                                <div th:each="banda : ${semana.bandas}" class="cal-banda"
-                                     th:style="'grid-column:' + ${banda.gridColumn} + '; grid-row:' + (${banda.fila} + 1) + ';'"
-                                     th:title="${banda.titulo}" th:text="${banda.titulo}"
-                                     onclick="mostrarDetalleEvento(this, event)"
-                                     th:attr="data-icono='📅', data-tipo-label='Evento Institucional', data-tipo-clase='event-general', data-titulo=${banda.titulo}, data-fecha=${banda.rangoLabel}, data-descripcion=${banda.descripcion} ?: '', data-enlace=${banda.enlace} ?: ''">Banda</div>
-                            </div>
-                        </div>
-                        <button type="button" class="cal-banda-mas" th:if="${semana.bandasOcultas > 0}"
-                                onclick="toggleBandasSemana(this)"
-                                th:attr="data-mas-label='+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">
-                            <svg class="cal-banda-mas-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                            <span th:text="'+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">+1 más</span>
-                        </button>
                         <div class="cal-dias-row">
                             <div th:each="d : ${semana.dias}" class="cal-cell"
                                  th:classappend="${d.otroMes} ? 'other-month' : (${d.hoy} ? 'today' : '')">
                                 <span class="cal-date" th:text="${d.diaMes}">1</span>
-                                <div class="cal-events-container" th:if="${!d.eventosSinBandas.empty}">
-                                    <div th:each="ev, iterEv : ${d.eventosSinBandas}" th:if="${iterEv.index < 3}"
+                                <div class="cal-events-container" th:if="${!d.eventos.empty}">
+                                    <div th:each="ev, iterEv : ${d.eventos}" th:if="${iterEv.index < 3}"
                                          th:class="'cal-event ' + ${ev.cssClass}" th:title="${ev.titulo}"
                                          onclick="mostrarDetalleEvento(this, event)"
                                          th:attr="data-icono=${ev.icono}, data-tipo-label=${ev.tipoLabel}, data-tipo-clase=${ev.cssClass}, data-titulo=${ev.titulo}, data-fecha=${ev.fechaLabel} + (${ev.tieneHora} ? (' · ' + ${#temporals.format(ev.hora,'HH:mm')}) : ''), data-descripcion=${ev.descripcion} ?: '', data-enlace=${ev.enlace} ?: ''">
@@ -788,8 +693,8 @@
                                         <span th:if="${ev.tieneHora}" th:text="${#temporals.format(ev.hora, 'HH:mm')}"></span>
                                         <span th:text="${ev.titulo}">Evento</span>
                                     </div>
-                                    <div class="cal-event-mas" th:if="${#lists.size(d.eventosSinBandas) > 3}"
-                                         th:text="'+' + (${#lists.size(d.eventosSinBandas) - 3}) + ' más'">+2 más</div>
+                                    <div class="cal-event-mas" th:if="${#lists.size(d.eventos) > 3}"
+                                         th:text="'+' + (${#lists.size(d.eventos) - 3}) + ' más'">+2 más</div>
                                 </div>
                             </div>
                         </div>
@@ -803,32 +708,11 @@
                     <div class="cal-header-cell" th:each="d : ${semana.dias}"
                          th:text="${d.etiquetaCorta}">Lunes 1</div>
                 </div>
-                <div class="cal-bandas-wrapper" th:if="${semana.filasBandas > 0}"
-                     th:style="'max-height:' + ${semana.alturaColapsadaPx} + 'px;'"
-                     th:attr="data-collapsed-height=${semana.alturaColapsadaPx}, data-expanded-height=${semana.alturaExpandidaPx}">
-                    <div class="cal-bandas-row"
-                         th:style="'grid-template-rows: repeat(' + ${semana.filasBandas} + ', 22px);'">
-                        <div th:each="banda : ${semana.bandas}" class="cal-banda"
-                             th:style="'grid-column:' + ${banda.gridColumn} + '; grid-row:' + (${banda.fila} + 1) + ';'"
-                             th:title="${banda.titulo}" th:text="${banda.titulo}"
-                             onclick="mostrarDetalleEvento(this, event)"
-                             th:attr="data-icono='📅', data-tipo-label='Evento Institucional', data-tipo-clase='event-general', data-titulo=${banda.titulo}, data-fecha=${banda.rangoLabel}, data-descripcion=${banda.descripcion} ?: '', data-enlace=${banda.enlace} ?: ''">Banda</div>
-                    </div>
-                </div>
-                <button type="button" class="cal-banda-mas" th:if="${semana.bandasOcultas > 0}"
-                        onclick="toggleBandasSemana(this)"
-                        th:attr="data-mas-label='+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">
-                    <svg class="cal-banda-mas-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                    <span th:text="'+' + ${semana.bandasOcultas} + ' evento(s) más de varios días esta semana'">+1 más</span>
-                </button>
                 <div class="cal-dias-row" style="grid-auto-rows: minmax(400px, 1fr);">
                     <div th:each="d : ${semana.dias}" class="cal-cell" th:classappend="${d.hoy} ? 'today'">
                         <span class="cal-date" th:text="${d.diaMes}">1</span>
-                        <div class="cal-events-container" th:if="${!d.eventosSinBandas.empty}">
-                            <div th:each="ev, iterEv : ${d.eventosSinBandas}" th:if="${iterEv.index < 8}"
+                        <div class="cal-events-container" th:if="${!d.eventos.empty}">
+                            <div th:each="ev, iterEv : ${d.eventos}" th:if="${iterEv.index < 8}"
                                  th:class="'cal-event ' + ${ev.cssClass}" th:title="${ev.titulo}"
                                  onclick="mostrarDetalleEvento(this, event)"
                                  th:attr="data-icono=${ev.icono}, data-tipo-label=${ev.tipoLabel}, data-tipo-clase=${ev.cssClass}, data-titulo=${ev.titulo}, data-fecha=${ev.fechaLabel} + (${ev.tieneHora} ? (' · ' + ${#temporals.format(ev.hora,'HH:mm')}) : ''), data-descripcion=${ev.descripcion} ?: '', data-enlace=${ev.enlace} ?: ''">
@@ -836,8 +720,8 @@
                                 <span th:if="${ev.tieneHora}" th:text="${#temporals.format(ev.hora, 'HH:mm')}"></span>
                                 <span th:text="${ev.titulo}">Evento</span>
                             </div>
-                            <div class="cal-event-mas" th:if="${#lists.size(d.eventosSinBandas) > 8}"
-                                 th:text="'+' + (${#lists.size(d.eventosSinBandas) - 8}) + ' más'">+2 más</div>
+                            <div class="cal-event-mas" th:if="${#lists.size(d.eventos) > 8}"
+                                 th:text="'+' + (${#lists.size(d.eventos) - 8}) + ' más'">+2 más</div>
                         </div>
                     </div>
                 </div>

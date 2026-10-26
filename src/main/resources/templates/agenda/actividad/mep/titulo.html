@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarActividadModal()">
+        <div class="modal-dialog" style="max-width:520px;">
+            <div class="modal-header">
+                <h3 class="modal-title"
+                    th:text="${evento != null and evento.seleccionada ? 'Título en el calendario' : 'Agregar al calendario'}">Agregar al calendario</h3>
+                <button type="button" class="close-btn" onclick="cerrarActividadModal()">&times;</button>
+            </div>
+            <div class="modal-body" th:if="${evento != null}">
+                <form th:action="@{/agenda/actividad/mep/{id}/seleccion(id=${evento.id})}" method="post"
+                      th:attr="hx-post='/agenda/actividad/mep/' + ${evento.id} + '/seleccion'"
+                      hx-target="#actividad-subcontent" hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful) cerrarActividadModal()">
+                    <input type="hidden" name="origen" th:value="${origen}">
+
+                    <div th:if="${error}" class="form-alert-error" th:text="${error}"></div>
+
+                    <div class="form-group">
+                        <label class="form-label">Actividad del MEP</label>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin:0;"
+                           th:text="${evento.tituloVisible}">Título del MEP</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Título en el calendario (opcional)</label>
+                        <input class="form-input" type="text" name="titulo" maxlength="200"
+                               th:value="${evento.tituloPersonalizado}"
+                               placeholder="Un nombre corto, ej: Entrega de notas">
+                        <small style="color:var(--text-light);">
+                            Si lo dejas vacío se usa el título del MEP. El título original se ve en el detalle.
+                        </small>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarActividadModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary"
+                                th:text="${evento.seleccionada ? 'Guardar' : 'Agregar'}">Agregar</button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-body" th:if="${evento == null}">
+                <p class="table-empty">No se encontró la actividad.</p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -280,17 +280,41 @@ public class AgendaController {
         return "agenda/actividad/mep/mep :: content";
     }
 
-    @PostMapping("/actividad/mep/{id}/seleccion")
-    public String actividadMepSeleccionar(@PathVariable String id,
-            @RequestParam(required = false) Integer mes,
-            @RequestParam(required = false) String categoria,
-            @RequestParam(required = false) String filtro,
+    @GetMapping("/actividad/mep/{id}/titulo")
+    public String actividadMepFormTitulo(@PathVariable String id, @RequestParam(defaultValue = "mep") String origen,
             Model model, HttpSession session, HttpServletRequest request) {
         exigirDirectorOAdmin(request);
+        model.addAttribute("evento", actividadInstitucionalService.obtenerEvento(requerirDireccion(session), id)
+                .orElseThrow(() -> new IllegalArgumentException("La actividad del MEP no existe")));
+        model.addAttribute("origen", origen);
+        return "agenda/actividad/mep/titulo :: form-content";
+    }
+
+    /** Agrega la actividad del MEP al calendario de la institución, o cambia su título si ya estaba. */
+    @PostMapping("/actividad/mep/{id}/seleccion")
+    public String actividadMepSeleccionar(@PathVariable String id,
+            @RequestParam(required = false) String titulo,
+            @RequestParam(defaultValue = "mep") String origen,
+            Model model, HttpSession session, HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response) {
+        exigirDirectorOAdmin(request);
         Long direccionId = requerirDireccion(session);
-        actividadInstitucionalService.seleccionarEventoMep(direccionId, requerirUsuario(session), id);
-        cargarActividadesMep(model, direccionId, mes, categoria, filtro, request);
-        return "agenda/actividad/mep/mep :: tabla-con-contador";
+        try {
+            actividadInstitucionalService.seleccionarEventoMep(direccionId, requerirUsuario(session), id, titulo);
+        } catch (IllegalArgumentException e) {
+            response.setHeader("HX-Retarget", "#actividad-modal-container");
+            response.setHeader("HX-Reswap", "innerHTML");
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("evento", actividadInstitucionalService.obtenerEvento(direccionId, id).orElse(null));
+            model.addAttribute("origen", origen);
+            return "agenda/actividad/mep/titulo :: form-content";
+        }
+        if ("institucion".equals(origen)) {
+            cargarActividadesInstitucion(model, direccionId, null, null, null, request);
+            return "agenda/actividad/institucion/institucion :: content";
+        }
+        cargarActividadesMep(model, direccionId, null, null, null, request);
+        return "agenda/actividad/mep/mep :: content";
     }
 
     @DeleteMapping("/actividad/mep/{id}/seleccion")

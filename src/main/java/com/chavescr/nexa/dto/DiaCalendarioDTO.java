@@ -39,11 +39,6 @@ public class DiaCalendarioDTO {
 
     public int getDiaMes() { return fecha.getDayOfMonth(); }
 
-    /** Eventos de este día excluyendo los institucionales de varios días (esos se muestran como banda arriba). */
-    public List<EventoCalendarioDTO> getEventosSinBandas() {
-        return eventos.stream().filter(ev -> !ev.isMultiDia()).toList();
-    }
-
     /** Ej: "Lunes 6" — para encabezados de columna en la vista de semana. */
     public String getEtiquetaCorta() {
         return capitalizar(fecha.getDayOfWeek().getDisplayName(TextStyle.FULL, ES)) + " " + fecha.getDayOfMonth();

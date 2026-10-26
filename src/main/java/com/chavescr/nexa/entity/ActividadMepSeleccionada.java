@@ -30,6 +30,10 @@ public class ActividadMepSeleccionada {
     @Column(nullable = false)
     private int anio;
 
+    /** Título corto que la institución prefiere mostrar en el calendario (opcional). */
+    @Column(length = 200)
+    private String tituloPersonalizado;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "direccion_id", nullable = false)
     private Direccion direccion;
@@ -50,6 +54,8 @@ public class ActividadMepSeleccionada {
     public void setId(Long id) { this.id = id; }
     public String getMepEventoId() { return mepEventoId; }
     public void setMepEventoId(String mepEventoId) { this.mepEventoId = mepEventoId; }
+    public String getTituloPersonalizado() { return tituloPersonalizado; }
+    public void setTituloPersonalizado(String tituloPersonalizado) { this.tituloPersonalizado = tituloPersonalizado; }
     public int getAnio() { return anio; }
     public void setAnio(int anio) { this.anio = anio; }
     public Direccion getDireccion() { return direccion; }

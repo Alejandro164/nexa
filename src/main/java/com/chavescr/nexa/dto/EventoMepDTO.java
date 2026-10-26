@@ -31,6 +31,7 @@ public class EventoMepDTO implements Serializable {
     private String destacado;
     private boolean propia;
     private boolean seleccionada;
+    private String tituloPersonalizado;
 
     /** Convierte una actividad creada manualmente al mismo formato usado para los eventos del MEP. */
     public static EventoMepDTO deActividadPropia(ActividadInstitucionalPropia a) {
@@ -49,7 +50,7 @@ public class EventoMepDTO implements Serializable {
     }
 
     /** Copia del evento (la lista del MEP es compartida entre instituciones) marcada como elegida o no. */
-    public EventoMepDTO conSeleccion(boolean seleccionada) {
+    public EventoMepDTO conSeleccion(boolean seleccionada, String tituloPersonalizado) {
         EventoMepDTO copia = new EventoMepDTO();
         copia.id = id;
         copia.titulo = titulo;
@@ -63,6 +64,7 @@ public class EventoMepDTO implements Serializable {
         copia.destacado = destacado;
         copia.propia = propia;
         copia.seleccionada = seleccionada;
+        copia.tituloPersonalizado = tituloPersonalizado;
         return copia;
     }
 
@@ -96,6 +98,22 @@ public class EventoMepDTO implements Serializable {
     public void setSubcategorias(List<String> subcategorias) { this.subcategorias = subcategorias; }
     public String getDestacado() { return destacado; }
     public void setDestacado(String destacado) { this.destacado = destacado; }
+    public String getTituloPersonalizado() { return tituloPersonalizado; }
+
+    public boolean isConTituloPersonalizado() {
+        return tituloPersonalizado != null && !tituloPersonalizado.isBlank();
+    }
+
+    /** Título del evento tal como lo publica el MEP; si viene vacío se muestra un nombre genérico. */
+    public String getTituloVisible() {
+        return titulo == null || titulo.isBlank() ? "Actividad MEP" : titulo;
+    }
+
+    /** Título para el calendario de la institución: el personalizado si existe, si no el del MEP. */
+    public String getTituloCalendario() {
+        return isConTituloPersonalizado() ? tituloPersonalizado : getTituloVisible();
+    }
+
     public boolean isSeleccionada() { return seleccionada; }
     public void setSeleccionada(boolean seleccionada) { this.seleccionada = seleccionada; }
     public boolean isPropia() { return propia; }

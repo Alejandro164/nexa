@@ -58,10 +58,12 @@
                 </tr>
                 <tr th:each="ev : ${eventos}">
                     <td>
-                        <strong th:text="${ev.titulo}" style="color:#0f172a;">Título</strong>
+                        <strong th:text="${ev.tituloCalendario}" style="color:#0f172a;">Título</strong>
                         <span th:if="${ev.destacadoFlag}" class="badge badge-info" style="margin-left:6px;">Destacado</span>
                         <span th:if="${ev.propia}" class="badge badge-secondary" style="margin-left:6px;">Propia</span>
                         <span th:unless="${ev.propia}" class="badge badge-secondary" style="margin-left:6px;">MEP</span>
+                        <div th:if="${ev.conTituloPersonalizado}" style="color:#94a3b8; font-size:0.8rem; margin-top:2px;"
+                             th:text="${ev.tituloVisible}">Título original</div>
                     </td>
                     <td><span class="badge badge-primary" th:text="${ev.nombreCategoria}">Categoría</span></td>
                     <td style="white-space:nowrap;"
@@ -91,6 +93,11 @@
                                                      data-delete-message='¿Deseas eliminar la actividad ' + ${ev.titulo} + '? Esta acción no se puede deshacer.'"
                                             title="Eliminar">🗑️</button>
                                 </th:block>
+                                <button th:unless="${ev.propia}" class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/agenda/actividad/mep/' + ${ev.id} + '/titulo?origen=institucion'"
+                                        hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                        onclick="abrirActividadModal()"
+                                        title="Cambiar el título que se ve en el calendario">✏️</button>
                                 <button th:unless="${ev.propia}" class="btn-xs btn-danger-ghost"
                                         th:attr="hx-delete='/agenda/actividad/mep/' + ${ev.id} + '/seleccion'"
                                         hx-target="#actividad-institucion-tabla" hx-swap="innerHTML"

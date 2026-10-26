@@ -54,7 +54,7 @@
                 </tr>
                 <tr th:each="ev : ${eventos}">
                     <td>
-                        <strong th:text="${ev.titulo}" style="color:#0f172a;">Título</strong>
+                        <strong th:text="${ev.tituloVisible}" style="color:#0f172a;">Título</strong>
                         <span th:if="${ev.destacadoFlag}" class="badge badge-info" style="margin-left:6px;">Destacado</span>
                         <span th:if="${ev.seleccionada}" class="badge badge-success" style="margin-left:6px;">En la institución</span>
                     </td>
@@ -73,10 +73,15 @@
                                     onclick="abrirActividadModal()">Ver detalles</button>
                             <th:block th:if="${puedeCrearActividad}">
                                 <button th:if="${!ev.seleccionada}" class="btn-xs btn-primary"
-                                        th:attr="hx-post='/agenda/actividad/mep/' + ${ev.id} + '/seleccion'"
-                                        hx-target="#actividad-mep-tabla" hx-swap="innerHTML"
-                                        hx-include=".filters-bar"
+                                        th:attr="hx-get='/agenda/actividad/mep/' + ${ev.id} + '/titulo?origen=mep'"
+                                        hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                        onclick="abrirActividadModal()"
                                         title="Agregar al calendario de la institución">+ Agregar</button>
+                                <button th:if="${ev.seleccionada}" class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/agenda/actividad/mep/' + ${ev.id} + '/titulo?origen=mep'"
+                                        hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                        onclick="abrirActividadModal()"
+                                        title="Cambiar el título que se ve en el calendario">✏️</button>
                                 <button th:if="${ev.seleccionada}" class="btn-xs btn-danger-ghost"
                                         th:attr="hx-delete='/agenda/actividad/mep/' + ${ev.id} + '/seleccion'"
                                         hx-target="#actividad-mep-tabla" hx-swap="innerHTML"
