@@ -21,18 +21,18 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "miembros_proyecto", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_miembro_proyecto_usuario", columnNames = {"proyecto_id", "usuario_id"})
+@Table(name = "miembros_plan_trabajo", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_miembro_plan_trabajo_usuario", columnNames = {"plan_trabajo_id", "usuario_id"})
 })
-public class MiembroProyecto {
+public class MiembroPlanTrabajo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "proyecto_id", nullable = false)
-    private Proyecto proyecto;
+    @JoinColumn(name = "plan_trabajo_id", nullable = false)
+    private PlanTrabajo planTrabajo;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "usuario_id", nullable = false)
@@ -40,15 +40,15 @@ public class MiembroProyecto {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private RolProyecto rol = RolProyecto.MIEMBRO;
+    private RolPlanTrabajo rol = RolPlanTrabajo.MIEMBRO;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaAsignacion;
 
     @OneToMany(mappedBy = "miembro", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TareaProyecto> tareas = new ArrayList<>();
+    private List<TareaPlanTrabajo> tareas = new ArrayList<>();
 
-    public enum RolProyecto {
+    public enum RolPlanTrabajo {
         LIDER, MIEMBRO
     }
 
@@ -59,14 +59,14 @@ public class MiembroProyecto {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Proyecto getProyecto() { return proyecto; }
-    public void setProyecto(Proyecto proyecto) { this.proyecto = proyecto; }
+    public PlanTrabajo getPlanTrabajo() { return planTrabajo; }
+    public void setPlanTrabajo(PlanTrabajo planTrabajo) { this.planTrabajo = planTrabajo; }
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
-    public RolProyecto getRol() { return rol; }
-    public void setRol(RolProyecto rol) { this.rol = rol; }
+    public RolPlanTrabajo getRol() { return rol; }
+    public void setRol(RolPlanTrabajo rol) { this.rol = rol; }
     public LocalDateTime getFechaAsignacion() { return fechaAsignacion; }
     public void setFechaAsignacion(LocalDateTime fechaAsignacion) { this.fechaAsignacion = fechaAsignacion; }
-    public List<TareaProyecto> getTareas() { return tareas; }
-    public void setTareas(List<TareaProyecto> tareas) { this.tareas = tareas; }
+    public List<TareaPlanTrabajo> getTareas() { return tareas; }
+    public void setTareas(List<TareaPlanTrabajo> tareas) { this.tareas = tareas; }
 }

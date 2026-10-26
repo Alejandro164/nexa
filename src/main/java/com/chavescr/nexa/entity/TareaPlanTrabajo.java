@@ -17,8 +17,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "tareas_proyecto")
-public class TareaProyecto {
+@Table(name = "tareas_plan_trabajo")
+public class TareaPlanTrabajo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,11 +45,11 @@ public class TareaProyecto {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "miembro_id", nullable = true)
-    private MiembroProyecto miembro;
+    private MiembroPlanTrabajo miembro;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "proyecto_id", nullable = false)
-    private Proyecto proyecto;
+    @JoinColumn(name = "plan_trabajo_id", nullable = false)
+    private PlanTrabajo planTrabajo;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaAsignacion;
@@ -88,10 +88,10 @@ public class TareaProyecto {
     public void setCalificacion(Integer calificacion) { this.calificacion = calificacion; }
     public LocalDateTime getFechaCompletada() { return fechaCompletada; }
     public void setFechaCompletada(LocalDateTime fechaCompletada) { this.fechaCompletada = fechaCompletada; }
-    public MiembroProyecto getMiembro() { return miembro; }
-    public void setMiembro(MiembroProyecto miembro) { this.miembro = miembro; }
-    public Proyecto getProyecto() { return proyecto; }
-    public void setProyecto(Proyecto proyecto) { this.proyecto = proyecto; }
+    public MiembroPlanTrabajo getMiembro() { return miembro; }
+    public void setMiembro(MiembroPlanTrabajo miembro) { this.miembro = miembro; }
+    public PlanTrabajo getPlanTrabajo() { return planTrabajo; }
+    public void setPlanTrabajo(PlanTrabajo planTrabajo) { this.planTrabajo = planTrabajo; }
     public LocalDateTime getFechaAsignacion() { return fechaAsignacion; }
     public void setFechaAsignacion(LocalDateTime fechaAsignacion) { this.fechaAsignacion = fechaAsignacion; }
 }

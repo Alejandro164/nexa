@@ -16,7 +16,7 @@ import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.dto.SemanaCalendarioDTO;
 import com.chavescr.nexa.entity.Recordatorio;
-import com.chavescr.nexa.entity.TareaProyecto;
+import com.chavescr.nexa.entity.TareaPlanTrabajo;
 
 /**
  * Agrega Tareas, Recordatorios y Actividades Institucionales en un
@@ -25,14 +25,14 @@ import com.chavescr.nexa.entity.TareaProyecto;
 @Service
 public class CalendarioService {
 
-    private final ProyectoService proyectoService;
+    private final PlanTrabajoService planTrabajoService;
     private final RecordatorioService recordatorioService;
     private final ActividadInstitucionalService actividadInstitucionalService;
 
-    public CalendarioService(ProyectoService proyectoService,
+    public CalendarioService(PlanTrabajoService planTrabajoService,
             RecordatorioService recordatorioService,
             ActividadInstitucionalService actividadInstitucionalService) {
-        this.proyectoService = proyectoService;
+        this.planTrabajoService = planTrabajoService;
         this.recordatorioService = recordatorioService;
         this.actividadInstitucionalService = actividadInstitucionalService;
     }
@@ -119,7 +119,7 @@ public class CalendarioService {
             LocalDate desde, LocalDate hasta) {
         Map<LocalDate, List<EventoCalendarioDTO>> mapa = new LinkedHashMap<>();
 
-        for (TareaProyecto t : proyectoService.listarTareasDireccion(direccionId)) {
+        for (TareaPlanTrabajo t : planTrabajoService.listarTareasDireccion(direccionId)) {
             LocalDate f = t.getFechaLimite();
             if (f != null && !f.isBefore(desde) && !f.isAfter(hasta)) {
                 mapa.computeIfAbsent(f, k -> new ArrayList<>())

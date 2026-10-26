@@ -2,45 +2,45 @@
     <div class="modal-backdrop" onclick="if(event.target===this) cerrarModalAcademico()">
         <div class="modal-dialog">
             <div class="modal-header">
-                <h3 class="modal-title" th:text="${proyecto.id == null ? 'Nuevo Proyecto' : 'Editar Proyecto'}">Nuevo Proyecto</h3>
+                <h3 class="modal-title" th:text="${planTrabajo.id == null ? 'Nuevo plan de trabajo' : 'Editar plan de trabajo'}">Nuevo Plan de trabajo</h3>
                 <button type="button" class="close-btn" onclick="cerrarModalAcademico()">&times;</button>
             </div>
             <div class="modal-body">
-                <form th:action="@{/agenda/proyectos}" method="post" hx-post="/agenda/proyectos"
-                      hx-target="#tabla-proyectos-container" hx-swap="innerHTML"
+                <form th:action="@{/agenda/plan-trabajo}" method="post" hx-post="/agenda/plan-trabajo"
+                      hx-target="#tabla-planes-trabajo-container" hx-swap="innerHTML"
                       hx-on:htmx:after-request="if(event.detail.successful) cerrarModalAcademico()">
-                    <input type="hidden" name="id" th:value="${proyecto.id}">
+                    <input type="hidden" name="id" th:value="${planTrabajo.id}">
                     <div class="form-group">
                         <label class="form-label">Nombre *</label>
-                        <input class="form-input" type="text" name="nombre" maxlength="150" required th:value="${proyecto.nombre}" placeholder="Nombre del proyecto">
+                        <input class="form-input" type="text" name="nombre" maxlength="150" required th:value="${planTrabajo.nombre}" placeholder="Nombre del plan de trabajo">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Objetivo *</label>
-                        <textarea class="form-textarea" name="objetivo" maxlength="500" required th:text="${proyecto.objetivo}" placeholder="¿Qué se quiere lograr con este proyecto?" style="min-height:60px;"></textarea>
+                        <textarea class="form-textarea" name="objetivo" maxlength="500" required th:text="${planTrabajo.objetivo}" placeholder="¿Qué se quiere lograr con este plan de trabajo?" style="min-height:60px;"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Descripción</label>
-                        <textarea class="form-textarea" name="descripcion" maxlength="800" th:text="${proyecto.descripcion}" placeholder="Detalles adicionales..."></textarea>
+                        <textarea class="form-textarea" name="descripcion" maxlength="800" th:text="${planTrabajo.descripcion}" placeholder="Detalles adicionales..."></textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Fecha Inicio *</label>
-                            <input class="form-input" type="date" name="fechaInicio" required th:value="${proyecto.fechaInicio}">
+                            <input class="form-input" type="date" name="fechaInicio" required th:value="${planTrabajo.fechaInicio}">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Fecha Fin *</label>
-                            <input class="form-input" type="date" name="fechaFin" required th:value="${proyecto.fechaFin}">
+                            <input class="form-input" type="date" name="fechaFin" required th:value="${planTrabajo.fechaFin}">
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Estado</label>
                         <select class="form-input" name="estado">
-                            <option value="ABIERTO"     th:selected="${proyecto.estado == null or proyecto.estado.name() == 'ABIERTO'}">Abierto</option>
-                            <option value="EN_PROGRESO" th:selected="${proyecto.estado != null and proyecto.estado.name() == 'EN_PROGRESO'}">En Progreso</option>
-                            <option value="PENDIENTE"   th:selected="${proyecto.estado != null and proyecto.estado.name() == 'PENDIENTE'}">Pendiente</option>
-                            <option value="EN_REVISION" th:selected="${proyecto.estado != null and proyecto.estado.name() == 'EN_REVISION'}">En Revisión</option>
-                            <option value="COMPLETADO"  th:selected="${proyecto.estado != null and proyecto.estado.name() == 'COMPLETADO'}">Completado</option>
-                            <option value="CERRADO"     th:selected="${proyecto.estado != null and proyecto.estado.name() == 'CERRADO'}">Cerrado</option>
+                            <option value="ABIERTO"     th:selected="${planTrabajo.estado == null or planTrabajo.estado.name() == 'ABIERTO'}">Abierto</option>
+                            <option value="EN_PROGRESO" th:selected="${planTrabajo.estado != null and planTrabajo.estado.name() == 'EN_PROGRESO'}">En Progreso</option>
+                            <option value="PENDIENTE"   th:selected="${planTrabajo.estado != null and planTrabajo.estado.name() == 'PENDIENTE'}">Pendiente</option>
+                            <option value="EN_REVISION" th:selected="${planTrabajo.estado != null and planTrabajo.estado.name() == 'EN_REVISION'}">En Revisión</option>
+                            <option value="COMPLETADO"  th:selected="${planTrabajo.estado != null and planTrabajo.estado.name() == 'COMPLETADO'}">Completado</option>
+                            <option value="CERRADO"     th:selected="${planTrabajo.estado != null and planTrabajo.estado.name() == 'CERRADO'}">Cerrado</option>
                         </select>
                     </div>
                     <div class="form-group"
@@ -122,7 +122,7 @@
 
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary" onclick="cerrarModalAcademico()">Cancelar</button>
-                        <button type="submit" class="btn-primary">Guardar Proyecto</button>
+                        <button type="submit" class="btn-primary">Guardar plan de trabajo</button>
                     </div>
                 </form>
             </div>

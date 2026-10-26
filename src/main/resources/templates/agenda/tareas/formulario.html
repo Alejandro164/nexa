@@ -37,7 +37,7 @@
                             <input type="hidden" name="asignarA" th:value="'m_' + ${miembroLock.id}">
                             <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;font-size:0.875rem;color:var(--text-primary);">
                                 <span th:text="${miembroLock.usuario.nombre}">Nombre</span>
-                                <span class="badge badge-primary" style="margin-left:auto;">Miembro de este proyecto</span>
+                                <span class="badge badge-primary" style="margin-left:auto;">Miembro de este plan de trabajo</span>
                             </div>
                         </th:block>
 
@@ -48,7 +48,7 @@
                                            th:checked="${tarea.miembro == null}"
                                            onchange="toggleTipoAsignacion('p')"
                                            style="accent-color:var(--primary);width:15px;height:15px;">
-                                    Proyecto
+                                    Plan de trabajo
                                 </label>
                                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.88rem;font-weight:500;color:#334155;">
                                     <input type="radio" name="_tipoAsig" value="u"
@@ -59,14 +59,14 @@
                                 </label>
                             </div>
 
-                            <div id="wrap-asig-proyecto" th:style="${tarea.miembro != null} ? 'display:none' : ''">
-                                <select id="asig-proyecto" name="asignarA" class="form-input"
+                            <div id="wrap-asig-plan-trabajo" th:style="${tarea.miembro != null} ? 'display:none' : ''">
+                                <select id="asig-plan-trabajo" name="asignarA" class="form-input"
                                         th:disabled="${tarea.miembro != null}">
-                                    <option value="" disabled hidden th:selected="${tarea.proyecto == null}">Seleccionar Proyecto</option>
-                                    <option th:each="p : ${proyectos}"
+                                    <option value="" disabled hidden th:selected="${tarea.planTrabajo == null}">Seleccionar plan de trabajo</option>
+                                    <option th:each="p : ${planesTrabajo}"
                                             th:value="'p_' + ${p.id}"
                                             th:text="${p.nombre}"
-                                            th:selected="${tarea.miembro == null and tarea.proyecto != null and tarea.proyecto.id == p.id}">Proyecto</option>
+                                            th:selected="${tarea.miembro == null and tarea.planTrabajo != null and tarea.planTrabajo.id == p.id}">Plan de trabajo</option>
                                 </select>
                             </div>
 

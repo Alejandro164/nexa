@@ -13,34 +13,34 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Direccion;
-import com.chavescr.nexa.entity.MiembroProyecto;
-import com.chavescr.nexa.entity.Proyecto;
-import com.chavescr.nexa.entity.TareaProyecto;
+import com.chavescr.nexa.entity.MiembroPlanTrabajo;
+import com.chavescr.nexa.entity.PlanTrabajo;
+import com.chavescr.nexa.entity.TareaPlanTrabajo;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.DireccionRepository;
-import com.chavescr.nexa.repository.MiembroProyectoRepository;
-import com.chavescr.nexa.repository.ProyectoRepository;
-import com.chavescr.nexa.repository.TareaProyectoRepository;
+import com.chavescr.nexa.repository.MiembroPlanTrabajoRepository;
+import com.chavescr.nexa.repository.PlanTrabajoRepository;
+import com.chavescr.nexa.repository.TareaPlanTrabajoRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
 @Service
 @Transactional
-public class ProyectoService {
+public class PlanTrabajoService {
 
-    private static final Logger log = LoggerFactory.getLogger(ProyectoService.class);
+    private static final Logger log = LoggerFactory.getLogger(PlanTrabajoService.class);
 
-    private final ProyectoRepository proyectoRepository;
-    private final MiembroProyectoRepository miembroRepository;
-    private final TareaProyectoRepository tareaRepository;
+    private final PlanTrabajoRepository planTrabajoRepository;
+    private final MiembroPlanTrabajoRepository miembroRepository;
+    private final TareaPlanTrabajoRepository tareaRepository;
     private final DireccionRepository direccionRepository;
     private final UsuarioRepository usuarioRepository;
 
-    public ProyectoService(ProyectoRepository proyectoRepository,
-                           MiembroProyectoRepository miembroRepository,
-                           TareaProyectoRepository tareaRepository,
+    public PlanTrabajoService(PlanTrabajoRepository planTrabajoRepository,
+                           MiembroPlanTrabajoRepository miembroRepository,
+                           TareaPlanTrabajoRepository tareaRepository,
                            DireccionRepository direccionRepository,
                            UsuarioRepository usuarioRepository) {
-        this.proyectoRepository = proyectoRepository;
+        this.planTrabajoRepository = planTrabajoRepository;
         this.miembroRepository = miembroRepository;
         this.tareaRepository = tareaRepository;
         this.direccionRepository = direccionRepository;
@@ -48,59 +48,59 @@ public class ProyectoService {
     }
 
     @Transactional(readOnly = true)
-    public List<Proyecto> listarProyectos(Long direccionId) {
-        return proyectoRepository.findByDireccionIdOrderByFechaCreacionDesc(direccionId);
+    public List<PlanTrabajo> listarPlanesTrabajo(Long direccionId) {
+        return planTrabajoRepository.findByDireccionIdOrderByFechaCreacionDesc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public Proyecto obtenerProyecto(Long direccionId, Long id) {
-        return proyectoRepository.findByIdAndDireccionId(id, direccionId)
-                .orElseThrow(() -> new IllegalArgumentException("Proyecto no encontrado"));
+    public PlanTrabajo obtenerPlanTrabajo(Long direccionId, Long id) {
+        return planTrabajoRepository.findByIdAndDireccionId(id, direccionId)
+                .orElseThrow(() -> new IllegalArgumentException("Plan de trabajo no encontrado"));
     }
 
     @Transactional(readOnly = true)
-    public List<Proyecto> buscarProyectos(Long direccionId, String filtro) {
-        return proyectoRepository.findByDireccionIdOrderByFechaCreacionDesc(direccionId)
+    public List<PlanTrabajo> buscarPlanesTrabajo(Long direccionId, String filtro) {
+        return planTrabajoRepository.findByDireccionIdOrderByFechaCreacionDesc(direccionId)
                 .stream()
                 .filter(p -> p.getNombre().toLowerCase().contains(filtro.toLowerCase()))
                 .toList();
     }
 
-    public Proyecto guardarProyecto(Long direccionId, Proyecto datos) {
+    public PlanTrabajo guardarPlanTrabajo(Long direccionId, PlanTrabajo datos) {
         if (datos.getNombre() == null || datos.getNombre().isBlank()) {
-            throw new IllegalArgumentException("El nombre del proyecto es obligatorio");
+            throw new IllegalArgumentException("El nombre del plan de trabajo es obligatorio");
         }
         if (datos.getFechaFin().isBefore(datos.getFechaInicio())) {
             throw new IllegalArgumentException("La fecha final no puede ser anterior a la fecha inicial");
         }
-        Proyecto proyecto = datos.getId() == null
-                ? new Proyecto()
-                : obtenerProyecto(direccionId, datos.getId());
-        proyecto.setNombre(datos.getNombre().trim());
-        proyecto.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
-        proyecto.setObjetivo(datos.getObjetivo() != null ? datos.getObjetivo().trim() : "");
-        proyecto.setFechaInicio(datos.getFechaInicio());
-        proyecto.setFechaFin(datos.getFechaFin());
-        proyecto.setDireccion(obtenerDireccion(direccionId));
+        PlanTrabajo planTrabajo = datos.getId() == null
+                ? new PlanTrabajo()
+                : obtenerPlanTrabajo(direccionId, datos.getId());
+        planTrabajo.setNombre(datos.getNombre().trim());
+        planTrabajo.setDescripcion(datos.getDescripcion() != null ? datos.getDescripcion().trim() : null);
+        planTrabajo.setObjetivo(datos.getObjetivo() != null ? datos.getObjetivo().trim() : "");
+        planTrabajo.setFechaInicio(datos.getFechaInicio());
+        planTrabajo.setFechaFin(datos.getFechaFin());
+        planTrabajo.setDireccion(obtenerDireccion(direccionId));
         if (datos.getEstado() != null) {
-            proyecto.setEstado(datos.getEstado());
+            planTrabajo.setEstado(datos.getEstado());
         }
-        Proyecto guardado = proyectoRepository.save(proyecto);
-        log.info("Proyecto guardado: id={}, nombre={}", guardado.getId(), guardado.getNombre());
+        PlanTrabajo guardado = planTrabajoRepository.save(planTrabajo);
+        log.info("Plan de trabajo guardado: id={}, nombre={}", guardado.getId(), guardado.getNombre());
         return guardado;
     }
 
-    public void eliminarProyecto(Long direccionId, Long id) {
-        Proyecto proyecto = obtenerProyecto(direccionId, id);
-        miembroRepository.deleteByProyectoId(id);
-        proyectoRepository.delete(proyecto);
-        log.info("Proyecto eliminado: id={}", id);
+    public void eliminarPlanTrabajo(Long direccionId, Long id) {
+        PlanTrabajo planTrabajo = obtenerPlanTrabajo(direccionId, id);
+        miembroRepository.deleteByPlanTrabajoId(id);
+        planTrabajoRepository.delete(planTrabajo);
+        log.info("Plan de trabajo eliminado: id={}", id);
     }
 
-    public void toggleActivoProyecto(Long direccionId, Long id) {
-        Proyecto proyecto = obtenerProyecto(direccionId, id);
-        proyecto.setActivo(!proyecto.getActivo());
-        proyectoRepository.save(proyecto);
+    public void toggleActivoPlanTrabajo(Long direccionId, Long id) {
+        PlanTrabajo planTrabajo = obtenerPlanTrabajo(direccionId, id);
+        planTrabajo.setActivo(!planTrabajo.getActivo());
+        planTrabajoRepository.save(planTrabajo);
     }
 
     @Transactional(readOnly = true)
@@ -108,44 +108,44 @@ public class ProyectoService {
         return usuarioRepository.findActivosByDireccionId(direccionId);
     }
 
-    public void sincronizarMiembrosFormulario(Long direccionId, Long proyectoId, List<Long> usuarioIds) {
+    public void sincronizarMiembrosFormulario(Long direccionId, Long planTrabajoId, List<Long> usuarioIds) {
         if (usuarioIds == null || usuarioIds.isEmpty()) return;
         for (Long uid : usuarioIds) {
-            if (!miembroRepository.existsByProyectoIdAndUsuarioId(proyectoId, uid)) {
-                agregarMiembro(direccionId, proyectoId, uid, "MIEMBRO");
+            if (!miembroRepository.existsByPlanTrabajoIdAndUsuarioId(planTrabajoId, uid)) {
+                agregarMiembro(direccionId, planTrabajoId, uid, "MIEMBRO");
             }
         }
     }
 
     @Transactional(readOnly = true)
-    public List<Long> listarIdsMiembros(Long proyectoId) {
-        return listarMiembros(proyectoId).stream()
+    public List<Long> listarIdsMiembros(Long planTrabajoId) {
+        return listarMiembros(planTrabajoId).stream()
                 .map(m -> m.getUsuario().getId()).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MiembroProyecto> listarMiembros(Long proyectoId) {
-        return miembroRepository.findByProyectoIdOrderByFechaAsignacionDesc(proyectoId);
+    public List<MiembroPlanTrabajo> listarMiembros(Long planTrabajoId) {
+        return miembroRepository.findByPlanTrabajoIdOrderByFechaAsignacionDesc(planTrabajoId);
     }
 
-    public MiembroProyecto agregarMiembro(Long direccionId, Long proyectoId, Long usuarioId, String rol) {
-        Proyecto proyecto = obtenerProyecto(direccionId, proyectoId);
-        if (miembroRepository.existsByProyectoIdAndUsuarioId(proyectoId, usuarioId)) {
-            throw new IllegalArgumentException("El usuario ya es miembro del proyecto");
+    public MiembroPlanTrabajo agregarMiembro(Long direccionId, Long planTrabajoId, Long usuarioId, String rol) {
+        PlanTrabajo planTrabajo = obtenerPlanTrabajo(direccionId, planTrabajoId);
+        if (miembroRepository.existsByPlanTrabajoIdAndUsuarioId(planTrabajoId, usuarioId)) {
+            throw new IllegalArgumentException("El usuario ya es miembro del plan de trabajo");
         }
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        MiembroProyecto miembro = new MiembroProyecto();
-        miembro.setProyecto(proyecto);
+        MiembroPlanTrabajo miembro = new MiembroPlanTrabajo();
+        miembro.setPlanTrabajo(planTrabajo);
         miembro.setUsuario(usuario);
-        miembro.setRol(rol != null ? MiembroProyecto.RolProyecto.valueOf(rol) : MiembroProyecto.RolProyecto.MIEMBRO);
-        MiembroProyecto guardado = miembroRepository.save(miembro);
-        log.info("Miembro agregado al proyecto: miembroId={}, proyectoId={}", guardado.getId(), proyectoId);
+        miembro.setRol(rol != null ? MiembroPlanTrabajo.RolPlanTrabajo.valueOf(rol) : MiembroPlanTrabajo.RolPlanTrabajo.MIEMBRO);
+        MiembroPlanTrabajo guardado = miembroRepository.save(miembro);
+        log.info("Miembro agregado al plan de trabajo: miembroId={}, planTrabajoId={}", guardado.getId(), planTrabajoId);
         return guardado;
     }
 
-    public void eliminarMiembro(Long direccionId, Long proyectoId, Long miembroId) {
-        MiembroProyecto miembro = miembroRepository.findByIdAndProyectoId(miembroId, proyectoId)
+    public void eliminarMiembro(Long direccionId, Long planTrabajoId, Long miembroId) {
+        MiembroPlanTrabajo miembro = miembroRepository.findByIdAndPlanTrabajoId(miembroId, planTrabajoId)
                 .orElseThrow(() -> new IllegalArgumentException("Miembro no encontrado"));
         tareaRepository.deleteByMiembroId(miembroId);
         miembroRepository.delete(miembro);
@@ -153,30 +153,30 @@ public class ProyectoService {
     }
 
     @Transactional(readOnly = true)
-    public List<TareaProyecto> listarTareasDeMiembro(Long miembroId) {
+    public List<TareaPlanTrabajo> listarTareasDeMiembro(Long miembroId) {
         return tareaRepository.findByMiembroIdOrderByFechaLimiteAsc(miembroId);
     }
 
     @Transactional(readOnly = true)
-    public MiembroProyecto obtenerMiembro(Long direccionId, Long miembroId) {
-        MiembroProyecto miembro = miembroRepository.findById(miembroId)
+    public MiembroPlanTrabajo obtenerMiembro(Long direccionId, Long miembroId) {
+        MiembroPlanTrabajo miembro = miembroRepository.findById(miembroId)
                 .orElseThrow(() -> new IllegalArgumentException("Miembro no encontrado"));
-        if (!miembro.getProyecto().getDireccion().getId().equals(direccionId)) {
+        if (!miembro.getPlanTrabajo().getDireccion().getId().equals(direccionId)) {
             throw new IllegalArgumentException("Miembro no encontrado");
         }
         return miembro;
     }
 
     @Transactional(readOnly = true)
-    public TareaProyecto obtenerTarea(Long proyectoId, Long tareaId) {
-        return tareaRepository.findByIdAndProyectoId(tareaId, proyectoId)
+    public TareaPlanTrabajo obtenerTarea(Long planTrabajoId, Long tareaId) {
+        return tareaRepository.findByIdAndPlanTrabajoId(tareaId, planTrabajoId)
                 .orElseThrow(() -> new IllegalArgumentException("Tarea no encontrada"));
     }
 
-    public void cambiarEstadoTarea(Long proyectoId, Long tareaId, TareaProyecto.EstadoTarea nuevoEstado) {
-        TareaProyecto tarea = obtenerTarea(proyectoId, tareaId);
+    public void cambiarEstadoTarea(Long planTrabajoId, Long tareaId, TareaPlanTrabajo.EstadoTarea nuevoEstado) {
+        TareaPlanTrabajo tarea = obtenerTarea(planTrabajoId, tareaId);
         tarea.setEstado(nuevoEstado);
-        if (nuevoEstado == TareaProyecto.EstadoTarea.COMPLETADA) {
+        if (nuevoEstado == TareaPlanTrabajo.EstadoTarea.COMPLETADA) {
             tarea.setFechaCompletada(LocalDateTime.now());
         } else {
             tarea.setFechaCompletada(null);
@@ -184,97 +184,97 @@ public class ProyectoService {
         tareaRepository.save(tarea);
     }
 
-    public void eliminarTarea(Long proyectoId, Long tareaId) {
-        TareaProyecto tarea = obtenerTarea(proyectoId, tareaId);
+    public void eliminarTarea(Long planTrabajoId, Long tareaId) {
+        TareaPlanTrabajo tarea = obtenerTarea(planTrabajoId, tareaId);
         tareaRepository.delete(tarea);
     }
 
     // ─── Tareas generales (vista agenda) ──────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<TareaProyecto> listarTareasDireccion(Long direccionId) {
+    public List<TareaPlanTrabajo> listarTareasDireccion(Long direccionId) {
         return tareaRepository.findByDireccionIdOrderByFechaLimiteAsc(direccionId);
     }
 
     @Transactional(readOnly = true)
-    public TareaProyecto obtenerTareaDireccion(Long direccionId, Long tareaId) {
-        return tareaRepository.findByIdAndProyecto_Direccion_Id(tareaId, direccionId)
+    public TareaPlanTrabajo obtenerTareaDireccion(Long direccionId, Long tareaId) {
+        return tareaRepository.findByIdAndPlanTrabajo_Direccion_Id(tareaId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Tarea no encontrada"));
     }
 
-    public TareaProyecto guardarTareaGeneral(Long direccionId, Long tareaId,
-            Long proyectoId, Long usuarioId, Long miembroId, String titulo, String descripcion,
-            java.time.LocalDate fechaLimite, TareaProyecto.EstadoTarea estado,
-            TareaProyecto.PrioridadTarea prioridad) {
-        TareaProyecto tarea;
+    public TareaPlanTrabajo guardarTareaGeneral(Long direccionId, Long tareaId,
+            Long planTrabajoId, Long usuarioId, Long miembroId, String titulo, String descripcion,
+            java.time.LocalDate fechaLimite, TareaPlanTrabajo.EstadoTarea estado,
+            TareaPlanTrabajo.PrioridadTarea prioridad) {
+        TareaPlanTrabajo tarea;
         if (tareaId != null) {
             tarea = obtenerTareaDireccion(direccionId, tareaId);
             // Actualizar asignación si se proporcionó
             if (miembroId != null) {
-                MiembroProyecto miembro = obtenerMiembro(direccionId, miembroId);
+                MiembroPlanTrabajo miembro = obtenerMiembro(direccionId, miembroId);
                 tarea.setMiembro(miembro);
-                tarea.setProyecto(miembro.getProyecto());
-            } else if (proyectoId != null || usuarioId != null) {
-                if (proyectoId != null) {
-                    tarea.setProyecto(obtenerProyecto(direccionId, proyectoId));
+                tarea.setPlanTrabajo(miembro.getPlanTrabajo());
+            } else if (planTrabajoId != null || usuarioId != null) {
+                if (planTrabajoId != null) {
+                    tarea.setPlanTrabajo(obtenerPlanTrabajo(direccionId, planTrabajoId));
                     tarea.setMiembro(null);
                 } else {
-                    Proyecto proyecto = tarea.getProyecto(); // mantener proyecto actual
+                    PlanTrabajo planTrabajo = tarea.getPlanTrabajo(); // mantener plan de trabajo actual
                     Usuario usuario = usuarioRepository.findActivoByIdAndDireccionId(usuarioId, direccionId)
                             .orElseThrow(() -> new IllegalArgumentException("Personal no válido"));
-                    MiembroProyecto miembro = miembroRepository
-                            .findByProyectoIdOrderByFechaAsignacionDesc(proyecto.getId()).stream()
+                    MiembroPlanTrabajo miembro = miembroRepository
+                            .findByPlanTrabajoIdOrderByFechaAsignacionDesc(planTrabajo.getId()).stream()
                             .filter(m -> m.getUsuario().getId().equals(usuarioId))
                             .findFirst()
                             .orElseGet(() -> {
-                                MiembroProyecto nuevo = new MiembroProyecto();
-                                nuevo.setProyecto(proyecto);
+                                MiembroPlanTrabajo nuevo = new MiembroPlanTrabajo();
+                                nuevo.setPlanTrabajo(planTrabajo);
                                 nuevo.setUsuario(usuario);
-                                nuevo.setRol(MiembroProyecto.RolProyecto.MIEMBRO);
+                                nuevo.setRol(MiembroPlanTrabajo.RolPlanTrabajo.MIEMBRO);
                                 return miembroRepository.save(nuevo);
                             });
                     tarea.setMiembro(miembro);
                 }
             }
         } else {
-            if (proyectoId == null && usuarioId == null && miembroId == null)
-                throw new IllegalArgumentException("Debes seleccionar un proyecto o personal");
-            tarea = new TareaProyecto();
+            if (planTrabajoId == null && usuarioId == null && miembroId == null)
+                throw new IllegalArgumentException("Debes seleccionar un plan de trabajo o personal");
+            tarea = new TareaPlanTrabajo();
             if (miembroId != null) {
-                MiembroProyecto miembro = obtenerMiembro(direccionId, miembroId);
+                MiembroPlanTrabajo miembro = obtenerMiembro(direccionId, miembroId);
                 tarea.setMiembro(miembro);
-                tarea.setProyecto(miembro.getProyecto());
-            } else if (proyectoId != null) {
-                // Asignada a un proyecto completo (sin miembro específico)
-                Proyecto proyecto = obtenerProyecto(direccionId, proyectoId);
-                tarea.setProyecto(proyecto);
+                tarea.setPlanTrabajo(miembro.getPlanTrabajo());
+            } else if (planTrabajoId != null) {
+                // Asignada a un plan de trabajo completo (sin miembro específico)
+                PlanTrabajo planTrabajo = obtenerPlanTrabajo(direccionId, planTrabajoId);
+                tarea.setPlanTrabajo(planTrabajo);
                 tarea.setMiembro(null);
             } else {
-                // Asignada a un usuario → busca o crea membresía en su primer proyecto activo
+                // Asignada a un usuario → busca o crea membresía en su primer plan de trabajo activo
                 Usuario usuario = usuarioRepository.findActivosByDireccionId(direccionId).stream()
                         .filter(u -> u.getId().equals(usuarioId))
                         .findFirst()
                         .orElseThrow(() -> new IllegalArgumentException("Personal no válido"));
-                // Tomar el primer proyecto activo donde participe, o el primero de la dirección
-                Proyecto proyecto = miembroRepository.findAll().stream()
+                // Tomar el primer plan de trabajo activo donde participe, o el primero de la dirección
+                PlanTrabajo planTrabajo = miembroRepository.findAll().stream()
                         .filter(m -> m.getUsuario().getId().equals(usuarioId))
-                        .map(MiembroProyecto::getProyecto)
+                        .map(MiembroPlanTrabajo::getPlanTrabajo)
                         .filter(p -> p.getDireccion().getId().equals(direccionId))
                         .findFirst()
-                        .orElseGet(() -> proyectoRepository
+                        .orElseGet(() -> planTrabajoRepository
                                 .findByDireccionIdOrderByFechaCreacionDesc(direccionId).stream()
                                 .findFirst()
-                                .orElseThrow(() -> new IllegalArgumentException("No hay proyectos disponibles")));
-                tarea.setProyecto(proyecto);
-                MiembroProyecto miembro = miembroRepository
-                        .findByProyectoIdOrderByFechaAsignacionDesc(proyecto.getId()).stream()
+                                .orElseThrow(() -> new IllegalArgumentException("No hay planes de trabajo disponibles")));
+                tarea.setPlanTrabajo(planTrabajo);
+                MiembroPlanTrabajo miembro = miembroRepository
+                        .findByPlanTrabajoIdOrderByFechaAsignacionDesc(planTrabajo.getId()).stream()
                         .filter(m -> m.getUsuario().getId().equals(usuarioId))
                         .findFirst()
                         .orElseGet(() -> {
-                            MiembroProyecto nuevo = new MiembroProyecto();
-                            nuevo.setProyecto(proyecto);
+                            MiembroPlanTrabajo nuevo = new MiembroPlanTrabajo();
+                            nuevo.setPlanTrabajo(planTrabajo);
                             nuevo.setUsuario(usuario);
-                            nuevo.setRol(MiembroProyecto.RolProyecto.MIEMBRO);
+                            nuevo.setRol(MiembroPlanTrabajo.RolPlanTrabajo.MIEMBRO);
                             return miembroRepository.save(nuevo);
                         });
                 tarea.setMiembro(miembro);
@@ -283,27 +283,27 @@ public class ProyectoService {
         tarea.setTitulo(titulo.trim());
         tarea.setDescripcion(descripcion != null ? descripcion.trim() : null);
         tarea.setFechaLimite(fechaLimite);
-        tarea.setEstado(estado != null ? estado : TareaProyecto.EstadoTarea.PENDIENTE);
-        tarea.setPrioridad(prioridad != null ? prioridad : TareaProyecto.PrioridadTarea.MEDIA);
+        tarea.setEstado(estado != null ? estado : TareaPlanTrabajo.EstadoTarea.PENDIENTE);
+        tarea.setPrioridad(prioridad != null ? prioridad : TareaPlanTrabajo.PrioridadTarea.MEDIA);
         return tareaRepository.save(tarea);
     }
 
     public void eliminarTareaGeneral(Long direccionId, Long tareaId) {
-        TareaProyecto tarea = obtenerTareaDireccion(direccionId, tareaId);
+        TareaPlanTrabajo tarea = obtenerTareaDireccion(direccionId, tareaId);
         tareaRepository.delete(tarea);
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> obtenerDashboard(Long direccionId, Long proyectoId) {
-        Proyecto proyecto = obtenerProyecto(direccionId, proyectoId);
-        List<MiembroProyecto> miembros = miembroRepository.findByProyectoIdOrderByFechaAsignacionDesc(proyectoId);
+    public Map<String, Object> obtenerDashboard(Long direccionId, Long planTrabajoId) {
+        PlanTrabajo planTrabajo = obtenerPlanTrabajo(direccionId, planTrabajoId);
+        List<MiembroPlanTrabajo> miembros = miembroRepository.findByPlanTrabajoIdOrderByFechaAsignacionDesc(planTrabajoId);
 
         Map<String, Object> dashboard = new LinkedHashMap<>();
-        dashboard.put("proyectoNombre", proyecto.getNombre());
-        dashboard.put("objetivo", proyecto.getObjetivo());
-        dashboard.put("estado", proyecto.getEstado().name());
-        dashboard.put("fechaInicio", proyecto.getFechaInicio());
-        dashboard.put("fechaFin", proyecto.getFechaFin());
+        dashboard.put("planTrabajoNombre", planTrabajo.getNombre());
+        dashboard.put("objetivo", planTrabajo.getObjetivo());
+        dashboard.put("estado", planTrabajo.getEstado().name());
+        dashboard.put("fechaInicio", planTrabajo.getFechaInicio());
+        dashboard.put("fechaFin", planTrabajo.getFechaFin());
         dashboard.put("totalMiembros", miembros.size());
 
         int totalTareas = 0;
@@ -315,13 +315,13 @@ public class ProyectoService {
         int tareasTarde = 0;
 
         List<Map<String, Object>> rendimientoMiembros = new ArrayList<>();
-        for (MiembroProyecto miembro : miembros) {
-            List<TareaProyecto> tareas = tareaRepository.findByMiembroIdOrderByFechaLimiteAsc(miembro.getId());
+        for (MiembroPlanTrabajo miembro : miembros) {
+            List<TareaPlanTrabajo> tareas = tareaRepository.findByMiembroIdOrderByFechaLimiteAsc(miembro.getId());
             int completadas = 0, vencidas = 0, pendientes = 0, enProgreso = 0;
             double sumaNotas = 0;
             int conNota = 0, aTiempo = 0, tarde = 0;
 
-            for (TareaProyecto t : tareas) {
+            for (TareaPlanTrabajo t : tareas) {
                 totalTareas++;
                 switch (t.getEstado()) {
                     case COMPLETADA -> {
@@ -334,7 +334,7 @@ public class ProyectoService {
                     case EN_PROGRESO -> enProgreso++;
                     default -> pendientes++;
                 }
-                if (t.getCalificacion() != null && t.getEstado() == TareaProyecto.EstadoTarea.COMPLETADA) {
+                if (t.getCalificacion() != null && t.getEstado() == TareaPlanTrabajo.EstadoTarea.COMPLETADA) {
                     sumaNotas += t.getCalificacion(); conNota++;
                     sumaCalificaciones += t.getCalificacion(); tareasConCalificacion++;
                 }
@@ -372,8 +372,8 @@ public class ProyectoService {
     }
 
     @Transactional(readOnly = true)
-    public List<Usuario> listarUsuariosDisponibles(Long direccionId, Long proyectoId) {
-        List<Long> idsMiembros = miembroRepository.findByProyectoIdOrderByFechaAsignacionDesc(proyectoId)
+    public List<Usuario> listarUsuariosDisponibles(Long direccionId, Long planTrabajoId) {
+        List<Long> idsMiembros = miembroRepository.findByPlanTrabajoIdOrderByFechaAsignacionDesc(planTrabajoId)
                 .stream().map(m -> m.getUsuario().getId()).toList();
         return usuarioRepository.findActivosByDireccionId(direccionId).stream()
                 .filter(u -> !idsMiembros.contains(u.getId())).toList();

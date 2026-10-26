@@ -21,8 +21,8 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "proyectos")
-public class Proyecto {
+@Table(name = "planes_trabajo")
+public class PlanTrabajo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,7 +45,7 @@ public class Proyecto {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 15)
-    private EstadoProyecto estado = EstadoProyecto.ABIERTO;
+    private EstadoPlanTrabajo estado = EstadoPlanTrabajo.ABIERTO;
 
     @Column(nullable = false)
     private Boolean activo = true;
@@ -57,13 +57,13 @@ public class Proyecto {
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
-    @OneToMany(mappedBy = "proyecto", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MiembroProyecto> miembros = new ArrayList<>();
+    @OneToMany(mappedBy = "planTrabajo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MiembroPlanTrabajo> miembros = new ArrayList<>();
 
-    @OneToMany(mappedBy = "proyecto", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TareaProyecto> tareas = new ArrayList<>();
+    @OneToMany(mappedBy = "planTrabajo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TareaPlanTrabajo> tareas = new ArrayList<>();
 
-    public enum EstadoProyecto {
+    public enum EstadoPlanTrabajo {
         ABIERTO, EN_PROGRESO, PENDIENTE, EN_REVISION, COMPLETADO, CERRADO
     }
 
@@ -84,16 +84,16 @@ public class Proyecto {
     public void setFechaInicio(LocalDate fechaInicio) { this.fechaInicio = fechaInicio; }
     public LocalDate getFechaFin() { return fechaFin; }
     public void setFechaFin(LocalDate fechaFin) { this.fechaFin = fechaFin; }
-    public EstadoProyecto getEstado() { return estado; }
-    public void setEstado(EstadoProyecto estado) { this.estado = estado; }
+    public EstadoPlanTrabajo getEstado() { return estado; }
+    public void setEstado(EstadoPlanTrabajo estado) { this.estado = estado; }
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }
     public Direccion getDireccion() { return direccion; }
     public void setDireccion(Direccion direccion) { this.direccion = direccion; }
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
-    public List<MiembroProyecto> getMiembros() { return miembros; }
-    public void setMiembros(List<MiembroProyecto> miembros) { this.miembros = miembros; }
-    public List<TareaProyecto> getTareas() { return tareas; }
-    public void setTareas(List<TareaProyecto> tareas) { this.tareas = tareas; }
+    public List<MiembroPlanTrabajo> getMiembros() { return miembros; }
+    public void setMiembros(List<MiembroPlanTrabajo> miembros) { this.miembros = miembros; }
+    public List<TareaPlanTrabajo> getTareas() { return tareas; }
+    public void setTareas(List<TareaPlanTrabajo> tareas) { this.tareas = tareas; }
 }

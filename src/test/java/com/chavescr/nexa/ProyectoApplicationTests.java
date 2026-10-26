@@ -39,6 +39,7 @@ import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.PlanTrabajo;
 import com.chavescr.nexa.entity.RebajaConducta;
 import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.TipoComponente;
@@ -582,5 +583,33 @@ class ProyectoApplicationTests {
 		assertTrue(html.contains("Del 7 de julio al 9 de julio de 2026"));
 		assertFalse(html.contains("Marcar No Disponible"));
 		assertFalse(html.contains("Salas Virtuales"));
+	}
+
+	@Test
+	void planDeTrabajoRenderaLaListaConLosNombresNuevos() {
+		PlanTrabajo plan = new PlanTrabajo();
+		plan.setId(5L);
+		plan.setNombre("Feria de Ciencias e Innovación 2026");
+		plan.setObjetivo("Promover la investigación escolar.");
+		plan.setFechaInicio(LocalDate.of(2026, 4, 1));
+		plan.setFechaFin(LocalDate.of(2026, 9, 20));
+
+		Context lista = new Context();
+		lista.setVariable("planesTrabajo", List.of(plan));
+		String htmlLista = templateEngine.process(
+				new TemplateSpec("agenda/plan-trabajo/contenido", Set.of("tabla-planes-trabajo"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), lista);
+		assertTrue(htmlLista.contains("Feria de Ciencias e Innovación 2026"));
+		assertTrue(htmlLista.contains("/agenda/plan-trabajo/form/5"));
+		assertTrue(htmlLista.contains("Eliminar plan de trabajo"));
+		assertFalse(htmlLista.contains("/agenda/proyectos"));
+
+		Context vacia = new Context();
+		vacia.setVariable("planesTrabajo", List.of());
+		String htmlVacia = templateEngine.process(
+				new TemplateSpec("agenda/plan-trabajo/contenido", Set.of("tabla-planes-trabajo"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), vacia);
+		assertTrue(htmlVacia.contains("No hay planes de trabajo. Crea el primero."));
+
 	}
 }

@@ -111,7 +111,7 @@ public class SecurityConfig {
 
                         // ── Agenda: calendario abierto a todos; reuniones entre familia y staff;
                         //    crear actividad ya reforzado a DIRECTOR/ADMIN;
-                        //    el resto (tareas, recordatorios, proyectos, participación) es herramienta interna de staff ──
+                        //    el resto (tareas, recordatorios, planes de trabajo, participación) es herramienta interna de staff ──
                         .requestMatchers(HttpMethod.GET, "/agenda", "/agenda/calendario/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, PADRE, ESTUDIANTE)
                         .requestMatchers("/agenda/reuniones", "/agenda/reuniones/**")

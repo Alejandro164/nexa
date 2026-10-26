@@ -37,7 +37,7 @@
             </tr>
             <tr th:each="t : ${tareas}">
                 <td><strong th:text="${t.titulo}" style="color:#0f172a;">Título</strong></td>
-                <td th:text="${t.miembro != null ? t.miembro.usuario.nombre : t.proyecto.nombre}" style="color:#64748b;">Asignado</td>
+                <td th:text="${t.miembro != null ? t.miembro.usuario.nombre : t.planTrabajo.nombre}" style="color:#64748b;">Asignado</td>
                 <td style="white-space:nowrap;"
                     th:text="${#temporals.format(t.fechaLimite,'dd/MM/yyyy')}"
                     th:style="${t.fechaLimite.isBefore(#temporals.createNow().toLocalDate()) and t.estado.name() != 'COMPLETADA'} ? 'color:#ef4444;font-size:0.85rem;white-space:nowrap;font-weight:600;' : 'color:#64748b;font-size:0.85rem;white-space:nowrap;'">
