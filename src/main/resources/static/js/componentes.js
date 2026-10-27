@@ -364,21 +364,21 @@ if (document.readyState === 'loading') {
 
 document.addEventListener('htmx:afterSettle', initComponentes);
 
-// ── Funciones globales de Proyectos (llamadas via onclick en contenido HTMX) ─
+// ── Funciones globales de Planes de trabajo (llamadas via onclick en contenido HTMX) ─
 
 function agregarMiembro(id) {
     var sel = document.getElementById('select-usuario-' + id);
     if (!sel || !sel.value) return;
-    htmx.ajax('POST', '/agenda/proyectos/' + id + '/miembros', {
+    htmx.ajax('POST', '/agenda/plan-trabajo/' + id + '/miembros', {
         target: '#miembros-container', swap: 'innerHTML',
         values: { usuarioId: sel.value, rol: 'MIEMBRO' }
     }).then(function () {
-        htmx.ajax('GET', '/agenda/proyectos/' + id + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
-        htmx.ajax('GET', '/agenda/proyectos/buscar?filtro=', { target: '#tabla-proyectos-container', swap: 'innerHTML' });
+        htmx.ajax('GET', '/agenda/plan-trabajo/' + id + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
+        htmx.ajax('GET', '/agenda/plan-trabajo/buscar?filtro=', { target: '#tabla-planes-trabajo-container', swap: 'innerHTML' });
     });
 }
 
-function cargarTareas(miembroId, proyectoId) {
+function cargarTareas(miembroId, planTrabajoId) {
     var wrap = document.getElementById('tareas-collapse-' + miembroId);
     if (!wrap) return;
 
@@ -393,7 +393,7 @@ function cargarTareas(miembroId, proyectoId) {
 
     wrap.classList.add('is-open');
     wrap.style.maxHeight = '0px';
-    htmx.ajax('GET', '/agenda/proyectos/miembros/' + miembroId + '/tareas?' + new URLSearchParams({ proyectoId: proyectoId }), { target: '#tareas-' + miembroId, swap: 'innerHTML' })
+    htmx.ajax('GET', '/agenda/plan-trabajo/miembros/' + miembroId + '/tareas?' + new URLSearchParams({ planTrabajoId: planTrabajoId }), { target: '#tareas-' + miembroId, swap: 'innerHTML' })
         .then(function () {
             requestAnimationFrame(function () {
                 wrap.style.maxHeight = wrap.scrollHeight + 'px';
@@ -412,24 +412,24 @@ document.addEventListener('htmx:afterSwap', function (e) {
     }
 });
 
-// ── Componente Alpine: Proyectos ─────────────────────────────────────────────
+// ── Componente Alpine: Planes de trabajo ─────────────────────────────────────────────
 
-function proyectoComponente() {
+function planTrabajoComponente() {
     return {
-        filtro: '', dashboardProyectoId: '', activeTab: 'proyectos',
+        filtro: '', dashboardPlanTrabajoId: '', activeTab: 'planesTrabajo',
 
-        buscarProyectos() {
-            htmx.ajax('GET', '/agenda/proyectos/buscar?' + new URLSearchParams({ filtro: this.filtro }), { target: '#tabla-proyectos-container', swap: 'innerHTML' });
+        buscarPlanesTrabajo() {
+            htmx.ajax('GET', '/agenda/plan-trabajo/buscar?' + new URLSearchParams({ filtro: this.filtro }), { target: '#tabla-planes-trabajo-container', swap: 'innerHTML' });
         },
         verMiembros(id) {
-            this.dashboardProyectoId = String(id);
+            this.dashboardPlanTrabajoId = String(id);
             document.getElementById('btn-tab-eficiencia')?.click();
             this.$nextTick(() => {
                 var wrap = this.$el.querySelector('.academic-select');
                 if (wrap && wrap._academicSync) wrap._academicSync();
             });
-            htmx.ajax('GET', '/agenda/proyectos/' + id + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
-            htmx.ajax('GET', '/agenda/proyectos/' + id + '/miembros', { target: '#miembros-container', swap: 'innerHTML' });
+            htmx.ajax('GET', '/agenda/plan-trabajo/' + id + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
+            htmx.ajax('GET', '/agenda/plan-trabajo/' + id + '/miembros', { target: '#miembros-container', swap: 'innerHTML' });
         }
     };
 }
@@ -455,9 +455,9 @@ function distribucionForm(el) {
 }
 
 function toggleTipoAsignacion(tipo) {
-    var wrapP = document.getElementById('wrap-asig-proyecto');
+    var wrapP = document.getElementById('wrap-asig-plan-trabajo');
     var wrapU = document.getElementById('wrap-asig-personal');
-    var selP  = document.getElementById('asig-proyecto');
+    var selP  = document.getElementById('asig-plan-trabajo');
     var selU  = document.getElementById('asig-personal');
     if (!wrapP || !wrapU) return;
 
@@ -519,7 +519,7 @@ function abrirModalTareaGeneral() {
 }
 
 function abrirModalTareaMiembro(btn) {
-    tareaModalMiembroCtx = { miembroId: btn.dataset.mid, proyectoId: btn.dataset.pid };
+    tareaModalMiembroCtx = { miembroId: btn.dataset.mid, planTrabajoId: btn.dataset.pid };
     abrirModalAcademico();
 }
 
@@ -531,7 +531,7 @@ function onTareaGuardada(event) {
     var ctx = tareaModalMiembroCtx;
     tareaModalMiembroCtx = null;
     var wrap = document.getElementById('tareas-collapse-' + ctx.miembroId);
-    htmx.ajax('GET', '/agenda/proyectos/miembros/' + ctx.miembroId + '/tareas?' + new URLSearchParams({ proyectoId: ctx.proyectoId }), { target: '#tareas-' + ctx.miembroId, swap: 'innerHTML' })
+    htmx.ajax('GET', '/agenda/plan-trabajo/miembros/' + ctx.miembroId + '/tareas?' + new URLSearchParams({ planTrabajoId: ctx.planTrabajoId }), { target: '#tareas-' + ctx.miembroId, swap: 'innerHTML' })
         .then(function () {
             if (wrap) requestAnimationFrame(function () { wrap.style.maxHeight = wrap.scrollHeight + 'px'; });
         });
@@ -632,6 +632,62 @@ function cerrarActividadModal() {
     }, 180);
 }
 
+function abrirEntregasModal() {
+    const el = document.getElementById('entregas-modal-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarEntregasModal() {
+    const el = document.getElementById('entregas-modal-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
+        // Lo que está detrás pudo cambiar (estado de una entrega, lista de mantenimiento...)
+        const filtros = document.getElementById('entregas-filtros');
+        const mantenimiento = document.getElementById('entregas-mantenimiento-panel');
+        if (filtros) {
+            htmx.trigger(filtros, 'submit');
+        } else if (mantenimiento) {
+            htmx.ajax('GET', '/entregas-academicas/mantenimiento', { target: '#entregas-mantenimiento-panel', swap: 'outerHTML' });
+        }
+    }, 180);
+}
+
+function abrirTareaDetalle() {
+    const el = document.getElementById('tarea-detalle-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarTareaDetalle() {
+    const el = document.getElementById('tarea-detalle-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
+        // La tabla de tareas pudo cambiar (estado, fechas, etiquetas...) mientras el detalle estaba abierto
+        if (document.getElementById('tareas-tabla-container')) {
+            htmx.ajax('GET', '/agenda/tareas/lista', { target: '#tareas-tabla-container', swap: 'innerHTML' });
+        }
+    }, 180);
+}
+
 function animarEvento(el, visible) {
     if (visible) {
         el.style.display = '';
@@ -654,29 +710,6 @@ function toggleCalendarioTipo(tipo, visible) {
     document.querySelectorAll('.cal-event.event-' + tipo).forEach(function (el) {
         animarEvento(el, visible);
     });
-    if (tipo === 'general') {
-        document.querySelectorAll('.cal-bandas-wrapper').forEach(function (wrapper) {
-            if (visible) {
-                var expandido = wrapper.classList.contains('expanded');
-                wrapper.style.maxHeight = (expandido ? wrapper.dataset.expandedHeight : wrapper.dataset.collapsedHeight) + 'px';
-            } else {
-                wrapper.style.maxHeight = '0px';
-            }
-        });
-        document.querySelectorAll('.cal-banda-mas').forEach(function (btn) {
-            btn.classList.toggle('oculto', !visible);
-        });
-    }
-}
-
-function toggleBandasSemana(btn) {
-    var wrapper = btn.previousElementSibling;
-    if (!wrapper || !wrapper.classList.contains('cal-bandas-wrapper')) return;
-    var expandido = wrapper.classList.toggle('expanded');
-    wrapper.style.maxHeight = (expandido ? wrapper.dataset.expandedHeight : wrapper.dataset.collapsedHeight) + 'px';
-    btn.classList.toggle('expanded', expandido);
-    var label = btn.querySelector('span');
-    if (label) label.textContent = expandido ? 'Ver menos' : btn.dataset.masLabel;
 }
 
 function mostrarDetalleEvento(el, evt) {
@@ -764,13 +797,13 @@ function _desmontarAcademicSelect(sel) {
     delete sel.dataset.academicSelect;
 }
 
-function cargarMiembrosFormTarea(proyectoId) {
+function cargarMiembrosFormTarea(planTrabajoId) {
     var sel = document.getElementById('form-tarea-miembro');
     if (!sel) return;
 
     _desmontarAcademicSelect(sel);
 
-    if (!proyectoId) {
+    if (!planTrabajoId) {
         sel.innerHTML = '<option value="">-- Seleccionar miembro --</option>';
         inicializarSelectoresAcademicos(sel.parentNode);
         return;
@@ -940,9 +973,9 @@ function confirmarEliminacionAcademica() {
         });
 }
 
-function refrescarPanelesProyecto(proyectoId) {
-    htmx.ajax('GET', '/agenda/proyectos/' + proyectoId + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
-    htmx.ajax('GET', '/agenda/proyectos/buscar?filtro=', { target: '#tabla-proyectos-container', swap: 'innerHTML' });
+function refrescarPanelesPlanTrabajo(planTrabajoId) {
+    htmx.ajax('GET', '/agenda/plan-trabajo/' + planTrabajoId + '/dashboard', { target: '#dashboard-container', swap: 'innerHTML' });
+    htmx.ajax('GET', '/agenda/plan-trabajo/buscar?filtro=', { target: '#tabla-planes-trabajo-container', swap: 'innerHTML' });
 }
 
 // ── Custom Select (academic-select) ──────────────────────────────────────────

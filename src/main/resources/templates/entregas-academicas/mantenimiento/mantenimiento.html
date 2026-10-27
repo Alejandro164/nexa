@@ -1,28 +1,82 @@
 <div th:fragment="content" id="entregas-mantenimiento-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="entregas-aviso">
+        Define las entregas que se le piden al personal docente y su plazo de presentación. Una entrega activa
+        aparece como pendiente a todos los docentes desde su fecha de inicio.
+    </div>
     <div class="card">
         <div class="card-header">
             <div>
-                <h3 class="card-title">Mantenimiento</h3>
+                <h3 class="card-title">Entregas académicas
+                    <span style="font-weight:400;color:#94a3b8;font-size:0.85rem;"
+                          th:text="'(' + ${entregas != null ? #lists.size(entregas) : 0} + ')'">(0)</span>
+                </h3>
                 <p class="academic-help">Configura y da de alta las entregas académicas de la dirección.</p>
             </div>
+            <button type="button" class="btn-primary"
+                    hx-get="/entregas-academicas/mantenimiento/form"
+                    hx-target="#entregas-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                    onclick="abrirEntregasModal()">+ Nueva entrega</button>
         </div>
-        <form class="entregas-form" onsubmit="return false;">
-            <div class="entregas-grid">
-                <div class="form-group span-2">
-                    <label class="form-label">Nombre</label>
-                    <input class="form-input" type="text" name="nombre" placeholder="Ej. Tarea, proyecto, examen">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Estado</label>
-                    <select class="form-select" name="activo">
-                        <option value="true">Activo</option>
-                        <option value="false">Inactivo</option>
-                    </select>
-                </div>
-            </div>
-            <div class="entregas-actions">
-                <button type="button" class="btn btn-primary">Guardar mantenimiento</button>
-            </div>
-        </form>
+        <div th:if="${errorLista}" class="form-alert-error" style="margin:0 1.5rem 1rem;" th:text="${errorLista}">Error</div>
+        <div class="table-container">
+            <table class="table entregas-tabla">
+                <thead>
+                    <tr>
+                        <th>Entrega</th>
+                        <th>Tipo</th>
+                        <th>Período</th>
+                        <th>Plazo inicio-fin</th>
+                        <th>Estado</th>
+                        <th style="text-align:right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${entregas == null or entregas.empty}">
+                        <td colspan="6" class="table-empty">Todavía no hay entregas. Crea la primera con «+ Nueva entrega».</td>
+                    </tr>
+                    <tr th:each="e : ${entregas}">
+                        <td>
+                            <strong th:text="${e.nombre}" style="color:#0f172a;">Entrega</strong>
+                            <div th:if="${e.descripcion != null}" th:text="${#strings.abbreviate(e.descripcion, 90)}"
+                                 style="font-size:0.78rem;color:#94a3b8;">Descripción</div>
+                        </td>
+                        <td th:text="${e.tipo.etiqueta}">Tipo</td>
+                        <td th:text="${e.periodo != null ? e.periodo.codigo : '—'}">202609</td>
+                        <td style="white-space:nowrap;">
+                            <div th:text="${#temporals.format(e.fechaInicio, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(e.fechaFin, 'dd/MM/yyyy')}">01/10/2026 - 15/10/2026</div>
+                            <div th:class="${e.plazo.css}" th:text="${e.plazo.etiqueta}">En plazo</div>
+                        </td>
+                        <td>
+                            <span class="entregas-estado" th:classappend="${e.activa ? 'aprobada' : 'borrador'}"
+                                  th:text="${e.activa ? 'Activa' : 'Inactiva'}">Activa</span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost" title="Seguimiento de los docentes"
+                                        th:attr="hx-get='/entregas-academicas/mantenimiento/' + ${e.id} + '/seguimiento'"
+                                        hx-target="#entregas-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                        onclick="abrirEntregasModal()">👥 Seguimiento</button>
+                                <button class="btn-xs btn-ghost" title="Editar"
+                                        th:attr="hx-get='/entregas-academicas/mantenimiento/form/' + ${e.id}"
+                                        hx-target="#entregas-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                        onclick="abrirEntregasModal()">✏️</button>
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-post='/entregas-academicas/mantenimiento/' + ${e.id} + '/activa'"
+                                        hx-target="#entregas-mantenimiento-panel" hx-swap="outerHTML"
+                                        th:title="${e.activa ? 'Desactivar' : 'Activar'}"
+                                        th:text="${e.activa ? '⏸' : '▶️'}">⏸</button>
+                                <button class="btn-xs btn-danger-ghost" title="Eliminar"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        th:attr="data-delete-url='/entregas-academicas/mantenimiento/' + ${e.id},
+                                                 data-delete-target='#entregas-mantenimiento-panel',
+                                                 data-delete-swap='outerHTML',
+                                                 data-delete-title='Eliminar entrega',
+                                                 data-delete-message='¿Deseas eliminar la entrega ' + ${e.nombre} + '? Solo se puede eliminar si ningún docente la ha iniciado.'">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>

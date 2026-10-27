@@ -1,0 +1,97 @@
+<div th:fragment="content" id="actividad-mep">
+    <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:0.75rem;">
+        Calendario oficial del MEP. Solo las actividades que agregues aparecerán en el calendario de la institución.
+    </p>
+    <form class="filters-bar"
+          hx-get="/agenda/actividad/mep"
+          hx-target="#actividad-mep-tabla" hx-swap="innerHTML"
+          hx-trigger="submit, change from:.filter-select delay:200ms, input from:.filter-input delay:400ms">
+        <input class="filter-input" type="text" name="filtro" th:value="${filtro}"
+               placeholder="🔍 Buscar por título o descripción..." style="flex:1; min-width:220px;">
+        <select class="form-input filter-select" name="mes">
+            <option value="" th:selected="${mesSel == null}">Todos los meses</option>
+            <option th:each="m : ${meses}" th:value="${m.key}" th:text="${m.value}"
+                    th:selected="${mesSel != null and mesSel == m.key}"></option>
+        </select>
+        <select class="form-input filter-select" name="categoria">
+            <option value="" th:selected="${categoriaSel == null or categoriaSel.isBlank()}">Todas las categorías</option>
+            <option th:each="c : ${categorias}" th:value="${c}" th:text="${c}"
+                    th:selected="${categoriaSel != null and categoriaSel == c}"></option>
+        </select>
+    </form>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Actividades MEP
+                <span id="actividad-count" style="font-weight:400; color:#94a3b8; font-size:0.85rem;"
+                      th:text="'(' + ${eventos != null ? #lists.size(eventos) : 0} + ')'"></span>
+            </h3>
+        </div>
+        <div id="actividad-mep-tabla" th:insert="~{agenda/actividad/mep/mep :: tabla}"></div>
+    </div>
+</div>
+
+<th:block th:fragment="tabla-con-contador">
+    <span id="actividad-count" hx-swap-oob="true" style="font-weight:400; color:#94a3b8; font-size:0.85rem;"
+          th:text="'(' + ${eventos != null ? #lists.size(eventos) : 0} + ')'"></span>
+    <div th:replace="~{agenda/actividad/mep/mep :: tabla}"></div>
+</th:block>
+
+<th:block th:fragment="tabla">
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Categoría</th>
+                    <th>Fecha</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${eventos == null or eventos.empty}">
+                    <td colspan="4" class="table-empty">No se encontraron actividades del MEP con esos filtros.</td>
+                </tr>
+                <tr th:each="ev : ${eventos}">
+                    <td>
+                        <strong th:text="${ev.tituloVisible}" style="color:#0f172a;">Título</strong>
+                        <span th:if="${ev.destacadoFlag}" class="badge badge-info" style="margin-left:6px;">Destacado</span>
+                        <span th:if="${ev.seleccionada}" class="badge badge-success" style="margin-left:6px;">En la institución</span>
+                    </td>
+                    <td><span class="badge badge-primary" th:text="${ev.nombreCategoria}">Categoría</span></td>
+                    <td style="white-space:nowrap;"
+                        th:text="${ev.rangoUnico}
+                            ? ${#temporals.format(ev.fechaInicio, 'dd/MM/yyyy')}
+                            : ${#temporals.format(ev.fechaInicio, 'dd/MM/yyyy')} + ' – ' + ${#temporals.format(ev.fechaFin, 'dd/MM/yyyy')}">
+                        Fecha
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-xs btn-ghost"
+                                    th:attr="hx-get='/agenda/actividad/detalle/' + ${ev.id}"
+                                    hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                    onclick="abrirActividadModal()">Ver detalles</button>
+                            <th:block th:if="${puedeCrearActividad}">
+                                <button th:if="${!ev.seleccionada}" class="btn-xs btn-primary"
+                                        th:attr="hx-get='/agenda/actividad/mep/' + ${ev.id} + '/titulo?origen=mep'"
+                                        hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                        onclick="abrirActividadModal()"
+                                        title="Agregar al calendario de la institución">+ Agregar</button>
+                                <button th:if="${ev.seleccionada}" class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/agenda/actividad/mep/' + ${ev.id} + '/titulo?origen=mep'"
+                                        hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                        onclick="abrirActividadModal()"
+                                        title="Cambiar el título que se ve en el calendario">✏️</button>
+                                <button th:if="${ev.seleccionada}" class="btn-xs btn-danger-ghost"
+                                        th:attr="hx-delete='/agenda/actividad/mep/' + ${ev.id} + '/seleccion'"
+                                        hx-target="#actividad-mep-tabla" hx-swap="innerHTML"
+                                        hx-include=".filters-bar"
+                                        title="Quitar del calendario de la institución">Quitar</button>
+                            </th:block>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</th:block>

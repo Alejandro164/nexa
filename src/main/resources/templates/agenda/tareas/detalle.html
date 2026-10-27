@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Modal de detalle de tarea (estilo Trello). Cada acción devuelve "detalle-cuerpo" y reemplaza el
+     contenido de #tarea-detalle-cuerpo; el estado de los paneles abiertos vive en el x-data del diálogo. -->
+<th:block th:fragment="detalle-modal">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarTareaDetalle()">
+        <div class="modal-dialog td-dialog"
+             x-data="{ abierto: { contenido: false, etiquetas: false, fechas: false, checklist: false, miembros: false, adjunto: false }, detalles: true, filtroMiembros: '' }">
+            <style>
+                .td-dialog { max-width: 1080px; width: 96vw; max-height: 92vh; overflow-y: auto; }
+                .td-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.5rem; padding: 1rem 1.5rem 1.5rem; }
+                @media (max-width: 880px) { .td-grid { grid-template-columns: minmax(0, 1fr); } }
+                .td-meta { font-size: 0.82rem; color: #64748b; margin: 2px 0 0; }
+                .td-seccion { margin-bottom: 1.4rem; }
+                .td-titulo-seccion { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; color: #0f172a; margin-bottom: 8px; }
+                .td-titulo-seccion .td-extra { margin-left: auto; font-weight: 500; font-size: 0.78rem; color: #64748b; }
+                .td-barra { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.25rem; }
+                .td-btn { border: 1px solid #e2e8f0; background: #f8fafc; color: #334155; border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+                .td-btn:hover { background: #eef2f7; }
+                .td-btn.activo { background: var(--primary); border-color: var(--primary); color: #fff; }
+                .td-flujo { display: flex; flex-wrap: wrap; gap: 6px; }
+                .td-flujo form { margin: 0; }
+                .td-paso { border: 1px solid #e2e8f0; background: #fff; color: #475569; border-radius: 999px; padding: 5px 12px; font-size: 0.78rem; font-weight: 600; font-family: inherit; cursor: pointer; }
+                .td-paso:hover { background: #f1f5f9; }
+                .td-paso.actual { color: #fff; border-color: transparent; }
+                .td-paso.actual.pendiente { background: #d97706; }
+                .td-paso.actual.en-ejecucion { background: #2563eb; }
+                .td-paso.actual.en-revision { background: #7c3aed; }
+                .td-paso.actual.en-correccion { background: #dc2626; }
+                .td-paso.actual.finalizado { background: #16a34a; }
+                .td-estado-desc { font-size: 0.82rem; color: #475569; margin: 8px 0 0; }
+                .td-chip-etiqueta { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; color: #fff; margin: 0 4px 4px 0; }
+                .td-etiqueta-fila { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+                .td-etiqueta-fila form { margin: 0; flex: 1; }
+                .td-etiqueta-fila .td-chip-etiqueta { display: flex; justify-content: space-between; width: 100%; margin: 0; border: none; cursor: pointer; font-family: inherit; }
+                .td-colores { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+                .td-colores label { cursor: pointer; }
+                .td-colores input { position: absolute; opacity: 0; width: 0; height: 0; }
+                .td-colores span { display: block; width: 28px; height: 22px; border-radius: 5px; border: 2px solid transparent; }
+                .td-colores input:checked + span { border-color: #0f172a; }
+                .td-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+                .td-fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+                .td-fila .form-input { flex: 1; min-width: 130px; }
+                .td-fechas-resumen { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.85rem; color: #334155; }
+                .td-pildora { background: #f1f5f9; border-radius: 6px; padding: 3px 9px; font-weight: 600; font-size: 0.8rem; }
+                .td-pildora.vencida { background: #fee2e2; color: #991b1b; }
+                .td-progreso { height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; flex: 1; }
+                .td-progreso > span { display: block; height: 100%; background: #22c55e; transition: width 0.25s ease; }
+                .td-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+                .td-item form { margin: 0; }
+                .td-item .td-texto { flex: 1; font-size: 0.88rem; color: #0f172a; }
+                .td-item.hecho .td-texto { text-decoration: line-through; color: #94a3b8; }
+                .td-check { width: 20px; height: 20px; border-radius: 5px; border: 2px solid #cbd5e1; background: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff; padding: 0; }
+                .td-check.hecho { background: #22c55e; border-color: #22c55e; }
+                .td-x { border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 1rem; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+                .td-x:hover { background: #fee2e2; color: #b91c1c; }
+                .td-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; flex-shrink: 0; }
+                .td-avatar.mini { width: 26px; height: 26px; font-size: 0.7rem; }
+                .td-miembros { display: flex; flex-wrap: wrap; gap: 8px; }
+                .td-miembro { display: flex; align-items: center; gap: 6px; background: #f1f5f9; border-radius: 999px; padding: 3px 4px 3px 4px; font-size: 0.8rem; font-weight: 600; color: #334155; }
+                .td-miembro form { margin: 0; }
+                .td-miembro .rol { font-weight: 500; color: #64748b; font-size: 0.72rem; }
+                .td-candidatos { max-height: 180px; overflow-y: auto; margin-top: 8px; }
+                .td-candidato { display: flex; align-items: center; gap: 8px; padding: 4px 2px; }
+                .td-candidato form { margin: 0 0 0 auto; }
+                .td-adjunto { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 6px; }
+                .td-adjunto form { margin: 0; }
+                .td-adjunto .td-icono { width: 38px; height: 38px; border-radius: 8px; background: #e2e8f0; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; }
+                .td-adjunto a { font-weight: 600; font-size: 0.86rem; color: #0f172a; word-break: break-all; }
+                .td-adjunto .td-sub { font-size: 0.74rem; color: #94a3b8; }
+                .td-feed-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; align-self: start; }
+                .td-feed-panel textarea { min-height: 64px; }
+                .td-entrada { display: flex; gap: 8px; margin-top: 12px; }
+                .td-entrada .td-cuerpo { flex: 1; min-width: 0; font-size: 0.84rem; color: #334155; }
+                .td-entrada .td-quien { font-weight: 700; color: #0f172a; }
+                .td-entrada .td-cuando { font-size: 0.72rem; color: #94a3b8; margin-left: 6px; }
+                .td-comentario { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px 10px; margin-top: 4px; white-space: pre-line; word-break: break-word; }
+                .td-accion-mini { border: none; background: none; color: #94a3b8; font-size: 0.72rem; cursor: pointer; padding: 2px 0; font-family: inherit; text-decoration: underline; }
+                .td-error { background: #fee2e2; color: #991b1b; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; margin: 0.75rem 1.5rem 0; }
+            </style>
+
+            <div id="tarea-detalle-cuerpo" hx-target="this" hx-swap="innerHTML"
+                 th:insert="~{agenda/tareas/detalle :: detalle-cuerpo}"></div>
+        </div>
+    </div>
+</th:block>
+
+<div th:fragment="detalle-cuerpo" th:with="base='/agenda/tareas/' + ${tarea.id} + '/detalle'">
+
+    <div class="modal-header">
+        <div style="min-width:0;">
+            <h3 class="modal-title" th:text="${tarea.titulo}">Título de la tarea</h3>
+            <p class="td-meta">
+                en <strong th:text="${tarea.planTrabajo.nombre}">Plan de trabajo</strong>
+                <span th:if="${tarea.vencida}" class="td-pildora vencida" style="margin-left:6px;">Vencida</span>
+            </p>
+        </div>
+        <button type="button" class="close-btn" onclick="cerrarTareaDetalle()">&times;</button>
+    </div>
+
+    <div th:if="${error}" class="td-error" th:text="${error}">Error</div>
+
+    <div class="td-grid">
+
+        <!-- ════════ Columna principal ════════ -->
+        <div>
+
+            <!-- Estado -->
+            <div class="td-seccion">
+                <div class="td-titulo-seccion">🚦 Estado</div>
+                <div class="td-flujo">
+                    <form th:each="e : ${estados}" th:attr="hx-post=${base} + '/estado'">
+                        <input type="hidden" name="estado" th:value="${e.name()}">
+                        <button type="submit" class="td-paso"
+                                th:classappend="${e == tarea.estado} ? 'actual ' + ${e.css}"
+                                th:title="${e.fase}" th:text="${e.etiqueta}">Estado</button>
+                    </form>
+                </div>
+                <p class="td-estado-desc">
+                    <strong th:text="${tarea.estado.fase}">Fase</strong> — <span th:text="${tarea.estado.descripcion}">Descripción</span>
+                </p>
+            </div>
+
+            <!-- Añadir -->
+            <div class="td-barra">
+                <button type="button" class="td-btn" :class="{ 'activo': abierto.etiquetas }" @click="abierto.etiquetas = !abierto.etiquetas">🏷️ Etiquetas</button>
+                <button type="button" class="td-btn" :class="{ 'activo': abierto.fechas }" @click="abierto.fechas = !abierto.fechas">🕒 Fechas</button>
+                <button type="button" class="td-btn" :class="{ 'activo': abierto.checklist }" @click="abierto.checklist = !abierto.checklist">☑️ Checklist</button>
+                <button type="button" class="td-btn" :class="{ 'activo': abierto.miembros }" @click="abierto.miembros = !abierto.miembros">👤 Miembros</button>
+                <button type="button" class="td-btn" :class="{ 'activo': abierto.adjunto }" @click="abierto.adjunto = !abierto.adjunto">📎 Adjunto</button>
+            </div>
+
+            <!-- Miembros -->
+            <div class="td-seccion">
+                <div class="td-titulo-seccion">👤 Miembros</div>
+                <div class="td-miembros">
+                    <div class="td-miembro" th:if="${tarea.miembro != null}">
+                        <span class="td-avatar mini" th:text="${#strings.toUpperCase(#strings.substring(tarea.miembro.usuario.nombre, 0, 1))}">A</span>
+                        <span><span th:text="${tarea.miembro.usuario.nombre}">Nombre</span> <span class="rol">· responsable</span></span>
+                    </div>
+                    <div class="td-miembro" th:if="${tarea.miembro == null}">
+                        <span class="rol" style="padding:3px 10px;">Asignada al plan de trabajo completo</span>
+                    </div>
+                    <div class="td-miembro" th:each="c : ${tarea.colaboradores}">
+                        <span class="td-avatar mini" th:text="${#strings.toUpperCase(#strings.substring(c.nombre, 0, 1))}">A</span>
+                        <span th:text="${c.nombre}">Colaborador</span>
+                        <form th:attr="hx-delete=${base} + '/miembros/' + ${c.id}">
+                            <button type="submit" class="td-x" title="Quitar de la tarea">&times;</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="td-panel" x-show="abierto.miembros" x-cloak>
+                    <input class="form-input" type="text" placeholder="Buscar personal..." x-model="filtroMiembros">
+                    <div class="td-candidatos">
+                        <p class="table-empty" th:if="${candidatos.empty}" style="margin:6px 0;">No hay más personal disponible.</p>
+                        <div class="td-candidato" th:each="u : ${candidatos}"
+                             th:attr="data-nombre=${#strings.toLowerCase(u.nombre)}"
+                             x-show="$el.dataset.nombre.includes(filtroMiembros.toLowerCase())">
+                            <span class="td-avatar mini" th:text="${#strings.toUpperCase(#strings.substring(u.nombre, 0, 1))}">A</span>
+                            <span th:text="${u.nombre}" style="font-size:0.85rem;">Nombre</span>
+                            <form th:attr="hx-post=${base} + '/miembros/' + ${u.id}">
+                                <button type="submit" class="btn-xs btn-primary">+ Agregar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Etiquetas -->
+            <div class="td-seccion" th:attr="x-show='abierto.etiquetas || ' + ${!tarea.etiquetas.empty}" x-cloak>
+                <div class="td-titulo-seccion">🏷️ Etiquetas</div>
+                <div>
+                    <span class="td-chip-etiqueta" th:each="et : ${tarea.etiquetas}"
+                          th:style="'background:' + ${et.color}" th:text="${et.nombre}">Etiqueta</span>
+                    <span th:if="${tarea.etiquetas.empty}" class="td-meta">Sin etiquetas.</span>
+                </div>
+                <div class="td-panel" x-show="abierto.etiquetas" x-cloak>
+                    <div class="td-etiqueta-fila" th:each="et : ${etiquetasDisponibles}">
+                        <form th:attr="hx-post=${base} + '/etiquetas/' + ${et.id}">
+                            <button type="submit" class="td-chip-etiqueta" th:style="'background:' + ${et.color}">
+                                <span th:text="${et.nombre}">Etiqueta</span>
+                                <span th:if="${tarea.etiquetas.contains(et)}">✓</span>
+                            </button>
+                        </form>
+                        <form th:attr="hx-delete=${base} + '/etiquetas/' + ${et.id}"
+                              hx-confirm="¿Eliminar esta etiqueta de todas las tareas?">
+                            <button type="submit" class="td-x" title="Eliminar etiqueta">🗑</button>
+                        </form>
+                    </div>
+                    <form th:attr="hx-post=${base} + '/etiquetas'" style="margin-top:10px;">
+                        <div class="td-fila">
+                            <input class="form-input" type="text" name="nombre" maxlength="60" placeholder="Nueva etiqueta..." required>
+                            <button type="submit" class="btn-xs btn-primary">Crear</button>
+                        </div>
+                        <div class="td-colores">
+                            <label th:each="c, it : ${colores}">
+                                <input type="radio" name="color" th:value="${c}" th:checked="${it.first}">
+                                <span th:style="'background:' + ${c}"></span>
+                            </label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Fechas -->
+            <div class="td-seccion">
+                <div class="td-titulo-seccion">🕒 Fechas</div>
+                <div class="td-fechas-resumen">
+                    <span th:if="${tarea.fechaInicio != null}">Inicio <span class="td-pildora" th:text="${#temporals.format(tarea.fechaInicio, 'dd/MM/yyyy')}">01/01/2026</span></span>
+                    <span>Vence <span class="td-pildora" th:classappend="${tarea.vencida} ? 'vencida'"
+                                      th:text="${#temporals.format(tarea.fechaLimite, 'dd/MM/yyyy')}">01/01/2026</span></span>
+                    <span th:if="${tarea.recordatorio.name() != 'NINGUNO'}">⏰ Recordatorio <span class="td-pildora" th:text="${tarea.recordatorio.etiqueta}">1 día antes</span></span>
+                </div>
+                <form class="td-panel" th:attr="hx-post=${base} + '/fechas'" x-show="abierto.fechas" x-cloak>
+                    <div class="td-fila">
+                        <div style="flex:1;min-width:130px;">
+                            <label class="form-label">Inicio</label>
+                            <input class="form-input" type="date" name="inicio" th:value="${tarea.fechaInicio}">
+                        </div>
+                        <div style="flex:1;min-width:130px;">
+                            <label class="form-label">Vencimiento *</label>
+                            <input class="form-input" type="date" name="limite" required th:value="${tarea.fechaLimite}">
+                        </div>
+                        <div style="flex:1;min-width:130px;">
+                            <label class="form-label">Recordatorio</label>
+                            <select class="form-input" name="recordatorio">
+                                <option th:each="r : ${recordatorios}" th:value="${r.name()}" th:text="${r.etiqueta}"
+                                        th:selected="${r == tarea.recordatorio}">Ninguno</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px;text-align:right;"><button type="submit" class="btn-xs btn-primary">Guardar fechas</button></div>
+                </form>
+            </div>
+
+            <!-- Descripción -->
+            <div class="td-seccion">
+                <div class="td-titulo-seccion">📝 Descripción
+                    <button type="button" class="td-btn td-extra" style="padding:3px 9px;" @click="abierto.contenido = !abierto.contenido">Editar</button>
+                </div>
+                <p th:if="${tarea.descripcion != null}" th:text="${tarea.descripcion}" style="white-space:pre-line;font-size:0.88rem;color:#334155;margin:0;">Descripción</p>
+                <p th:if="${tarea.descripcion == null}" class="td-meta">Sin descripción.</p>
+                <form class="td-panel" th:attr="hx-post=${base} + '/contenido'" x-show="abierto.contenido" x-cloak>
+                    <label class="form-label">Título *</label>
+                    <input class="form-input" type="text" name="titulo" maxlength="200" required th:value="${tarea.titulo}">
+                    <label class="form-label" style="margin-top:8px;">Descripción</label>
+                    <textarea class="form-textarea" name="descripcion" maxlength="1000" th:text="${tarea.descripcion}"></textarea>
+                    <div style="margin-top:8px;text-align:right;"><button type="submit" class="btn-xs btn-primary">Guardar</button></div>
+                </form>
+            </div>
+
+            <!-- Checklist -->
+            <div class="td-seccion" th:attr="x-show='abierto.checklist || ' + ${!tarea.checklist.empty}" x-cloak>
+                <div class="td-titulo-seccion">☑️ Checklist
+                    <span class="td-extra" th:if="${!tarea.checklist.empty}"
+                          th:text="${tarea.checklistCompletados} + '/' + ${tarea.checklistTotal}">0/0</span>
+                </div>
+                <div class="td-fila" th:if="${!tarea.checklist.empty}" style="margin-bottom:6px;">
+                    <span style="font-size:0.75rem;color:#64748b;width:34px;" th:text="${tarea.checklistPorcentaje} + '%'">0%</span>
+                    <div class="td-progreso"><span th:style="'width:' + ${tarea.checklistPorcentaje} + '%'"></span></div>
+                </div>
+                <div class="td-item" th:each="i : ${tarea.checklist}" th:classappend="${i.completado} ? 'hecho'">
+                    <form th:attr="hx-post=${base} + '/checklist/' + ${i.id}">
+                        <button type="submit" class="td-check" th:classappend="${i.completado} ? 'hecho'"
+                                th:title="${i.completado ? 'Marcar como pendiente' : 'Marcar como hecha'}"
+                                th:text="${i.completado} ? '✓' : ''"></button>
+                    </form>
+                    <span class="td-texto" th:text="${i.texto}">Subtarea</span>
+                    <form th:attr="hx-delete=${base} + '/checklist/' + ${i.id}">
+                        <button type="submit" class="td-x" title="Eliminar subtarea">&times;</button>
+                    </form>
+                </div>
+                <form th:attr="hx-post=${base} + '/checklist'" style="margin-top:6px;">
+                    <div class="td-fila">
+                        <input class="form-input" type="text" name="texto" maxlength="300" placeholder="Agregar una subtarea..." required>
+                        <button type="submit" class="btn-xs btn-primary">Agregar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Adjuntos -->
+            <div class="td-seccion" th:attr="x-show='abierto.adjunto || ' + ${!tarea.adjuntos.empty}" x-cloak>
+                <div class="td-titulo-seccion">📎 Adjuntos
+                    <span class="td-extra" th:if="${!tarea.adjuntos.empty}" th:text="${tarea.adjuntos.size()}">0</span>
+                </div>
+                <div class="td-adjunto" th:each="a : ${tarea.adjuntos}">
+                    <span class="td-icono" th:text="${a.enlace ? 'URL' : (a.extension != null ? a.extension : 'ARCH')}">PDF</span>
+                    <div style="flex:1;min-width:0;">
+                        <a th:if="${a.enlace}" th:href="${a.url}" target="_blank" rel="noopener noreferrer" th:text="${a.nombre}">Enlace</a>
+                        <a th:unless="${a.enlace}" th:href="'/agenda/tareas/adjuntos/' + ${a.id}" target="_blank" rel="noopener" th:text="${a.nombre}">Archivo</a>
+                        <div class="td-sub">
+                            <span th:if="${!a.enlace}" th:text="${a.tamanoLegible} + ' · '">1 MB · </span>
+                            <span th:text="${a.subidoPor != null ? a.subidoPor.nombre : ''}">Usuario</span>
+                            · <span th:text="${#temporals.format(a.fechaCreacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                        </div>
+                    </div>
+                    <form th:attr="hx-delete=${base} + '/adjuntos/' + ${a.id}" hx-confirm="¿Eliminar este adjunto?">
+                        <button type="submit" class="td-x" title="Eliminar adjunto">&times;</button>
+                    </form>
+                </div>
+                <form class="td-panel" th:attr="hx-post=${base} + '/adjuntos'" hx-encoding="multipart/form-data"
+                      x-show="abierto.adjunto" x-cloak>
+                    <label class="form-label">Archivos (máx. 25 MB cada uno)</label>
+                    <input class="form-input" type="file" name="archivos" multiple>
+                    <label class="form-label" style="margin-top:8px;">o un enlace</label>
+                    <input class="form-input" type="text" name="enlace" maxlength="1000" placeholder="https://...">
+                    <div style="margin-top:8px;text-align:right;"><button type="submit" class="btn-xs btn-primary">Adjuntar</button></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ════════ Comentarios y actividad ════════ -->
+        <aside class="td-feed-panel">
+            <div class="td-titulo-seccion">💬 Comentarios y Actividad
+                <button type="button" class="td-btn td-extra" style="padding:3px 9px;"
+                        @click="detalles = !detalles" x-text="detalles ? 'Ocultar detalles' : 'Mostrar detalles'">Ocultar detalles</button>
+            </div>
+            <form th:attr="hx-post=${base} + '/comentarios'">
+                <textarea class="form-textarea" name="texto" maxlength="2000" placeholder="Escribe un comentario..." required></textarea>
+                <div style="margin-top:6px;text-align:right;"><button type="submit" class="btn-xs btn-primary">Comentar</button></div>
+            </form>
+
+            <p class="table-empty" th:if="${tarea.actividad.empty}" style="margin-top:12px;">Todavía no hay actividad.</p>
+            <th:block th:each="e : ${tarea.actividad}">
+                <div class="td-entrada" th:attr="x-show=${e.comentario} ? 'true' : 'detalles'">
+                    <span class="td-avatar mini" th:text="${#strings.toUpperCase(#strings.substring(e.usuario.nombre, 0, 1))}">A</span>
+                    <div class="td-cuerpo">
+                        <div>
+                            <span class="td-quien" th:text="${e.usuario.nombre}">Usuario</span>
+                            <span th:unless="${e.comentario}" th:text="${e.texto}">hizo un cambio</span>
+                            <span class="td-cuando" th:text="${#temporals.format(e.fecha, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</span>
+                        </div>
+                        <div th:if="${e.comentario}" class="td-comentario" th:text="${e.texto}">Comentario</div>
+                        <form th:if="${e.comentario and (puedeSupervisar or e.usuario.id == usuarioActualId)}"
+                              th:attr="hx-delete=${base} + '/comentarios/' + ${e.id}" hx-confirm="¿Eliminar este comentario?"
+                              style="margin:0;">
+                            <button type="submit" class="td-accion-mini">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            </th:block>
+        </aside>
+    </div>
+</div>
+
+</body>
+</html>

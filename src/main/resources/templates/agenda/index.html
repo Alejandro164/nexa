@@ -153,11 +153,11 @@
                         sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
                         📋 Actividad Institucional
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'proyectos' }"
-                        @click="activeTab = 'proyectos'" hx-get="/agenda/proyectos" hx-target="#agenda-content"
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'planesTrabajo' }"
+                        @click="activeTab = 'planesTrabajo'" hx-get="/agenda/plan-trabajo" hx-target="#agenda-content"
                         hx-swap="innerHTML"
                         sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_DOCENTE')">
-                        📁 Proyectos
+                        📁 Plan de trabajo
                     </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'participacion' }"
                         @click="activeTab = 'participacion'" hx-get="/agenda/participacion" hx-target="#agenda-content"
@@ -167,6 +167,9 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Detalle de tarea (modal); lo abren la tabla de tareas y el plan de trabajo -->
+            <div id="tarea-detalle-container" style="display:none;"></div>
 
             <!-- Contenedor HTMX para el contenido de las pestañas -->
             <div class="agenda-content-wrapper">

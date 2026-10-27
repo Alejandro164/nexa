@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Avisos amarillos al inicio de Pendientes y Realizadas -->
+<th:block th:fragment="avisos">
+    <div class="entregas-aviso">
+        <strong>Las entregas pendientes se muestran a partir del inicio de su plazo de presentación.</strong>
+    </div>
+    <div class="entregas-aviso" th:if="${modo == 'pendientes' and !supervisor}">
+        Guarda tu avance como borrador y presenta la entrega cuando esté lista. La dirección la revisará y podrá
+        aprobarla o devolverla con observaciones; si la devuelve, volverá a aparecer en Pendientes para que la corrijas.
+    </div>
+    <div class="entregas-aviso" th:if="${supervisor}">
+        Aquí ves la situación de todos los docentes. Abre una entrega presentada para aprobarla o devolverla con observaciones.
+    </div>
+</th:block>
+
+<!-- Filtros: nombre de la entrega, tipo y período -->
+<form th:fragment="filtros" id="entregas-filtros" class="entregas-filtros"
+      th:attr="hx-get='/entregas-academicas/' + ${modo}" hx-target="#entregas-tabla" hx-swap="innerHTML"
+      hx-trigger="submit">
+    <select class="form-input" name="entregaId">
+        <option value="">Nombre de la entrega</option>
+        <option th:each="e : ${entregasFiltro}" th:value="${e.id}" th:text="${e.nombre}"
+                th:selected="${filtroEntregaId != null and filtroEntregaId == e.id}">Entrega</option>
+    </select>
+    <select class="form-input" name="tipo">
+        <option value="">Tipo de entrega</option>
+        <option th:each="t : ${tipos}" th:value="${t.name()}" th:text="${t.etiqueta}"
+                th:selected="${filtroTipo == t.name()}">Tipo</option>
+    </select>
+    <select class="form-input" name="periodoId">
+        <option value="">Período</option>
+        <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
+                th:selected="${filtroPeriodoId != null and filtroPeriodoId == p.id}">Período</option>
+    </select>
+    <button type="submit" class="btn-primary">Filtrar</button>
+</form>
+
+<!-- Tabla con paginación "n / total" -->
+<th:block th:fragment="tabla">
+    <div class="table-container">
+        <table class="table entregas-tabla">
+            <thead>
+                <tr>
+                    <th>Período</th>
+                    <th>Tipo</th>
+                    <th>Entrega</th>
+                    <th th:if="${supervisor}">Docente</th>
+                    <th>Plazo presentación inicio-fin</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${pagina.filas.empty}">
+                    <td th:colspan="${supervisor ? 7 : 6}" class="table-empty"
+                        th:text="${modo == 'pendientes'
+                            ? (supervisor ? 'No hay entregas pendientes de los docentes.' : 'No tienes entregas pendientes.')
+                            : 'Todavía no hay entregas realizadas.'}">Sin entregas</td>
+                </tr>
+                <tr th:each="f : ${pagina.filas}">
+                    <td th:text="${f.entrega.periodo != null ? f.entrega.periodo.codigo : '—'}">202609</td>
+                    <td th:text="${f.entrega.tipo.etiqueta}">Planeamiento didáctico</td>
+                    <td>
+                        <strong th:text="${f.entrega.nombre}" style="color:#0f172a;">Entrega</strong>
+                    </td>
+                    <td th:if="${supervisor}" th:text="${f.docente.nombre}">Docente</td>
+                    <td style="white-space:nowrap;">
+                        <div th:text="${#temporals.format(f.entrega.fechaInicio, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(f.entrega.fechaFin, 'dd/MM/yyyy')}">01/10/2026 - 15/10/2026</div>
+                        <div th:if="${modo == 'pendientes'}" th:class="${f.entrega.plazo.css}" th:text="${f.entrega.plazo.etiqueta}">En plazo</div>
+                        <div th:if="${modo == 'realizadas' and f.presentacion.fechaPresentacion != null}" class="plazo-proxima"
+                             th:text="'Presentada ' + ${#temporals.format(f.presentacion.fechaPresentacion, 'dd/MM/yyyy HH:mm')}">Presentada</div>
+                    </td>
+                    <td><span class="entregas-estado" th:classappend="${f.estadoCss}" th:text="${f.estadoEtiqueta}">Borrador</span></td>
+                    <td style="text-align:right;">
+                        <button type="button" class="entregas-btn-accion"
+                                th:attr="hx-get='/entregas-academicas/detalle/' + ${f.entrega.id} + (${supervisor} ? '?docenteId=' + ${f.docente.id} : '')"
+                                hx-target="#entregas-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                onclick="abrirEntregasModal()"
+                                th:text="${supervisor ? f.accionDireccion : f.accionDocente}">Continuar</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="entregas-paginacion">
+        <button type="button" class="td-x" style="border:none;background:none;cursor:pointer;font-size:1.1rem;"
+                th:if="${pagina.hayAnterior}"
+                th:attr="hx-get='/entregas-academicas/' + ${modo} + '?pagina=' + ${pagina.pagina - 1}"
+                hx-include="#entregas-filtros" hx-target="#entregas-tabla" hx-swap="innerHTML" title="Página anterior">‹</button>
+        <span th:text="${pagina.pagina} + ' / ' + ${pagina.totalPaginas}">1 / 1</span>
+        <button type="button" class="td-x" style="border:none;background:none;cursor:pointer;font-size:1.1rem;"
+                th:if="${pagina.haySiguiente}"
+                th:attr="hx-get='/entregas-academicas/' + ${modo} + '?pagina=' + ${pagina.pagina + 1}"
+                hx-include="#entregas-filtros" hx-target="#entregas-tabla" hx-swap="innerHTML" title="Página siguiente">›</button>
+        <span style="margin-left:auto;font-size:0.8rem;color:#94a3b8;" th:text="${pagina.total} + ' en total'">0 en total</span>
+    </div>
+</th:block>
+
+<!-- Respuesta a los filtros y la paginación: tabla + punto rojo de pendientes -->
+<th:block th:fragment="tabla-con-contador">
+    <span id="entregas-pendientes-dot" hx-swap-oob="true" class="entregas-dot"
+          th:classappend="${pendientesCount == 0} ? 'oculto'" th:title="${pendientesCount} + ' pendientes'"></span>
+    <div th:replace="~{entregas-academicas/comun :: tabla}"></div>
+</th:block>
+
+</body>
+</html>

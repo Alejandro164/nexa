@@ -1,0 +1,114 @@
+<div th:fragment="content" id="actividad-institucion">
+    <form class="filters-bar"
+          hx-get="/agenda/actividad/institucion"
+          hx-target="#actividad-institucion-tabla" hx-swap="innerHTML"
+          hx-trigger="submit, change from:.filter-select delay:200ms, input from:.filter-input delay:400ms">
+        <input class="filter-input" type="text" name="filtro" th:value="${filtro}"
+               placeholder="🔍 Buscar por título o descripción..." style="flex:1; min-width:220px;">
+        <select class="form-input filter-select" name="mes">
+            <option value="" th:selected="${mesSel == null}">Todos los meses</option>
+            <option th:each="m : ${meses}" th:value="${m.key}" th:text="${m.value}"
+                    th:selected="${mesSel != null and mesSel == m.key}"></option>
+        </select>
+        <select class="form-input filter-select" name="categoria">
+            <option value="" th:selected="${categoriaSel == null or categoriaSel.isBlank()}">Todas las categorías</option>
+            <option th:each="c : ${categorias}" th:value="${c}" th:text="${c}"
+                    th:selected="${categoriaSel != null and categoriaSel == c}"></option>
+        </select>
+    </form>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Actividades Institución
+                <span id="actividad-count" style="font-weight:400; color:#94a3b8; font-size:0.85rem;"
+                      th:text="'(' + ${eventos != null ? #lists.size(eventos) : 0} + ')'"></span>
+            </h3>
+            <button th:if="${puedeCrearActividad}" class="btn-primary"
+                    hx-get="/agenda/actividad/form"
+                    hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                    onclick="abrirActividadModal()">+ Nueva Actividad</button>
+        </div>
+        <div id="actividad-institucion-tabla" th:insert="~{agenda/actividad/institucion/institucion :: tabla}"></div>
+    </div>
+</div>
+
+<th:block th:fragment="tabla-con-contador">
+    <span id="actividad-count" hx-swap-oob="true" style="font-weight:400; color:#94a3b8; font-size:0.85rem;"
+          th:text="'(' + ${eventos != null ? #lists.size(eventos) : 0} + ')'"></span>
+    <div th:replace="~{agenda/actividad/institucion/institucion :: tabla}"></div>
+</th:block>
+
+<th:block th:fragment="tabla">
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Categoría</th>
+                    <th>Fecha</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${eventos == null or eventos.empty}">
+                    <td colspan="4" class="table-empty">
+                        No hay actividades de la institución con esos filtros. Agrega actividades del MEP desde
+                        "Actividades MEP" o crea una propia.
+                    </td>
+                </tr>
+                <tr th:each="ev : ${eventos}">
+                    <td>
+                        <strong th:text="${ev.tituloCalendario}" style="color:#0f172a;">Título</strong>
+                        <span th:if="${ev.destacadoFlag}" class="badge badge-info" style="margin-left:6px;">Destacado</span>
+                        <span th:if="${ev.propia}" class="badge badge-secondary" style="margin-left:6px;">Propia</span>
+                        <span th:unless="${ev.propia}" class="badge badge-secondary" style="margin-left:6px;">MEP</span>
+                        <div th:if="${ev.conTituloPersonalizado}" style="color:#94a3b8; font-size:0.8rem; margin-top:2px;"
+                             th:text="${ev.tituloVisible}">Título original</div>
+                    </td>
+                    <td><span class="badge badge-primary" th:text="${ev.nombreCategoria}">Categoría</span></td>
+                    <td style="white-space:nowrap;"
+                        th:text="${ev.rangoUnico}
+                            ? ${#temporals.format(ev.fechaInicio, 'dd/MM/yyyy')}
+                            : ${#temporals.format(ev.fechaInicio, 'dd/MM/yyyy')} + ' – ' + ${#temporals.format(ev.fechaFin, 'dd/MM/yyyy')}">
+                        Fecha
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-xs btn-ghost"
+                                    th:attr="hx-get='/agenda/actividad/detalle/' + ${ev.id}"
+                                    hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                    onclick="abrirActividadModal()">Ver detalles</button>
+                            <th:block th:if="${puedeCrearActividad}">
+                                <th:block th:if="${ev.propia}">
+                                    <button class="btn-xs btn-ghost"
+                                            th:attr="hx-get='/agenda/actividad/form/' + ${#strings.substringAfter(ev.id, 'local-')}"
+                                            hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                            onclick="abrirActividadModal()" title="Editar">✏️</button>
+                                    <button class="btn-xs btn-danger-ghost"
+                                            onclick="abrirConfirmacionAcademica(this)"
+                                            th:attr="data-delete-url='/agenda/actividad/' + ${#strings.substringAfter(ev.id, 'local-')},
+                                                     data-delete-target='#actividad-content',
+                                                     data-delete-swap='outerHTML',
+                                                     data-delete-title='Eliminar actividad',
+                                                     data-delete-message='¿Deseas eliminar la actividad ' + ${ev.titulo} + '? Esta acción no se puede deshacer.'"
+                                            title="Eliminar">🗑️</button>
+                                </th:block>
+                                <button th:unless="${ev.propia}" class="btn-xs btn-ghost"
+                                        th:attr="hx-get='/agenda/actividad/mep/' + ${ev.id} + '/titulo?origen=institucion'"
+                                        hx-target="#actividad-modal-container" hx-swap="innerHTML" hx-indicator="this"
+                                        onclick="abrirActividadModal()"
+                                        title="Cambiar el título que se ve en el calendario">✏️</button>
+                                <button th:unless="${ev.propia}" class="btn-xs btn-danger-ghost"
+                                        th:attr="hx-delete='/agenda/actividad/mep/' + ${ev.id} + '/seleccion'"
+                                        hx-target="#actividad-institucion-tabla" hx-swap="innerHTML"
+                                        hx-include=".filters-bar"
+                                        hx-confirm="¿Quitar esta actividad del calendario de la institución?"
+                                        title="Quitar del calendario de la institución">Quitar</button>
+                            </th:block>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</th:block>

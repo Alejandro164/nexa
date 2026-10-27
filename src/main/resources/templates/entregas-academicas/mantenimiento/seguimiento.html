@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Seguimiento: cómo va cada docente con una entrega. "Ver"/"Revisar" abre el detalle en este mismo modal. -->
+<div th:fragment="seguimiento-modal">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarEntregasModal()">
+        <div class="modal-dialog" style="max-width:720px; width:96vw; max-height:92vh; overflow-y:auto;">
+            <div class="modal-header">
+                <div style="min-width:0;">
+                    <h3 class="modal-title" th:text="${entrega.nombre}">Entrega</h3>
+                    <p style="font-size:0.82rem;color:#64748b;margin:2px 0 0;"
+                       th:text="'Seguimiento · plazo ' + ${#temporals.format(entrega.fechaInicio, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(entrega.fechaFin, 'dd/MM/yyyy')}">Seguimiento</p>
+                </div>
+                <button type="button" class="close-btn" onclick="cerrarEntregasModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-container">
+                    <table class="table entregas-tabla">
+                        <thead>
+                            <tr>
+                                <th>Docente</th>
+                                <th>Estado</th>
+                                <th>Presentada</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${filas.empty}">
+                                <td colspan="4" class="table-empty">No hay docentes activos en esta dirección.</td>
+                            </tr>
+                            <tr th:each="f : ${filas}">
+                                <td th:text="${f.docente.nombre}">Docente</td>
+                                <td><span class="entregas-estado" th:classappend="${f.estadoCss}" th:text="${f.estadoEtiqueta}">Sin iniciar</span></td>
+                                <td th:text="${f.presentacion != null and f.presentacion.fechaPresentacion != null ? #temporals.format(f.presentacion.fechaPresentacion, 'dd/MM/yyyy HH:mm') : '—'}">—</td>
+                                <td style="text-align:right;">
+                                    <button type="button" class="entregas-btn-accion"
+                                            th:if="${f.presentacion != null}"
+                                            th:attr="hx-get='/entregas-academicas/detalle/' + ${entrega.id} + '?docenteId=' + ${f.docente.id}"
+                                            hx-target="#entregas-modal-container" hx-swap="innerHTML"
+                                            th:text="${f.accionDireccion}">Ver</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="cerrarEntregasModal()">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

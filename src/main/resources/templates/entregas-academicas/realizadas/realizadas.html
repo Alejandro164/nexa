@@ -1,0 +1,11 @@
+<th:block th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <span id="entregas-pendientes-dot" hx-swap-oob="true" class="entregas-dot"
+          th:classappend="${pendientesCount == 0} ? 'oculto'" th:title="${pendientesCount} + ' pendientes'"></span>
+    <div id="entregas-realizadas-panel">
+        <div th:replace="~{entregas-academicas/comun :: avisos}"></div>
+        <div class="card">
+            <form th:replace="~{entregas-academicas/comun :: filtros}"></form>
+            <div id="entregas-tabla" th:insert="~{entregas-academicas/comun :: tabla}"></div>
+        </div>
+    </div>
+</th:block>

@@ -111,7 +111,7 @@ public class SecurityConfig {
 
                         // ── Agenda: calendario abierto a todos; reuniones entre familia y staff;
                         //    crear actividad ya reforzado a DIRECTOR/ADMIN;
-                        //    el resto (tareas, recordatorios, proyectos, participación) es herramienta interna de staff ──
+                        //    el resto (tareas, recordatorios, planes de trabajo, participación) es herramienta interna de staff ──
                         .requestMatchers(HttpMethod.GET, "/agenda", "/agenda/calendario/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR, DOCENTE, PADRE, ESTUDIANTE)
                         .requestMatchers("/agenda/reuniones", "/agenda/reuniones/**")
@@ -149,6 +149,10 @@ public class SecurityConfig {
 
                         // ── Control de acceso: portería de la institución, solo administrador y director ──
                         .requestMatchers("/control-de-acceso", "/control-de-acceso/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR)
+
+                        // ── Entregas académicas: la dirección define y revisa; el docente solo presenta lo suyo ──
+                        .requestMatchers("/entregas-academicas/mantenimiento", "/entregas-academicas/mantenimiento/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR)
 
                         // ── Resto de módulos operativos: abiertos a todo el staff (ADMIN/DIRECTOR/DOCENTE) ──

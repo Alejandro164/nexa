@@ -35,7 +35,7 @@
         </div>
         <table class="table">
             <thead>
-                <tr><th>Persona</th><th>Rol</th><th>Tareas</th><th>Cumplimiento</th><th>Promedio</th><th>Proyectos</th><th></th></tr>
+                <tr><th>Persona</th><th>Rol</th><th>Tareas</th><th>Cumplimiento</th><th>Promedio</th><th>Planes de trabajo</th><th></th></tr>
             </thead>
             <tbody>
                 <tr th:if="${participantes == null or participantes.empty}"><td colspan="7" class="table-empty">No se encontraron participantes.</td></tr>
@@ -62,7 +62,7 @@
                         </div>
                     </td>
                     <td th:text="${p.promedioCalificacion != null ? p.promedioCalificacion : '—'}">—</td>
-                    <td th:text="${p.proyectosCount}">0</td>
+                    <td th:text="${p.planesTrabajoCount}">0</td>
                     <td>
                         <button class="btn-xs btn-ghost"
                                 th:attr="hx-get=|/agenda/participacion/detalle/${p.usuarioId}|"

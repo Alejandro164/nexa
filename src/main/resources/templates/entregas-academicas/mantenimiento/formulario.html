@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarEntregasModal()">
+        <div class="modal-dialog" style="max-width:560px;">
+            <div class="modal-header">
+                <h3 class="modal-title" th:text="${entrega.id == null ? 'Nueva entrega académica' : 'Editar entrega académica'}">Entrega</h3>
+                <button type="button" class="close-btn" onclick="cerrarEntregasModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form method="post" hx-post="/entregas-academicas/mantenimiento"
+                      hx-target="#entregas-mantenimiento-panel" hx-swap="outerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful &amp;&amp; !event.detail.xhr.getResponseHeader('HX-Retarget')) cerrarEntregasModal()">
+                    <input type="hidden" name="id" th:value="${entrega.id}">
+
+                    <div th:if="${error}" class="form-alert-error" th:text="${error}">Error</div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre *</label>
+                        <input class="form-input" type="text" name="nombre" required maxlength="200"
+                               th:value="${entrega.nombre}" placeholder="Ej. Planeamiento didáctico del II trimestre">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Qué se pide</label>
+                        <textarea class="form-textarea" name="descripcion" maxlength="1000"
+                                  th:text="${entrega.descripcion}"
+                                  placeholder="Instrucciones o requisitos para el docente..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-input" name="tipo">
+                                <option th:each="t : ${tipos}" th:value="${t.name()}" th:text="${t.etiqueta}"
+                                        th:selected="${entrega.tipo == t}">Tipo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Período</label>
+                            <select class="form-input" name="periodoId">
+                                <option value="">Sin período</option>
+                                <option th:each="p : ${periodos}" th:value="${p.id}" th:text="${p.codigo}"
+                                        th:selected="${entrega.periodo != null and entrega.periodo.id == p.id}">Período</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Inicio del plazo *</label>
+                            <input class="form-input" type="date" name="fechaInicio" required th:value="${entrega.fechaInicio}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fin del plazo *</label>
+                            <input class="form-input" type="date" name="fechaFin" required th:value="${entrega.fechaFin}">
+                        </div>
+                    </div>
+
+                    <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;color:#334155;cursor:pointer;margin-bottom:6px;">
+                        <input type="checkbox" name="activa" th:checked="${entrega.id == null or entrega.activa}"
+                               style="accent-color:var(--primary);width:16px;height:16px;">
+                        Activa (aparece como pendiente a los docentes desde el inicio del plazo)
+                    </label>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarEntregasModal()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

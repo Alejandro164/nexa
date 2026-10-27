@@ -18,13 +18,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.chavescr.nexa.entity.ActividadInstitucionalPropia;
-import com.chavescr.nexa.entity.Proyecto;
+import com.chavescr.nexa.entity.PlanTrabajo;
 import com.chavescr.nexa.entity.Recordatorio;
-import com.chavescr.nexa.entity.TareaProyecto;
+import com.chavescr.nexa.entity.TareaPlanTrabajo;
 import com.chavescr.nexa.service.ActividadInstitucionalService;
 import com.chavescr.nexa.service.CalendarioService;
 import com.chavescr.nexa.service.ParticipacionService;
-import com.chavescr.nexa.service.ProyectoService;
+import com.chavescr.nexa.service.PlanTrabajoService;
 import com.chavescr.nexa.service.RecordatorioService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,7 @@ public class AgendaController {
     private ParticipacionService participacionService;
 
     @Autowired
-    private ProyectoService proyectoService;
+    private PlanTrabajoService planTrabajoService;
 
     @Autowired
     private RecordatorioService recordatorioService;
@@ -134,14 +134,14 @@ public class AgendaController {
     @GetMapping("/tareas")
     public String tareas(Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
+        model.addAttribute("tareas", planTrabajoService.listarTareasDireccion(direccionId));
         return "agenda/tareas/tareas :: content";
     }
 
     @GetMapping("/tareas/lista")
     public String tareasLista(Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
+        model.addAttribute("tareas", planTrabajoService.listarTareasDireccion(direccionId));
         return "agenda/tareas/tareas :: tabla-tareas";
     }
 
@@ -161,11 +161,11 @@ public class AgendaController {
     public String tareaFormCrear(@RequestParam(required = false) Long miembroId,
                                  Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaProyecto());
-        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
+        model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaPlanTrabajo());
+        model.addAttribute("planesTrabajo", planTrabajoService.listarPlanesTrabajo(direccionId));
+        model.addAttribute("personal", planTrabajoService.listarPersonalActivo(direccionId));
         if (miembroId != null) {
-            model.addAttribute("miembroLock", proyectoService.obtenerMiembro(direccionId, miembroId));
+            model.addAttribute("miembroLock", planTrabajoService.obtenerMiembro(direccionId, miembroId));
         }
         return "agenda/tareas/formulario :: form-content";
     }
@@ -174,19 +174,19 @@ public class AgendaController {
     public String tareaFormEditar(@PathVariable Long id, @RequestParam(required = false) Long miembroId,
                                   Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("tarea", proyectoService.obtenerTareaDireccion(direccionId, id));
-        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
+        model.addAttribute("tarea", planTrabajoService.obtenerTareaDireccion(direccionId, id));
+        model.addAttribute("planesTrabajo", planTrabajoService.listarPlanesTrabajo(direccionId));
+        model.addAttribute("personal", planTrabajoService.listarPersonalActivo(direccionId));
         if (miembroId != null) {
-            model.addAttribute("miembroLock", proyectoService.obtenerMiembro(direccionId, miembroId));
+            model.addAttribute("miembroLock", planTrabajoService.obtenerMiembro(direccionId, miembroId));
         }
         return "agenda/tareas/formulario :: form-content";
     }
 
     @GetMapping("/tareas/miembros")
-    public String tareasMiembrosDeProyecto(Model model, HttpSession session) {
+    public String tareasMiembrosDePlanTrabajo(Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
+        model.addAttribute("personal", planTrabajoService.listarPersonalActivo(direccionId));
         return "agenda/tareas/miembros-options :: options";
     }
 
@@ -197,31 +197,31 @@ public class AgendaController {
             @RequestParam String titulo,
             @RequestParam(required = false) String descripcion,
             @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fechaLimite,
-            @RequestParam(required = false) com.chavescr.nexa.entity.TareaProyecto.EstadoTarea estado,
-            @RequestParam(required = false) com.chavescr.nexa.entity.TareaProyecto.PrioridadTarea prioridad,
+            @RequestParam(required = false) com.chavescr.nexa.entity.TareaPlanTrabajo.EstadoTarea estado,
+            @RequestParam(required = false) com.chavescr.nexa.entity.TareaPlanTrabajo.PrioridadTarea prioridad,
             Model model, HttpSession session,
             jakarta.servlet.http.HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
-            Long proyectoId = null;
+            Long planTrabajoId = null;
             Long usuarioId = null;
             Long miembroId = null;
             if (asignarA != null && !asignarA.isBlank()) {
-                if (asignarA.startsWith("p_")) proyectoId = Long.parseLong(asignarA.substring(2));
+                if (asignarA.startsWith("p_")) planTrabajoId = Long.parseLong(asignarA.substring(2));
                 else if (asignarA.startsWith("u_")) usuarioId = Long.parseLong(asignarA.substring(2));
                 else if (asignarA.startsWith("m_")) miembroId = Long.parseLong(asignarA.substring(2));
             }
-            proyectoService.guardarTareaGeneral(direccionId, id, proyectoId, usuarioId, miembroId,
+            planTrabajoService.guardarTareaGeneral(direccionId, id, planTrabajoId, usuarioId, miembroId,
                     titulo, descripcion, fechaLimite, estado, prioridad);
-            model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
+            model.addAttribute("tareas", planTrabajoService.listarTareasDireccion(direccionId));
             return "agenda/tareas/tareas :: tabla-tareas";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaProyecto());
-            model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
-            model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
+            model.addAttribute("tarea", new com.chavescr.nexa.entity.TareaPlanTrabajo());
+            model.addAttribute("planesTrabajo", planTrabajoService.listarPlanesTrabajo(direccionId));
+            model.addAttribute("personal", planTrabajoService.listarPersonalActivo(direccionId));
             return "agenda/tareas/formulario :: form-content";
         }
     }
@@ -229,43 +229,110 @@ public class AgendaController {
     @DeleteMapping("/tareas/{id}")
     public String tareaEliminar(@PathVariable Long id, Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        proyectoService.eliminarTareaGeneral(direccionId, id);
-        model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
+        planTrabajoService.eliminarTareaGeneral(direccionId, id);
+        model.addAttribute("tareas", planTrabajoService.listarTareasDireccion(direccionId));
         return "agenda/tareas/tareas :: tabla-tareas";
     }
 
     @PutMapping("/tareas/{id}/estado")
     public String tareaEstado(@PathVariable Long id,
-            @RequestParam com.chavescr.nexa.entity.TareaProyecto.EstadoTarea estado,
+            @RequestParam com.chavescr.nexa.entity.TareaPlanTrabajo.EstadoTarea estado,
             Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        com.chavescr.nexa.entity.TareaProyecto t = proyectoService.obtenerTareaDireccion(direccionId, id);
+        com.chavescr.nexa.entity.TareaPlanTrabajo t = planTrabajoService.obtenerTareaDireccion(direccionId, id);
         t.setEstado(estado);
-        if (estado == com.chavescr.nexa.entity.TareaProyecto.EstadoTarea.COMPLETADA)
+        if (estado == com.chavescr.nexa.entity.TareaPlanTrabajo.EstadoTarea.FINALIZADO)
             t.setFechaCompletada(java.time.LocalDateTime.now());
         else t.setFechaCompletada(null);
-        proyectoService.cambiarEstadoTarea(t.getProyecto().getId(), id, estado);
-        model.addAttribute("tareas", proyectoService.listarTareasDireccion(direccionId));
+        planTrabajoService.cambiarEstadoTarea(t.getPlanTrabajo().getId(), id, estado);
+        model.addAttribute("tareas", planTrabajoService.listarTareasDireccion(direccionId));
         return "agenda/tareas/tareas :: tabla-tareas";
     }
 
     @GetMapping("/actividad")
-    public String actividad(@RequestParam(required = false) Integer mes,
+    public String actividad(Model model, HttpSession session, HttpServletRequest request) {
+        cargarActividadesInstitucion(model, requerirDireccion(session), null, null, null, request);
+        return "agenda/actividad/actividad :: content";
+    }
+
+    @GetMapping("/actividad/institucion")
+    public String actividadInstitucion(@RequestParam(required = false) Integer mes,
             @RequestParam(required = false) String categoria,
             @RequestParam(required = false) String filtro,
             Model model, HttpSession session, HttpServletRequest request) {
-        Long direccionId = requerirDireccion(session);
-        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(direccionId, mes, categoria, filtro));
-        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(direccionId));
-        model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
-        model.addAttribute("mesSel", mes);
-        model.addAttribute("categoriaSel", categoria);
-        model.addAttribute("filtro", filtro);
-        model.addAttribute("puedeCrearActividad", esDirectorOAdmin(request));
-        if ("actividad-tabla-container".equals(request.getHeader("HX-Target"))) {
-            return "agenda/actividad/actividad :: eventos-tabla-con-contador";
+        cargarActividadesInstitucion(model, requerirDireccion(session), mes, categoria, filtro, request);
+        if ("actividad-institucion-tabla".equals(request.getHeader("HX-Target"))) {
+            return "agenda/actividad/institucion/institucion :: tabla-con-contador";
         }
-        return "agenda/actividad/actividad :: content";
+        return "agenda/actividad/institucion/institucion :: content";
+    }
+
+    @GetMapping("/actividad/mep")
+    public String actividadMep(@RequestParam(required = false) Integer mes,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String filtro,
+            Model model, HttpSession session, HttpServletRequest request) {
+        exigirDirectorOAdmin(request);
+        cargarActividadesMep(model, requerirDireccion(session), mes, categoria, filtro, request);
+        if ("actividad-mep-tabla".equals(request.getHeader("HX-Target"))) {
+            return "agenda/actividad/mep/mep :: tabla-con-contador";
+        }
+        return "agenda/actividad/mep/mep :: content";
+    }
+
+    @GetMapping("/actividad/mep/{id}/titulo")
+    public String actividadMepFormTitulo(@PathVariable String id, @RequestParam(defaultValue = "mep") String origen,
+            Model model, HttpSession session, HttpServletRequest request) {
+        exigirDirectorOAdmin(request);
+        model.addAttribute("evento", actividadInstitucionalService.obtenerEvento(requerirDireccion(session), id)
+                .orElseThrow(() -> new IllegalArgumentException("La actividad del MEP no existe")));
+        model.addAttribute("origen", origen);
+        return "agenda/actividad/mep/titulo :: form-content";
+    }
+
+    /** Agrega la actividad del MEP al calendario de la institución, o cambia su título si ya estaba. */
+    @PostMapping("/actividad/mep/{id}/seleccion")
+    public String actividadMepSeleccionar(@PathVariable String id,
+            @RequestParam(required = false) String titulo,
+            @RequestParam(defaultValue = "mep") String origen,
+            Model model, HttpSession session, HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response) {
+        exigirDirectorOAdmin(request);
+        Long direccionId = requerirDireccion(session);
+        try {
+            actividadInstitucionalService.seleccionarEventoMep(direccionId, requerirUsuario(session), id, titulo);
+        } catch (IllegalArgumentException e) {
+            response.setHeader("HX-Retarget", "#actividad-modal-container");
+            response.setHeader("HX-Reswap", "innerHTML");
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("evento", actividadInstitucionalService.obtenerEvento(direccionId, id).orElse(null));
+            model.addAttribute("origen", origen);
+            return "agenda/actividad/mep/titulo :: form-content";
+        }
+        if ("institucion".equals(origen)) {
+            cargarActividadesInstitucion(model, direccionId, null, null, null, request);
+            return "agenda/actividad/institucion/institucion :: content";
+        }
+        cargarActividadesMep(model, direccionId, null, null, null, request);
+        return "agenda/actividad/mep/mep :: content";
+    }
+
+    @DeleteMapping("/actividad/mep/{id}/seleccion")
+    public String actividadMepQuitar(@PathVariable String id,
+            @RequestParam(required = false) Integer mes,
+            @RequestParam(required = false) String categoria,
+            @RequestParam(required = false) String filtro,
+            Model model, HttpSession session, HttpServletRequest request) {
+        exigirDirectorOAdmin(request);
+        Long direccionId = requerirDireccion(session);
+        actividadInstitucionalService.quitarEventoMep(direccionId, id);
+        // Se puede quitar desde la tabla de la institución o desde la del MEP.
+        if ("actividad-institucion-tabla".equals(request.getHeader("HX-Target"))) {
+            cargarActividadesInstitucion(model, direccionId, mes, categoria, filtro, request);
+            return "agenda/actividad/institucion/institucion :: tabla-con-contador";
+        }
+        cargarActividadesMep(model, direccionId, mes, categoria, filtro, request);
+        return "agenda/actividad/mep/mep :: tabla-con-contador";
     }
 
     @GetMapping("/actividad/detalle/{id}")
@@ -310,10 +377,7 @@ public class AgendaController {
         try {
             actividadInstitucionalService.guardarActividadPropia(direccionId, usuarioId, id,
                     titulo, descripcion, fechaInicio, fechaFin, categoria, enlace);
-            model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(direccionId, null, null, null));
-            model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(direccionId));
-            model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
-            model.addAttribute("puedeCrearActividad", true);
+            cargarActividadesInstitucion(model, direccionId, null, null, null, request);
             return "agenda/actividad/actividad :: content";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#actividad-modal-container");
@@ -338,10 +402,7 @@ public class AgendaController {
         exigirDirectorOAdmin(request);
         Long direccionId = requerirDireccion(session);
         actividadInstitucionalService.eliminarActividadPropia(direccionId, id);
-        model.addAttribute("eventos", actividadInstitucionalService.buscarEventos(direccionId, null, null, null));
-        model.addAttribute("categorias", actividadInstitucionalService.listarCategorias(direccionId));
-        model.addAttribute("meses", com.chavescr.nexa.service.ActividadInstitucionalService.MESES);
-        model.addAttribute("puedeCrearActividad", true);
+        cargarActividadesInstitucion(model, direccionId, null, null, null, request);
         return "agenda/actividad/actividad :: content";
     }
 
@@ -442,125 +503,125 @@ public class AgendaController {
         return "agenda/participacion/detalle :: contenido";
     }
 
-    // ─── PROYECTOS ─────────────────────────────────────────────
+    // ─── PLAN DE TRABAJO ─────────────────────────────────────────────
 
-    @GetMapping("/proyectos")
-    public String proyectos(Model model, HttpSession session) {
+    @GetMapping("/plan-trabajo")
+    public String planesTrabajo(Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
-        return "agenda/proyecto/contenido :: content";
+        model.addAttribute("planesTrabajo", planTrabajoService.listarPlanesTrabajo(direccionId));
+        return "agenda/plan-trabajo/contenido :: content";
     }
 
-    @GetMapping("/proyectos/form")
-    public String proyectoFormCrear(Model model, HttpSession session) {
+    @GetMapping("/plan-trabajo/form")
+    public String planTrabajoFormCrear(Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("proyecto", new Proyecto());
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
+        model.addAttribute("planTrabajo", new PlanTrabajo());
+        model.addAttribute("personal", planTrabajoService.listarPersonalActivo(direccionId));
         model.addAttribute("miembrosIds", java.util.List.of());
-        return "agenda/proyecto/formulario :: form-content";
+        return "agenda/plan-trabajo/formulario :: form-content";
     }
 
-    @GetMapping("/proyectos/form/{id}")
-    public String proyectoFormEditar(@PathVariable Long id, Model model, HttpSession session) {
+    @GetMapping("/plan-trabajo/form/{id}")
+    public String planTrabajoFormEditar(@PathVariable Long id, Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("proyecto", proyectoService.obtenerProyecto(direccionId, id));
-        model.addAttribute("personal", proyectoService.listarPersonalActivo(direccionId));
-        model.addAttribute("miembrosIds", proyectoService.listarIdsMiembros(id));
-        return "agenda/proyecto/formulario :: form-content";
+        model.addAttribute("planTrabajo", planTrabajoService.obtenerPlanTrabajo(direccionId, id));
+        model.addAttribute("personal", planTrabajoService.listarPersonalActivo(direccionId));
+        model.addAttribute("miembrosIds", planTrabajoService.listarIdsMiembros(id));
+        return "agenda/plan-trabajo/formulario :: form-content";
     }
 
-    @PostMapping("/proyectos")
-    public String proyectoGuardar(@ModelAttribute Proyecto datos,
+    @PostMapping("/plan-trabajo")
+    public String planTrabajoGuardar(@ModelAttribute PlanTrabajo datos,
             @RequestParam(required = false) java.util.List<Long> miembroIds,
             Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        Proyecto guardado = proyectoService.guardarProyecto(direccionId, datos);
-        proyectoService.sincronizarMiembrosFormulario(direccionId, guardado.getId(), miembroIds);
-        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
-        return "agenda/proyecto/contenido :: tabla-proyectos";
+        PlanTrabajo guardado = planTrabajoService.guardarPlanTrabajo(direccionId, datos);
+        planTrabajoService.sincronizarMiembrosFormulario(direccionId, guardado.getId(), miembroIds);
+        model.addAttribute("planesTrabajo", planTrabajoService.listarPlanesTrabajo(direccionId));
+        return "agenda/plan-trabajo/contenido :: tabla-planes-trabajo";
     }
 
-    @DeleteMapping("/proyectos/{id}")
-    public String proyectoEliminar(@PathVariable Long id, Model model, HttpSession session) {
+    @DeleteMapping("/plan-trabajo/{id}")
+    public String planTrabajoEliminar(@PathVariable Long id, Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        proyectoService.eliminarProyecto(direccionId, id);
-        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
-        return "agenda/proyecto/contenido :: tabla-proyectos";
+        planTrabajoService.eliminarPlanTrabajo(direccionId, id);
+        model.addAttribute("planesTrabajo", planTrabajoService.listarPlanesTrabajo(direccionId));
+        return "agenda/plan-trabajo/contenido :: tabla-planes-trabajo";
     }
 
-    @PutMapping("/proyectos/{id}/toggle")
-    public String proyectoToggleActivo(@PathVariable Long id, Model model, HttpSession session) {
+    @PutMapping("/plan-trabajo/{id}/toggle")
+    public String planTrabajoToggleActivo(@PathVariable Long id, Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        proyectoService.toggleActivoProyecto(direccionId, id);
-        model.addAttribute("proyectos", proyectoService.listarProyectos(direccionId));
-        return "agenda/proyecto/contenido :: tabla-proyectos";
+        planTrabajoService.toggleActivoPlanTrabajo(direccionId, id);
+        model.addAttribute("planesTrabajo", planTrabajoService.listarPlanesTrabajo(direccionId));
+        return "agenda/plan-trabajo/contenido :: tabla-planes-trabajo";
     }
 
-    @GetMapping("/proyectos/buscar")
-    public String proyectoBuscar(@RequestParam String filtro, Model model, HttpSession session) {
+    @GetMapping("/plan-trabajo/buscar")
+    public String planTrabajoBuscar(@RequestParam String filtro, Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("proyectos", proyectoService.buscarProyectos(direccionId, filtro));
-        return "agenda/proyecto/contenido :: tabla-proyectos";
+        model.addAttribute("planesTrabajo", planTrabajoService.buscarPlanesTrabajo(direccionId, filtro));
+        return "agenda/plan-trabajo/contenido :: tabla-planes-trabajo";
     }
 
-    @GetMapping("/proyectos/{id}/miembros")
-    public String proyectoMiembros(@PathVariable Long id, Model model, HttpSession session) {
+    @GetMapping("/plan-trabajo/{id}/miembros")
+    public String planTrabajoMiembros(@PathVariable Long id, Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("proyecto", proyectoService.obtenerProyecto(direccionId, id));
-        model.addAttribute("miembros", proyectoService.listarMiembros(id));
-        model.addAttribute("usuariosDisponibles", proyectoService.listarUsuariosDisponibles(direccionId, id));
-        return "agenda/proyecto/miembros :: contenido";
+        model.addAttribute("planTrabajo", planTrabajoService.obtenerPlanTrabajo(direccionId, id));
+        model.addAttribute("miembros", planTrabajoService.listarMiembros(id));
+        model.addAttribute("usuariosDisponibles", planTrabajoService.listarUsuariosDisponibles(direccionId, id));
+        return "agenda/plan-trabajo/miembros :: contenido";
     }
 
-    @PostMapping("/proyectos/{id}/miembros")
-    public String proyectoAgregarMiembro(@PathVariable Long id,
+    @PostMapping("/plan-trabajo/{id}/miembros")
+    public String planTrabajoAgregarMiembro(@PathVariable Long id,
                                          @RequestParam Long usuarioId,
                                          @RequestParam(defaultValue = "MIEMBRO") String rol,
                                          Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        proyectoService.agregarMiembro(direccionId, id, usuarioId, rol);
-        model.addAttribute("proyecto", proyectoService.obtenerProyecto(direccionId, id));
-        model.addAttribute("miembros", proyectoService.listarMiembros(id));
-        model.addAttribute("usuariosDisponibles", proyectoService.listarUsuariosDisponibles(direccionId, id));
-        return "agenda/proyecto/miembros :: contenido";
+        planTrabajoService.agregarMiembro(direccionId, id, usuarioId, rol);
+        model.addAttribute("planTrabajo", planTrabajoService.obtenerPlanTrabajo(direccionId, id));
+        model.addAttribute("miembros", planTrabajoService.listarMiembros(id));
+        model.addAttribute("usuariosDisponibles", planTrabajoService.listarUsuariosDisponibles(direccionId, id));
+        return "agenda/plan-trabajo/miembros :: contenido";
     }
 
-    @DeleteMapping("/proyectos/{id}/miembros/{miembroId}")
-    public String proyectoEliminarMiembro(@PathVariable Long id, @PathVariable Long miembroId,
+    @DeleteMapping("/plan-trabajo/{id}/miembros/{miembroId}")
+    public String planTrabajoEliminarMiembro(@PathVariable Long id, @PathVariable Long miembroId,
                                           Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        proyectoService.eliminarMiembro(direccionId, id, miembroId);
-        model.addAttribute("proyecto", proyectoService.obtenerProyecto(direccionId, id));
-        model.addAttribute("miembros", proyectoService.listarMiembros(id));
-        model.addAttribute("usuariosDisponibles", proyectoService.listarUsuariosDisponibles(direccionId, id));
-        return "agenda/proyecto/miembros :: contenido";
+        planTrabajoService.eliminarMiembro(direccionId, id, miembroId);
+        model.addAttribute("planTrabajo", planTrabajoService.obtenerPlanTrabajo(direccionId, id));
+        model.addAttribute("miembros", planTrabajoService.listarMiembros(id));
+        model.addAttribute("usuariosDisponibles", planTrabajoService.listarUsuariosDisponibles(direccionId, id));
+        return "agenda/plan-trabajo/miembros :: contenido";
     }
 
-    @GetMapping("/proyectos/{id}/dashboard")
-    public String proyectoDashboard(@PathVariable Long id, Model model, HttpSession session) {
+    @GetMapping("/plan-trabajo/{id}/dashboard")
+    public String planTrabajoDashboard(@PathVariable Long id, Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("dashboard", proyectoService.obtenerDashboard(direccionId, id));
-        model.addAttribute("proyectoId", id);
-        return "agenda/proyecto/dashboard :: contenido";
+        model.addAttribute("dashboard", planTrabajoService.obtenerDashboard(direccionId, id));
+        model.addAttribute("planTrabajoId", id);
+        return "agenda/plan-trabajo/dashboard :: contenido";
     }
 
-    @GetMapping("/proyectos/miembros/{miembroId}/tareas")
-    public String proyectoTareasMiembro(@PathVariable Long miembroId,
-                                        @RequestParam Long proyectoId, Model model) {
-        model.addAttribute("tareas", proyectoService.listarTareasDeMiembro(miembroId));
+    @GetMapping("/plan-trabajo/miembros/{miembroId}/tareas")
+    public String planTrabajoTareasMiembro(@PathVariable Long miembroId,
+                                        @RequestParam Long planTrabajoId, Model model) {
+        model.addAttribute("tareas", planTrabajoService.listarTareasDeMiembro(miembroId));
         model.addAttribute("miembroId", miembroId);
-        model.addAttribute("proyectoId", proyectoId);
-        return "agenda/proyecto/tareas :: tabla-tareas";
+        model.addAttribute("planTrabajoId", planTrabajoId);
+        return "agenda/plan-trabajo/tareas :: tabla-tareas";
     }
 
-    @DeleteMapping("/proyectos/tareas/{tareaId}")
-    public String proyectoEliminarTarea(@PathVariable Long tareaId,
-                                        @RequestParam Long proyectoId,
+    @DeleteMapping("/plan-trabajo/tareas/{tareaId}")
+    public String planTrabajoEliminarTarea(@PathVariable Long tareaId,
+                                        @RequestParam Long planTrabajoId,
                                         @RequestParam Long miembroId, Model model) {
-        proyectoService.eliminarTarea(proyectoId, tareaId);
-        model.addAttribute("tareas", proyectoService.listarTareasDeMiembro(miembroId));
+        planTrabajoService.eliminarTarea(planTrabajoId, tareaId);
+        model.addAttribute("tareas", planTrabajoService.listarTareasDeMiembro(miembroId));
         model.addAttribute("miembroId", miembroId);
-        return "agenda/proyecto/tareas :: tabla-tareas";
+        return "agenda/plan-trabajo/tareas :: tabla-tareas";
     }
 
     // ─── HELPERS ───────────────────────────────────────────────
@@ -579,6 +640,29 @@ public class AgendaController {
         Long id = (Long) session.getAttribute("SESSION_USUARIO_ID");
         if (id == null) throw new IllegalArgumentException("No hay usuario en sesión");
         return id;
+    }
+
+    private void cargarActividadesInstitucion(Model model, Long direccionId, Integer mes, String categoria,
+            String filtro, HttpServletRequest request) {
+        model.addAttribute("eventos", actividadInstitucionalService.buscarEventosInstitucion(direccionId, mes, categoria, filtro));
+        model.addAttribute("categorias", actividadInstitucionalService.listarCategoriasInstitucion(direccionId));
+        cargarFiltrosActividad(model, mes, categoria, filtro, request);
+    }
+
+    private void cargarActividadesMep(Model model, Long direccionId, Integer mes, String categoria,
+            String filtro, HttpServletRequest request) {
+        model.addAttribute("eventos", actividadInstitucionalService.buscarEventosMep(direccionId, mes, categoria, filtro));
+        model.addAttribute("categorias", actividadInstitucionalService.listarCategoriasMep());
+        cargarFiltrosActividad(model, mes, categoria, filtro, request);
+    }
+
+    private void cargarFiltrosActividad(Model model, Integer mes, String categoria, String filtro,
+            HttpServletRequest request) {
+        model.addAttribute("meses", ActividadInstitucionalService.MESES);
+        model.addAttribute("mesSel", mes);
+        model.addAttribute("categoriaSel", categoria);
+        model.addAttribute("filtro", filtro);
+        model.addAttribute("puedeCrearActividad", esDirectorOAdmin(request));
     }
 
     private boolean esDirectorOAdmin(HttpServletRequest request) {

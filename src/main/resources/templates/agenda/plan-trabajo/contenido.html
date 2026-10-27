@@ -2,33 +2,33 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<div th:fragment="content" x-data="proyectoComponente()"
+<div th:fragment="content" x-data="planTrabajoComponente()"
      @ver-miembros.window="verMiembros($event.detail.id)">
 
     <div>
         <div class="module-tabs">
-            <button class="module-tab" :class="{ 'active': activeTab === 'proyectos' }" @click="activeTab = 'proyectos'">📁 Proyectos</button>
+            <button class="module-tab" :class="{ 'active': activeTab === 'planesTrabajo' }" @click="activeTab = 'planesTrabajo'">📁 Plan de trabajo</button>
             <button class="module-tab" id="btn-tab-eficiencia" :class="{ 'active': activeTab === 'dashboard' }" @click="activeTab = 'dashboard'">📊 Eficiencia</button>
         </div>
 
-        <div class="module-panel" x-show="activeTab === 'proyectos'" x-cloak>
+        <div class="module-panel" x-show="activeTab === 'planesTrabajo'" x-cloak>
             <div class="module-search">
-                <input class="module-search-input" type="text" placeholder="Buscar proyectos..." x-model="filtro" @input.debounce.300ms="buscarProyectos()">
+                <input class="module-search-input" type="text" placeholder="Buscar planes de trabajo..." x-model="filtro" @input.debounce.300ms="buscarPlanesTrabajo()">
                 <button class="btn-primary"
-                        hx-get="/agenda/proyectos/form"
+                        hx-get="/agenda/plan-trabajo/form"
                         hx-target="#modal-container" hx-swap="innerHTML"
                         onclick="abrirModalAcademico()"
-                        style="white-space: nowrap;">+ Nuevo Proyecto</button>
+                        style="white-space: nowrap;">+ Nuevo plan de trabajo</button>
             </div>
-            <div id="tabla-proyectos-container" class="module-card" th:insert="~{agenda/proyecto/contenido :: tabla-proyectos}"></div>
+            <div id="tabla-planes-trabajo-container" class="module-card" th:insert="~{agenda/plan-trabajo/contenido :: tabla-planes-trabajo}"></div>
         </div>
 
         <div class="module-panel" x-show="activeTab === 'dashboard'" x-cloak>
-            <div id="proyectos-select-group" class="select-group">
-                <select x-model="dashboardProyectoId" class="form-input"
-                        onchange="if(this.value){htmx.ajax('GET','/agenda/proyectos/'+this.value+'/dashboard',{target:'#dashboard-container',swap:'innerHTML'});htmx.ajax('GET','/agenda/proyectos/'+this.value+'/miembros',{target:'#miembros-container',swap:'innerHTML'});}">
-                    <option value="" disabled hidden>Selecciona un proyecto</option>
-                    <option th:each="p : ${proyectos}" th:value="${p.id}" th:text="${p.nombre}">Proyecto</option>
+            <div id="planes-trabajo-select-group" class="select-group">
+                <select x-model="dashboardPlanTrabajoId" class="form-input"
+                        onchange="if(this.value){htmx.ajax('GET','/agenda/plan-trabajo/'+this.value+'/dashboard',{target:'#dashboard-container',swap:'innerHTML'});htmx.ajax('GET','/agenda/plan-trabajo/'+this.value+'/miembros',{target:'#miembros-container',swap:'innerHTML'});}">
+                    <option value="" disabled hidden>Selecciona un plan de trabajo</option>
+                    <option th:each="p : ${planesTrabajo}" th:value="${p.id}" th:text="${p.nombre}">Plan de trabajo</option>
                 </select>
             </div>
             <div id="dashboard-container"></div>
@@ -38,11 +38,11 @@
 
 </div>
 
-<th:block th:fragment="tabla-proyectos">
+<th:block th:fragment="tabla-planes-trabajo">
     <div class="module-card-header">
-        <h3 class="module-card-title">Proyectos
+        <h3 class="module-card-title">Planes de trabajo
             <span style="font-weight:400;color:#94a3b8;font-size:0.85rem;"
-                  th:text="'(' + ${proyectos != null ? #lists.size(proyectos) : 0} + ')'">
+                  th:text="'(' + ${planesTrabajo != null ? #lists.size(planesTrabajo) : 0} + ')'">
                 (0)
             </span>
         </h3>
@@ -60,10 +60,10 @@
             </tr>
         </thead>
         <tbody>
-            <tr th:if="${proyectos == null or proyectos.empty}">
-                <td colspan="7" class="table-empty">No hay proyectos. Crea el primero.</td>
+            <tr th:if="${planesTrabajo == null or planesTrabajo.empty}">
+                <td colspan="7" class="table-empty">No hay planes de trabajo. Crea el primero.</td>
             </tr>
-            <tr th:each="p : ${proyectos}">
+            <tr th:each="p : ${planesTrabajo}">
                 <td><strong th:text="${p.nombre}" style="color:#0f172a;">Nombre</strong></td>
                 <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                     <span th:text="${p.objetivo}" style="color:#64748b;">Objetivo</span>
@@ -92,27 +92,27 @@
                                 th:attr="data-id=${p.id}"
                                 onclick="window.dispatchEvent(new CustomEvent('ver-miembros',{detail:{id:+this.dataset.id}}))">👤</button>
                         <button class="btn-xs btn-ghost"
-                                th:attr="hx-get='/agenda/proyectos/form/' + ${p.id}"
+                                th:attr="hx-get='/agenda/plan-trabajo/form/' + ${p.id}"
                                 hx-target="#modal-container" hx-swap="innerHTML"
                                 onclick="abrirModalAcademico()">✏️</button>
                         <button class="btn-xs btn-danger-ghost"
                                 onclick="abrirConfirmacionAcademica(this)"
-                                th:attr="data-delete-url='/agenda/proyectos/' + ${p.id},
-                                         data-delete-target='#tabla-proyectos-container',
-                                         data-delete-title='Eliminar proyecto',
-                                         data-delete-message='¿Deseas eliminar el proyecto ' + ${p.nombre} + '? Se perderán todos sus miembros y tareas.'">🗑️</button>
+                                th:attr="data-delete-url='/agenda/plan-trabajo/' + ${p.id},
+                                         data-delete-target='#tabla-planes-trabajo-container',
+                                         data-delete-title='Eliminar plan de trabajo',
+                                         data-delete-message='¿Deseas eliminar el plan de trabajo ' + ${p.nombre} + '? Se perderán todos sus miembros y tareas.'">🗑️</button>
                     </div>
                 </td>
             </tr>
         </tbody>
     </table>
 
-    <!-- OOB: sincroniza el select de Eficiencia cuando cambia la lista de proyectos -->
-    <div id="proyectos-select-group" hx-swap-oob="true" class="select-group">
-        <select x-model="dashboardProyectoId" class="form-input"
-                onchange="if(this.value){htmx.ajax('GET','/agenda/proyectos/'+this.value+'/dashboard',{target:'#dashboard-container',swap:'innerHTML'});htmx.ajax('GET','/agenda/proyectos/'+this.value+'/miembros',{target:'#miembros-container',swap:'innerHTML'});}">
-            <option value="" disabled hidden>Selecciona un proyecto</option>
-            <option th:each="p : ${proyectos}" th:value="${p.id}" th:text="${p.nombre}">Proyecto</option>
+    <!-- OOB: sincroniza el select de Eficiencia cuando cambia la lista de planes de trabajo -->
+    <div id="planes-trabajo-select-group" hx-swap-oob="true" class="select-group">
+        <select x-model="dashboardPlanTrabajoId" class="form-input"
+                onchange="if(this.value){htmx.ajax('GET','/agenda/plan-trabajo/'+this.value+'/dashboard',{target:'#dashboard-container',swap:'innerHTML'});htmx.ajax('GET','/agenda/plan-trabajo/'+this.value+'/miembros',{target:'#miembros-container',swap:'innerHTML'});}">
+            <option value="" disabled hidden>Selecciona un plan de trabajo</option>
+            <option th:each="p : ${planesTrabajo}" th:value="${p.id}" th:text="${p.nombre}">Plan de trabajo</option>
         </select>
     </div>
 </th:block>

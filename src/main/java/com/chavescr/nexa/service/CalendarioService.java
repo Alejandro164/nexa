@@ -2,7 +2,6 @@ package com.chavescr.nexa.service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -12,13 +11,12 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import com.chavescr.nexa.dto.BandaEventoDTO;
 import com.chavescr.nexa.dto.DiaCalendarioDTO;
 import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.dto.SemanaCalendarioDTO;
 import com.chavescr.nexa.entity.Recordatorio;
-import com.chavescr.nexa.entity.TareaProyecto;
+import com.chavescr.nexa.entity.TareaPlanTrabajo;
 
 /**
  * Agrega Tareas, Recordatorios y Actividades Institucionales en un
@@ -27,14 +25,14 @@ import com.chavescr.nexa.entity.TareaProyecto;
 @Service
 public class CalendarioService {
 
-    private final ProyectoService proyectoService;
+    private final PlanTrabajoService planTrabajoService;
     private final RecordatorioService recordatorioService;
     private final ActividadInstitucionalService actividadInstitucionalService;
 
-    public CalendarioService(ProyectoService proyectoService,
+    public CalendarioService(PlanTrabajoService planTrabajoService,
             RecordatorioService recordatorioService,
             ActividadInstitucionalService actividadInstitucionalService) {
-        this.proyectoService = proyectoService;
+        this.planTrabajoService = planTrabajoService;
         this.recordatorioService = recordatorioService;
         this.actividadInstitucionalService = actividadInstitucionalService;
     }
@@ -50,18 +48,14 @@ public class CalendarioService {
 
         List<SemanaCalendarioDTO> semanas = new ArrayList<>();
         List<DiaCalendarioDTO> diasSemana = new ArrayList<>();
-        LocalDate inicioSemanaActual = inicioGrid;
         for (LocalDate cursor = inicioGrid; !cursor.isAfter(finGrid); cursor = cursor.plusDays(1)) {
             boolean otroMes = cursor.getMonthValue() != referencia.getMonthValue()
                     || cursor.getYear() != referencia.getYear();
             diasSemana.add(new DiaCalendarioDTO(cursor, otroMes, cursor.equals(LocalDate.now()),
                     eventosPorDia.getOrDefault(cursor, List.of())));
             if (diasSemana.size() == 7) {
-                LocalDate finSemanaActual = inicioSemanaActual.plusDays(6);
-                semanas.add(new SemanaCalendarioDTO(diasSemana,
-                        calcularBandas(direccionId, inicioSemanaActual, finSemanaActual)));
+                semanas.add(new SemanaCalendarioDTO(diasSemana));
                 diasSemana = new ArrayList<>();
-                inicioSemanaActual = cursor.plusDays(1);
             }
         }
         return semanas;
@@ -103,7 +97,7 @@ public class CalendarioService {
             dias.add(new DiaCalendarioDTO(cursor, false, cursor.equals(LocalDate.now()),
                     eventosPorDia.getOrDefault(cursor, List.of())));
         }
-        return new SemanaCalendarioDTO(dias, calcularBandas(direccionId, inicioSemana, finSemana));
+        return new SemanaCalendarioDTO(dias);
     }
 
     public DiaCalendarioDTO construirDia(Long direccionId, Long usuarioId, LocalDate referencia) {
@@ -121,53 +115,11 @@ public class CalendarioService {
                 .toList();
     }
 
-    /**
-     * Bandas horizontales (estilo Outlook/Teams) para los eventos institucionales de varios días
-     * que cruzan la semana [inicioSemana, finSemana], con apilado (fila) para no solaparse entre sí.
-     * Se devuelven todas las filas; la vista solo muestra {@link SemanaCalendarioDTO#FILAS_VISIBLES_POR_DEFECTO}
-     * de entrada y permite expandir el resto.
-     */
-    private List<BandaEventoDTO> calcularBandas(Long direccionId, LocalDate inicioSemana, LocalDate finSemana) {
-        List<EventoMepDTO> multiDia = actividadInstitucionalService
-                .listarEventosEnRango(direccionId, inicioSemana, finSemana)
-                .stream()
-                .filter(e -> e.getFechaFin().isAfter(e.getFechaInicio()))
-                .sorted(Comparator.comparing(EventoMepDTO::getFechaInicio))
-                .toList();
-
-        List<BandaEventoDTO> bandas = new ArrayList<>();
-        List<Integer> finColumnaPorFila = new ArrayList<>();
-
-        for (EventoMepDTO ev : multiDia) {
-            LocalDate inicioClip = ev.getFechaInicio().isBefore(inicioSemana) ? inicioSemana : ev.getFechaInicio();
-            LocalDate finClip = ev.getFechaFin().isAfter(finSemana) ? finSemana : ev.getFechaFin();
-            int columnaInicio = (int) ChronoUnit.DAYS.between(inicioSemana, inicioClip) + 1;
-            int columnaFin = (int) ChronoUnit.DAYS.between(inicioSemana, finClip) + 1;
-
-            int fila = -1;
-            for (int f = 0; f < finColumnaPorFila.size(); f++) {
-                if (finColumnaPorFila.get(f) < columnaInicio) {
-                    fila = f;
-                    break;
-                }
-            }
-            if (fila == -1) {
-                fila = finColumnaPorFila.size();
-                finColumnaPorFila.add(0);
-            }
-            finColumnaPorFila.set(fila, columnaFin);
-
-            bandas.add(new BandaEventoDTO(ev.getTitulo(), ev.getDescripcion(), ev.getLink(),
-                    columnaInicio, columnaFin, fila, ev.getFechaInicio(), ev.getFechaFin()));
-        }
-        return bandas;
-    }
-
     private Map<LocalDate, List<EventoCalendarioDTO>> agruparEventos(Long direccionId, Long usuarioId,
             LocalDate desde, LocalDate hasta) {
         Map<LocalDate, List<EventoCalendarioDTO>> mapa = new LinkedHashMap<>();
 
-        for (TareaProyecto t : proyectoService.listarTareasDireccion(direccionId)) {
+        for (TareaPlanTrabajo t : planTrabajoService.listarTareasDireccion(direccionId)) {
             LocalDate f = t.getFechaLimite();
             if (f != null && !f.isBefore(desde) && !f.isAfter(hasta)) {
                 mapa.computeIfAbsent(f, k -> new ArrayList<>())
@@ -185,17 +137,15 @@ public class CalendarioService {
         }
 
         for (EventoMepDTO ev : actividadInstitucionalService.listarEventosEnRango(direccionId, desde, hasta)) {
-            // Se ancla al día de inicio (o al primer día visible si ya estaba en curso). Los eventos
-            // de varios días también se muestran como banda en la grilla (ver calcularBandas); aquí
-            // se guardan igual para que las vistas de lista (Día/Agenda) los sigan mostrando completos.
-            boolean multiDia = ev.getFechaFin().isAfter(ev.getFechaInicio());
-            LocalDate diaAncla = ev.getFechaInicio().isBefore(desde) ? desde : ev.getFechaInicio();
-            String descripcion = multiDia
-                    ? "(" + ev.getFechaInicio() + " a " + ev.getFechaFin() + ") " + ev.getDescripcion()
-                    : ev.getDescripcion();
-            mapa.computeIfAbsent(diaAncla, k -> new ArrayList<>())
-                    .add(EventoCalendarioDTO.deInstitucional(ev.getTitulo(), descripcion, diaAncla, ev.getLink(),
-                            multiDia));
+            // Un evento de varios días aparece como una etiqueta en cada día que dura (dentro del rango visible).
+            String descripcion = descripcionEvento(ev);
+            LocalDate primero = ev.getFechaInicio().isBefore(desde) ? desde : ev.getFechaInicio();
+            LocalDate ultimo = ev.getFechaFin().isAfter(hasta) ? hasta : ev.getFechaFin();
+            for (LocalDate dia = primero; !dia.isAfter(ultimo); dia = dia.plusDays(1)) {
+                mapa.computeIfAbsent(dia, k -> new ArrayList<>())
+                        .add(EventoCalendarioDTO.deInstitucional(ev.getTituloCalendario(), descripcion, dia,
+                                ev.getLink(), ev.getFechaInicio(), ev.getFechaFin()));
+            }
         }
 
         for (List<EventoCalendarioDTO> lista : mapa.values()) {
@@ -204,5 +154,14 @@ public class CalendarioService {
         }
 
         return mapa;
+    }
+
+    /** Si la institución le cambió el título, el título original del MEP pasa a la descripción del detalle. */
+    private String descripcionEvento(EventoMepDTO ev) {
+        boolean tieneDescripcion = ev.getDescripcion() != null && !ev.getDescripcion().isBlank();
+        if (!ev.isConTituloPersonalizado() || ev.isPropia()) {
+            return ev.getDescripcion();
+        }
+        return tieneDescripcion ? ev.getTituloVisible() + "\n\n" + ev.getDescripcion() : ev.getTituloVisible();
     }
 }

@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +26,11 @@ import org.springframework.web.client.RestClientException;
 
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.entity.ActividadInstitucionalPropia;
+import com.chavescr.nexa.entity.ActividadMepSeleccionada;
 import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.ActividadInstitucionalPropiaRepository;
+import com.chavescr.nexa.repository.ActividadMepSeleccionadaRepository;
 import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -67,6 +70,7 @@ public class ActividadInstitucionalService {
 
     private final RestClient restClient;
     private final ActividadInstitucionalPropiaRepository actividadPropiaRepository;
+    private final ActividadMepSeleccionadaRepository seleccionRepository;
     private final DireccionRepository direccionRepository;
     private final UsuarioRepository usuarioRepository;
 
@@ -78,8 +82,9 @@ public class ActividadInstitucionalService {
     private final Map<Integer, EntradaCacheMep> cacheEventosMep = new ConcurrentHashMap<>();
 
     public ActividadInstitucionalService(ActividadInstitucionalPropiaRepository actividadPropiaRepository,
-            DireccionRepository direccionRepository, UsuarioRepository usuarioRepository) {
+            ActividadMepSeleccionadaRepository seleccionRepository, DireccionRepository direccionRepository, UsuarioRepository usuarioRepository) {
         this.actividadPropiaRepository = actividadPropiaRepository;
+        this.seleccionRepository = seleccionRepository;
         this.direccionRepository = direccionRepository;
         this.usuarioRepository = usuarioRepository;
 
@@ -120,11 +125,23 @@ public class ActividadInstitucionalService {
         }
     }
 
+    /** Actividades que forman parte del calendario de la institución: las propias y las del MEP que eligió. */
     @Transactional(readOnly = true)
-    public List<EventoMepDTO> buscarEventos(Long direccionId, Integer mes, String categoria, String texto) {
-        List<EventoMepDTO> base = new ArrayList<>(listarEventosDelAnio(anioActual()));
-        base.addAll(listarPropias(direccionId));
+    public List<EventoMepDTO> buscarEventosInstitucion(Long direccionId, Integer mes, String categoria, String texto) {
+        return filtrar(listarInstitucionales(direccionId, List.of(anioActual())), mes, categoria, texto);
+    }
 
+    /** Todas las actividades del MEP del año, marcando cuáles ya eligió la institución. */
+    @Transactional(readOnly = true)
+    public List<EventoMepDTO> buscarEventosMep(Long direccionId, Integer mes, String categoria, String texto) {
+        Map<String, String> elegidas = titulosSeleccionados(direccionId, List.of(anioActual()));
+        List<EventoMepDTO> base = listarEventosDelAnio(anioActual()).stream()
+                .map(e -> e.conSeleccion(elegidas.containsKey(e.getId()), elegidas.get(e.getId())))
+                .toList();
+        return filtrar(base, mes, categoria, texto);
+    }
+
+    private List<EventoMepDTO> filtrar(List<EventoMepDTO> base, Integer mes, String categoria, String texto) {
         LocalDate inicioMes = mes != null ? YearMonth.of(anioActual(), mes).atDay(1) : null;
         LocalDate finMes = mes != null ? YearMonth.of(anioActual(), mes).atEndOfMonth() : null;
         String textoNormalizado = texto != null && !texto.isBlank() ? texto.trim().toLowerCase() : null;
@@ -143,11 +160,18 @@ public class ActividadInstitucionalService {
     }
 
     @Transactional(readOnly = true)
-    public List<String> listarCategorias(Long direccionId) {
-        List<String> categorias = new ArrayList<>();
-        listarEventosDelAnio(anioActual()).forEach(e -> categorias.add(e.getNombreCategoria()));
-        listarPropias(direccionId).forEach(e -> categorias.add(e.getNombreCategoria()));
-        return categorias.stream()
+    public List<String> listarCategoriasInstitucion(Long direccionId) {
+        return categoriasDe(listarInstitucionales(direccionId, List.of(anioActual())));
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> listarCategoriasMep() {
+        return categoriasDe(listarEventosDelAnio(anioActual()));
+    }
+
+    private List<String> categoriasDe(List<EventoMepDTO> eventos) {
+        return eventos.stream()
+                .map(EventoMepDTO::getNombreCategoria)
                 .filter(c -> c != null && !c.isBlank())
                 .distinct()
                 .sorted()
@@ -160,24 +184,81 @@ public class ActividadInstitucionalService {
             return actividadPropiaRepository.findByIdAndDireccionId(EventoMepDTO.idNumericoPropia(id), direccionId)
                     .map(EventoMepDTO::deActividadPropia);
         }
+        Map<String, String> elegidas = titulosSeleccionados(direccionId, List.of(anioActual()));
         return listarEventosDelAnio(anioActual()).stream()
                 .filter(e -> id.equals(e.getId()))
-                .findFirst();
+                .findFirst()
+                .map(e -> e.conSeleccion(elegidas.containsKey(e.getId()), elegidas.get(e.getId())));
     }
 
-    /** Eventos cuyo rango de fechas se solapa con [desde, hasta], sin importar el año. */
+    /** Eventos de la institución cuyo rango de fechas se solapa con [desde, hasta], sin importar el año. */
     @Transactional(readOnly = true)
     public List<EventoMepDTO> listarEventosEnRango(Long direccionId, LocalDate desde, LocalDate hasta) {
-        List<EventoMepDTO> eventos = new ArrayList<>();
+        List<Integer> anios = new ArrayList<>();
         for (int anio = desde.getYear(); anio <= hasta.getYear(); anio++) {
-            eventos.addAll(listarEventosDelAnio(anio));
+            anios.add(anio);
         }
-        eventos.addAll(listarPropias(direccionId));
-        return eventos.stream()
+        return listarInstitucionales(direccionId, anios).stream()
                 .filter(e -> e.getFechaInicio() != null && e.getFechaFin() != null)
                 .filter(e -> !e.getFechaFin().isBefore(desde) && !e.getFechaInicio().isAfter(hasta))
                 .sorted(Comparator.comparing(EventoMepDTO::getFechaInicio))
                 .toList();
+    }
+
+    private List<EventoMepDTO> listarInstitucionales(Long direccionId, List<Integer> anios) {
+        Map<String, String> elegidas = titulosSeleccionados(direccionId, anios);
+        List<EventoMepDTO> eventos = new ArrayList<>();
+        for (int anio : anios) {
+            listarEventosDelAnio(anio).stream()
+                    .filter(e -> elegidas.containsKey(e.getId()))
+                    .map(e -> e.conSeleccion(true, elegidas.get(e.getId())))
+                    .forEach(eventos::add);
+        }
+        eventos.addAll(listarPropias(direccionId));
+        return eventos;
+    }
+
+    /** Id del evento del MEP -> título personalizado (null si la institución no le puso uno). */
+    private Map<String, String> titulosSeleccionados(Long direccionId, List<Integer> anios) {
+        Map<String, String> titulos = new HashMap<>();
+        for (ActividadMepSeleccionada s : seleccionRepository.findByDireccionIdAndAnioIn(direccionId, anios)) {
+            titulos.put(s.getMepEventoId(), s.getTituloPersonalizado());
+        }
+        return titulos;
+    }
+
+    // ─── Selección de actividades del MEP ───────
+
+    /** Agrega la actividad del MEP al calendario de la institución, o actualiza su título si ya estaba. */
+    public void seleccionarEventoMep(Long direccionId, Long usuarioId, String eventoId, String tituloPersonalizado) {
+        int anio = anioActual();
+        boolean existeEnMep = listarEventosDelAnio(anio).stream().anyMatch(e -> eventoId.equals(e.getId()));
+        if (!existeEnMep) {
+            throw new IllegalArgumentException("La actividad del MEP no existe");
+        }
+        String titulo = tituloPersonalizado != null && !tituloPersonalizado.isBlank()
+                ? tituloPersonalizado.trim() : null;
+        if (titulo != null && titulo.length() > 200) {
+            throw new IllegalArgumentException("El título no puede superar los 200 caracteres");
+        }
+        ActividadMepSeleccionada seleccion = seleccionRepository
+                .findByDireccionIdAndAnioAndMepEventoId(direccionId, anio, eventoId)
+                .orElseGet(() -> {
+                    ActividadMepSeleccionada nueva = new ActividadMepSeleccionada();
+                    nueva.setDireccion(obtenerDireccion(direccionId));
+                    nueva.setSeleccionadoPor(obtenerUsuario(usuarioId));
+                    nueva.setAnio(anio);
+                    nueva.setMepEventoId(eventoId);
+                    return nueva;
+                });
+        seleccion.setTituloPersonalizado(titulo);
+        seleccionRepository.save(seleccion);
+        log.info("Actividad MEP seleccionada: direccion={}, evento={}", direccionId, eventoId);
+    }
+
+    public void quitarEventoMep(Long direccionId, String eventoId) {
+        seleccionRepository.deleteByDireccionIdAndAnioAndMepEventoId(direccionId, anioActual(), eventoId);
+        log.info("Actividad MEP quitada: direccion={}, evento={}", direccionId, eventoId);
     }
 
     private List<EventoMepDTO> listarPropias(Long direccionId) {

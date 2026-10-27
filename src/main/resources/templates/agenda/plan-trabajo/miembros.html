@@ -1,14 +1,14 @@
 <div th:fragment="contenido">
-    <div class="proyecto-card" style="margin-bottom:1.5rem;">
-        <div class="proyecto-card-header">
+    <div class="plan-trabajo-card" style="margin-bottom:1.5rem;">
+        <div class="plan-trabajo-card-header">
             <div>
-                <h3 class="proyecto-card-title" th:text="'Miembros de: ' + ${proyecto.nombre}">Miembros</h3>
-                <p style="font-size:0.85rem;color:#64748b;margin:4px 0 0 0;" th:text="${proyecto.objetivo}">Objetivo</p>
+                <h3 class="plan-trabajo-card-title" th:text="'Miembros de: ' + ${planTrabajo.nombre}">Miembros</h3>
+                <p style="font-size:0.85rem;color:#64748b;margin:4px 0 0 0;" th:text="${planTrabajo.objetivo}">Objetivo</p>
             </div>
         </div>
         <div style="padding:1rem 1.5rem;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;align-items:center;">
             <div style="flex:1;min-width:0;">
-                <select class="form-input" th:attr="id='select-usuario-'+${proyecto.id}">
+                <select class="form-input" th:attr="id='select-usuario-'+${planTrabajo.id}">
                     <option value="" disabled hidden selected>Agregar Usuario</option>
                     <option th:each="u : ${usuariosDisponibles}" th:value="${u.id}" th:text="${u.nombre}"
                             th:attr="data-role=${u.roles.empty ? 'Sin rol' : #strings.replace(u.roles.![nombre].get(0), 'ROLE_', '')}">Usuario</option>
@@ -17,14 +17,14 @@
             <button class="btn-primary btn-sm"
                     style="white-space:nowrap;flex-shrink:0;"
                     th:if="${usuariosDisponibles != null and !usuariosDisponibles.empty}"
-                    th:attr="data-id=${proyecto.id}"
+                    th:attr="data-id=${planTrabajo.id}"
                     onclick="agregarMiembro(+this.dataset.id)">Agregar Miembro</button>
             <span th:if="${usuariosDisponibles == null or usuariosDisponibles.empty}" style="color:#94a3b8;font-size:0.85rem;">Todos ya son miembros.</span>
         </div>
-        <table class="proyecto-table">
+        <table class="plan-trabajo-table">
             <tbody>
                 <tr th:if="${miembros == null or miembros.empty}">
-                    <td colspan="2" class="proyecto-empty">No hay miembros. Agrega usuarios.</td>
+                    <td colspan="2" class="plan-trabajo-empty">No hay miembros. Agrega usuarios.</td>
                 </tr>
                 <tr th:each="m : ${miembros}">
                     <td colspan="2">
@@ -35,17 +35,17 @@
                             </div>
                             <div style="display:flex;gap:4px;flex-shrink:0;">
                                 <button class="btn-xs btn-ghost"
-                                        th:attr="data-mid=${m.id},data-pid=${proyecto.id}"
+                                        th:attr="data-mid=${m.id},data-pid=${planTrabajo.id}"
                                         onclick="cargarTareas(+this.dataset.mid, +this.dataset.pid)"
                                         title="Ver tareas">📋</button>
                                 <button class="btn-xs btn-danger-ghost"
                                         onclick="abrirConfirmacionAcademica(this)"
-                                        th:attr="data-delete-url='/agenda/proyectos/' + ${proyecto.id} + '/miembros/' + ${m.id},
+                                        th:attr="data-delete-url='/agenda/plan-trabajo/' + ${planTrabajo.id} + '/miembros/' + ${m.id},
                                                  data-delete-target='#miembros-container',
-                                                 data-delete-oncomplete='refrescarPanelesProyecto',
-                                                 data-delete-context=${proyecto.id},
+                                                 data-delete-oncomplete='refrescarPanelesPlanTrabajo',
+                                                 data-delete-context=${planTrabajo.id},
                                                  data-delete-title='Quitar miembro',
-                                                 data-delete-message='¿Deseas quitar a ' + ${m.usuario.nombre} + ' de este proyecto?'"
+                                                 data-delete-message='¿Deseas quitar a ' + ${m.usuario.nombre} + ' de este plan de trabajo?'"
                                         title="Quitar miembro">✕</button>
                             </div>
                         </div>

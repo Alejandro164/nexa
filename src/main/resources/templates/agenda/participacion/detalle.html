@@ -51,8 +51,8 @@
                     <div class="detalle-stat-label">Promedio</div>
                 </div>
                 <div class="detalle-stat">
-                    <div class="detalle-stat-value" th:text="${detalle.proyectosCount}">0</div>
-                    <div class="detalle-stat-label">Proyectos</div>
+                    <div class="detalle-stat-value" th:text="${detalle.planesTrabajoCount}">0</div>
+                    <div class="detalle-stat-label">Planes de trabajo</div>
                 </div>
             </div>
 
@@ -60,15 +60,15 @@
             <div class="seccion-titulo">📋 Tareas Asignadas</div>
             <div th:if="${detalle.tareas == null or detalle.tareas.empty}" style="padding:1.5rem;text-align:center;color:#94a3b8;font-size:0.85rem;">Sin tareas asignadas.</div>
             <table class="mini-table" th:if="${detalle.tareas != null and !detalle.tareas.empty}">
-                <thead><tr><th>Tarea</th><th>Proyecto</th><th>Estado</th><th>Límite</th><th>Nota</th></tr></thead>
+                <thead><tr><th>Tarea</th><th>Plan de trabajo</th><th>Estado</th><th>Límite</th><th>Nota</th></tr></thead>
                 <tbody>
                     <tr th:each="t : ${detalle.tareas}">
                         <td><strong th:text="${t.titulo}">Título</strong></td>
-                        <td th:text="${t.proyecto}">Proyecto</td>
+                        <td th:text="${t.planTrabajo}">Plan de trabajo</td>
                         <td>
                             <span class="badge-xs"
-                                  th:classappend="${t.estado == 'COMPLETADA' ? 'badge-ok' : (t.estado == 'VENCIDA' ? 'badge-err' : (t.estado == 'EN_PROGRESO' ? 'badge-info' : 'badge-warn'))}"
-                                  th:text="${t.estado}">ESTADO</span>
+                                  th:classappend="${t.finalizada ? 'badge-ok' : (t.vencida ? 'badge-err' : (t.pendiente ? 'badge-warn' : 'badge-info'))}"
+                                  th:text="${t.vencida ? t.estado + ' · vencida' : t.estado}">ESTADO</span>
                         </td>
                         <td th:text="${#temporals.format(t.fechaLimite, 'dd/MM/yy')}">01/01</td>
                         <td th:text="${t.calificacion != null ? t.calificacion : '—'}">—</td>
@@ -76,11 +76,11 @@
                 </tbody>
             </table>
 
-            <!-- Proyectos -->
-            <div class="seccion-titulo">📁 Proyectos donde participa</div>
-            <div th:if="${detalle.proyectos == null or detalle.proyectos.empty}" style="padding:1rem 1.5rem;color:#94a3b8;font-size:0.85rem;">No participa en ningún proyecto.</div>
-            <div style="padding:0.5rem 1.5rem 1rem;" th:if="${detalle.proyectos != null and !detalle.proyectos.empty}">
-                <div th:each="p : ${detalle.proyectos}" style="padding:6px 0;font-size:0.85rem;display:flex;justify-content:space-between;">
+            <!-- Planes de trabajo -->
+            <div class="seccion-titulo">📁 Planes de trabajo donde participa</div>
+            <div th:if="${detalle.planesTrabajo == null or detalle.planesTrabajo.empty}" style="padding:1rem 1.5rem;color:#94a3b8;font-size:0.85rem;">No participa en ningún plan de trabajo.</div>
+            <div style="padding:0.5rem 1.5rem 1rem;" th:if="${detalle.planesTrabajo != null and !detalle.planesTrabajo.empty}">
+                <div th:each="p : ${detalle.planesTrabajo}" style="padding:6px 0;font-size:0.85rem;display:flex;justify-content:space-between;">
                     <span th:text="${p.nombre}" style="font-weight:500;">Nombre</span>
                     <span class="badge-xs" th:classappend="${p.rol == 'LIDER' ? 'badge-warn' : 'badge-info'}" th:text="${p.rol == 'LIDER' ? 'Líder' : 'Miembro'}">Rol</span>
                 </div>

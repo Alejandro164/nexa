@@ -36,11 +36,28 @@
                 <td colspan="6" class="table-empty">No hay tareas registradas.</td>
             </tr>
             <tr th:each="t : ${tareas}">
-                <td><strong th:text="${t.titulo}" style="color:#0f172a;">Título</strong></td>
-                <td th:text="${t.miembro != null ? t.miembro.usuario.nombre : t.proyecto.nombre}" style="color:#64748b;">Asignado</td>
+                <td>
+                    <a href="#" style="text-decoration:none;" onclick="abrirTareaDetalle(); return false;"
+                       th:attr="hx-get='/agenda/tareas/' + ${t.id} + '/detalle'"
+                       hx-target="#tarea-detalle-container" hx-swap="innerHTML">
+                        <strong th:text="${t.titulo}" style="color:#0f172a;">Título</strong>
+                    </a>
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:3px;"
+                         th:if="${!t.etiquetas.empty or t.checklistTotal > 0 or !t.adjuntos.empty or !t.colaboradores.empty}">
+                        <span th:each="et : ${t.etiquetas}" th:text="${et.nombre}"
+                              th:style="'background:' + ${et.color} + ';color:#fff;border-radius:5px;padding:1px 7px;font-size:0.7rem;font-weight:600;'">Etiqueta</span>
+                        <span th:if="${t.checklistTotal > 0}" style="font-size:0.75rem;color:#64748b;"
+                              th:text="'☑ ' + ${t.checklistCompletados} + '/' + ${t.checklistTotal}">☑ 0/0</span>
+                        <span th:if="${!t.adjuntos.empty}" style="font-size:0.75rem;color:#64748b;"
+                              th:text="'📎 ' + ${t.adjuntos.size()}">📎 1</span>
+                        <span th:if="${!t.colaboradores.empty}" style="font-size:0.75rem;color:#64748b;"
+                              th:text="'👥 ' + ${t.colaboradores.size()}">👥 1</span>
+                    </div>
+                </td>
+                <td th:text="${t.miembro != null ? t.miembro.usuario.nombre : t.planTrabajo.nombre}" style="color:#64748b;">Asignado</td>
                 <td style="white-space:nowrap;"
                     th:text="${#temporals.format(t.fechaLimite,'dd/MM/yyyy')}"
-                    th:style="${t.fechaLimite.isBefore(#temporals.createNow().toLocalDate()) and t.estado.name() != 'COMPLETADA'} ? 'color:#ef4444;font-size:0.85rem;white-space:nowrap;font-weight:600;' : 'color:#64748b;font-size:0.85rem;white-space:nowrap;'">
+                    th:style="${t.vencida} ? 'color:#ef4444;font-size:0.85rem;white-space:nowrap;font-weight:600;' : 'color:#64748b;font-size:0.85rem;white-space:nowrap;'">
                 </td>
                 <td>
                     <span class="tarea-chip"
@@ -50,14 +67,16 @@
                 </td>
                 <td>
                     <span class="tarea-chip"
-                          th:classappend="${'tarea-badge-' + t.estado.name().toLowerCase().replace('_','-')}"
-                          th:text="${t.estado.name() == 'PENDIENTE' ? 'Pendiente' :
-                                    (t.estado.name() == 'EN_PROGRESO' ? 'En Progreso' :
-                                    (t.estado.name() == 'COMPLETADA' ? 'Completada' : 'Vencida'))}">
-                    </span>
+                          th:classappend="${'tarea-badge-' + t.estado.css}"
+                          th:text="${t.estado.etiqueta}">Pendiente</span>
+                    <span th:if="${t.vencida}" class="tarea-chip tarea-badge-vencida" style="margin-left:4px;">Vencida</span>
                 </td>
                 <td>
                     <div class="table-actions">
+                        <button class="btn-xs btn-ghost"
+                                th:attr="hx-get='/agenda/tareas/' + ${t.id} + '/detalle'"
+                                hx-target="#tarea-detalle-container" hx-swap="innerHTML"
+                                onclick="abrirTareaDetalle()" title="Abrir detalle">🔎</button>
                         <button class="btn-xs btn-ghost"
                                 th:attr="hx-get='/agenda/tareas/form/' + ${t.id}"
                                 hx-target="#modal-container" hx-swap="innerHTML"

@@ -1,5 +1,6 @@
 package com.chavescr.nexa;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -38,6 +39,13 @@ import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.PlanTrabajo;
+import com.chavescr.nexa.entity.MiembroPlanTrabajo;
+import com.chavescr.nexa.entity.TareaPlanTrabajo;
+import com.chavescr.nexa.entity.EtiquetaTarea;
+import com.chavescr.nexa.entity.ChecklistItemTarea;
+import com.chavescr.nexa.entity.AdjuntoTarea;
+import com.chavescr.nexa.entity.ActividadTarea;
 import com.chavescr.nexa.entity.RebajaConducta;
 import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.TipoComponente;
@@ -433,7 +441,7 @@ class ProyectoApplicationTests {
 		context.setVariable("eventos", List.of(destacado, enRango));
 
 		String html = templateEngine.process(
-				new TemplateSpec("agenda/actividad/actividad", Set.of("eventos-tabla"),
+				new TemplateSpec("agenda/actividad/mep/mep", Set.of("tabla"),
 						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
 
 		assertTrue(html.contains("Inicio de curso lectivo para Colegios Científicos Costarricenses."));
@@ -445,9 +453,43 @@ class ProyectoApplicationTests {
 
 		context.setVariable("eventos", List.of());
 		String htmlVacio = templateEngine.process(
-				new TemplateSpec("agenda/actividad/actividad", Set.of("eventos-tabla"),
+				new TemplateSpec("agenda/actividad/mep/mep", Set.of("tabla"),
 						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
-		assertTrue(htmlVacio.contains("No se encontraron actividades institucionales"));
+		assertTrue(htmlVacio.contains("No se encontraron actividades del MEP"));
+	}
+
+	@Test
+	void actividadesDeLaInstitucionUsanElTituloPersonalizadoYUnNombreGenericoSiFaltaElTitulo() {
+		EventoMepDTO conTitulo = new EventoMepDTO();
+		conTitulo.setId("7");
+		conTitulo.setTitulo("Aplicación de la II prueba de ampliación para todos los niveles educativos.");
+		conTitulo.setFechaInicio(LocalDate.of(2026, 2, 9));
+		conTitulo.setFechaFin(LocalDate.of(2026, 2, 13));
+		conTitulo.setNombreCategoria("Pruebas de Ampliación");
+		EventoMepDTO personalizado = conTitulo.conSeleccion(true, "Pruebas de ampliación");
+
+		EventoMepDTO sinTitulo = new EventoMepDTO();
+		sinTitulo.setId("8");
+		sinTitulo.setTitulo(" ");
+		sinTitulo.setFechaInicio(LocalDate.of(2026, 3, 1));
+		sinTitulo.setFechaFin(LocalDate.of(2026, 3, 1));
+		sinTitulo.setNombreCategoria("Otros");
+
+		assertEquals("Pruebas de ampliación", personalizado.getTituloCalendario());
+		assertEquals(conTitulo.getTitulo(), conTitulo.conSeleccion(true, "  ").getTituloCalendario());
+		assertEquals("Actividad MEP", sinTitulo.getTituloCalendario());
+
+		Context context = new Context();
+		context.setVariable("eventos", List.of(personalizado, sinTitulo.conSeleccion(true, null)));
+		context.setVariable("puedeCrearActividad", true);
+
+		String html = templateEngine.process(
+				new TemplateSpec("agenda/actividad/institucion/institucion", Set.of("tabla"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+
+		assertTrue(html.contains("Pruebas de ampliación"));
+		assertTrue(html.contains("Aplicación de la II prueba de ampliación para todos los niveles educativos."));
+		assertTrue(html.contains("Actividad MEP"));
 	}
 
 	@Test
@@ -485,9 +527,14 @@ class ProyectoApplicationTests {
 	}
 
 	@Test
-	void calendarioVistaMesRenderaEventosConTopeBandasYLabelsEnEspanol() {
+	void calendarioVistaMesRenderaEventosConTopeYEventosDeVariosDiasPorDia() {
 		LocalDate lunes = LocalDate.of(2026, 7, 6);
 
+		LocalDate martes = lunes.plusDays(1);
+		LocalDate jueves = lunes.plusDays(3);
+		// Evento de varios días (martes a jueves): se muestra como una etiqueta en cada día.
+		java.util.function.Function<LocalDate, EventoCalendarioDTO> examenes = dia -> EventoCalendarioDTO
+				.deInstitucional("Semana de Exámenes", "desc", dia, null, martes, jueves);
 		List<EventoCalendarioDTO> eventosLunes = List.of(
 				EventoCalendarioDTO.deTarea("Tarea 1", "desc", lunes),
 				EventoCalendarioDTO.deTarea("Tarea 2", "desc", lunes),
@@ -495,22 +542,21 @@ class ProyectoApplicationTests {
 				EventoCalendarioDTO.deTarea("Tarea 4", "desc", lunes));
 		DiaCalendarioDTO diaLunes = new DiaCalendarioDTO(lunes, false, true, eventosLunes);
 
-		DiaCalendarioDTO diaMartes = new DiaCalendarioDTO(lunes.plusDays(1), false, false,
-				List.of(EventoCalendarioDTO.deRecordatorio("Enviar reporte", "desc", lunes.plusDays(1),
-						java.time.LocalTime.of(16, 30))));
+		DiaCalendarioDTO diaMartes = new DiaCalendarioDTO(martes, false, false,
+				List.of(EventoCalendarioDTO.deRecordatorio("Enviar reporte", "desc", martes,
+						java.time.LocalTime.of(16, 30)), examenes.apply(martes)));
 
 		DiaCalendarioDTO diaMiercoles = new DiaCalendarioDTO(lunes.plusDays(2), false, false,
-				List.of(EventoCalendarioDTO.deInstitucional("Feriado", "desc", lunes.plusDays(2), null, false)));
+				List.of(EventoCalendarioDTO.deInstitucional("Feriado", "desc", lunes.plusDays(2), null,
+						lunes.plusDays(2), lunes.plusDays(2)), examenes.apply(lunes.plusDays(2))));
 
 		List<DiaCalendarioDTO> dias = new java.util.ArrayList<>(List.of(diaLunes, diaMartes, diaMiercoles));
-		for (int i = 3; i < 7; i++) {
+		dias.add(new DiaCalendarioDTO(jueves, false, false, List.of(examenes.apply(jueves))));
+		for (int i = 4; i < 7; i++) {
 			dias.add(new DiaCalendarioDTO(lunes.plusDays(i), false, false, List.of()));
 		}
 
-		List<com.chavescr.nexa.dto.BandaEventoDTO> bandas = List.of(
-				new com.chavescr.nexa.dto.BandaEventoDTO("Semana de Exámenes", "desc", null, 1, 4, 0),
-				new com.chavescr.nexa.dto.BandaEventoDTO("Feria Científica", "desc", null, 2, 3, 1));
-		com.chavescr.nexa.dto.SemanaCalendarioDTO semana = new com.chavescr.nexa.dto.SemanaCalendarioDTO(dias, bandas);
+		com.chavescr.nexa.dto.SemanaCalendarioDTO semana = new com.chavescr.nexa.dto.SemanaCalendarioDTO(dias);
 
 		Context context = new Context();
 		context.setVariable("vista", "mes");
@@ -537,13 +583,172 @@ class ProyectoApplicationTests {
 		assertTrue(html.contains("event-recordatorio"));
 		assertTrue(html.contains("event-general"));
 		assertTrue(html.contains("16:30"));
-		assertTrue(html.contains("cal-banda"));
-		assertTrue(html.contains("Semana de Exámenes"));
-		assertTrue(html.contains("Feria Científica"));
-		assertTrue(html.contains("grid-column:1 / 5"));
-		assertTrue(html.contains("grid-row:1"));
-		assertTrue(html.contains("grid-row:2"));
+		assertFalse(html.contains("cal-banda"));
+		// Aparece una vez por cada día (martes, miércoles y jueves) y el detalle muestra el rango completo.
+		assertEquals(3, html.split("data-titulo=\"Semana de Exámenes\"", -1).length - 1);
+		assertTrue(html.contains("Del 7 de julio al 9 de julio de 2026"));
 		assertFalse(html.contains("Marcar No Disponible"));
 		assertFalse(html.contains("Salas Virtuales"));
+	}
+
+	@Test
+	void planDeTrabajoRenderaLaListaConLosNombresNuevos() {
+		PlanTrabajo plan = new PlanTrabajo();
+		plan.setId(5L);
+		plan.setNombre("Feria de Ciencias e Innovación 2026");
+		plan.setObjetivo("Promover la investigación escolar.");
+		plan.setFechaInicio(LocalDate.of(2026, 4, 1));
+		plan.setFechaFin(LocalDate.of(2026, 9, 20));
+
+		Context lista = new Context();
+		lista.setVariable("planesTrabajo", List.of(plan));
+		String htmlLista = templateEngine.process(
+				new TemplateSpec("agenda/plan-trabajo/contenido", Set.of("tabla-planes-trabajo"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), lista);
+		assertTrue(htmlLista.contains("Feria de Ciencias e Innovación 2026"));
+		assertTrue(htmlLista.contains("/agenda/plan-trabajo/form/5"));
+		assertTrue(htmlLista.contains("Eliminar plan de trabajo"));
+		assertFalse(htmlLista.contains("/agenda/proyectos"));
+
+		Context vacia = new Context();
+		vacia.setVariable("planesTrabajo", List.of());
+		String htmlVacia = templateEngine.process(
+				new TemplateSpec("agenda/plan-trabajo/contenido", Set.of("tabla-planes-trabajo"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), vacia);
+		assertTrue(htmlVacia.contains("No hay planes de trabajo. Crea el primero."));
+
+	}
+
+	@Test
+	void detalleDeTareaRenderaTodasLasFuncionesYLosCincoEstados() {
+		Usuario docente = new Usuario();
+		docente.setId(2L);
+		docente.setNombre("María Soto");
+		Usuario colega = new Usuario();
+		colega.setId(3L);
+		colega.setNombre("Pedro Mora");
+
+		PlanTrabajo plan = new PlanTrabajo();
+		plan.setId(5L);
+		plan.setNombre("Feria de Ciencias");
+		MiembroPlanTrabajo miembro = new MiembroPlanTrabajo();
+		miembro.setId(7L);
+		miembro.setUsuario(docente);
+
+		TareaPlanTrabajo tarea = new TareaPlanTrabajo();
+		tarea.setId(10L);
+		tarea.setTitulo("Redactar el planeamiento");
+		tarea.setDescripcion("Incluye objetivos y rúbricas.");
+		tarea.setPlanTrabajo(plan);
+		tarea.setMiembro(miembro);
+		tarea.setEstado(TareaPlanTrabajo.EstadoTarea.EN_REVISION);
+		tarea.setFechaInicio(LocalDate.of(2026, 10, 1));
+		tarea.setFechaLimite(LocalDate.of(2026, 10, 20));
+		tarea.setRecordatorio(TareaPlanTrabajo.RecordatorioTarea.UN_DIA_ANTES);
+		tarea.getColaboradores().add(colega);
+
+		EtiquetaTarea urgente = new EtiquetaTarea();
+		urgente.setId(1L);
+		urgente.setNombre("Urgente");
+		urgente.setColor("#eb5a46");
+		tarea.getEtiquetas().add(urgente);
+
+		ChecklistItemTarea hecho = new ChecklistItemTarea();
+		hecho.setId(1L);
+		hecho.setTexto("Revisar objetivos");
+		hecho.setCompletado(true);
+		ChecklistItemTarea pendiente = new ChecklistItemTarea();
+		pendiente.setId(2L);
+		pendiente.setTexto("Enviar a dirección");
+		tarea.getChecklist().addAll(List.of(hecho, pendiente));
+
+		AdjuntoTarea archivo = new AdjuntoTarea();
+		archivo.setId(1L);
+		archivo.setNombre("planeamiento.pdf");
+		archivo.setRuta("123/agenda-tareas/10/x_planeamiento.pdf");
+		archivo.setExtension("PDF");
+		archivo.setTamanoBytes(340L * 1024);
+		archivo.setSubidoPor(docente);
+		archivo.setFechaCreacion(java.time.LocalDateTime.of(2026, 10, 5, 9, 30));
+		AdjuntoTarea enlace = new AdjuntoTarea();
+		enlace.setId(2L);
+		enlace.setNombre("https://www.mep.go.cr/circular");
+		enlace.setUrl("https://www.mep.go.cr/circular");
+		enlace.setSubidoPor(docente);
+		enlace.setFechaCreacion(java.time.LocalDateTime.of(2026, 10, 5, 9, 31));
+		tarea.getAdjuntos().addAll(List.of(archivo, enlace));
+
+		ActividadTarea comentario = new ActividadTarea();
+		comentario.setId(1L);
+		comentario.setUsuario(colega);
+		comentario.setTipo(ActividadTarea.TipoActividad.COMENTARIO);
+		comentario.setTexto("Falta anexar la rúbrica");
+		comentario.setFecha(java.time.LocalDateTime.of(2026, 10, 6, 10, 0));
+		ActividadTarea cambio = new ActividadTarea();
+		cambio.setId(2L);
+		cambio.setUsuario(docente);
+		cambio.setTipo(ActividadTarea.TipoActividad.ACTIVIDAD);
+		cambio.setTexto("cambió el estado de «Pendiente» a «En revisión»");
+		cambio.setFecha(java.time.LocalDateTime.of(2026, 10, 6, 9, 0));
+		tarea.getActividad().addAll(List.of(comentario, cambio));
+
+		Usuario candidato = new Usuario();
+		candidato.setId(4L);
+		candidato.setNombre("Laura Vargas");
+
+		Context context = new Context();
+		context.setVariable("tarea", tarea);
+		context.setVariable("estados", TareaPlanTrabajo.EstadoTarea.values());
+		context.setVariable("recordatorios", TareaPlanTrabajo.RecordatorioTarea.values());
+		context.setVariable("etiquetasDisponibles", List.of(urgente));
+		context.setVariable("candidatos", List.of(candidato));
+		context.setVariable("colores", List.of("#61bd4f", "#eb5a46"));
+		context.setVariable("usuarioActualId", 3L);
+		context.setVariable("puedeSupervisar", false);
+
+		String html = templateEngine.process(
+				new TemplateSpec("agenda/tareas/detalle", Set.of("detalle-cuerpo"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+
+		// Cinco estados, con el actual resaltado
+		assertTrue(html.contains("Pendiente"));
+		assertTrue(html.contains("En ejecución"));
+		assertTrue(html.contains("En revisión"));
+		assertTrue(html.contains("En corrección"));
+		assertTrue(html.contains("Finalizado"));
+		assertTrue(html.contains("actual en-revision"));
+		assertTrue(html.contains("Control y auditoría"));
+		// Etiquetas, fechas y recordatorio
+		assertTrue(html.contains("Urgente"));
+		assertTrue(html.contains("background:#eb5a46"));
+		assertTrue(html.contains("01/10/2026"));
+		assertTrue(html.contains("20/10/2026"));
+		assertTrue(html.contains("1 día antes"));
+		// Checklist con progreso
+		assertTrue(html.contains("Revisar objetivos"));
+		assertTrue(html.contains("1/2"));
+		assertTrue(html.contains("width:50%"));
+		// Miembros: responsable, colaborador y candidatos
+		assertTrue(html.contains("María Soto"));
+		assertTrue(html.contains("Pedro Mora"));
+		assertTrue(html.contains("Laura Vargas"));
+		// Adjuntos: archivo (descarga interna) y enlace externo
+		assertTrue(html.contains("/agenda/tareas/adjuntos/1"));
+		assertTrue(html.contains("340 KB"));
+		assertTrue(html.contains("href=\"https://www.mep.go.cr/circular\""));
+		// Comentarios y actividad; el autor del comentario (usuario 3) ve "Eliminar"
+		assertTrue(html.contains("Falta anexar la rúbrica"));
+		assertTrue(html.contains("cambió el estado de «Pendiente» a «En revisión»"));
+		assertTrue(html.contains("/agenda/tareas/10/detalle/comentarios/1"));
+		assertFalse(html.contains("td-error"));
+
+		context.setVariable("error", "El título es obligatorio");
+		context.setVariable("usuarioActualId", 99L);
+		String conError = templateEngine.process(
+				new TemplateSpec("agenda/tareas/detalle", Set.of("detalle-cuerpo"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+		assertTrue(conError.contains("El título es obligatorio"));
+		// Un tercero sin permisos de supervisión no ve el botón de eliminar el comentario ajeno
+		assertFalse(conError.contains("/agenda/tareas/10/detalle/comentarios/1"));
 	}
 }
