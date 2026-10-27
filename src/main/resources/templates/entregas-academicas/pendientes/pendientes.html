@@ -1,25 +1,11 @@
-<div th:fragment="content" id="entregas-pendientes-panel" xmlns:th="http://www.thymeleaf.org">
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <h3 class="card-title">Pendientes</h3>
-                <p class="academic-help">Entregas que aún no se han recibido o están fuera de plazo.</p>
-            </div>
+<th:block th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <span id="entregas-pendientes-dot" hx-swap-oob="true" class="entregas-dot"
+          th:classappend="${pendientesCount == 0} ? 'oculto'" th:title="${pendientesCount} + ' pendientes'"></span>
+    <div id="entregas-pendientes-panel">
+        <div th:replace="~{entregas-academicas/comun :: avisos}"></div>
+        <div class="card">
+            <form th:replace="~{entregas-academicas/comun :: filtros}"></form>
+            <div id="entregas-tabla" th:insert="~{entregas-academicas/comun :: tabla}"></div>
         </div>
-        <form class="entregas-form" onsubmit="return false;">
-            <div class="entregas-grid">
-                <div class="form-group span-2">
-                    <label class="form-label">Trabajo pendiente</label>
-                    <input class="form-input" type="text" name="nombre" placeholder="Ej. Examen I período">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Fecha límite</label>
-                    <input class="form-input" type="date" name="fechaLimite">
-                </div>
-            </div>
-            <div class="entregas-actions">
-                <button type="button" class="btn btn-primary">Guardar pendiente</button>
-            </div>
-        </form>
     </div>
-</div>
+</th:block>

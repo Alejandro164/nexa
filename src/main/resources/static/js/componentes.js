@@ -632,6 +632,36 @@ function cerrarActividadModal() {
     }, 180);
 }
 
+function abrirEntregasModal() {
+    const el = document.getElementById('entregas-modal-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarEntregasModal() {
+    const el = document.getElementById('entregas-modal-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
+        // Lo que está detrás pudo cambiar (estado de una entrega, lista de mantenimiento...)
+        const filtros = document.getElementById('entregas-filtros');
+        const mantenimiento = document.getElementById('entregas-mantenimiento-panel');
+        if (filtros) {
+            htmx.trigger(filtros, 'submit');
+        } else if (mantenimiento) {
+            htmx.ajax('GET', '/entregas-academicas/mantenimiento', { target: '#entregas-mantenimiento-panel', swap: 'outerHTML' });
+        }
+    }, 180);
+}
+
 function abrirTareaDetalle() {
     const el = document.getElementById('tarea-detalle-container');
     if (!el) return;

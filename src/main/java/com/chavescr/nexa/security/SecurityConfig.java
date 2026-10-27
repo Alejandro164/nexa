@@ -151,6 +151,10 @@ public class SecurityConfig {
                         .requestMatchers("/control-de-acceso", "/control-de-acceso/**")
                         .hasAnyAuthority(ADMIN, DIRECTOR)
 
+                        // ── Entregas académicas: la dirección define y revisa; el docente solo presenta lo suyo ──
+                        .requestMatchers("/entregas-academicas/mantenimiento", "/entregas-academicas/mantenimiento/**")
+                        .hasAnyAuthority(ADMIN, DIRECTOR)
+
                         // ── Resto de módulos operativos: abiertos a todo el staff (ADMIN/DIRECTOR/DOCENTE) ──
                         .requestMatchers("/docentes/**", "/gestion-academica/**",
                                 "/gestion-especial/**", "/evaluacion-academica/**", "/conducta/**", "/notas/**",

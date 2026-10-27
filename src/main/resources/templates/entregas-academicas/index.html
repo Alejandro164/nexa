@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
     layout:decorate="~{index}">
 
 <head>
@@ -98,51 +99,104 @@
                 padding-top: 1.25rem;
                 margin-top: 0.5rem;
             }
+            .entregas-dot {
+                display: inline-block;
+                width: 9px;
+                height: 9px;
+                border-radius: 50%;
+                background: #c2185b;
+            }
+            .entregas-dot.oculto { display: none; }
+            .entregas-aviso {
+                background: #fbf8e6;
+                border-radius: 12px;
+                padding: 0.9rem 1.25rem;
+                margin-bottom: 0.75rem;
+                font-size: 0.86rem;
+                color: #3f3a1d;
+            }
+            .entregas-filtros {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.6rem;
+                padding: 1rem 1.5rem;
+                align-items: center;
+            }
+            .entregas-filtros .form-input { flex: 1; min-width: 180px; max-width: 280px; }
+            .entregas-tabla th { font-size: 0.78rem; color: #64748b; font-weight: 500; }
+            .entregas-tabla td { vertical-align: middle; }
+            .entregas-estado {
+                display: inline-block;
+                padding: 4px 14px;
+                border-radius: 8px;
+                font-size: 0.78rem;
+                font-weight: 600;
+                background: #eef0f3;
+                color: #475569;
+            }
+            .entregas-estado.borrador { background: #eef0f3; color: #475569; }
+            .entregas-estado.presentada { background: #dbeafe; color: #1e40af; }
+            .entregas-estado.devuelta { background: #fee2e2; color: #991b1b; }
+            .entregas-estado.aprobada { background: #dcfce7; color: #166534; }
+            .entregas-estado.sin-iniciar { background: #fef3c7; color: #92400e; }
+            .plazo-en-plazo { color: #166534; font-size: 0.82rem; }
+            .plazo-vencida { color: #b91c1c; font-size: 0.82rem; font-weight: 600; }
+            .plazo-proxima { color: #64748b; font-size: 0.82rem; }
+            .entregas-paginacion {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 1rem 1.5rem;
+                font-size: 0.9rem;
+                color: #475569;
+            }
+            .entregas-btn-accion {
+                border: 1px solid #cbd5e1;
+                background: #fff;
+                color: #1e293b;
+                border-radius: 999px;
+                padding: 7px 20px;
+                font-size: 0.85rem;
+                font-weight: 700;
+                font-family: inherit;
+                cursor: pointer;
+            }
+            .entregas-btn-accion:hover { background: #f1f5f9; border-color: var(--primary); }
         </style>
 
-        <div x-data>
+        <div x-data="{ activeTab: 'pendientes' }">
             <div class="config-tabs-container">
                 <div class="config-tabs">
-                    <button class="config-tab-btn" :class="{ 'active': $store.entregas.activeTab === 'entregas' }"
-                            @click="$store.entregas.activeTab = 'entregas'">
-                        Entregas
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': $store.entregas.activeTab === 'pendientes' }"
-                            @click="$store.entregas.activeTab = 'pendientes'">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'pendientes' }"
+                            @click="activeTab = 'pendientes'" hx-get="/entregas-academicas/pendientes"
+                            hx-target="#entregas-content" hx-swap="innerHTML">
                         Pendientes
+                        <span id="entregas-pendientes-dot" class="entregas-dot"
+                              th:classappend="${pendientesCount == 0} ? 'oculto'"
+                              th:title="${pendientesCount} + ' pendientes'"></span>
                     </button>
-                    <button class="config-tab-btn" :class="{ 'active': $store.entregas.activeTab === 'mantenimiento' }"
-                            @click="$store.entregas.activeTab = 'mantenimiento'">
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'realizadas' }"
+                            @click="activeTab = 'realizadas'" hx-get="/entregas-academicas/realizadas"
+                            hx-target="#entregas-content" hx-swap="innerHTML">
+                        Realizadas
+                    </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'mantenimiento' }"
+                            @click="activeTab = 'mantenimiento'" hx-get="/entregas-academicas/mantenimiento"
+                            hx-target="#entregas-content" hx-swap="innerHTML"
+                            sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')">
                         Mantenimiento
                     </button>
                 </div>
             </div>
 
-            <div x-show="$store.entregas.activeTab === 'entregas'" class="tab-pane">
-                <div th:replace="~{entregas-academicas/entregas/entregas :: content}"></div>
+            <div id="entregas-content" class="tab-pane" hx-get="/entregas-academicas/pendientes"
+                 hx-trigger="load" hx-swap="innerHTML">
+                <!-- El contenido de la pestaña se carga aquí -->
             </div>
-            <div x-show="$store.entregas.activeTab === 'pendientes'" class="tab-pane" x-cloak>
-                <div th:replace="~{entregas-academicas/pendientes/pendientes :: content}"></div>
-            </div>
-            <div x-show="$store.entregas.activeTab === 'mantenimiento'" class="tab-pane" x-cloak>
-                <div th:replace="~{entregas-academicas/mantenimiento/mantenimiento :: content}"></div>
-            </div>
-        </div>
 
-        <script>
-            (function asegurarStoreEntregas() {
-                function crear() {
-                    if (!window.Alpine || typeof Alpine.store !== 'function') {
-                        return;
-                    }
-                    if (!Alpine.store('entregas')) {
-                        Alpine.store('entregas', { activeTab: 'entregas' });
-                    }
-                }
-                crear();
-                document.addEventListener('alpine:init', crear);
-            })();
-        </script>
+            <!-- Modales: detalle de la entrega, formulario de mantenimiento y seguimiento -->
+            <div id="entregas-modal-container" style="display:none;"></div>
+        </div>
     </main>
     </th:block>
 

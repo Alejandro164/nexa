@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Modal de una entrega académica: el docente la prepara y la presenta; la dirección la revisa.
+     Cada acción devuelve "detalle-cuerpo" y reemplaza el contenido de #entrega-detalle-cuerpo. -->
+<th:block th:fragment="detalle-modal">
+    <div class="modal-backdrop" onclick="if(event.target===this) cerrarEntregasModal()">
+        <div class="modal-dialog" style="max-width:760px; width:96vw; max-height:92vh; overflow-y:auto;">
+            <style>
+                .ed-meta { font-size: 0.82rem; color: #64748b; margin: 2px 0 0; }
+                .ed-seccion { margin-bottom: 1.25rem; }
+                .ed-titulo { font-weight: 700; font-size: 0.9rem; color: #0f172a; margin-bottom: 6px; }
+                .ed-aviso { border-radius: 10px; padding: 10px 14px; font-size: 0.86rem; margin-bottom: 1rem; }
+                .ed-aviso.devuelta { background: #fee2e2; color: #991b1b; }
+                .ed-aviso.presentada { background: #dbeafe; color: #1e40af; }
+                .ed-aviso.aprobada { background: #dcfce7; color: #166534; }
+                .ed-adjunto { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 6px; }
+                .ed-adjunto form { margin: 0; }
+                .ed-adjunto .ed-icono { width: 38px; height: 38px; border-radius: 8px; background: #e2e8f0; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; }
+                .ed-adjunto a { font-weight: 600; font-size: 0.86rem; color: #0f172a; word-break: break-all; }
+                .ed-adjunto .ed-sub { font-size: 0.74rem; color: #94a3b8; }
+                .ed-x { border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 8px; border-radius: 6px; }
+                .ed-x:hover { background: #fee2e2; color: #b91c1c; }
+                .ed-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+                .ed-acciones { display: flex; justify-content: flex-end; gap: 0.6rem; flex-wrap: wrap; margin-top: 10px; }
+                .ed-error { background: #fee2e2; color: #991b1b; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; margin: 0.75rem 1.5rem 0; }
+                .ed-obs { white-space: pre-line; font-size: 0.88rem; color: #334155; margin: 0; }
+            </style>
+            <div id="entrega-detalle-cuerpo" hx-target="this" hx-swap="innerHTML"
+                 th:insert="~{entregas-academicas/detalle :: detalle-cuerpo}"></div>
+        </div>
+    </div>
+</th:block>
+
+<div th:fragment="detalle-cuerpo"
+     th:with="base='/entregas-academicas/detalle/' + ${fila.entrega.id}, p=${fila.presentacion}">
+
+    <div class="modal-header">
+        <div style="min-width:0;">
+            <h3 class="modal-title" th:text="${fila.entrega.nombre}">Entrega</h3>
+            <p class="ed-meta">
+                <span th:text="${fila.entrega.tipo.etiqueta}">Tipo</span>
+                <span th:if="${fila.entrega.periodo != null}" th:text="'· ' + ${fila.entrega.periodo.codigo}">· 202609</span>
+                · Plazo <strong th:text="${#temporals.format(fila.entrega.fechaInicio, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(fila.entrega.fechaFin, 'dd/MM/yyyy')}">01/10/2026 - 15/10/2026</strong>
+                <span th:class="${fila.entrega.plazo.css}" th:text="'(' + ${fila.entrega.plazo.etiqueta} + ')'">(En plazo)</span>
+            </p>
+            <p class="ed-meta" th:if="${supervisor}">Docente: <strong th:text="${fila.docente.nombre}">Docente</strong></p>
+        </div>
+        <button type="button" class="close-btn" onclick="cerrarEntregasModal()">&times;</button>
+    </div>
+
+    <div th:if="${error}" class="ed-error" th:text="${error}">Error</div>
+
+    <div class="modal-body">
+
+        <div class="ed-seccion" th:if="${fila.entrega.descripcion != null}">
+            <div class="ed-titulo">Qué se pide</div>
+            <p class="ed-obs" th:text="${fila.entrega.descripcion}">Descripción</p>
+        </div>
+
+        <div class="ed-seccion">
+            <div class="ed-titulo">Estado
+                <span class="entregas-estado" th:classappend="${fila.estadoCss}" th:text="${fila.estadoEtiqueta}" style="margin-left:6px;">Borrador</span>
+            </div>
+            <div class="ed-aviso devuelta" th:if="${p != null and p.estado.name() == 'DEVUELTA'}">
+                La dirección devolvió esta entrega<span th:text="${p.observacionRevision != null ? ':' : '.'}">:</span>
+                <div th:if="${p.observacionRevision != null}" th:text="${p.observacionRevision}" style="margin-top:4px;font-weight:600;white-space:pre-line;">Observación</div>
+            </div>
+            <div class="ed-aviso presentada" th:if="${p != null and p.estado.name() == 'PRESENTADA'}">
+                Presentada el <span th:text="${#temporals.format(p.fechaPresentacion, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</span>.
+                Está pendiente de revisión por la dirección.
+            </div>
+            <div class="ed-aviso aprobada" th:if="${p != null and p.estado.name() == 'APROBADA'}">
+                Aprobada<span th:if="${p.revisadoPor != null}" th:text="' por ' + ${p.revisadoPor.nombre}"> por Director</span><span th:if="${p.fechaRevision != null}" th:text="' el ' + ${#temporals.format(p.fechaRevision, 'dd/MM/yyyy HH:mm')}"> el 01/01/2026</span>.
+                <div th:if="${p.observacionRevision != null}" th:text="${p.observacionRevision}" style="margin-top:4px;font-weight:600;white-space:pre-line;">Observación</div>
+            </div>
+        </div>
+
+        <!-- Observación del docente -->
+        <div class="ed-seccion">
+            <div class="ed-titulo">Observación</div>
+            <textarea th:if="${editable}" id="entrega-observacion" class="form-textarea" name="observacion" maxlength="2000"
+                      placeholder="Notas para la dirección sobre esta entrega..." th:text="${p != null ? p.observacion : ''}"></textarea>
+            <p th:if="${!editable}" class="ed-obs" th:text="${p != null and p.observacion != null ? p.observacion : 'Sin observación.'}">Observación</p>
+        </div>
+
+        <!-- Adjuntos -->
+        <div class="ed-seccion">
+            <div class="ed-titulo">Adjuntos
+                <span th:if="${p != null and !p.adjuntos.empty}" th:text="'(' + ${p.adjuntos.size()} + ')'" style="font-weight:500;color:#64748b;"></span>
+            </div>
+            <p th:if="${p == null or p.adjuntos.empty}" class="ed-meta">Todavía no hay archivos ni enlaces adjuntos.</p>
+            <div class="ed-adjunto" th:each="a : ${p != null ? p.adjuntos : {}}">
+                <span class="ed-icono" th:text="${a.enlace ? 'URL' : (a.extension != null ? a.extension : 'ARCH')}">PDF</span>
+                <div style="flex:1;min-width:0;">
+                    <a th:if="${a.enlace}" th:href="${a.url}" target="_blank" rel="noopener noreferrer" th:text="${a.nombre}">Enlace</a>
+                    <a th:unless="${a.enlace}" th:href="'/entregas-academicas/adjuntos/' + ${a.id}" target="_blank" rel="noopener" th:text="${a.nombre}">Archivo</a>
+                    <div class="ed-sub">
+                        <span th:if="${!a.enlace}" th:text="${a.tamanoLegible} + ' · '">1 MB · </span>
+                        <span th:text="${#temporals.format(a.fechaCreacion, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                    </div>
+                </div>
+                <form th:if="${editable}" th:attr="hx-post=${base} + '/adjuntos/' + ${a.id} + '/eliminar'"
+                      hx-include="#entrega-observacion" hx-confirm="¿Eliminar este adjunto?">
+                    <button type="submit" class="ed-x" title="Eliminar adjunto">&times;</button>
+                </form>
+            </div>
+            <form th:if="${editable}" class="ed-panel" th:attr="hx-post=${base} + '/adjuntos'"
+                  hx-encoding="multipart/form-data" hx-include="#entrega-observacion">
+                <label class="form-label">Archivos (máx. 25 MB cada uno)</label>
+                <input class="form-input" type="file" name="archivos" multiple>
+                <label class="form-label" style="margin-top:8px;">o un enlace</label>
+                <input class="form-input" type="text" name="enlace" maxlength="1000" placeholder="https://...">
+                <div style="margin-top:8px;text-align:right;"><button type="submit" class="btn-xs btn-primary">Adjuntar</button></div>
+            </form>
+        </div>
+
+        <!-- Acciones del docente -->
+        <div class="ed-acciones" th:if="${editable}">
+            <button type="button" class="btn-secondary" th:attr="hx-post=${base} + '/borrador'"
+                    hx-include="#entrega-observacion">Guardar borrador</button>
+            <button type="button" class="btn-primary" th:attr="hx-post=${base} + '/presentar'"
+                    hx-include="#entrega-observacion"
+                    hx-confirm="¿Presentar la entrega? Después no podrás modificarla a menos que la dirección la devuelva.">Presentar</button>
+        </div>
+
+        <!-- Revisión de la dirección -->
+        <div class="ed-seccion" th:if="${puedeRevisar}">
+            <div class="ed-titulo">Revisión</div>
+            <textarea id="entrega-revision" class="form-textarea" name="observacion" maxlength="1000"
+                      placeholder="Observaciones para el docente (obligatorias si la devuelves)..."></textarea>
+            <input type="hidden" id="entrega-revision-presentacion" name="presentacionId" th:value="${p.id}">
+            <input type="hidden" id="entrega-revision-docente" name="docenteId" th:value="${fila.docente.id}">
+            <div class="ed-acciones">
+                <button type="button" class="btn-secondary" th:attr="hx-post=${base} + '/revision'"
+                        hx-include="#entrega-revision, #entrega-revision-presentacion, #entrega-revision-docente"
+                        hx-vals='{"aprobar": false}'>Devolver con observaciones</button>
+                <button type="button" class="btn-primary" th:attr="hx-post=${base} + '/revision'"
+                        hx-include="#entrega-revision, #entrega-revision-presentacion, #entrega-revision-docente"
+                        hx-vals='{"aprobar": true}'>Aprobar</button>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="cerrarEntregasModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
