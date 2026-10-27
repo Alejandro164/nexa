@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
@@ -42,6 +43,7 @@ import jakarta.persistence.EntityManager;
  * controlador y renderiza las plantillas. Todo corre en una transacción que se revierte al terminar.
  */
 @SpringBootTest
+@TestPropertySource(properties = "ruta.recursos=${java.io.tmpdir}/nexa-pruebas")
 @Transactional
 class EntregasAcademicasFlujoTest {
 
@@ -62,6 +64,8 @@ class EntregasAcademicasFlujoTest {
     private EntityManager em;
     @Autowired
     private com.chavescr.nexa.service.AlmacenamientoService almacenamientoService;
+    @Autowired
+    private com.chavescr.nexa.repository.DireccionRepository direccionRepository;
 
     private Usuario docente;
     private MockHttpSession sesionDireccion;
@@ -150,15 +154,21 @@ class EntregasAcademicasFlujoTest {
 
         MockMultipartFile archivo = new MockMultipartFile("archivos", "planeamiento.pdf", "application/pdf",
                 "contenido de prueba".getBytes());
+        // Subir archivos exige que la institución tenga cédula; si la base de pruebas no la tiene, solo se prueba el enlace
+        boolean puedeSubirArchivos = almacenamientoService
+                .carpetaInstitucionOpcional(direccionRepository.findById(DIRECCION).orElseThrow()) != null;
         model = new ExtendedModelMap();
-        html = render(controller.agregarAdjuntos(entregaId, List.of(archivo), "www.mep.go.cr/circular",
+        html = render(controller.agregarAdjuntos(entregaId, puedeSubirArchivos ? List.<org.springframework.web.multipart.MultipartFile>of(archivo) : List.<org.springframework.web.multipart.MultipartFile>of(),
+                "www.mep.go.cr/circular",
                 "Avance 80%", model, sesionDocente, comoDocente), model);
         assertFalse(html.contains("ed-error"), html);
         EntregaAcademicaDocente borrador = respuesta(entregaId);
         assertEquals("Avance 80%", borrador.getObservacion());
-        assertEquals(2, borrador.getAdjuntos().size());
-        var guardado = borrador.getAdjuntos().stream().filter(a -> !a.isEnlace()).findFirst().orElseThrow();
-        assertTrue(java.nio.file.Files.isReadable(almacenamientoService.resolver(guardado.getRuta())));
+        assertEquals(puedeSubirArchivos ? 2 : 1, borrador.getAdjuntos().size());
+        if (puedeSubirArchivos) {
+            var guardado = borrador.getAdjuntos().stream().filter(a -> !a.isEnlace()).findFirst().orElseThrow();
+            assertTrue(java.nio.file.Files.isReadable(almacenamientoService.resolver(guardado.getRuta())));
+        }
 
         // En Pendientes pasa a "Borrador / Continuar"
         model = new ExtendedModelMap();

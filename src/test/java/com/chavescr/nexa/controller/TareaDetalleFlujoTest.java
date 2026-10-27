@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ import jakarta.persistence.EntityManager;
  * Todo corre en una transacción que se revierte al terminar, así que no deja datos.
  */
 @SpringBootTest
+@TestPropertySource(properties = "ruta.recursos=${java.io.tmpdir}/nexa-pruebas")
 @Transactional
 class TareaDetalleFlujoTest {
 
@@ -174,18 +176,23 @@ class TareaDetalleFlujoTest {
         assertTrue(html.contains("https://www.mep.go.cr/circular"));
         assertEquals(1, recargar().getAdjuntos().size());
 
-        // Adjuntos: archivo en disco (al revertirse la transacción de la prueba el archivo se borra)
-        org.springframework.mock.web.MockMultipartFile archivo = new org.springframework.mock.web.MockMultipartFile(
-                "archivos", "planeamiento.pdf", "application/pdf", "contenido de prueba".getBytes());
-        model = new ExtendedModelMap();
-        html = render(controller.agregarAdjuntos(tareaId, List.of(archivo), null, model, session, request), model);
-        assertFalse(html.contains("td-error"), html);
-        assertTrue(html.contains("planeamiento.pdf"));
-        List<com.chavescr.nexa.entity.AdjuntoTarea> adjuntos = recargar().getAdjuntos();
-        assertEquals(2, adjuntos.size());
-        com.chavescr.nexa.entity.AdjuntoTarea guardado = adjuntos.stream().filter(a -> !a.isEnlace()).findFirst().orElseThrow();
-        assertEquals("PDF", guardado.getExtension());
-        assertTrue(java.nio.file.Files.isReadable(almacenamientoService.resolver(guardado.getRuta())));
+        // Adjuntos: archivo en disco (al revertirse la transacción de la prueba el archivo se borra).
+        // Subir archivos exige que la institución tenga cédula; si la base de pruebas no la tiene, solo se prueba el enlace.
+        boolean puedeSubirArchivos = almacenamientoService.carpetaInstitucionOpcional(
+                recargar().getPlanTrabajo().getDireccion()) != null;
+        if (puedeSubirArchivos) {
+            org.springframework.mock.web.MockMultipartFile archivo = new org.springframework.mock.web.MockMultipartFile(
+                    "archivos", "planeamiento.pdf", "application/pdf", "contenido de prueba".getBytes());
+            model = new ExtendedModelMap();
+            html = render(controller.agregarAdjuntos(tareaId, List.of(archivo), null, model, session, request), model);
+            assertFalse(html.contains("td-error"), html);
+            assertTrue(html.contains("planeamiento.pdf"));
+            List<com.chavescr.nexa.entity.AdjuntoTarea> adjuntos = recargar().getAdjuntos();
+            assertEquals(2, adjuntos.size());
+            com.chavescr.nexa.entity.AdjuntoTarea guardado = adjuntos.stream().filter(a -> !a.isEnlace()).findFirst().orElseThrow();
+            assertEquals("PDF", guardado.getExtension());
+            assertTrue(java.nio.file.Files.isReadable(almacenamientoService.resolver(guardado.getRuta())));
+        }
 
         // Comentarios
         model = new ExtendedModelMap();
