@@ -15,9 +15,16 @@
                 <td>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span class="estado-badge"
-                              th:classappend="${t.estado.name() == 'PENDIENTE' ? 'estado-pendiente' : (t.estado.name() == 'EN_PROGRESO' ? 'estado-en-progreso' : (t.estado.name() == 'COMPLETADA' ? 'estado-completada' : 'estado-vencida'))}"
-                              th:text="${t.estado.name()}">PENDIENTE</span>
-                        <strong style="font-size:0.85rem;" th:text="${t.titulo}">Título</strong>
+                              th:classappend="'estado-' + ${t.estado.css}"
+                              th:text="${t.estado.etiqueta}">Pendiente</span>
+                        <span th:if="${t.vencida}" class="estado-badge estado-vencida">Vencida</span>
+                        <a href="#" style="text-decoration:none;" onclick="abrirTareaDetalle(); return false;"
+                           th:attr="hx-get='/agenda/tareas/' + ${t.id} + '/detalle'"
+                           hx-target="#tarea-detalle-container" hx-swap="innerHTML">
+                            <strong style="font-size:0.85rem;color:#0f172a;" th:text="${t.titulo}">Título</strong>
+                        </a>
+                        <span th:if="${t.checklistTotal > 0}" style="font-size:0.75rem;color:#64748b;"
+                              th:text="'☑ ' + ${t.checklistCompletados} + '/' + ${t.checklistTotal}">☑ 0/0</span>
                         <span th:if="${t.calificacion != null}" style="font-size:0.8rem;color:#64748b;" th:text="'Nota: '+${t.calificacion}+'/100'">Nota</span>
                     </div>
                     <div style="font-size:0.78rem;color:#94a3b8;margin-top:3px;" th:text="'Límite: '+${#temporals.format(t.fechaLimite, 'dd/MM/yyyy')}">Límite</div>

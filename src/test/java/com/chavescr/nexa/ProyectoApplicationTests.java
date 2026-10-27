@@ -40,6 +40,12 @@ import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.PlanTrabajo;
+import com.chavescr.nexa.entity.MiembroPlanTrabajo;
+import com.chavescr.nexa.entity.TareaPlanTrabajo;
+import com.chavescr.nexa.entity.EtiquetaTarea;
+import com.chavescr.nexa.entity.ChecklistItemTarea;
+import com.chavescr.nexa.entity.AdjuntoTarea;
+import com.chavescr.nexa.entity.ActividadTarea;
 import com.chavescr.nexa.entity.RebajaConducta;
 import com.chavescr.nexa.entity.Recordatorio;
 import com.chavescr.nexa.entity.TipoComponente;
@@ -611,5 +617,138 @@ class ProyectoApplicationTests {
 						(org.thymeleaf.templatemode.TemplateMode) null, null), vacia);
 		assertTrue(htmlVacia.contains("No hay planes de trabajo. Crea el primero."));
 
+	}
+
+	@Test
+	void detalleDeTareaRenderaTodasLasFuncionesYLosCincoEstados() {
+		Usuario docente = new Usuario();
+		docente.setId(2L);
+		docente.setNombre("María Soto");
+		Usuario colega = new Usuario();
+		colega.setId(3L);
+		colega.setNombre("Pedro Mora");
+
+		PlanTrabajo plan = new PlanTrabajo();
+		plan.setId(5L);
+		plan.setNombre("Feria de Ciencias");
+		MiembroPlanTrabajo miembro = new MiembroPlanTrabajo();
+		miembro.setId(7L);
+		miembro.setUsuario(docente);
+
+		TareaPlanTrabajo tarea = new TareaPlanTrabajo();
+		tarea.setId(10L);
+		tarea.setTitulo("Redactar el planeamiento");
+		tarea.setDescripcion("Incluye objetivos y rúbricas.");
+		tarea.setPlanTrabajo(plan);
+		tarea.setMiembro(miembro);
+		tarea.setEstado(TareaPlanTrabajo.EstadoTarea.EN_REVISION);
+		tarea.setFechaInicio(LocalDate.of(2026, 10, 1));
+		tarea.setFechaLimite(LocalDate.of(2026, 10, 20));
+		tarea.setRecordatorio(TareaPlanTrabajo.RecordatorioTarea.UN_DIA_ANTES);
+		tarea.getColaboradores().add(colega);
+
+		EtiquetaTarea urgente = new EtiquetaTarea();
+		urgente.setId(1L);
+		urgente.setNombre("Urgente");
+		urgente.setColor("#eb5a46");
+		tarea.getEtiquetas().add(urgente);
+
+		ChecklistItemTarea hecho = new ChecklistItemTarea();
+		hecho.setId(1L);
+		hecho.setTexto("Revisar objetivos");
+		hecho.setCompletado(true);
+		ChecklistItemTarea pendiente = new ChecklistItemTarea();
+		pendiente.setId(2L);
+		pendiente.setTexto("Enviar a dirección");
+		tarea.getChecklist().addAll(List.of(hecho, pendiente));
+
+		AdjuntoTarea archivo = new AdjuntoTarea();
+		archivo.setId(1L);
+		archivo.setNombre("planeamiento.pdf");
+		archivo.setRuta("123/agenda-tareas/10/x_planeamiento.pdf");
+		archivo.setExtension("PDF");
+		archivo.setTamanoBytes(340L * 1024);
+		archivo.setSubidoPor(docente);
+		archivo.setFechaCreacion(java.time.LocalDateTime.of(2026, 10, 5, 9, 30));
+		AdjuntoTarea enlace = new AdjuntoTarea();
+		enlace.setId(2L);
+		enlace.setNombre("https://www.mep.go.cr/circular");
+		enlace.setUrl("https://www.mep.go.cr/circular");
+		enlace.setSubidoPor(docente);
+		enlace.setFechaCreacion(java.time.LocalDateTime.of(2026, 10, 5, 9, 31));
+		tarea.getAdjuntos().addAll(List.of(archivo, enlace));
+
+		ActividadTarea comentario = new ActividadTarea();
+		comentario.setId(1L);
+		comentario.setUsuario(colega);
+		comentario.setTipo(ActividadTarea.TipoActividad.COMENTARIO);
+		comentario.setTexto("Falta anexar la rúbrica");
+		comentario.setFecha(java.time.LocalDateTime.of(2026, 10, 6, 10, 0));
+		ActividadTarea cambio = new ActividadTarea();
+		cambio.setId(2L);
+		cambio.setUsuario(docente);
+		cambio.setTipo(ActividadTarea.TipoActividad.ACTIVIDAD);
+		cambio.setTexto("cambió el estado de «Pendiente» a «En revisión»");
+		cambio.setFecha(java.time.LocalDateTime.of(2026, 10, 6, 9, 0));
+		tarea.getActividad().addAll(List.of(comentario, cambio));
+
+		Usuario candidato = new Usuario();
+		candidato.setId(4L);
+		candidato.setNombre("Laura Vargas");
+
+		Context context = new Context();
+		context.setVariable("tarea", tarea);
+		context.setVariable("estados", TareaPlanTrabajo.EstadoTarea.values());
+		context.setVariable("recordatorios", TareaPlanTrabajo.RecordatorioTarea.values());
+		context.setVariable("etiquetasDisponibles", List.of(urgente));
+		context.setVariable("candidatos", List.of(candidato));
+		context.setVariable("colores", List.of("#61bd4f", "#eb5a46"));
+		context.setVariable("usuarioActualId", 3L);
+		context.setVariable("puedeSupervisar", false);
+
+		String html = templateEngine.process(
+				new TemplateSpec("agenda/tareas/detalle", Set.of("detalle-cuerpo"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+
+		// Cinco estados, con el actual resaltado
+		assertTrue(html.contains("Pendiente"));
+		assertTrue(html.contains("En ejecución"));
+		assertTrue(html.contains("En revisión"));
+		assertTrue(html.contains("En corrección"));
+		assertTrue(html.contains("Finalizado"));
+		assertTrue(html.contains("actual en-revision"));
+		assertTrue(html.contains("Control y auditoría"));
+		// Etiquetas, fechas y recordatorio
+		assertTrue(html.contains("Urgente"));
+		assertTrue(html.contains("background:#eb5a46"));
+		assertTrue(html.contains("01/10/2026"));
+		assertTrue(html.contains("20/10/2026"));
+		assertTrue(html.contains("1 día antes"));
+		// Checklist con progreso
+		assertTrue(html.contains("Revisar objetivos"));
+		assertTrue(html.contains("1/2"));
+		assertTrue(html.contains("width:50%"));
+		// Miembros: responsable, colaborador y candidatos
+		assertTrue(html.contains("María Soto"));
+		assertTrue(html.contains("Pedro Mora"));
+		assertTrue(html.contains("Laura Vargas"));
+		// Adjuntos: archivo (descarga interna) y enlace externo
+		assertTrue(html.contains("/agenda/tareas/adjuntos/1"));
+		assertTrue(html.contains("340 KB"));
+		assertTrue(html.contains("href=\"https://www.mep.go.cr/circular\""));
+		// Comentarios y actividad; el autor del comentario (usuario 3) ve "Eliminar"
+		assertTrue(html.contains("Falta anexar la rúbrica"));
+		assertTrue(html.contains("cambió el estado de «Pendiente» a «En revisión»"));
+		assertTrue(html.contains("/agenda/tareas/10/detalle/comentarios/1"));
+		assertFalse(html.contains("td-error"));
+
+		context.setVariable("error", "El título es obligatorio");
+		context.setVariable("usuarioActualId", 99L);
+		String conError = templateEngine.process(
+				new TemplateSpec("agenda/tareas/detalle", Set.of("detalle-cuerpo"),
+						(org.thymeleaf.templatemode.TemplateMode) null, null), context);
+		assertTrue(conError.contains("El título es obligatorio"));
+		// Un tercero sin permisos de supervisión no ve el botón de eliminar el comentario ajeno
+		assertFalse(conError.contains("/agenda/tareas/10/detalle/comentarios/1"));
 	}
 }

@@ -103,10 +103,9 @@
                     <div class="form-group">
                         <label class="form-label">Estado</label>
                         <select class="form-input" name="estado">
-                            <option value="PENDIENTE"   th:selected="${tarea.estado == null or tarea.estado.name() == 'PENDIENTE'}">Pendiente</option>
-                            <option value="EN_PROGRESO" th:selected="${tarea.estado != null and tarea.estado.name() == 'EN_PROGRESO'}">En Progreso</option>
-                            <option value="COMPLETADA"  th:selected="${tarea.estado != null and tarea.estado.name() == 'COMPLETADA'}">Completada</option>
-                            <option value="VENCIDA"     th:selected="${tarea.estado != null and tarea.estado.name() == 'VENCIDA'}">Vencida</option>
+                            <option th:each="e : ${T(com.chavescr.nexa.entity.TareaPlanTrabajo.EstadoTarea).values()}"
+                                    th:value="${e.name()}" th:text="${e.etiqueta}"
+                                    th:selected="${tarea.estado == null ? e.name() == 'PENDIENTE' : tarea.estado == e}">Pendiente</option>
                         </select>
                     </div>
 

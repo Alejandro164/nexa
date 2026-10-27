@@ -1454,22 +1454,26 @@
 #recordatorios-modal-container.dir-modal-visible .modal-backdrop,
 #reuniones-modal-container.dir-modal-visible .modal-backdrop,
 #solicitudes-modal-container.dir-modal-visible .modal-backdrop,
-#actividad-modal-container.dir-modal-visible .modal-backdrop { animation: academicModalBackdropIn 180ms ease-out both; }
+#actividad-modal-container.dir-modal-visible .modal-backdrop,
+#tarea-detalle-container.dir-modal-visible .modal-backdrop { animation: academicModalBackdropIn 180ms ease-out both; }
 #dir-modal-container.dir-modal-visible .modal-dialog,
 #recordatorios-modal-container.dir-modal-visible .modal-dialog,
 #reuniones-modal-container.dir-modal-visible .modal-dialog,
 #solicitudes-modal-container.dir-modal-visible .modal-dialog,
-#actividad-modal-container.dir-modal-visible .modal-dialog   { animation: academicModalDialogIn 240ms cubic-bezier(.22,1,.36,1) both; }
+#actividad-modal-container.dir-modal-visible .modal-dialog,
+#tarea-detalle-container.dir-modal-visible .modal-dialog   { animation: academicModalDialogIn 240ms cubic-bezier(.22,1,.36,1) both; }
 #dir-modal-container.dir-modal-closing .modal-backdrop,
 #recordatorios-modal-container.dir-modal-closing .modal-backdrop,
 #reuniones-modal-container.dir-modal-closing .modal-backdrop,
 #solicitudes-modal-container.dir-modal-closing .modal-backdrop,
-#actividad-modal-container.dir-modal-closing .modal-backdrop { animation: academicModalBackdropOut 180ms ease-in both; }
+#actividad-modal-container.dir-modal-closing .modal-backdrop,
+#tarea-detalle-container.dir-modal-closing .modal-backdrop { animation: academicModalBackdropOut 180ms ease-in both; }
 #dir-modal-container.dir-modal-closing .modal-dialog,
 #recordatorios-modal-container.dir-modal-closing .modal-dialog,
 #reuniones-modal-container.dir-modal-closing .modal-dialog,
 #solicitudes-modal-container.dir-modal-closing .modal-dialog,
-#actividad-modal-container.dir-modal-closing .modal-dialog   { animation: academicModalDialogOut 180ms ease-in both; }
+#actividad-modal-container.dir-modal-closing .modal-dialog,
+#tarea-detalle-container.dir-modal-closing .modal-dialog   { animation: academicModalDialogOut 180ms ease-in both; }
 
 /* ── Etiquetas de roles y estado de usuario ──────────────────── */
 .badge-xs { display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.68rem;font-weight:600;text-transform:uppercase;margin:1px; }
@@ -1490,6 +1494,10 @@
 .tarea-badge-en-progreso { background: #dbeafe; color: #1e40af; }
 .tarea-badge-completada  { background: #dcfce7; color: #166534; }
 .tarea-badge-vencida     { background: #fee2e2; color: #991b1b; }
+.tarea-badge-en-ejecucion  { background: #dbeafe; color: #1e40af; }
+.tarea-badge-en-revision   { background: #ede9fe; color: #5b21b6; }
+.tarea-badge-en-correccion { background: #fee2e2; color: #991b1b; }
+.tarea-badge-finalizado    { background: #dcfce7; color: #166534; }
 
 /* ── Estado de plan de trabajo ──────────────────────────────────────── */
 .badge-estado     { display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600; }
@@ -1534,6 +1542,10 @@
 .estado-en-progreso { background:#dbeafe;color:#1e40af; }
 .estado-completada  { background:#dcfce7;color:#166534; }
 .estado-vencida     { background:#fee2e2;color:#991b1b; }
+.estado-en-ejecucion  { background:#dbeafe;color:#1e40af; }
+.estado-en-revision   { background:#ede9fe;color:#5b21b6; }
+.estado-en-correccion { background:#fee2e2;color:#991b1b; }
+.estado-finalizado    { background:#dcfce7;color:#166534; }
 
 /* ── Dropdown de perfil (topbar) ────────────────────────────── */
 .dropdown-enter         { transition: opacity 150ms ease-out, transform 150ms cubic-bezier(.22,1,.36,1); }

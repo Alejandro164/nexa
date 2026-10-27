@@ -23,4 +23,13 @@ public interface TareaPlanTrabajoRepository extends JpaRepository<TareaPlanTraba
     List<TareaPlanTrabajo> findByDireccionIdOrderByFechaLimiteAsc(@Param("direccionId") Long direccionId);
 
     Optional<TareaPlanTrabajo> findByIdAndPlanTrabajo_Direccion_Id(Long id, Long direccionId);
+
+    List<TareaPlanTrabajo> findByEtiquetas_Id(Long etiquetaId);
+
+    /** Tareas abiertas con un recordatorio configurado que todavía no se ha enviado. */
+    @Query("SELECT t FROM TareaPlanTrabajo t WHERE t.recordatorio <> :ninguno AND t.recordatorioEnviado = false "
+            + "AND t.estado <> :finalizado")
+    List<TareaPlanTrabajo> findConRecordatorioPendiente(
+            @Param("ninguno") TareaPlanTrabajo.RecordatorioTarea ninguno,
+            @Param("finalizado") TareaPlanTrabajo.EstadoTarea finalizado);
 }

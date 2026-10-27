@@ -632,6 +632,32 @@ function cerrarActividadModal() {
     }, 180);
 }
 
+function abrirTareaDetalle() {
+    const el = document.getElementById('tarea-detalle-container');
+    if (!el) return;
+    el.style.display = 'block';
+    setTimeout(function () {
+        el.classList.remove('dir-modal-closing');
+        el.classList.add('dir-modal-visible');
+    }, 0);
+}
+
+function cerrarTareaDetalle() {
+    const el = document.getElementById('tarea-detalle-container');
+    if (!el) return;
+    el.classList.remove('dir-modal-visible');
+    el.classList.add('dir-modal-closing');
+    setTimeout(function () {
+        el.style.display = 'none';
+        el.classList.remove('dir-modal-closing');
+        el.innerHTML = '';
+        // La tabla de tareas pudo cambiar (estado, fechas, etiquetas...) mientras el detalle estaba abierto
+        if (document.getElementById('tareas-tabla-container')) {
+            htmx.ajax('GET', '/agenda/tareas/lista', { target: '#tareas-tabla-container', swap: 'innerHTML' });
+        }
+    }, 180);
+}
+
 function animarEvento(el, visible) {
     if (visible) {
         el.style.display = '';

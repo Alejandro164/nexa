@@ -67,8 +67,8 @@
                         <td th:text="${t.planTrabajo}">Plan de trabajo</td>
                         <td>
                             <span class="badge-xs"
-                                  th:classappend="${t.estado == 'COMPLETADA' ? 'badge-ok' : (t.estado == 'VENCIDA' ? 'badge-err' : (t.estado == 'EN_PROGRESO' ? 'badge-info' : 'badge-warn'))}"
-                                  th:text="${t.estado}">ESTADO</span>
+                                  th:classappend="${t.finalizada ? 'badge-ok' : (t.vencida ? 'badge-err' : (t.pendiente ? 'badge-warn' : 'badge-info'))}"
+                                  th:text="${t.vencida ? t.estado + ' · vencida' : t.estado}">ESTADO</span>
                         </td>
                         <td th:text="${#temporals.format(t.fechaLimite, 'dd/MM/yy')}">01/01</td>
                         <td th:text="${t.calificacion != null ? t.calificacion : '—'}">—</td>

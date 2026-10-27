@@ -81,7 +81,10 @@ public class ParticipacionService {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", t.getId());
             m.put("titulo", t.getTitulo());
-            m.put("estado", t.getEstado().name());
+            m.put("estado", t.getEstado().getEtiqueta());
+            m.put("finalizada", t.getEstado().isCerrado());
+            m.put("vencida", t.isVencida());
+            m.put("pendiente", t.getEstado() == TareaPlanTrabajo.EstadoTarea.PENDIENTE);
             m.put("fechaLimite", t.getFechaLimite());
             m.put("calificacion", t.getCalificacion());
             m.put("planTrabajo", t.getPlanTrabajo().getNombre());
@@ -104,7 +107,7 @@ public class ParticipacionService {
                     Map<String, Object> h = new LinkedHashMap<>();
                     h.put("tipo", "Tarea de plan de trabajo");
                     h.put("titulo", t.getTitulo());
-                    h.put("detalle", t.getEstado() == TareaPlanTrabajo.EstadoTarea.COMPLETADA
+                    h.put("detalle", t.getEstado() == TareaPlanTrabajo.EstadoTarea.FINALIZADO
                             ? "Completada" : "Calificada: " + t.getCalificacion());
                     h.put("fecha", t.getFechaCompletada() != null ? t.getFechaCompletada() : t.getFechaAsignacion());
                     return h;
@@ -130,8 +133,8 @@ public class ParticipacionService {
             List<TareaPlanTrabajo> tareas = tareaPlanTrabajoRepository.findByMiembroIdOrderByFechaLimiteAsc(mp.getId());
             for (TareaPlanTrabajo t : tareas) {
                 totalTareas++;
-                if (t.getEstado() == TareaPlanTrabajo.EstadoTarea.COMPLETADA) completadas++;
-                if (t.getCalificacion() != null && t.getEstado() == TareaPlanTrabajo.EstadoTarea.COMPLETADA) {
+                if (t.getEstado() == TareaPlanTrabajo.EstadoTarea.FINALIZADO) completadas++;
+                if (t.getCalificacion() != null && t.getEstado() == TareaPlanTrabajo.EstadoTarea.FINALIZADO) {
                     sumaNotas += t.getCalificacion();
                     conNota++;
                 }

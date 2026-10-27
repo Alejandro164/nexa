@@ -241,7 +241,7 @@ public class AgendaController {
         Long direccionId = requerirDireccion(session);
         com.chavescr.nexa.entity.TareaPlanTrabajo t = planTrabajoService.obtenerTareaDireccion(direccionId, id);
         t.setEstado(estado);
-        if (estado == com.chavescr.nexa.entity.TareaPlanTrabajo.EstadoTarea.COMPLETADA)
+        if (estado == com.chavescr.nexa.entity.TareaPlanTrabajo.EstadoTarea.FINALIZADO)
             t.setFechaCompletada(java.time.LocalDateTime.now());
         else t.setFechaCompletada(null);
         planTrabajoService.cambiarEstadoTarea(t.getPlanTrabajo().getId(), id, estado);

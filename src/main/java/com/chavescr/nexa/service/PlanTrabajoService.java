@@ -176,7 +176,7 @@ public class PlanTrabajoService {
     public void cambiarEstadoTarea(Long planTrabajoId, Long tareaId, TareaPlanTrabajo.EstadoTarea nuevoEstado) {
         TareaPlanTrabajo tarea = obtenerTarea(planTrabajoId, tareaId);
         tarea.setEstado(nuevoEstado);
-        if (nuevoEstado == TareaPlanTrabajo.EstadoTarea.COMPLETADA) {
+        if (nuevoEstado == TareaPlanTrabajo.EstadoTarea.FINALIZADO) {
             tarea.setFechaCompletada(LocalDateTime.now());
         } else {
             tarea.setFechaCompletada(null);
@@ -282,8 +282,16 @@ public class PlanTrabajoService {
         }
         tarea.setTitulo(titulo.trim());
         tarea.setDescripcion(descripcion != null ? descripcion.trim() : null);
+        if (!fechaLimite.equals(tarea.getFechaLimite())) {
+            tarea.setRecordatorioEnviado(false);
+        }
         tarea.setFechaLimite(fechaLimite);
         tarea.setEstado(estado != null ? estado : TareaPlanTrabajo.EstadoTarea.PENDIENTE);
+        if (!tarea.getEstado().isCerrado()) {
+            tarea.setFechaCompletada(null);
+        } else if (tarea.getFechaCompletada() == null) {
+            tarea.setFechaCompletada(LocalDateTime.now());
+        }
         tarea.setPrioridad(prioridad != null ? prioridad : TareaPlanTrabajo.PrioridadTarea.MEDIA);
         return tareaRepository.save(tarea);
     }
@@ -323,18 +331,20 @@ public class PlanTrabajoService {
 
             for (TareaPlanTrabajo t : tareas) {
                 totalTareas++;
-                switch (t.getEstado()) {
-                    case COMPLETADA -> {
-                        completadas++; tareasCompletadas++;
-                        if (t.getFechaCompletada() != null && !t.getFechaCompletada().toLocalDate().isAfter(t.getFechaLimite())) {
-                            aTiempo++; tareasATiempo++;
-                        } else { tarde++; tareasTarde++; }
-                    }
-                    case VENCIDA -> { vencidas++; tareasVencidas++; tarde++; tareasTarde++; }
-                    case EN_PROGRESO -> enProgreso++;
-                    default -> pendientes++;
+                if (t.getEstado() == TareaPlanTrabajo.EstadoTarea.FINALIZADO) {
+                    completadas++; tareasCompletadas++;
+                    if (t.getFechaCompletada() != null && !t.getFechaCompletada().toLocalDate().isAfter(t.getFechaLimite())) {
+                        aTiempo++; tareasATiempo++;
+                    } else { tarde++; tareasTarde++; }
+                } else if (t.isVencida()) {
+                    vencidas++; tareasVencidas++; tarde++; tareasTarde++;
+                } else if (t.getEstado() == TareaPlanTrabajo.EstadoTarea.PENDIENTE) {
+                    pendientes++;
+                } else {
+                    // En ejecución, en revisión o en corrección: la tarea sigue en curso
+                    enProgreso++;
                 }
-                if (t.getCalificacion() != null && t.getEstado() == TareaPlanTrabajo.EstadoTarea.COMPLETADA) {
+                if (t.getCalificacion() != null && t.getEstado() == TareaPlanTrabajo.EstadoTarea.FINALIZADO) {
                     sumaNotas += t.getCalificacion(); conNota++;
                     sumaCalificaciones += t.getCalificacion(); tareasConCalificacion++;
                 }
