@@ -2,6 +2,7 @@ package com.chavescr.nexa.controller;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.DiaLaboral;
@@ -60,7 +62,7 @@ public class ConfiguracionInstitucionalController {
         cargarJornada(model, direccionId);
         cargarComponentes(model, direccionId);
         cargarTiposMateria(model, direccionId);
-        cargarEscala(model, direccionId);
+        cargarEscala(model, direccionId, null);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "configuracion-institucional/index :: htmx-content";
         }
@@ -203,14 +205,15 @@ public class ConfiguracionInstitucionalController {
     }
 
     @GetMapping("/escala-notas")
-    public String escalaNotas(Model model, HttpSession session) {
-        cargarEscala(model, requerirDireccion(session));
+    public String escalaNotas(@RequestParam(required = false) CicloEducativo ciclo, Model model, HttpSession session) {
+        cargarEscala(model, requerirDireccion(session), ciclo);
         return "configuracion-institucional/escala-notas/escala-notas :: content";
     }
 
     /** Guarda la escala de notas y las rebajas juntas; si una no es válida, no se guarda ninguna. */
     @PostMapping("/escala-notas")
     public String guardarEscala(
+            @RequestParam CicloEducativo ciclo,
             @RequestParam Integer notaMinima,
             @RequestParam Integer notaMaxima,
             @RequestParam Integer decimales,
@@ -222,14 +225,14 @@ public class ConfiguracionInstitucionalController {
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
-            escalaEvaluacionService.guardar(direccionId, notaMinima, notaMaxima, decimales, notaAprobacion, tramos,
-                    rebajas, quienRegistraPuntosBoleta, destinoRebajaAsistencia);
-            response.setHeader("HX-Trigger",
-                    "{\"institucionalGuardado\":{\"mensaje\":\"Escala de notas y rebajas actualizadas\"}}");
+            escalaEvaluacionService.guardar(direccionId, ciclo, notaMinima, notaMaxima, decimales, notaAprobacion,
+                    tramos, rebajas, quienRegistraPuntosBoleta, destinoRebajaAsistencia);
+            response.setHeader("HX-Trigger", "{\"institucionalGuardado\":{\"mensaje\":\"Escala del "
+                    + escaparJson(ciclo.getEtiqueta()) + " y rebajas actualizadas\"}}");
         } catch (IllegalArgumentException e) {
             notificarError(response, e.getMessage());
         }
-        cargarEscala(model, direccionId);
+        cargarEscala(model, direccionId, ciclo);
         return "configuracion-institucional/escala-notas/escala-notas :: content";
     }
 
@@ -255,8 +258,19 @@ public class ConfiguracionInstitucionalController {
         model.addAttribute("tiposMateria", tipoMateriaService.listar(direccionId));
     }
 
-    private void cargarEscala(Model model, Long direccionId) {
-        model.addAttribute("escalaNotas", escalaNotasService.obtener(direccionId));
+    /** Sin ciclo pedido, abre el primero que tenga secciones (o el Primer Ciclo). */
+    private void cargarEscala(Model model, Long direccionId, CicloEducativo ciclo) {
+        Map<CicloEducativo, Long> secciones = escalaNotasService.seccionesPorCiclo(direccionId);
+        CicloEducativo seleccionado = ciclo != null ? ciclo
+                : secciones.entrySet().stream()
+                        .filter(entrada -> entrada.getValue() > 0)
+                        .map(Map.Entry::getKey)
+                        .findFirst()
+                        .orElse(CicloEducativo.PRIMER_CICLO);
+        model.addAttribute("ciclos", CicloEducativo.values());
+        model.addAttribute("cicloSeleccionado", seleccionado);
+        model.addAttribute("seccionesPorCiclo", secciones);
+        model.addAttribute("escalaNotas", escalaNotasService.obtener(direccionId, seleccionado));
         model.addAttribute("rebajaConducta", rebajaConductaService.obtener(direccionId));
     }
 

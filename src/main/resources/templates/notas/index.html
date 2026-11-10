@@ -829,8 +829,8 @@
                         @click="limpiarFiltros()">Limpiar</button>
                 <span class="notas-count" x-text="cohorte.length + (cohorte.length === 1 ? ' estudiante' : ' estudiantes')"></span>
             </div>
-            <div class="notas-escala" x-show="escala.length" x-cloak>
-                <template x-for="t in escala" :key="t.desde">
+            <div class="notas-escala" x-show="escalaVisible.length" x-cloak>
+                <template x-for="t in escalaVisible" :key="t.desde">
                     <span class="notas-pill" :class="t.tono" x-text="t.nombre + ' · ' + t.desde"></span>
                 </template>
             </div>
@@ -866,7 +866,7 @@
                                     <span class="notas-student-sub" x-text="e.cedula + ' · ' + grupoDe(e)"></span>
                                 </span>
                                 <span class="notas-pill" x-show="promedioDe(e) != null"
-                                      :class="nivel(promedioDe(e))" x-text="promedioDe(e)"></span>
+                                      :class="nivel(promedioDe(e), e)" x-text="promedioDe(e)"></span>
                             </button>
                         </template>
                         <div class="notas-empty" x-show="filtrados.length === 0">
@@ -1150,6 +1150,9 @@
         <script th:inline="javascript">
             var NOTAS_CATALOGO = /*[[${notasCatalogo}]]*/ {};
             var NOTAS_ESCALA = /*[[${escala.tramos}]]*/ [];
+            // Escala de cada ciclo (PRIMER_CICLO…): cada estudiante se pinta con la del ciclo de su sección.
+            // Propiedad de window y no declaración, porque este script se vuelve a ejecutar en cada swap de HTMX.
+            window.NOTAS_ESCALAS = /*[[${escalasPorCiclo}]]*/ {};
             var NOTAS_CON_ASISTENCIA = /*[[${conAsistencia}]]*/ true;
 
             function notasModulo() {
@@ -1203,6 +1206,19 @@
                     niveles: niveles,
                     estudiantes: estudiantes,
                     escala: Array.isArray(NOTAS_ESCALA) ? NOTAS_ESCALA : [],
+                    escalas: window.NOTAS_ESCALAS || {},
+                    escalaDe(est) {
+                        const e = est === undefined ? this.seleccionado : est;
+                        if (e) {
+                            const nivel = this.niveles.find(function (n) { return String(n.id) === String(e.nivelId); });
+                            const propia = nivel && nivel.ciclo ? this.escalas[nivel.ciclo] : null;
+                            if (Array.isArray(propia) && propia.length) return propia;
+                        }
+                        return this.escala;
+                    },
+                    get escalaVisible() {
+                        return this.escalaDe(this.seleccionado);
+                    },
                     get periodosDelAnio() {
                         const anio = String(this.anio);
                         return this.periodos.filter(function (p) { return String(p.anio) === anio; });
@@ -1751,7 +1767,7 @@
                         return +(notas.reduce((acc, n) => acc + n, 0) / notas.length).toFixed(2);
                     },
                     conteo(est, aprobadas) {
-                        const umbral = this.corte();
+                        const umbral = this.corte(est);
                         return this.materiasDe(est).filter((m) => {
                             const n = this.pctDe(this.resumenDe(m));
                             if (n == null) return false;
@@ -1760,7 +1776,7 @@
                     },
                     conteoPeriodo(est, periodo, aprobadas) {
                         if (!est || !periodo) return 0;
-                        const umbral = this.corte();
+                        const umbral = this.corte(est);
                         return this.materiasDe(est).filter((m) => {
                             if (this.esConducta(m)) return false;
                             const n = this.pctDe(this.notaDe(m, periodo.id));
@@ -1768,24 +1784,26 @@
                             return aprobadas ? n >= umbral : n < umbral;
                         }).length;
                     },
-                    tramoDe(n) {
-                        if (n == null || !this.escala.length) return null;
+                    // est: estudiante cuya escala se usa; sin él, la del estudiante seleccionado.
+                    tramoDe(n, est) {
+                        const escala = this.escalaDe(est);
+                        if (n == null || !escala.length) return null;
                         const nota = Number(n);
-                        for (let i = 0; i < this.escala.length; i++) {
-                            if (nota >= this.escala[i].desde) return this.escala[i];
+                        for (let i = 0; i < escala.length; i++) {
+                            if (nota >= escala[i].desde) return escala[i];
                         }
-                        return this.escala[this.escala.length - 1];
+                        return escala[escala.length - 1];
                     },
-                    corte() {
-                        const pasan = this.escala.filter(function (t) { return t.tono !== 'aplazado'; });
+                    corte(est) {
+                        const pasan = this.escalaDe(est).filter(function (t) { return t.tono !== 'aplazado'; });
                         return pasan.length ? pasan[pasan.length - 1].desde : 0;
                     },
-                    nivel(n) {
-                        const tramo = this.tramoDe(n);
+                    nivel(n, est) {
+                        const tramo = this.tramoDe(n, est);
                         return tramo ? tramo.tono : '';
                     },
-                    etiqueta(n) {
-                        const tramo = this.tramoDe(n);
+                    etiqueta(n, est) {
+                        const tramo = this.tramoDe(n, est);
                         return tramo ? tramo.nombre : '';
                     },
                     colorDe(n) {

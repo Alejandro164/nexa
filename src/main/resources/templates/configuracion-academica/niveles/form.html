@@ -21,7 +21,7 @@
                     <div class="academic-form-grid">
                         <div class="form-group">
                             <label class="form-label">Grado</label>
-                            <select class="form-input" name="grado" required>
+                            <select class="form-input" name="grado" required onchange="sugerirCicloNivel(this)">
                                 <option value="" disabled hidden th:selected="${nivel.grado == null}">
                                     Seleccione un grado
                                 </option>
@@ -34,6 +34,20 @@
                             <label class="form-label">Sección</label>
                             <input class="form-input" name="seccion" maxlength="20" required
                                    th:value="${nivel.seccion}" placeholder="Ej. A">
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label">Ciclo</label>
+                            <select class="form-input" name="ciclo" required>
+                                <option value="" disabled hidden th:selected="${nivel.cicloEfectivo == null}">
+                                    Seleccione un ciclo
+                                </option>
+                                <option th:each="c : ${ciclos}"
+                                        th:value="${c.name()}"
+                                        th:text="${c.etiqueta + ' (' + c.gradoDesde + '.º a ' + c.gradoHasta + '.º)'}"
+                                        th:attr="data-grado-desde=${c.gradoDesde}, data-grado-hasta=${c.gradoHasta}"
+                                        th:selected="${nivel.cicloEfectivo == c}">Primer Ciclo</option>
+                            </select>
+                            <p class="academic-help">Se sugiere según el grado. Define qué escala de notas usan sus estudiantes.</p>
                         </div>
                     </div>
                     <input type="hidden" name="_activo" value="on">
@@ -56,6 +70,23 @@
             </div>
         </div>
     </div>
+    <script>
+        function sugerirCicloNivel(selectGrado) {
+            const form = selectGrado.closest('form');
+            const ciclo = form ? form.querySelector('select[name="ciclo"]') : null;
+            const grado = Number(selectGrado.value);
+            if (!ciclo || !Number.isFinite(grado)) {
+                return;
+            }
+            const sugerido = Array.from(ciclo.options).find(function (opcion) {
+                return grado >= Number(opcion.dataset.gradoDesde) && grado <= Number(opcion.dataset.gradoHasta);
+            });
+            if (sugerido && ciclo.value !== sugerido.value) {
+                ciclo.value = sugerido.value;
+                ciclo.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+    </script>
 </div>
 </body>
 </html>

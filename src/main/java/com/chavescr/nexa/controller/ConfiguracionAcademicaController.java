@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
@@ -82,12 +83,14 @@ public class ConfiguracionAcademicaController {
     @GetMapping("/niveles/form")
     public String nuevoNivel(Model model) {
         model.addAttribute("nivel", new NivelAcademico());
+        model.addAttribute("ciclos", CicloEducativo.values());
         return "configuracion-academica/niveles/form :: form-content";
     }
 
     @GetMapping("/niveles/form/{id}")
     public String editarNivel(@PathVariable Long id, Model model, HttpSession session) {
         model.addAttribute("nivel", service.obtenerNivel(requerirDireccion(session), id));
+        model.addAttribute("ciclos", CicloEducativo.values());
         return "configuracion-academica/niveles/form :: form-content";
     }
 

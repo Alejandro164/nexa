@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
@@ -173,6 +174,11 @@ public class ConfiguracionAcademicaService {
         nivel.setDireccion(obtenerDireccion(direccionId));
         nivel.setGrado(datos.getGrado());
         nivel.setSeccion(datos.getSeccion().trim().toUpperCase());
+        CicloEducativo ciclo = datos.getCiclo() != null ? datos.getCiclo() : CicloEducativo.deGrado(datos.getGrado());
+        if (ciclo == null) {
+            throw new IllegalArgumentException("Elige el ciclo de la sección");
+        }
+        nivel.setCiclo(ciclo);
         nivel.setActivo(Boolean.TRUE.equals(datos.getActivo()));
         return nivelRepository.save(nivel);
     }

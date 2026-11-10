@@ -1261,7 +1261,8 @@ public class NotasConsultaService {
 
     private NivelOpcion nivel(NivelAcademico nivel) {
         return new NivelOpcion(nivel.getId(), nivel.getGrado(), nivel.getSeccion(),
-                nivel.getGrado() + "-" + nivel.getSeccion());
+                nivel.getGrado() + "-" + nivel.getSeccion(),
+                nivel.getCicloEfectivo() == null ? null : nivel.getCicloEfectivo().name());
     }
 
     private Map<Long, List<ObservacionPeriodo>> observacionesDe(Long direccionId, List<Usuario> estudiantes,

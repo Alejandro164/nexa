@@ -22,6 +22,7 @@ import com.chavescr.nexa.dto.FilaNotaConducta;
 import com.chavescr.nexa.dto.PanelNotaConducta;
 import com.chavescr.nexa.dto.ResumenNotaConducta;
 import com.chavescr.nexa.dto.VistaEscala;
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.IncidenteConducta;
@@ -95,6 +96,34 @@ public class NotaConductaService {
         return cargarPanel(direccionId, periodoId, grado, nivelId, docenteId, null);
     }
 
+    /**
+     * Escala que se muestra en el encabezado del panel: la del ciclo de la sección elegida, si no la de una sección
+     * del grado elegido, si no la de la primera sección visible.
+     */
+    private static VistaEscala escalaDelPanel(Map<CicloEducativo, VistaEscala> escalas,
+            List<NivelAcademico> nivelesVisibles, Integer grado, Long nivelId) {
+        CicloEducativo ciclo = nivelesVisibles.stream()
+                .filter(nivel -> nivelId != null && nivelId.equals(nivel.getId()))
+                .map(NivelAcademico::getCicloEfectivo)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseGet(() -> nivelesVisibles.stream()
+                        .filter(nivel -> grado == null || grado.equals(nivel.getGrado()))
+                        .map(NivelAcademico::getCicloEfectivo)
+                        .filter(Objects::nonNull)
+                        .findFirst()
+                        .orElse(CicloEducativo.PRIMER_CICLO));
+        return escalas.get(ciclo);
+    }
+
+    /** Cada estudiante se califica con la escala del ciclo de su sección. */
+    private static VistaEscala escalaDe(Map<CicloEducativo, VistaEscala> escalas, Usuario estudiante,
+            VistaEscala porDefecto) {
+        NivelAcademico nivel = estudiante.getNivelAcademico();
+        CicloEducativo ciclo = nivel == null ? null : nivel.getCicloEfectivo();
+        return ciclo == null ? porDefecto : escalas.getOrDefault(ciclo, porDefecto);
+    }
+
     @Transactional(readOnly = true, rollbackFor = Exception.class)
     public PanelNotaConducta cargarPanel(Long direccionId, Long periodoId, Integer grado, Long nivelId,
             Long docenteId, java.util.Collection<Long> soloEstudiantes) {
@@ -108,7 +137,8 @@ public class NotaConductaService {
                 .toList();
 
         PeriodoAcademico periodo = resolverPeriodo(periodos, periodoId);
-        VistaEscala escala = escalaNotasService.vista(direccionId);
+        Map<CicloEducativo, VistaEscala> escalas = escalaNotasService.vistasPorCiclo(direccionId);
+        VistaEscala escala = escalaDelPanel(escalas, nivelesVisibles, grado, nivelId);
         if (periodo == null) {
             return new PanelNotaConducta(periodos, grados, List.of(), List.of(),
                     new ResumenNotaConducta(0, 0, 0, 0), null, grado, nivelId,
@@ -129,6 +159,7 @@ public class NotaConductaService {
             }
         }
 
+        escala = escalaDelPanel(escalas, nivelesVisibles, grado, nivelId);
         List<Usuario> estudiantes = listarEstudiantes(direccionId, grado, nivelId, nivelesVisibles, docenteId != null);
         if (soloEstudiantes != null) {
             estudiantes = estudiantes.stream()
@@ -152,7 +183,8 @@ public class NotaConductaService {
             List<IncidenteConducta> delEstudiante = porEstudiante.getOrDefault(estudiante.getId(), List.of());
             incidentesFiltrados.addAll(delEstudiante);
             filas.add(construirFila(estudiante, periodo, delEstudiante,
-                    enviadas.contains(estudiante.getId()), escala, calculo, asistencias.get(estudiante.getId())));
+                    enviadas.contains(estudiante.getId()), escalaDe(escalas, estudiante, escala), calculo,
+                    asistencias.get(estudiante.getId())));
         }
         filas.sort(Comparator
                 .comparing((FilaNotaConducta f) -> f.getEstudiante().getNivelAcademico() == null
@@ -242,7 +274,7 @@ public class NotaConductaService {
         CalculoRebaja calculo = rebajaConductaService.calculo(direccionId);
         Map<Long, int[]> asistencias = conteosAsistencia(direccionId, periodo, List.of(estudianteId), calculo);
         FilaNotaConducta fila = construirFila(estudiante, periodo, incidentes, false,
-                escalaNotasService.vista(direccionId), calculo, asistencias.get(estudianteId));
+                escalaNotasService.vistaDeEstudiante(direccionId, estudianteId), calculo, asistencias.get(estudianteId));
 
         List<Usuario> padres = usuarioRepository.findPadresByEstudianteId(estudianteId);
         if (padres.isEmpty()) {

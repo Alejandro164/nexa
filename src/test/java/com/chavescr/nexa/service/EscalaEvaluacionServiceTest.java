@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 
@@ -38,21 +39,21 @@ class EscalaEvaluacionServiceTest {
 
     @Test
     void guardaLaEscalaYLasRebajas() {
-        service.guardar(DIRECCION, 0, 100, 1, 70, "[]", "[]",
+        service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO, 0, 100, 1, 70, "[]", "[]",
                 QuienRegistraPuntosBoleta.PROFESOR_GUIA, DestinoRebajaAsistencia.CONDUCTA);
 
-        verify(escalaNotasService).guardar(DIRECCION, 0, 100, 1, 70, "[]");
+        verify(escalaNotasService).guardar(DIRECCION, CicloEducativo.TERCER_CICLO, 0, 100, 1, 70, "[]");
         verify(rebajaConductaService).guardar(DIRECCION, "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA,
                 DestinoRebajaAsistencia.CONDUCTA);
     }
 
     @Test
     void siLaEscalaNoEsValidaNoGuardaLasRebajas() {
-        when(escalaNotasService.guardar(anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyString()))
+        when(escalaNotasService.guardar(anyLong(), any(), anyInt(), anyInt(), anyInt(), anyInt(), anyString()))
                 .thenThrow(new IllegalArgumentException("Hacen falta al menos dos tramos"));
 
-        assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, 0, 100, 1, 70, "[]", "[]",
-                QuienRegistraPuntosBoleta.PROFESOR_GUIA, DestinoRebajaAsistencia.CONDUCTA));
+        assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO,
+                0, 100, 1, 70, "[]", "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA, DestinoRebajaAsistencia.CONDUCTA));
 
         verifyNoInteractions(rebajaConductaService);
     }
@@ -62,7 +63,7 @@ class EscalaEvaluacionServiceTest {
         when(rebajaConductaService.guardar(anyLong(), anyString(), any(), any()))
                 .thenThrow(new IllegalArgumentException("Indica quién registra los puntos de las boletas"));
 
-        assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, 0, 100, 1, 70, "[]", "[]",
-                null, DestinoRebajaAsistencia.CONDUCTA));
+        assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO,
+                0, 100, 1, 70, "[]", "[]", null, DestinoRebajaAsistencia.CONDUCTA));
     }
 }

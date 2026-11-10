@@ -43,7 +43,7 @@ public class NotasController {
         }
         boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-        model.addAttribute("escala", escalaNotasService.vista(direccionId));
+        model.addAttribute("escala", escalaNotasService.vistaDeEstudiante(direccionId, estudianteId));
         model.addAttribute("conAsistencia", rebajaConductaService.asistenciaRebajaComponente(direccionId));
         try {
             model.addAttribute("filas", notasConsultaService.desglose(
@@ -64,7 +64,7 @@ public class NotasController {
         }
         boolean supervision = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
-        model.addAttribute("escala", escalaNotasService.vista(direccionId));
+        model.addAttribute("escala", escalaNotasService.vistaDeEstudiante(direccionId, estudianteId));
         try {
             model.addAttribute("detalle", notasConsultaService.detalleMateria(
                     direccionId, usuarioId, supervision, estudianteId, periodoId, materiaId, clave));

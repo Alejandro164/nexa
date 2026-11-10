@@ -2,22 +2,27 @@ package com.chavescr.nexa.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
- * Una escala por dirección. {@code tramos} va de la nota más alta a la más baja:
+ * Una escala por dirección y ciclo educativo: los estudiantes de una sección usan la de su ciclo. {@code tramos} va de la nota más alta a la más baja:
  * {@code [{"nombre":"Excelente","desde":90}, ...]}. El tope de cada tramo es el
  * inicio del anterior; el primero llega hasta {@code notaMaxima}. Se aprueba
  * desde {@code notaAprobacion}.
  */
 @Entity
-@Table(name = "escalas_notas")
+@Table(name = "escalas_notas", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_escala_notas_direccion_ciclo", columnNames = { "direccion_id", "ciclo" })
+})
 public class EscalaNotas {
 
     public static final int NOTA_MINIMA_PREDETERMINADA = 0;
@@ -32,9 +37,14 @@ public class EscalaNotas {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "direccion_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "direccion_id", nullable = false)
     private Direccion direccion;
+
+    /** Nullable en el esquema solo para la migración desde la escala única por dirección. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private CicloEducativo ciclo;
 
     @Column(nullable = false)
     private Integer notaMinima = NOTA_MINIMA_PREDETERMINADA;
@@ -69,6 +79,14 @@ public class EscalaNotas {
 
     public void setDireccion(Direccion direccion) {
         this.direccion = direccion;
+    }
+
+    public CicloEducativo getCiclo() {
+        return ciclo;
+    }
+
+    public void setCiclo(CicloEducativo ciclo) {
+        this.ciclo = ciclo;
     }
 
     public Integer getNotaMinima() {

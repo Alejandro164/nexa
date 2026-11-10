@@ -3,11 +3,12 @@ package com.chavescr.nexa.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 
 /**
- * Guarda juntas la escala de notas y las rebajas de conducta de una dirección, como las edita la pestaña
+ * Guarda juntas la escala de notas de un ciclo y las rebajas de conducta de una dirección, como las edita la pestaña
  * "Escala notas" con un solo botón. Es una sola transacción: si alguna de las dos no es válida, no se guarda
  * ninguna.
  */
@@ -25,10 +26,10 @@ public class EscalaEvaluacionService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void guardar(Long direccionId, Integer notaMinima, Integer notaMaxima, Integer decimales,
-            Integer notaAprobacion, String tramosJson, String rebajasJson,
+    public void guardar(Long direccionId, CicloEducativo ciclo, Integer notaMinima, Integer notaMaxima,
+            Integer decimales, Integer notaAprobacion, String tramosJson, String rebajasJson,
             QuienRegistraPuntosBoleta quienRegistraPuntosBoleta, DestinoRebajaAsistencia destinoRebajaAsistencia) {
-        escalaNotasService.guardar(direccionId, notaMinima, notaMaxima, decimales, notaAprobacion, tramosJson);
+        escalaNotasService.guardar(direccionId, ciclo, notaMinima, notaMaxima, decimales, notaAprobacion, tramosJson);
         rebajaConductaService.guardar(direccionId, rebajasJson, quienRegistraPuntosBoleta, destinoRebajaAsistencia);
     }
 }

@@ -16,17 +16,19 @@
                     <tr>
                         <th>Grado</th>
                         <th>Sección</th>
+                        <th>Ciclo</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:if="${niveles == null or niveles.empty}">
-                        <td colspan="4" class="table-empty">No hay niveles registrados.</td>
+                        <td colspan="5" class="table-empty">No hay niveles registrados.</td>
                     </tr>
                     <tr th:each="nivel : ${niveles}">
                         <td><strong th:text="${nivel.grado}">Sétimo</strong></td>
                         <td th:text="${nivel.seccion}">A</td>
+                        <td th:text="${nivel.cicloEfectivo != null ? nivel.cicloEfectivo.etiqueta : '—'}">Tercer Ciclo</td>
                         <td>
                             <span th:if="${nivel.activo}" class="badge badge-success">Activo</span>
                             <span th:unless="${nivel.activo}" class="badge badge-secondary">Inactivo</span>

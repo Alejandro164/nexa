@@ -17,8 +17,52 @@
         #institucional-escala-notas-panel .card {
             overflow: hidden;
         }
+        #institucional-escala-notas-panel .escala-ciclos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 1rem 1.5rem 0;
+            padding: 5px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #f8fafc;
+        }
+        #institucional-escala-notas-panel .escala-ciclo {
+            flex: 1 1 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            min-height: 44px;
+            padding: 0.45rem 0.75rem;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--text-secondary);
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #institucional-escala-notas-panel .escala-ciclo small {
+            font-size: 0.72rem;
+            font-weight: 500;
+        }
+        #institucional-escala-notas-panel .escala-ciclo:hover {
+            color: var(--primary);
+        }
+        #institucional-escala-notas-panel .escala-ciclo.is-on {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+        }
+        #institucional-escala-notas-panel .escala-ciclo-ayuda {
+            margin: 0.75rem 1.5rem 0;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
         #institucional-escala-notas-panel .escala-regla {
-            padding: 1.25rem 1.5rem 0.5rem;
+            padding: 1rem 1.5rem 0.5rem;
         }
         #institucional-escala-notas-panel .escala-barra {
             display: flex;
@@ -226,11 +270,15 @@
           hx-indicator="#escala-loading"
           hx-disabled-elt="find button[type='submit']"
           @submit.capture="prepararEnvio($event)"
+          @input="sucio = true"
+          @change="sucio = true"
+          @institucional-guardado.camel.document="sucio = false"
           autocomplete="off">
         <div id="escala-loading" class="htmx-indicator panel-loading-overlay">
             <div class="spinner"></div>
             <span>Guardando...</span>
         </div>
+        <input type="hidden" name="ciclo" th:value="${cicloSeleccionado.name()}">
         <input type="hidden" name="notaAprobacion" :value="notaAprobacion">
         <input type="hidden" name="tramos" :value="tramosJson">
         <input type="hidden" name="rebajas" :value="reglasJson">
@@ -239,9 +287,23 @@
             <div class="card-header">
                 <div>
                     <h3 class="card-title" id="escala-titulo">Escala de notas</h3>
-                    <p class="academic-help">Cada tramo empieza en su número y termina justo antes del siguiente.</p>
+                    <p class="academic-help">Cada ciclo tiene su propia escala; los estudiantes usan la del ciclo de su sección.</p>
                 </div>
             </div>
+
+            <div class="escala-ciclos" role="tablist" aria-label="Ciclo de la escala">
+                <button th:each="c : ${ciclos}" type="button" role="tab" class="escala-ciclo"
+                        th:classappend="${c == cicloSeleccionado} ? 'is-on' : ''"
+                        th:attr="aria-selected=${c == cicloSeleccionado}, data-ciclo=${c.name()}"
+                        @click="cambiarCiclo($el.dataset.ciclo)">
+                    <span th:text="${c.etiqueta}">Primer Ciclo</span>
+                    <small th:with="n=${seccionesPorCiclo.get(c) ?: 0}"
+                           th:text="${n == 1 ? '1 sección' : n + ' secciones'}">0 secciones</small>
+                </button>
+            </div>
+            <p class="escala-ciclo-ayuda">
+                Cada tramo empieza en su número y termina justo antes del siguiente.
+            </p>
 
             <div class="escala-regla">
                 <div class="escala-barra" aria-hidden="true">
@@ -418,7 +480,7 @@
         </section>
 
         <div class="card escala-guardar">
-            <p>Guarda la escala de notas y las rebajas de conducta juntas.</p>
+            <p th:text="${'Guarda la escala del ' + cicloSeleccionado.etiqueta + ' y las rebajas de conducta juntas.'}">Guarda la escala y las rebajas de conducta juntas.</p>
             <button type="submit" class="btn btn-primary" :disabled="errores.length > 0">Guardar cambios</button>
         </div>
     </form>
@@ -530,6 +592,7 @@
                 corteId: corteId,
                 siguienteId: maxId + 1,
                 rebajas: leerRebajas(),
+                sucio: false,
                 quienPuntosBoleta: opcion('quienPuntosBoleta', ['PROFESOR_GUIA', 'PROFESOR_MATERIA'], 'PROFESOR_GUIA'),
                 destinoAsistencia: opcion('destinoRebaja', ['CONDUCTA', 'COMPONENTE'], 'CONDUCTA'),
 
@@ -798,6 +861,16 @@
                     const puntos = Math.round(Number(fila.puntos));
                     fila.cada = Number.isFinite(cada) ? Math.min(30, Math.max(1, cada)) : 1;
                     fila.puntos = Number.isFinite(puntos) ? Math.min(100, Math.max(0, puntos)) : 0;
+                },
+                cambiarCiclo: function (ciclo) {
+                    if (!ciclo) return;
+                    if (this.sucio && !window.confirm('Tienes cambios sin guardar en esta escala. ¿Cambiar de ciclo y descartarlos?')) {
+                        return;
+                    }
+                    htmx.ajax('GET', '/configuracion-institucional/escala-notas?ciclo=' + encodeURIComponent(ciclo), {
+                        target: '#institucional-escala-notas-panel',
+                        swap: 'outerHTML'
+                    });
                 },
                 prepararEnvio: function (event) {
                     const self = this;

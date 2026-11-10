@@ -25,6 +25,7 @@ import com.chavescr.nexa.dto.DetalleNotaConducta.Concepto;
 import com.chavescr.nexa.dto.DetalleNotaConducta.Registro;
 import com.chavescr.nexa.dto.FilaNotaConducta;
 import com.chavescr.nexa.dto.VistaEscala;
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.IncidenteConducta;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
@@ -229,11 +230,16 @@ class NotaConductaServiceTest {
     private void prepararPanel(CalculoRebaja calculo) {
         when(periodoRepository.findByDireccionIdOrderByFechaInicioDesc(DIRECCION)).thenReturn(List.of(periodo));
         when(nivelRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(DIRECCION)).thenReturn(List.of());
-        when(escalaNotasService.vista(DIRECCION)).thenReturn(new VistaEscala(List.of(
+        VistaEscala escala = new VistaEscala(List.of(
                 new VistaEscala.Tramo("Excelente", 90, "excelente"),
                 new VistaEscala.Tramo("Bueno", 80, "bueno"),
                 new VistaEscala.Tramo("Regular", 70, "regular"),
-                new VistaEscala.Tramo("Aplazado", 0, "aplazado"))));
+                new VistaEscala.Tramo("Aplazado", 0, "aplazado")));
+        Map<CicloEducativo, VistaEscala> escalas = new EnumMap<>(CicloEducativo.class);
+        for (CicloEducativo ciclo : CicloEducativo.values()) {
+            escalas.put(ciclo, escala);
+        }
+        when(escalaNotasService.vistasPorCiclo(DIRECCION)).thenReturn(escalas);
         when(usuarioRepository.findEstudiantesActivosConNivel(DIRECCION, null, null)).thenReturn(List.of(estudiante));
         when(notaRepository.findEstudianteIdsEnviados(DIRECCION, PERIODO, List.of(ESTUDIANTE))).thenReturn(List.of());
         when(rebajaConductaService.calculo(DIRECCION)).thenReturn(calculo);
