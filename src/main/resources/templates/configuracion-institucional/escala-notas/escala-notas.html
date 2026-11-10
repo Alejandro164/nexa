@@ -7,7 +7,7 @@
      th:data-tramos="${escalaNotas.tramos}"
      th:data-rebajas="${rebajaConducta.reglas}"
      th:data-quien-puntos-boleta="${rebajaConducta.quienRegistraPuntosBoleta}"
-     th:data-destino-rebaja="${rebajaConducta.destinoRebajaAsistencia}">
+     th:data-tardias-por-ausencia="${rebajaConducta.tardiasPorAusencia}">
     <style>
         #institucional-escala-notas-panel .escala-form {
             position: relative;
@@ -214,6 +214,23 @@
         #institucional-escala-notas-panel .escala-politicas .form-group {
             margin: 0;
         }
+        #institucional-escala-notas-panel .asistencia-de {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        #institucional-escala-notas-panel .asistencia-tabla td {
+            padding-top: 0.65rem;
+            padding-bottom: 0.65rem;
+            font-variant-numeric: tabular-nums;
+        }
+        #institucional-escala-notas-panel .asistencia-nota {
+            margin: 0;
+            padding: 0.75rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: #f8fafc;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
         #institucional-escala-notas-panel .rebaja-cantidad {
             display: flex;
             align-items: center;
@@ -404,11 +421,55 @@
             </div>
         </section>
 
+        <section class="card" aria-labelledby="asistencia-titulo">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title" id="asistencia-titulo">Asistencia</h3>
+                    <p class="academic-help">El rubro Asistencia de cada materia se asigna por período según el porcentaje de ausencias injustificadas sobre las lecciones registradas al pasar lista (Reglamento de Evaluación, artículo 37). Las ausencias y tardías justificadas no cuentan.</p>
+                </div>
+            </div>
+
+            <div class="escala-politicas">
+                <div class="form-group">
+                    <label class="form-label" for="asistencia-tardias">Cada tardía injustificada cuenta como</label>
+                    <select class="form-input" id="asistencia-tardias" name="tardiasPorAusencia"
+                            x-model.number="tardiasPorAusencia">
+                        <option value="2" th:selected="${rebajaConducta.tardiasPorAusencia != 1}">Media ausencia (llegó menos de 10 minutos tarde)</option>
+                        <option value="1" th:selected="${rebajaConducta.tardiasPorAusencia == 1}">Una ausencia (llegó más de 10 minutos tarde)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table escala-tabla asistencia-tabla">
+                    <thead>
+                        <tr>
+                            <th>Ausencias injustificadas del total de lecciones</th>
+                            <th>Se asigna</th>
+                            <th>Nota del rubro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="t : ${tablaAsistencia}">
+                            <td th:text="${t.hasta() != null
+                                    ? (t.desde() == 0 ? 'Menos de ' + t.hasta() + '%' : 'Del ' + t.desde() + '% a menos del ' + t.hasta() + '%')
+                                    : t.desde() + '% o más'}">Menos de 10%</td>
+                            <td><strong th:text="${t.asignacion() + '%'}">5%</strong> <span class="asistencia-de">de 5%</span></td>
+                            <td th:text="${t.nota()}">100</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="asistencia-nota">
+                La nota del rubro se pondera con el porcentaje de Asistencia del componente de evaluación de la materia; con 5% aporta exactamente lo que indica la tabla.
+            </p>
+        </section>
+
         <section class="card" aria-labelledby="rebajas-titulo">
             <div class="card-header">
                 <div>
                     <h3 class="card-title" id="rebajas-titulo">Rebajas de conducta</h3>
-                    <p class="academic-help">La conducta parte de 100 y baja según los registros del período.</p>
+                    <p class="academic-help">La conducta parte de 100 y baja por las llamadas de atención y los puntos de las boletas.</p>
                 </div>
             </div>
 
@@ -423,16 +484,6 @@
                                 th:selected="${rebajaConducta.quienRegistraPuntosBoleta != null and rebajaConducta.quienRegistraPuntosBoleta.name() == 'PROFESOR_MATERIA'}">El profesor de la materia</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label class="form-label" for="rebaja-destino">Las ausencias y tardías rebajan</label>
-                    <select class="form-input" id="rebaja-destino" name="destinoRebajaAsistencia"
-                            x-model="destinoAsistencia">
-                        <option value="CONDUCTA"
-                                th:selected="${rebajaConducta.destinoRebajaAsistencia == null or rebajaConducta.destinoRebajaAsistencia.name() == 'CONDUCTA'}">La conducta</option>
-                        <option value="COMPONENTE"
-                                th:selected="${rebajaConducta.destinoRebajaAsistencia != null and rebajaConducta.destinoRebajaAsistencia.name() == 'COMPONENTE'}">El componente de asistencia</option>
-                    </select>
-                </div>
             </div>
 
             <div class="table-container">
@@ -445,7 +496,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="fila in rebajas" :key="fila.id">
+                        <template x-for="fila in rebajasConducta" :key="fila.id">
                             <tr>
                                 <td style="font-weight: 500;" x-text="fila.nombre"></td>
                                 <td>
@@ -480,7 +531,7 @@
         </section>
 
         <div class="card escala-guardar">
-            <p th:text="${'Guarda la escala del ' + cicloSeleccionado.etiqueta + ' y las rebajas de conducta juntas.'}">Guarda la escala y las rebajas de conducta juntas.</p>
+            <p th:text="${'Guarda la escala del ' + cicloSeleccionado.etiqueta + ', la asistencia y las rebajas de conducta juntas.'}">Guarda la escala, la asistencia y las rebajas de conducta juntas.</p>
             <button type="submit" class="btn btn-primary" :disabled="errores.length > 0">Guardar cambios</button>
         </div>
     </form>
@@ -594,7 +645,7 @@
                 rebajas: leerRebajas(),
                 sucio: false,
                 quienPuntosBoleta: opcion('quienPuntosBoleta', ['PROFESOR_GUIA', 'PROFESOR_MATERIA'], 'PROFESOR_GUIA'),
-                destinoAsistencia: opcion('destinoRebaja', ['CONDUCTA', 'COMPONENTE'], 'CONDUCTA'),
+                tardiasPorAusencia: Number(DATOS.tardiasPorAusencia) === 1 ? 1 : 2,
 
                 get paso() {
                     return Number(this.decimales) === 0 ? 1 : 0.1;
@@ -779,6 +830,11 @@
                         return { id: fila.id, cada: Math.round(Number(fila.cada)), puntos: Math.round(Number(fila.puntos)) };
                     }));
                 },
+                // Las ausencias y tardías van al rubro Asistencia (artículo 37); en conducta solo queda la llamada de
+                // atención. Las demás reglas se siguen enviando porque el servidor guarda la lista completa.
+                get rebajasConducta() {
+                    return this.rebajas.filter(function (fila) { return fila.id === 'llamada'; });
+                },
                 unidadDe: function (fila) {
                     return Math.round(Number(fila.cada)) === 1 ? fila.unidad[0] : fila.unidad[1];
                 },
@@ -887,7 +943,7 @@
                             notaMaxima: this.notaMaxima,
                             decimales: this.decimales,
                             quienRegistraPuntosBoleta: this.quienPuntosBoleta,
-                            destinoRebajaAsistencia: this.destinoAsistencia
+                            tardiasPorAusencia: this.tardiasPorAusencia
                         };
                         Object.keys(valores).forEach(function (nombre) {
                             const campo = form.querySelector('[name="' + nombre + '"]');

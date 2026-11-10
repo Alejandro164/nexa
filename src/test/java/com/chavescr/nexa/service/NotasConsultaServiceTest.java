@@ -128,20 +128,24 @@ class NotasConsultaServiceTest {
     }
 
     @Test
-    void elDesgloseIncluyeLaAsistenciaCuandoRebajaElComponente() {
+    void elDesgloseIncluyeLaAsistenciaSegunElPorcentajeDeAusencias() {
         conCotidianoDe80();
         when(rebajaConductaService.asistenciaRebajaComponente(DIRECCION)).thenReturn(true);
         when(rebajaConductaService.calculo(DIRECCION)).thenReturn(predeterminada());
+        List<Object[]> lecciones = new java.util.ArrayList<>();
+        for (int i = 0; i < 19; i++) {
+            lecciones.add(new Object[] { MATERIA, EstadoAsistencia.PRESENTE });
+        }
+        lecciones.add(new Object[] { MATERIA, EstadoAsistencia.AUSENTE });
         when(asistenciaRepository.findEstadosDeEstudiante(DIRECCION, ESTUDIANTE, periodo.getFechaInicio(),
-                periodo.getFechaFin())).thenReturn(List.of(
-                        new Object[] { MATERIA, EstadoAsistencia.PRESENTE },
-                        new Object[] { MATERIA, EstadoAsistencia.AUSENTE }));
+                periodo.getFechaFin())).thenReturn(lecciones);
 
         NotasDesgloseFila fila = service.desglose(DIRECCION, null, true, ESTUDIANTE, PERIODO).get(0);
 
+        // 1 ausencia de 20 lecciones = 5%: conserva 5 de 5 (artículo 37).
         assertEquals(80, fila.getCotidiano());
-        assertEquals(95, fila.getAsistencia());
-        assertEquals(81.7, fila.getPromedio());
+        assertEquals(100, fila.getAsistencia());
+        assertEquals(82.2, fila.getPromedio());
     }
 
     @Test

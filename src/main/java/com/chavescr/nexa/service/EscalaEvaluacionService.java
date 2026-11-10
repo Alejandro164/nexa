@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.CicloEducativo;
-import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 
 /**
@@ -28,8 +27,8 @@ public class EscalaEvaluacionService {
     @Transactional(rollbackFor = Exception.class)
     public void guardar(Long direccionId, CicloEducativo ciclo, Integer notaMinima, Integer notaMaxima,
             Integer decimales, Integer notaAprobacion, String tramosJson, String rebajasJson,
-            QuienRegistraPuntosBoleta quienRegistraPuntosBoleta, DestinoRebajaAsistencia destinoRebajaAsistencia) {
+            QuienRegistraPuntosBoleta quienRegistraPuntosBoleta, Integer tardiasPorAusencia) {
         escalaNotasService.guardar(direccionId, ciclo, notaMinima, notaMaxima, decimales, notaAprobacion, tramosJson);
-        rebajaConductaService.guardar(direccionId, rebajasJson, quienRegistraPuntosBoleta, destinoRebajaAsistencia);
+        rebajaConductaService.guardar(direccionId, rebajasJson, quienRegistraPuntosBoleta, tardiasPorAusencia);
     }
 }

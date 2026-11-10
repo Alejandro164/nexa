@@ -138,7 +138,7 @@ public class PromedioService {
         return new FilaPromedio(estudiante, notas, asistenciaScore, promedioFinal);
     }
 
-    /** Parte de 100 y resta los puntos de la regla. No es el porcentaje de lecciones presentes. */
+    /** Nota del rubro según el porcentaje de ausencias injustificadas sobre las lecciones registradas (art. 37). */
     private Integer calcularAsistencia(Long direccionId, Long estudianteId, Long materiaId,
             PeriodoAcademico periodo, CalculoRebaja calculo) {
         List<AsistenciaEstudiante> registros = asistenciaRepository
@@ -151,7 +151,7 @@ public class PromedioService {
         for (AsistenciaEstudiante registro : registros) {
             CalculoRebaja.sumar(conteo, registro.getEstado(), 1);
         }
-        return calculo.notaAsistencia(conteo);
+        return calculo.notaAsistencia(conteo, registros.size());
     }
 
     private Double promedioDe(List<ResultadoComponente> resultados, ClaveComponente clave, Map<Long, Double> pesos) {

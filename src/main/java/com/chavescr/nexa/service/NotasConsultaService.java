@@ -407,16 +407,34 @@ public class NotasConsultaService {
                     claseAsistencia(estado)));
         }
         int total = lecciones.size();
-        Integer promedio = total == 0 ? null : calculo.notaAsistencia(conteo);
-        int rebaja = total == 0 ? 0 : calculo.rebajaAsistencia(conteo);
+        Integer promedio = total == 0 ? null : calculo.notaAsistencia(conteo, total);
         String leyenda = total == 0
                 ? "No hay lecciones registradas en " + materia + " en este período."
-                : "Parte de 100. Las ausencias y tardías rebajan " + rebaja
-                        + (rebaja == 1 ? " punto" : " puntos") + ", así que la asistencia queda en "
-                        + String.format(Locale.US, "%.2f", promedio.doubleValue())
-                        + ". Vale " + pesoNota + "% de la nota de " + materia + ".";
+                : leyendaAsistencia(calculo, conteo, total, promedio, pesoNota, materia);
         return new NotasMateriaDetalle(materia, "Asistencia", true, true, promedio, pesoNota, total, presentes,
                 leyenda, false, rubros);
+    }
+
+    /** Explica el cálculo del artículo 37: ausencias equivalentes, porcentaje, asignación y nota. */
+    static String leyendaAsistencia(CalculoRebaja calculo, int[] conteo, int lecciones, int nota, int pesoNota,
+            String materia) {
+        double ausencias = calculo.ausenciasEquivalentes(conteo);
+        double porcentaje = calculo.porcentajeAusencias(conteo, lecciones);
+        int asignacion = CalculoRebaja.asignacionAsistencia(porcentaje);
+        String tardias = calculo.getTardiasPorAusencia() == 1
+                ? "cada tardía injustificada cuenta como una ausencia"
+                : "cada tardía injustificada cuenta como media ausencia";
+        return "Ausencias injustificadas: " + formatoAusencias(ausencias) + " de " + lecciones
+                + (lecciones == 1 ? " lección" : " lecciones") + " (" + tardias + "), "
+                + String.format(Locale.US, "%.1f", porcentaje) + "% del total. Según el artículo 37 se asigna "
+                + asignacion + " de " + CalculoRebaja.ASIGNACION_MAXIMA + ", así que la asistencia queda en " + nota
+                + ". Vale " + pesoNota + "% de la nota de " + materia + ".";
+    }
+
+    private static String formatoAusencias(double ausencias) {
+        return ausencias == Math.rint(ausencias)
+                ? String.valueOf((long) ausencias)
+                : String.format(Locale.US, "%.1f", ausencias);
     }
 
     /** La materia tiene que ser de la sección del estudiante en el año del período, igual que el desglose. */
@@ -1053,7 +1071,7 @@ public class NotasConsultaService {
         }
         Integer asistencia = null;
         if (tieneLecciones(asist)) {
-            asistencia = calculo.notaAsistencia(asist);
+            asistencia = calculo.notaAsistencia(asist, asist[4]);
             if (dist[4] > 0) {
                 sumaPonderada += asistencia * dist[4];
                 sumaPesos += dist[4];

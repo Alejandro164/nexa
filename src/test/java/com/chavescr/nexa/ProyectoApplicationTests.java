@@ -219,7 +219,9 @@ class ProyectoApplicationTests {
 		assertFalse(escalaRenderizada.contains("Guardar rebajas"));
 		assertTrue(escalaRenderizada.contains("data-rebajas"));
 		assertTrue(escalaRenderizada.contains("data-quien-puntos-boleta=\"PROFESOR_GUIA\""));
-		assertTrue(escalaRenderizada.contains("data-destino-rebaja=\"CONDUCTA\""));
+		assertTrue(escalaRenderizada.contains("data-tardias-por-ausencia=\"2\""));
+		assertFalse(escalaRenderizada.contains("destinoRebajaAsistencia"));
+		assertTrue(escalaRenderizada.contains("Cada tardía injustificada cuenta como"));
 		assertTrue(escalaRenderizada.contains("Excelente"));
 		assertTrue(escalaRenderizada.contains("data-nota-aprobacion=\"70\""));
 	}

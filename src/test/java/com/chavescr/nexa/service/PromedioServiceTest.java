@@ -119,38 +119,42 @@ class PromedioServiceTest {
     }
 
     @Test
-    void laAsistenciaPesaEnElPromedioCuandoRebajaElComponente() {
+    void unaAusenciaDeVeinteLeccionesConservaTodaLaAsistencia() {
         when(rebajaConductaService.asistenciaRebajaComponente(DIRECCION)).thenReturn(true);
         when(rebajaConductaService.calculo(DIRECCION)).thenReturn(predeterminada());
         when(asistenciaRepository.findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(
                 DIRECCION, ESTUDIANTE, MATERIA, periodo.getFechaInicio(), periodo.getFechaFin()))
-                .thenReturn(List.of(leccion(EstadoAsistencia.PRESENTE), leccion(EstadoAsistencia.AUSENTE)));
+                .thenReturn(lecciones(19, 1));
 
         FilaPromedio fila = service.calcularPromedio(DIRECCION, NIVEL, MATERIA, List.of(cotidiano)).get(0);
 
-        assertEquals(95, fila.getAsistencia());
-        assertEquals(81.7, fila.getPromedioFinal());
+        assertEquals(100, fila.getAsistencia());
+        assertEquals(82.2, fila.getPromedioFinal());
     }
 
     @Test
-    void sieteAusenciasConLaReglaDeCadaTresBajanDiezYLaNotaQuedaEnNoventa() {
+    void seisAusenciasDeVeinteLeccionesDejanLaAsistenciaEnCuarenta() {
         when(rebajaConductaService.asistenciaRebajaComponente(DIRECCION)).thenReturn(true);
-        when(rebajaConductaService.calculo(DIRECCION)).thenReturn(reglaDeAusencia(3, 5));
+        when(rebajaConductaService.calculo(DIRECCION)).thenReturn(predeterminada());
         when(asistenciaRepository.findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(
                 DIRECCION, ESTUDIANTE, MATERIA, periodo.getFechaInicio(), periodo.getFechaFin()))
-                .thenReturn(List.of(
-                        leccion(EstadoAsistencia.PRESENTE),
-                        leccion(EstadoAsistencia.AUSENTE),
-                        leccion(EstadoAsistencia.AUSENTE),
-                        leccion(EstadoAsistencia.AUSENTE),
-                        leccion(EstadoAsistencia.AUSENTE),
-                        leccion(EstadoAsistencia.AUSENTE),
-                        leccion(EstadoAsistencia.AUSENTE),
-                        leccion(EstadoAsistencia.AUSENTE)));
+                .thenReturn(lecciones(14, 6));
 
         FilaPromedio fila = service.calcularPromedio(DIRECCION, NIVEL, MATERIA, List.of(cotidiano)).get(0);
 
-        assertEquals(90, fila.getAsistencia());
+        // 6 de 20 = 30%: se asigna 2 de 5 (artículo 37).
+        assertEquals(40, fila.getAsistencia());
+    }
+
+    private static List<AsistenciaEstudiante> lecciones(int presentes, int ausentes) {
+        List<AsistenciaEstudiante> lista = new java.util.ArrayList<>();
+        for (int i = 0; i < presentes; i++) {
+            lista.add(leccion(EstadoAsistencia.PRESENTE));
+        }
+        for (int i = 0; i < ausentes; i++) {
+            lista.add(leccion(EstadoAsistencia.AUSENTE));
+        }
+        return lista;
     }
 
     @Test
@@ -169,12 +173,6 @@ class PromedioServiceTest {
         for (TipoRebaja tipo : TipoRebaja.values()) {
             reglas.put(tipo, new int[] { tipo.cada(), tipo.puntos() });
         }
-        return new CalculoRebaja(reglas, false);
-    }
-
-    private static CalculoRebaja reglaDeAusencia(int cada, int puntos) {
-        Map<TipoRebaja, int[]> reglas = new EnumMap<>(TipoRebaja.class);
-        reglas.put(TipoRebaja.AUSENCIA_INJUSTIFICADA, new int[] { cada, puntos });
         return new CalculoRebaja(reglas, false);
     }
 

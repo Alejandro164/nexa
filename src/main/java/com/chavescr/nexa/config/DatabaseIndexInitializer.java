@@ -56,6 +56,23 @@ public class DatabaseIndexInitializer {
         copiarRubrosAComponentes();
         permitirOficiosSinDireccionDestinataria();
         permitirMateriasSinCodigoNiArea();
+        asistenciaSiempreAlComponente();
+    }
+
+    /**
+     * Las ausencias y tardías ya no rebajan la conducta: forman el rubro Asistencia según el artículo 37 del
+     * Reglamento de Evaluación. Deja el destino viejo en COMPONENTE; en prod lo hace
+     * docker/migraciones/2026-11-10-asistencia-reglamento.sql.
+     */
+    private void asistenciaSiempreAlComponente() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE rebajas_conducta ALTER COLUMN destino_rebaja_asistencia "
+                    + "SET DEFAULT 'COMPONENTE'");
+            jdbcTemplate.update("UPDATE rebajas_conducta SET destino_rebaja_asistencia = 'COMPONENTE' "
+                    + "WHERE destino_rebaja_asistencia <> 'COMPONENTE'");
+        } catch (Exception e) {
+            log.warn("No se pudo dejar la asistencia en el componente: {}", e.getMessage());
+        }
     }
 
     /**

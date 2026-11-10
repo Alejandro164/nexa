@@ -16,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.chavescr.nexa.entity.CicloEducativo;
-import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,11 +39,10 @@ class EscalaEvaluacionServiceTest {
     @Test
     void guardaLaEscalaYLasRebajas() {
         service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO, 0, 100, 1, 70, "[]", "[]",
-                QuienRegistraPuntosBoleta.PROFESOR_GUIA, DestinoRebajaAsistencia.CONDUCTA);
+                QuienRegistraPuntosBoleta.PROFESOR_GUIA, 2);
 
         verify(escalaNotasService).guardar(DIRECCION, CicloEducativo.TERCER_CICLO, 0, 100, 1, 70, "[]");
-        verify(rebajaConductaService).guardar(DIRECCION, "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA,
-                DestinoRebajaAsistencia.CONDUCTA);
+        verify(rebajaConductaService).guardar(DIRECCION, "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA, 2);
     }
 
     @Test
@@ -53,7 +51,7 @@ class EscalaEvaluacionServiceTest {
                 .thenThrow(new IllegalArgumentException("Hacen falta al menos dos tramos"));
 
         assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO,
-                0, 100, 1, 70, "[]", "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA, DestinoRebajaAsistencia.CONDUCTA));
+                0, 100, 1, 70, "[]", "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA, 2));
 
         verifyNoInteractions(rebajaConductaService);
     }
@@ -64,6 +62,6 @@ class EscalaEvaluacionServiceTest {
                 .thenThrow(new IllegalArgumentException("Indica quién registra los puntos de las boletas"));
 
         assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO,
-                0, 100, 1, 70, "[]", "[]", null, DestinoRebajaAsistencia.CONDUCTA));
+                0, 100, 1, 70, "[]", "[]", null, 2));
     }
 }

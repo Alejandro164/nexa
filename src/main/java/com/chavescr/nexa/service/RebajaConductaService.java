@@ -41,9 +41,13 @@ public class RebajaConductaService {
         return repository.findByDireccionId(direccionId).orElseGet(RebajaConducta::predeterminada);
     }
 
+    /**
+     * Las ausencias y tardías siempre forman el rubro Asistencia de la nota (artículo 37 del Reglamento de
+     * Evaluación); ya no rebajan la conducta. Se mantiene para las vistas que muestran u ocultan ese rubro.
+     */
     @Transactional(readOnly = true, rollbackFor = Exception.class)
     public boolean asistenciaRebajaComponente(Long direccionId) {
-        return obtener(direccionId).getDestinoRebajaAsistencia() == DestinoRebajaAsistencia.COMPONENTE;
+        return true;
     }
 
     /** Reglas listas para restar de la nota. Si el texto guardado no se puede leer, usa las predeterminadas. */
@@ -55,25 +59,24 @@ public class RebajaConductaService {
         for (TipoRebaja tipo : TipoRebaja.values()) {
             reglas.put(tipo, reglaDe(porId.get(tipo.id()), tipo));
         }
-        boolean enConducta = rebaja.getDestinoRebajaAsistencia() != DestinoRebajaAsistencia.COMPONENTE;
-        return new CalculoRebaja(reglas, enConducta);
+        return new CalculoRebaja(reglas, false, rebaja.getTardiasPorAusencia());
     }
 
     @Transactional(rollbackFor = Exception.class)
     public RebajaConducta guardar(Long direccionId, String reglasJson,
-            QuienRegistraPuntosBoleta quienRegistraPuntosBoleta,
-            DestinoRebajaAsistencia destinoRebajaAsistencia) {
+            QuienRegistraPuntosBoleta quienRegistraPuntosBoleta, Integer tardiasPorAusencia) {
         String canonico = canonizar(reglasJson);
         if (quienRegistraPuntosBoleta == null) {
             throw new IllegalArgumentException("Indica quién registra los puntos de las boletas");
         }
-        if (destinoRebajaAsistencia == null) {
-            throw new IllegalArgumentException("Indica dónde se rebajan las ausencias y tardías");
+        if (tardiasPorAusencia == null || (tardiasPorAusencia != 1 && tardiasPorAusencia != 2)) {
+            throw new IllegalArgumentException("Indica cuánto vale cada tardía injustificada");
         }
         RebajaConducta rebaja = repository.findByDireccionId(direccionId).orElseGet(() -> nueva(direccionId));
         rebaja.setReglas(canonico);
         rebaja.setQuienRegistraPuntosBoleta(quienRegistraPuntosBoleta);
-        rebaja.setDestinoRebajaAsistencia(destinoRebajaAsistencia);
+        rebaja.setDestinoRebajaAsistencia(DestinoRebajaAsistencia.COMPONENTE);
+        rebaja.setTardiasPorAusencia(tardiasPorAusencia);
         return repository.save(rebaja);
     }
 

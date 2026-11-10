@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.ComponenteEvaluacion;
-import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
+import com.chavescr.nexa.service.CalculoRebaja;
 import com.chavescr.nexa.service.ComponenteEvaluacionService;
 import com.chavescr.nexa.service.ConfiguracionDireccionService;
 import com.chavescr.nexa.service.EscalaEvaluacionService;
@@ -221,12 +221,12 @@ public class ConfiguracionInstitucionalController {
             @RequestParam String tramos,
             @RequestParam String rebajas,
             @RequestParam QuienRegistraPuntosBoleta quienRegistraPuntosBoleta,
-            @RequestParam DestinoRebajaAsistencia destinoRebajaAsistencia,
+            @RequestParam Integer tardiasPorAusencia,
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
             escalaEvaluacionService.guardar(direccionId, ciclo, notaMinima, notaMaxima, decimales, notaAprobacion,
-                    tramos, rebajas, quienRegistraPuntosBoleta, destinoRebajaAsistencia);
+                    tramos, rebajas, quienRegistraPuntosBoleta, tardiasPorAusencia);
             response.setHeader("HX-Trigger", "{\"institucionalGuardado\":{\"mensaje\":\"Escala del "
                     + escaparJson(ciclo.getEtiqueta()) + " y rebajas actualizadas\"}}");
         } catch (IllegalArgumentException e) {
@@ -272,6 +272,7 @@ public class ConfiguracionInstitucionalController {
         model.addAttribute("seccionesPorCiclo", secciones);
         model.addAttribute("escalaNotas", escalaNotasService.obtener(direccionId, seleccionado));
         model.addAttribute("rebajaConducta", rebajaConductaService.obtener(direccionId));
+        model.addAttribute("tablaAsistencia", CalculoRebaja.tramosAsistencia());
     }
 
     private Long requerirDireccion(HttpSession session) {
