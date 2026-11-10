@@ -9,20 +9,22 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
+import com.chavescr.nexa.service.ComponenteEvaluacionService;
 import com.chavescr.nexa.service.ConfiguracionDireccionService;
 import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.RebajaConductaService;
-import com.chavescr.nexa.service.TipoComponenteService;
 import com.chavescr.nexa.service.TipoMateriaService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +39,7 @@ public class ConfiguracionInstitucionalController {
     private ConfiguracionDireccionService service;
 
     @Autowired
-    private TipoComponenteService tipoComponenteService;
+    private ComponenteEvaluacionService componenteEvaluacionService;
 
     @Autowired
     private TipoMateriaService tipoMateriaService;
@@ -93,16 +95,34 @@ public class ConfiguracionInstitucionalController {
         return "configuracion-institucional/componentes/componentes :: content";
     }
 
+    @GetMapping("/componentes/form")
+    public String nuevoComponente(Model model, HttpSession session) {
+        ComponenteEvaluacion componente = new ComponenteEvaluacion();
+        componente.setCotidiano(ComponenteEvaluacion.PESOS_POR_DEFECTO[0]);
+        componente.setTareas(ComponenteEvaluacion.PESOS_POR_DEFECTO[1]);
+        componente.setProyecto(ComponenteEvaluacion.PESOS_POR_DEFECTO[2]);
+        componente.setPruebas(ComponenteEvaluacion.PESOS_POR_DEFECTO[3]);
+        componente.setAsistencia(ComponenteEvaluacion.PESOS_POR_DEFECTO[4]);
+        cargarFormularioComponente(model, requerirDireccion(session), componente);
+        return "configuracion-institucional/componentes/formulario :: form-content";
+    }
+
+    @GetMapping("/componentes/form/{id}")
+    public String editarComponente(@PathVariable Long id, Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        cargarFormularioComponente(model, direccionId, componenteEvaluacionService.obtener(direccionId, id));
+        return "configuracion-institucional/componentes/formulario :: form-content";
+    }
+
+    /** Solo se copian nombre, descripción, porcentajes y estado; dirección y orden los pone el servicio. */
     @PostMapping("/componentes")
-    public String crearComponente(@RequestParam String nombre,
-            @RequestParam(required = false) String emoji,
-            @RequestParam(required = false) Boolean activo,
+    public String guardarComponente(@ModelAttribute ComponenteEvaluacion componente,
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
-            tipoComponenteService.crear(direccionId, nombre, emoji, activo);
+            componenteEvaluacionService.guardar(direccionId, componente);
             response.setHeader("HX-Trigger",
-                    "{\"institucionalGuardado\":{\"mensaje\":\"Tipo de componente agregado\"}}");
+                    "{\"institucionalGuardado\":{\"mensaje\":\"Componente guardado\",\"cerrarModal\":true}}");
         } catch (IllegalArgumentException e) {
             notificarError(response, e.getMessage());
         }
@@ -110,31 +130,14 @@ public class ConfiguracionInstitucionalController {
         return "configuracion-institucional/componentes/componentes :: content";
     }
 
-    @PostMapping("/componentes/{id}")
-    public String actualizarComponente(@PathVariable Long id, @RequestParam String nombre,
-            @RequestParam(required = false) String emoji,
-            @RequestParam(required = false) Boolean activo,
-            Model model, HttpSession session, HttpServletResponse response) {
-        Long direccionId = requerirDireccion(session);
-        try {
-            tipoComponenteService.actualizar(direccionId, id, nombre, emoji, activo);
-            response.setHeader("HX-Trigger",
-                    "{\"institucionalGuardado\":{\"mensaje\":\"Tipo de componente actualizado\"}}");
-        } catch (IllegalArgumentException e) {
-            notificarError(response, e.getMessage());
-        }
-        cargarComponentes(model, direccionId);
-        return "configuracion-institucional/componentes/componentes :: content";
-    }
-
-    @PostMapping("/componentes/{id}/eliminar")
+    @DeleteMapping("/componentes/{id}")
     public String eliminarComponente(@PathVariable Long id,
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
-            tipoComponenteService.eliminar(direccionId, id);
+            componenteEvaluacionService.eliminar(direccionId, id);
             response.setHeader("HX-Trigger",
-                    "{\"institucionalGuardado\":{\"mensaje\":\"Tipo de componente eliminado\"}}");
+                    "{\"institucionalGuardado\":{\"mensaje\":\"Componente eliminado\"}}");
         } catch (IllegalArgumentException e) {
             notificarError(response, e.getMessage());
         }
@@ -244,7 +247,16 @@ public class ConfiguracionInstitucionalController {
     }
 
     private void cargarComponentes(Model model, Long direccionId) {
-        model.addAttribute("tiposComponente", tipoComponenteService.listar(direccionId));
+        model.addAttribute("componentesEvaluacion", componenteEvaluacionService.listar(direccionId));
+        model.addAttribute("materiasPorComponente", componenteEvaluacionService.contarMaterias(direccionId));
+        model.addAttribute("asistenciaCuenta", rebajaConductaService.asistenciaRebajaComponente(direccionId));
+    }
+
+    private void cargarFormularioComponente(Model model, Long direccionId, ComponenteEvaluacion componente) {
+        model.addAttribute("componente", componente);
+        model.addAttribute("materiasDelComponente", componente.getId() == null ? 0L
+                : componenteEvaluacionService.contarMaterias(direccionId).getOrDefault(componente.getId(), 0L));
+        model.addAttribute("asistenciaCuenta", rebajaConductaService.asistenciaRebajaComponente(direccionId));
     }
 
     private void cargarTiposMateria(Model model, Long direccionId) {

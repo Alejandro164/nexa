@@ -111,8 +111,10 @@ public class ConfiguracionAcademicaController {
 
     @GetMapping("/materias/form")
     public String nuevaMateria(Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
         model.addAttribute("materia", new Materia());
-        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos(requerirDireccion(session)));
+        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos(direccionId));
+        model.addAttribute("componentesEvaluacion", service.listarComponentesEvaluacionActivos(direccionId));
         return "configuracion-academica/materias/form :: form-content";
     }
 
@@ -121,6 +123,7 @@ public class ConfiguracionAcademicaController {
         Long direccionId = requerirDireccion(session);
         model.addAttribute("materia", service.obtenerMateria(direccionId, id));
         model.addAttribute("tiposMateria", service.listarTiposMateriaActivos(direccionId));
+        model.addAttribute("componentesEvaluacion", service.listarComponentesEvaluacionActivos(direccionId));
         return "configuracion-academica/materias/form :: form-content";
     }
 

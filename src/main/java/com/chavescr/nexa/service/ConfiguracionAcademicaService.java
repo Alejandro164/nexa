@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Direccion;
@@ -41,6 +42,7 @@ public class ConfiguracionAcademicaService {
     private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
     private final TipoMateriaService tipoMateriaService;
+    private final ComponenteEvaluacionService componenteEvaluacionService;
     private final TipoAulaRepository tipoAulaRepository;
     private final HorarioLeccionRepository horarioRepository;
     private final UsuarioRepository usuarioRepository;
@@ -57,6 +59,7 @@ public class ConfiguracionAcademicaService {
             NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository,
             TipoMateriaService tipoMateriaService,
+            ComponenteEvaluacionService componenteEvaluacionService,
             TipoAulaRepository tipoAulaRepository,
             HorarioLeccionRepository horarioRepository,
             UsuarioRepository usuarioRepository,
@@ -72,6 +75,7 @@ public class ConfiguracionAcademicaService {
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
         this.tipoMateriaService = tipoMateriaService;
+        this.componenteEvaluacionService = componenteEvaluacionService;
         this.tipoAulaRepository = tipoAulaRepository;
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
@@ -195,6 +199,10 @@ public class ConfiguracionAcademicaService {
         return tipoMateriaService.listarActivos(direccionId);
     }
 
+    public List<ComponenteEvaluacion> listarComponentesEvaluacionActivos(Long direccionId) {
+        return componenteEvaluacionService.listarActivos(direccionId);
+    }
+
     @Transactional(readOnly = true)
     public Materia obtenerMateria(Long direccionId, Long id) {
         return materiaRepository.findByIdAndDireccionId(id, direccionId)
@@ -208,6 +216,8 @@ public class ConfiguracionAcademicaService {
         materia.setNombre(datos.getNombre().trim());
         materia.setTipoMateria(tipoMateria);
         materia.setTipo(tipoMateria.getNombre());
+        Long componenteId = datos.getComponenteEvaluacion() != null ? datos.getComponenteEvaluacion().getId() : null;
+        materia.setComponenteEvaluacion(componenteEvaluacionService.obtenerActivo(direccionId, componenteId));
         materia.setColor(normalizarColor(datos.getColor()));
         materia.setActivo(Boolean.TRUE.equals(datos.getActivo()));
         return materiaRepository.save(materia);

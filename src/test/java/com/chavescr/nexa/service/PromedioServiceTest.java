@@ -21,7 +21,6 @@ import com.chavescr.nexa.entity.AsistenciaEstudiante;
 import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.ClaveComponente;
 import com.chavescr.nexa.entity.Componente;
-import com.chavescr.nexa.entity.DistribucionPorcentual;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.entity.ResultadoComponente;
 import com.chavescr.nexa.entity.TipoComponente;
@@ -62,7 +61,7 @@ class PromedioServiceTest {
     private AsistenciaEstudianteRepository asistenciaRepository;
 
     @Mock
-    private DistribucionPorcentualService distribucionService;
+    private ComponenteEvaluacionService componenteEvaluacionService;
 
     @Mock
     private ComponenteService componenteService;
@@ -80,7 +79,7 @@ class PromedioServiceTest {
     @BeforeEach
     void setUp() {
         service = new PromedioService(usuarioRepository, nivelRepository, materiaRepository, periodoRepository,
-                resultadoRepository, asistenciaRepository, distribucionService, componenteService,
+                resultadoRepository, asistenciaRepository, componenteEvaluacionService, componenteService,
                 rebajaConductaService, subgrupoService);
 
         periodo = new PeriodoAcademico();
@@ -103,12 +102,7 @@ class PromedioServiceTest {
         resultado.setComponente(rubro);
         resultado.setCalificacion(80);
 
-        DistribucionPorcentual distribucion = new DistribucionPorcentual();
-        distribucion.setCotidiano(40);
-        distribucion.setTareas(15);
-        distribucion.setProyectos(20);
-        distribucion.setExamenes(20);
-        distribucion.setAsistencia(5);
+        int[] distribucion = { 40, 15, 20, 20, 5 };
 
         when(periodoRepository.findByDireccionIdAndActivoTrueOrderByFechaInicioDesc(DIRECCION))
                 .thenReturn(List.of(periodo));
@@ -118,7 +112,7 @@ class PromedioServiceTest {
                 .thenReturn(List.of(estudiante));
         when(resultadoRepository.findByComponente_Direccion_IdAndComponente_Nivel_IdAndComponente_Materia_IdAndPeriodo_Id(
                 DIRECCION, NIVEL, MATERIA, PERIODO)).thenReturn(List.of(resultado));
-        when(distribucionService.obtenerDistribucion(DIRECCION, PERIODO, MATERIA)).thenReturn(distribucion);
+        when(componenteEvaluacionService.pesosDeMateria(DIRECCION, MATERIA)).thenReturn(distribucion);
         when(componenteService.listar(DIRECCION, ClaveComponente.COTIDIANO, NIVEL, MATERIA, null))
                 .thenReturn(List.of(rubro));
         when(componenteService.calcularPesosEfectivos(List.of(rubro))).thenReturn(Map.of(20L, 100.0));

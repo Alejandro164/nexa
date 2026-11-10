@@ -12,6 +12,10 @@ import com.chavescr.nexa.entity.TipoComponente;
 import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.TipoComponenteRepository;
 
+/**
+ * Rubros de la nota (trabajo cotidiano, tareas, proyecto, pruebas). Son fijos: se crean solos por dirección y
+ * ya no se administran; los porcentajes de cada uno se definen en los componentes de evaluación.
+ */
 @Service
 @Transactional
 public class TipoComponenteService {
@@ -50,47 +54,6 @@ public class TipoComponenteService {
                 .toList();
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public TipoComponente crear(Long direccionId, String nombre, String emoji, Boolean activo) {
-        String limpio = normalizarNombre(nombre);
-        if (repository.existsByDireccionIdAndNombreIgnoreCase(direccionId, limpio)) {
-            throw new IllegalArgumentException("Ya existe un tipo de componente con ese nombre");
-        }
-        TipoComponente tipo = new TipoComponente();
-        tipo.setDireccion(direccion(direccionId));
-        tipo.setNombre(limpio);
-        tipo.setEmoji(normalizarEmoji(emoji));
-        tipo.setActivo(activo == null || activo);
-        tipo.setOrden(siguienteOrden(direccionId));
-        return repository.save(tipo);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public TipoComponente actualizar(Long direccionId, Long id, String nombre, String emoji, Boolean activo) {
-        TipoComponente tipo = obtener(direccionId, id);
-        String limpio = normalizarNombre(nombre);
-        if (repository.existsByDireccionIdAndNombreIgnoreCaseAndIdNot(direccionId, limpio, id)) {
-            throw new IllegalArgumentException("Ya existe un tipo de componente con ese nombre");
-        }
-        tipo.setNombre(limpio);
-        if (emoji != null) {
-            tipo.setEmoji(normalizarEmoji(emoji));
-        }
-        if (activo != null) {
-            tipo.setActivo(activo);
-        }
-        return repository.save(tipo);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void eliminar(Long direccionId, Long id) {
-        TipoComponente tipo = obtener(direccionId, id);
-        if (tipo.isDelSistema()) {
-            throw new IllegalArgumentException("Los tipos del sistema se desactivan, no se eliminan");
-        }
-        repository.delete(tipo);
-    }
-
     private void asegurarPredeterminados(Long direccionId) {
         Direccion direccion = direccion(direccionId);
         for (Predeterminado predeterminado : PREDETERMINADOS) {
@@ -115,23 +78,9 @@ public class TipoComponenteService {
         }
     }
 
-    private TipoComponente obtener(Long direccionId, Long id) {
-        return repository.findByIdAndDireccionId(id, direccionId)
-                .orElseThrow(() -> new IllegalArgumentException("Tipo de componente no encontrado"));
-    }
-
     private Direccion direccion(Long direccionId) {
         return direccionRepository.findById(direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
-    }
-
-    private int siguienteOrden(Long direccionId) {
-        return repository.findByDireccionIdOrderByOrdenAscNombreAsc(direccionId).stream()
-                .map(TipoComponente::getOrden)
-                .filter(orden -> orden != null)
-                .mapToInt(Integer::intValue)
-                .max()
-                .orElse(0) + 1;
     }
 
     private String emojiDe(ClaveComponente clave) {
@@ -140,28 +89,6 @@ public class TipoComponenteService {
                 .map(Predeterminado::emoji)
                 .findFirst()
                 .orElse("📝");
-    }
-
-    private String normalizarEmoji(String emoji) {
-        if (emoji == null || emoji.isBlank()) {
-            return null;
-        }
-        String limpio = emoji.trim();
-        if (limpio.length() > 16) {
-            throw new IllegalArgumentException("Elige un solo emoji");
-        }
-        return limpio;
-    }
-
-    private String normalizarNombre(String nombre) {
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("Indica el nombre del tipo de componente");
-        }
-        String limpio = nombre.trim().replaceAll("\\s+", " ");
-        if (limpio.length() > 60) {
-            throw new IllegalArgumentException("El nombre no puede superar 60 caracteres");
-        }
-        return limpio;
     }
 
     private record Predeterminado(ClaveComponente clave, String nombre, String emoji, int orden) {

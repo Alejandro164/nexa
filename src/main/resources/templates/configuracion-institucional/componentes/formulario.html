@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <style>
+        .comp-eval-rubros {
+            display: grid;
+            gap: 0.5rem;
+        }
+        .comp-eval-rubro {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.75rem;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-solid, #e2e8f0);
+            border-radius: 10px;
+        }
+        .comp-eval-rubro label {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+        .comp-eval-rubro label small {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .comp-eval-pct {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .comp-eval-pct .form-input {
+            width: 76px;
+            text-align: right;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        .comp-eval-total-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.75rem;
+            padding: 0.7rem 0.9rem;
+            border-radius: 10px;
+            border: 1px solid #bbf7d0;
+            background: #f0fdf4;
+            color: #14532d;
+            font-weight: 600;
+        }
+        .comp-eval-total-box.is-error {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #7f1d1d;
+        }
+        .comp-eval-total-num {
+            font-size: 1.25rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+        .comp-eval-aviso {
+            margin: 0 0 1rem;
+            padding: 0.7rem 0.9rem;
+            border-radius: 10px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1e3a5f;
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+    </style>
+    <div class="modal-backdrop">
+        <div class="modal-dialog">
+            <div class="modal-loading-overlay htmx-indicator" id="modal-loading-overlay">
+                <div class="spinner"></div>
+                <span>Cargando...</span>
+            </div>
+            <div class="modal-header">
+                <h3 class="modal-title"
+                    th:text="${componente.id == null ? 'Registrar componente' : 'Editar componente'}">Componente</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalInstitucional()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form hx-post="/configuracion-institucional/componentes"
+                      hx-target="#institucional-componentes-panel"
+                      hx-swap="outerHTML"
+                      hx-indicator="#modal-loading-overlay"
+                      oninput="actualizarTotalComponente(this)">
+                    <input type="hidden" name="id" th:value="${componente.id}">
+                    <div class="form-group">
+                        <label class="form-label" for="componente-nombre">Nombre</label>
+                        <input class="form-input" id="componente-nombre" name="nombre" maxlength="60" required
+                               th:value="${componente.nombre}" placeholder="Ej. III Ciclo — Básicas">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="componente-descripcion">Descripción <span class="academic-help">(opcional)</span></label>
+                        <input class="form-input" id="componente-descripcion" name="descripcion" maxlength="160"
+                               th:value="${componente.descripcion}" placeholder="Ej. Art. 41 a) · Matemática, Español…">
+                    </div>
+
+                    <fieldset class="form-group" style="border: 0; padding: 0; margin: 0 0 1.25rem;">
+                        <legend class="form-label">Porcentaje de cada rubro</legend>
+                        <div class="comp-eval-rubros">
+                            <div class="comp-eval-rubro">
+                                <label for="componente-cotidiano">Trabajo cotidiano<small>Indicadores evaluados en clase</small></label>
+                                <div class="comp-eval-pct">
+                                    <input class="form-input" id="componente-cotidiano" name="cotidiano" type="number"
+                                           min="0" max="100" step="1" required data-rubro th:value="${componente.cotidiano}">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="comp-eval-rubro">
+                                <label for="componente-tareas">Tareas<small>Trabajos asignados fuera de la lección</small></label>
+                                <div class="comp-eval-pct">
+                                    <input class="form-input" id="componente-tareas" name="tareas" type="number"
+                                           min="0" max="100" step="1" required data-rubro th:value="${componente.tareas}">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="comp-eval-rubro">
+                                <label for="componente-proyecto">Proyecto<small>0% = no forma parte de la nota</small></label>
+                                <div class="comp-eval-pct">
+                                    <input class="form-input" id="componente-proyecto" name="proyecto" type="number"
+                                           min="0" max="100" step="1" required data-rubro th:value="${componente.proyecto}">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="comp-eval-rubro">
+                                <label for="componente-pruebas">Pruebas<small>Pruebas escritas del período</small></label>
+                                <div class="comp-eval-pct">
+                                    <input class="form-input" id="componente-pruebas" name="pruebas" type="number"
+                                           min="0" max="100" step="1" required data-rubro th:value="${componente.pruebas}">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                            <div class="comp-eval-rubro">
+                                <label for="componente-asistencia">Asistencia
+                                    <small th:if="${asistenciaCuenta}">Según la tabla del Art. 37</small>
+                                    <small th:unless="${asistenciaCuenta}">En esta dirección rebaja la conducta: su porcentaje se reparte entre los demás rubros</small>
+                                </label>
+                                <div class="comp-eval-pct">
+                                    <input class="form-input" id="componente-asistencia" name="asistencia" type="number"
+                                           min="0" max="100" step="1" required data-rubro th:value="${componente.asistencia}">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="comp-eval-total-box" data-total-box aria-live="polite">
+                            <span>Total</span>
+                            <span class="comp-eval-total-num" data-total th:text="${componente.total + '%'}">100%</span>
+                        </div>
+                    </fieldset>
+
+                    <input type="hidden" name="_activo" value="on">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="custom-checkbox" name="activo"
+                                   th:checked="${componente.id == null or componente.activo}">
+                            <span class="custom-checkbox-control">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </span>
+                            <span>Componente activo</span>
+                        </label>
+                    </div>
+
+                    <p class="comp-eval-aviso" th:if="${materiasDelComponente > 0}">
+                        Este componente lo usan <strong th:text="${materiasDelComponente == 1 ? '1 materia' : materiasDelComponente + ' materias'}">18 materias</strong>.
+                        Al guardar, sus notas se calculan con los porcentajes nuevos.
+                    </p>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarModalInstitucional()">Cancelar</button>
+                        <button type="submit" class="btn-primary" data-guardar>Guardar componente</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function actualizarTotalComponente(form) {
+            let total = 0;
+            form.querySelectorAll('[data-rubro]').forEach(function (input) {
+                const valor = Number(input.value);
+                total += Number.isFinite(valor) ? valor : 0;
+            });
+            const caja = form.querySelector('[data-total-box]');
+            form.querySelector('[data-total]').textContent = total + '%';
+            caja.classList.toggle('is-error', total !== 100);
+            form.querySelector('[data-guardar]').disabled = total !== 100;
+        }
+        (function () {
+            const form = document.querySelector('#modal-container form[oninput]');
+            if (form) {
+                actualizarTotalComponente(form);
+            }
+        })();
+    </script>
+</div>
+</body>
+</html>

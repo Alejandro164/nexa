@@ -37,6 +37,29 @@
                                         th:text="${tipo.nombre}">Tipo</option>
                             </select>
                         </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label class="form-label">Componente de evaluación</label>
+                            <select class="form-input" name="componenteEvaluacion.id" required
+                                    onchange="mostrarResumenComponente(this)">
+                                <option value="" disabled hidden
+                                        th:selected="${materia.componenteEvaluacion == null}">
+                                    Seleccione un componente
+                                </option>
+                                <option th:each="c : ${componentesEvaluacion}"
+                                        th:value="${c.id}"
+                                        th:selected="${materia.componenteEvaluacion != null and materia.componenteEvaluacion.id == c.id}"
+                                        th:attr="data-resumen=${(c.cotidiano > 0 ? 'Cotidiano ' + c.cotidiano + '%|' : '')
+                                                 + (c.tareas > 0 ? 'Tareas ' + c.tareas + '%|' : '')
+                                                 + (c.proyecto > 0 ? 'Proyecto ' + c.proyecto + '%|' : '')
+                                                 + (c.pruebas > 0 ? 'Pruebas ' + c.pruebas + '%|' : '')
+                                                 + (c.asistencia > 0 ? 'Asistencia ' + c.asistencia + '%' : '')}"
+                                        th:text="${c.nombre}">Componente</option>
+                            </select>
+                            <div class="materia-componente-resumen" data-componente-resumen hidden>
+                                <p>La nota de esta materia se calcula así:</p>
+                                <div data-componente-chips></div>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label class="form-label">Color</label>
                             <div class="academic-color-picker"
@@ -84,6 +107,59 @@
             </div>
         </div>
     </div>
+    <style>
+        .materia-componente-resumen {
+            margin-top: 0.5rem;
+            padding: 0.65rem 0.8rem;
+            border: 1px solid var(--border-solid, #e2e8f0);
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+        .materia-componente-resumen p {
+            margin: 0 0 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .materia-componente-resumen [data-componente-chips] {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        .materia-componente-chip {
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            background: #e8f0f8;
+            color: #1e3a5f;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+    </style>
+    <script>
+        function mostrarResumenComponente(select) {
+            const grupo = select.closest('.form-group');
+            const resumen = grupo ? grupo.querySelector('[data-componente-resumen]') : null;
+            if (!resumen) {
+                return;
+            }
+            const opcion = select.options[select.selectedIndex];
+            const partes = opcion && opcion.value ? (opcion.dataset.resumen || '').split('|').filter(Boolean) : [];
+            const chips = resumen.querySelector('[data-componente-chips]');
+            chips.replaceChildren(...partes.map(function (texto) {
+                const chip = document.createElement('span');
+                chip.className = 'materia-componente-chip';
+                chip.textContent = texto;
+                return chip;
+            }));
+            resumen.hidden = partes.length === 0;
+        }
+        (function () {
+            const select = document.querySelector('#modal-container select[name="componenteEvaluacion.id"]');
+            if (select) {
+                mostrarResumenComponente(select);
+            }
+        })();
+    </script>
 </div>
 </body>
 </html>

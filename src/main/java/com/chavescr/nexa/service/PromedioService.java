@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.dto.FilaPromedio;
 import com.chavescr.nexa.entity.AsistenciaEstudiante;
-import com.chavescr.nexa.entity.DistribucionPorcentual;
 import com.chavescr.nexa.entity.ClaveComponente;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
@@ -36,7 +35,7 @@ public class PromedioService {
     private final PeriodoAcademicoRepository periodoRepository;
     private final ResultadoComponenteRepository resultadoRepository;
     private final AsistenciaEstudianteRepository asistenciaRepository;
-    private final DistribucionPorcentualService distribucionService;
+    private final ComponenteEvaluacionService componenteEvaluacionService;
     private final ComponenteService componenteService;
     private final RebajaConductaService rebajaConductaService;
     private final SubgrupoService subgrupoService;
@@ -44,7 +43,7 @@ public class PromedioService {
     public PromedioService(UsuarioRepository usuarioRepository, NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository, PeriodoAcademicoRepository periodoRepository,
             ResultadoComponenteRepository resultadoRepository, AsistenciaEstudianteRepository asistenciaRepository,
-            DistribucionPorcentualService distribucionService, ComponenteService componenteService,
+            ComponenteEvaluacionService componenteEvaluacionService, ComponenteService componenteService,
             RebajaConductaService rebajaConductaService, SubgrupoService subgrupoService) {
         this.usuarioRepository = usuarioRepository;
         this.nivelRepository = nivelRepository;
@@ -52,7 +51,7 @@ public class PromedioService {
         this.periodoRepository = periodoRepository;
         this.resultadoRepository = resultadoRepository;
         this.asistenciaRepository = asistenciaRepository;
-        this.distribucionService = distribucionService;
+        this.componenteEvaluacionService = componenteEvaluacionService;
         this.componenteService = componenteService;
         this.rebajaConductaService = rebajaConductaService;
         this.subgrupoService = subgrupoService;
@@ -94,7 +93,7 @@ public class PromedioService {
                         direccionId, nivelId, materiaId, periodoId)
                 .stream().collect(Collectors.groupingBy(r -> r.getEstudiante().getId()));
 
-        DistribucionPorcentual distribucion = distribucionService.obtenerDistribucion(direccionId, periodoId, materiaId);
+        int[] distribucion = componenteEvaluacionService.pesosDeMateria(direccionId, materiaId);
         List<TipoComponente> columnas = tipos == null ? List.of() : tipos;
         Map<ClaveComponente, Map<Long, Double>> pesos = pesosDe(direccionId, nivelId, materiaId, periodoId, columnas);
 
@@ -121,7 +120,7 @@ public class PromedioService {
     }
 
     private FilaPromedio calcularFila(Usuario estudiante, PeriodoAcademico periodo, Long materiaId,
-            Long direccionId, List<ResultadoComponente> resultados, DistribucionPorcentual distribucion,
+            Long direccionId, List<ResultadoComponente> resultados, int[] distribucion,
             List<TipoComponente> tipos, Map<ClaveComponente, Map<Long, Double>> pesos, CalculoRebaja calculo) {
         List<Double> notas = new ArrayList<>();
         for (TipoComponente tipo : tipos) {
@@ -172,7 +171,8 @@ public class PromedioService {
         return Math.round(suma / sumaPesos * 100) / 100.0;
     }
 
-    private Double promedioFinal(DistribucionPorcentual d, List<TipoComponente> tipos, List<Double> notas,
+    /** {@code d}: pesos del componente de evaluación (cotidiano, tareas, proyecto, pruebas, asistencia). */
+    private Double promedioFinal(int[] d, List<TipoComponente> tipos, List<Double> notas,
             Integer asistencia) {
         double sumaPonderada = 0;
         double sumaPesos = 0;
@@ -186,8 +186,8 @@ public class PromedioService {
             sumaPesos += peso;
         }
         if (asistencia != null) {
-            sumaPonderada += asistencia * d.getAsistencia();
-            sumaPesos += d.getAsistencia();
+            sumaPonderada += asistencia * d[4];
+            sumaPesos += d[4];
         }
         if (sumaPesos <= 0) {
             return null;
@@ -195,15 +195,15 @@ public class PromedioService {
         return Math.round((sumaPonderada / sumaPesos) * 10) / 10.0;
     }
 
-    private Integer pesoDe(DistribucionPorcentual d, ClaveComponente clave) {
+    private Integer pesoDe(int[] d, ClaveComponente clave) {
         if (clave == null || d == null) {
             return null;
         }
         return switch (clave) {
-            case COTIDIANO -> d.getCotidiano();
-            case TAREA -> d.getTareas();
-            case PROYECTO -> d.getProyectos();
-            case EXAMEN -> d.getExamenes();
+            case COTIDIANO -> d[0];
+            case TAREA -> d[1];
+            case PROYECTO -> d[2];
+            case EXAMEN -> d[3];
         };
     }
 }

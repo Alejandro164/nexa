@@ -30,7 +30,6 @@ import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.ComponenteRepository;
-import com.chavescr.nexa.repository.DistribucionPorcentualRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.repository.IncidenteConductaRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
@@ -72,7 +71,7 @@ class NotasConsultaServiceTest {
     private ResultadoComponenteRepository resultadoRepository;
 
     @Mock
-    private DistribucionPorcentualRepository distribucionRepository;
+    private ComponenteEvaluacionService componenteEvaluacionService;
 
     @Mock
     private AsistenciaEstudianteRepository asistenciaRepository;
@@ -100,7 +99,7 @@ class NotasConsultaServiceTest {
     @BeforeEach
     void setUp() {
         service = new NotasConsultaService(periodoRepository, nivelRepository, usuarioRepository, docenteGuiaService,
-                horarioRepository, componenteRepository, resultadoRepository, distribucionRepository,
+                horarioRepository, componenteRepository, resultadoRepository, componenteEvaluacionService,
                 asistenciaRepository, tipoComponenteRepository, incidenteRepository, observacionRepository,
                 materiaRepository, rebajaConductaService);
 

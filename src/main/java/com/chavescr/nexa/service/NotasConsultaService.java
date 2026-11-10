@@ -45,7 +45,7 @@ import com.chavescr.nexa.entity.Componente;
 import com.chavescr.nexa.entity.IncidenteConducta;
 import com.chavescr.nexa.entity.IncidenteConducta.EstadoIncidente;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
-import com.chavescr.nexa.entity.DistribucionPorcentual;
+import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
@@ -55,7 +55,6 @@ import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.ComponenteRepository;
-import com.chavescr.nexa.repository.DistribucionPorcentualRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.repository.IncidenteConductaRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
@@ -83,7 +82,7 @@ public class NotasConsultaService {
     private final HorarioLeccionRepository horarioRepository;
     private final ComponenteRepository componenteRepository;
     private final ResultadoComponenteRepository resultadoRepository;
-    private final DistribucionPorcentualRepository distribucionRepository;
+    private final ComponenteEvaluacionService componenteEvaluacionService;
     private final AsistenciaEstudianteRepository asistenciaRepository;
     private final TipoComponenteRepository tipoComponenteRepository;
     private final IncidenteConductaRepository incidenteRepository;
@@ -95,7 +94,7 @@ public class NotasConsultaService {
             NivelAcademicoRepository nivelRepository, UsuarioRepository usuarioRepository,
             DocenteGuiaService docenteGuiaService, HorarioLeccionRepository horarioRepository,
             ComponenteRepository componenteRepository, ResultadoComponenteRepository resultadoRepository,
-            DistribucionPorcentualRepository distribucionRepository,
+            ComponenteEvaluacionService componenteEvaluacionService,
             AsistenciaEstudianteRepository asistenciaRepository,
             TipoComponenteRepository tipoComponenteRepository,
             IncidenteConductaRepository incidenteRepository,
@@ -109,7 +108,7 @@ public class NotasConsultaService {
         this.horarioRepository = horarioRepository;
         this.componenteRepository = componenteRepository;
         this.resultadoRepository = resultadoRepository;
-        this.distribucionRepository = distribucionRepository;
+        this.componenteEvaluacionService = componenteEvaluacionService;
         this.asistenciaRepository = asistenciaRepository;
         this.tipoComponenteRepository = tipoComponenteRepository;
         this.incidenteRepository = incidenteRepository;
@@ -245,7 +244,7 @@ public class NotasConsultaService {
                 componenteRepository.findParaNotas(direccionId, nivelIds), periodoIds);
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
         CalculoRebaja calculo = conAsistencia ? rebajaConductaService.calculo(direccionId) : null;
-        Distribuciones distribuciones = distribucionesDe(direccionId, periodoIds, conAsistencia);
+        Distribuciones distribuciones = distribucionesDe(direccionId);
         Map<Long, int[]> asistencia = conAsistencia
                 ? asistenciaDeEstudiante(direccionId, estudianteId, periodo)
                 : Map.of();
@@ -258,7 +257,7 @@ public class NotasConsultaService {
             ComponentesNota nota = ponderar(
                     porMateria.getOrDefault(vista.id, List.of()),
                     asistencia.get(vista.id),
-                    distribuciones.de(periodoId, vista.id),
+                    distribuciones.de(vista.id),
                     claves,
                     pesosDeMateria(pesos, nivelId, vista.id, periodoId),
                     calculo);
@@ -287,8 +286,7 @@ public class NotasConsultaService {
         exigirMateriaDeLaSeccion(direccionId, nivel.getId(), materiaId, periodo);
 
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
-        int[] dist = distribucionesDe(direccionId, List.of(periodo.getId()), conAsistencia)
-                .de(periodo.getId(), materiaId);
+        int[] dist = componenteEvaluacionService.pesosDeMateria(direccionId, materiaId);
         String nombre = materia.getNombre() == null || materia.getNombre().isBlank() ? "Materia" : materia.getNombre();
         String limpia = claveTexto == null ? "" : claveTexto.trim().toUpperCase(Locale.ROOT);
         if ("ASISTENCIA".equals(limpia)) {
@@ -845,7 +843,7 @@ public class NotasConsultaService {
                 componenteRepository.findParaNotas(direccionId, nivelIds), periodoIds);
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
         CalculoRebaja calculo = rebajaConductaService.calculo(direccionId);
-        Distribuciones distribuciones = distribucionesDe(direccionId, periodoIds, conAsistencia);
+        Distribuciones distribuciones = distribucionesDe(direccionId);
         AsistenciaCargada cargada = asistenciaDe(direccionId, nivelIds, periodos);
         Map<AsistKey, int[]> asistencia = conAsistencia ? cargada.porMateria() : Map.of();
         Set<ClaveComponente> claves = clavesActivas(direccionId);
@@ -990,7 +988,7 @@ public class NotasConsultaService {
             return null;
         }
 
-        int[] dist = distribuciones.de(periodoId, materiaId);
+        int[] dist = distribuciones.de(materiaId);
         ComponentesNota componentes = ponderar(resultados, asist, dist, claves,
                 pesosDeMateria(pesos, nivelId, materiaId, periodoId), calculo);
 
@@ -1138,19 +1136,13 @@ public class NotasConsultaService {
         return pesos;
     }
 
-    private Distribuciones distribucionesDe(Long direccionId, List<Long> periodoIds, boolean conAsistencia) {
-        Map<DistKey, int[]> guardadas = new HashMap<>();
-        for (DistribucionPorcentual dist : distribucionRepository.findByDireccionIdAndPeriodoIdIn(direccionId,
-                periodoIds)) {
-            guardadas.put(new DistKey(dist.getPeriodo().getId(), dist.getMateria().getId()), pesos(dist));
-        }
-        return new Distribuciones(guardadas, pesos(DistribucionPorcentual.predeterminada(conAsistencia)));
-    }
-
-    private static int[] pesos(DistribucionPorcentual dist) {
-        return new int[] {
-                dist.getCotidiano(), dist.getTareas(), dist.getProyectos(), dist.getExamenes(), dist.getAsistencia()
-        };
+    /**
+     * Porcentajes de cada materia según su componente de evaluación. Si la asistencia no forma parte de la nota
+     * (rebaja la conducta), no hay lecciones que ponderar y su porcentaje se reparte entre los demás rubros.
+     */
+    private Distribuciones distribucionesDe(Long direccionId) {
+        return new Distribuciones(componenteEvaluacionService.pesosPorMateria(direccionId),
+                ComponenteEvaluacion.PESOS_POR_DEFECTO);
     }
 
     private AsistenciaCargada asistenciaDe(Long direccionId, List<Long> nivelIds, List<PeriodoAcademico> periodos) {
@@ -1370,12 +1362,9 @@ public class NotasConsultaService {
     private record PesoKey(long nivelId, long materiaId, Long periodoId, ClaveComponente clave) {
     }
 
-    private record DistKey(long periodoId, long materiaId) {
-    }
-
-    private record Distribuciones(Map<DistKey, int[]> guardadas, int[] predeterminada) {
-        int[] de(Long periodoId, Long materiaId) {
-            return guardadas.getOrDefault(new DistKey(periodoId, materiaId), predeterminada);
+    private record Distribuciones(Map<Long, int[]> porMateria, int[] predeterminada) {
+        int[] de(Long materiaId) {
+            return porMateria.getOrDefault(materiaId, predeterminada);
         }
     }
 
