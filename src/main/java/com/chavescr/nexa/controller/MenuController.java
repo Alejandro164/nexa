@@ -97,7 +97,11 @@ public class MenuController {
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         model.addAttribute("notasCatalogo", notasConsultaService.consultar(
                 direccionId, usuarioId, supervision, supervision));
-        model.addAttribute("escala", escalaNotasService.vista(direccionId));
+        // La escala depende del ciclo de la sección de cada estudiante: la vista elige la suya.
+        var escalas = escalaNotasService.vistasPorCiclo(direccionId);
+        model.addAttribute("escalasPorCiclo", escalas.entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(e -> e.getKey().name(), e -> e.getValue().tramos())));
+        model.addAttribute("escala", escalas.get(com.chavescr.nexa.entity.CicloEducativo.PRIMER_CICLO));
         model.addAttribute("conAsistencia", rebajaConductaService.asistenciaRebajaComponente(direccionId));
         return htmxRequest ? "notas/index :: htmx-content" : "notas/index";
     }

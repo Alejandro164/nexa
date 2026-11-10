@@ -2,6 +2,8 @@ package com.chavescr.nexa.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,6 +33,11 @@ public class NivelAcademico {
 
     @Column(nullable = false, length = 20)
     private String seccion;
+
+    /** Define qué escala de notas usan sus estudiantes. Nullable en el esquema solo para la migración. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private CicloEducativo ciclo;
 
     @Column(nullable = false)
     private Boolean activo = true;
@@ -65,6 +72,19 @@ public class NivelAcademico {
 
     public void setSeccion(String seccion) {
         this.seccion = seccion;
+    }
+
+    public CicloEducativo getCiclo() {
+        return ciclo;
+    }
+
+    public void setCiclo(CicloEducativo ciclo) {
+        this.ciclo = ciclo;
+    }
+
+    /** El ciclo guardado o, si todavía no tiene, el que corresponde a su grado. */
+    public CicloEducativo getCicloEfectivo() {
+        return ciclo != null ? ciclo : CicloEducativo.deGrado(grado);
     }
 
     public Boolean getActivo() {

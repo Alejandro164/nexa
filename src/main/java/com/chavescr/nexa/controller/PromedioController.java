@@ -89,7 +89,7 @@ public class PromedioController {
         model.addAttribute("notaMasBaja", promedios.stream().mapToDouble(Double::doubleValue).min().orElse(0));
         model.addAttribute("esDocente", docenteId != null);
         model.addAttribute("notasEnviadas", notasEnviadas);
-        model.addAttribute("escala", escalaNotasService.vista(direccionId));
+        model.addAttribute("escala", escalaNotasService.vistaDeNivel(direccionId, nivelId));
         return "gestion-academica/promedio/promedio :: content";
     }
 

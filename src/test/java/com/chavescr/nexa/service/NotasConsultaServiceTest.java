@@ -30,7 +30,6 @@ import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.ComponenteRepository;
-import com.chavescr.nexa.repository.DistribucionPorcentualRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
 import com.chavescr.nexa.repository.IncidenteConductaRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
@@ -72,7 +71,7 @@ class NotasConsultaServiceTest {
     private ResultadoComponenteRepository resultadoRepository;
 
     @Mock
-    private DistribucionPorcentualRepository distribucionRepository;
+    private ComponenteEvaluacionService componenteEvaluacionService;
 
     @Mock
     private AsistenciaEstudianteRepository asistenciaRepository;
@@ -100,7 +99,7 @@ class NotasConsultaServiceTest {
     @BeforeEach
     void setUp() {
         service = new NotasConsultaService(periodoRepository, nivelRepository, usuarioRepository, docenteGuiaService,
-                horarioRepository, componenteRepository, resultadoRepository, distribucionRepository,
+                horarioRepository, componenteRepository, resultadoRepository, componenteEvaluacionService,
                 asistenciaRepository, tipoComponenteRepository, incidenteRepository, observacionRepository,
                 materiaRepository, rebajaConductaService);
 
@@ -129,20 +128,24 @@ class NotasConsultaServiceTest {
     }
 
     @Test
-    void elDesgloseIncluyeLaAsistenciaCuandoRebajaElComponente() {
+    void elDesgloseIncluyeLaAsistenciaSegunElPorcentajeDeAusencias() {
         conCotidianoDe80();
         when(rebajaConductaService.asistenciaRebajaComponente(DIRECCION)).thenReturn(true);
         when(rebajaConductaService.calculo(DIRECCION)).thenReturn(predeterminada());
+        List<Object[]> lecciones = new java.util.ArrayList<>();
+        for (int i = 0; i < 19; i++) {
+            lecciones.add(new Object[] { MATERIA, EstadoAsistencia.PRESENTE });
+        }
+        lecciones.add(new Object[] { MATERIA, EstadoAsistencia.AUSENTE });
         when(asistenciaRepository.findEstadosDeEstudiante(DIRECCION, ESTUDIANTE, periodo.getFechaInicio(),
-                periodo.getFechaFin())).thenReturn(List.of(
-                        new Object[] { MATERIA, EstadoAsistencia.PRESENTE },
-                        new Object[] { MATERIA, EstadoAsistencia.AUSENTE }));
+                periodo.getFechaFin())).thenReturn(lecciones);
 
         NotasDesgloseFila fila = service.desglose(DIRECCION, null, true, ESTUDIANTE, PERIODO).get(0);
 
+        // 1 ausencia de 20 lecciones = 5%: conserva 5 de 5 (artículo 37).
         assertEquals(80, fila.getCotidiano());
-        assertEquals(95, fila.getAsistencia());
-        assertEquals(81.7, fila.getPromedio());
+        assertEquals(100, fila.getAsistencia());
+        assertEquals(82.2, fila.getPromedio());
     }
 
     @Test

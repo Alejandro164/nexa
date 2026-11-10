@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
@@ -82,12 +83,14 @@ public class ConfiguracionAcademicaController {
     @GetMapping("/niveles/form")
     public String nuevoNivel(Model model) {
         model.addAttribute("nivel", new NivelAcademico());
+        model.addAttribute("ciclos", CicloEducativo.values());
         return "configuracion-academica/niveles/form :: form-content";
     }
 
     @GetMapping("/niveles/form/{id}")
     public String editarNivel(@PathVariable Long id, Model model, HttpSession session) {
         model.addAttribute("nivel", service.obtenerNivel(requerirDireccion(session), id));
+        model.addAttribute("ciclos", CicloEducativo.values());
         return "configuracion-academica/niveles/form :: form-content";
     }
 
@@ -110,16 +113,20 @@ public class ConfiguracionAcademicaController {
     }
 
     @GetMapping("/materias/form")
-    public String nuevaMateria(Model model) {
+    public String nuevaMateria(Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
         model.addAttribute("materia", new Materia());
-        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos());
+        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos(direccionId));
+        model.addAttribute("componentesEvaluacion", service.listarComponentesEvaluacionActivos(direccionId));
         return "configuracion-academica/materias/form :: form-content";
     }
 
     @GetMapping("/materias/form/{id}")
     public String editarMateria(@PathVariable Long id, Model model, HttpSession session) {
-        model.addAttribute("materia", service.obtenerMateria(requerirDireccion(session), id));
-        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos());
+        Long direccionId = requerirDireccion(session);
+        model.addAttribute("materia", service.obtenerMateria(direccionId, id));
+        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos(direccionId));
+        model.addAttribute("componentesEvaluacion", service.listarComponentesEvaluacionActivos(direccionId));
         return "configuracion-academica/materias/form :: form-content";
     }
 
@@ -338,7 +345,7 @@ public class ConfiguracionAcademicaController {
         model.addAttribute("almuerzos", config.almuerzos());
         model.addAttribute("horario", horario);
         model.addAttribute("totalLecciones", totalLecciones);
-        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos());
+        model.addAttribute("tiposMateria", service.listarTiposMateriaActivos(direccionId));
         model.addAttribute("tipoBloqueoId", tipoBloqueoId);
         model.addAttribute("bloqueosSeccion", service.obtenerBloqueosSeccion(direccionId, periodoId, nivelId));
     }

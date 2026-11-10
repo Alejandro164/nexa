@@ -39,11 +39,44 @@ class CalculoRebajaTest {
     }
 
     @Test
-    void sieteAusenciasCadaTresBajanDiezYLaAsistenciaQuedaEnNoventa() {
-        CalculoRebaja calculo = calculo(false, TipoRebaja.AUSENCIA_INJUSTIFICADA, 3, 5);
+    void laAsistenciaSigueLaTablaDelArticulo37() {
+        CalculoRebaja calculo = new CalculoRebaja(Map.of(), false);
 
-        assertEquals(10, calculo.rebajaAsistencia(conteo(0, 7, 0, 0)));
-        assertEquals(90, calculo.notaAsistencia(conteo(0, 7, 0, 0)));
+        assertEquals(100, calculo.notaAsistencia(conteo(0, 0, 0, 0), 20));
+        assertEquals(100, calculo.notaAsistencia(conteo(0, 1, 0, 0), 20));
+        assertEquals(80, calculo.notaAsistencia(conteo(0, 2, 0, 0), 20));
+        assertEquals(60, calculo.notaAsistencia(conteo(0, 4, 0, 0), 20));
+        assertEquals(40, calculo.notaAsistencia(conteo(0, 6, 0, 0), 20));
+        assertEquals(20, calculo.notaAsistencia(conteo(0, 9, 0, 0), 20));
+        assertEquals(0, calculo.notaAsistencia(conteo(0, 10, 0, 0), 20));
+    }
+
+    @Test
+    void lasJustificadasNoCuentanYSinLeccionesQuedaEnCien() {
+        CalculoRebaja calculo = new CalculoRebaja(Map.of(), false);
+
+        assertEquals(100, calculo.notaAsistencia(conteo(8, 0, 8, 0), 20));
+        assertEquals(100, calculo.notaAsistencia(conteo(0, 3, 0, 0), 0));
+    }
+
+    @Test
+    void cadaTardiaInjustificadaValeMediaAusenciaOUnaSegunLaConfiguracion() {
+        CalculoRebaja media = new CalculoRebaja(Map.of(), false, 2);
+        CalculoRebaja completa = new CalculoRebaja(Map.of(), false, 1);
+
+        assertEquals(2.0, media.ausenciasEquivalentes(conteo(0, 0, 0, 4)));
+        assertEquals(80, media.notaAsistencia(conteo(0, 0, 0, 4), 20));
+        assertEquals(4.0, completa.ausenciasEquivalentes(conteo(0, 0, 0, 4)));
+        assertEquals(60, completa.notaAsistencia(conteo(0, 0, 0, 4), 20));
+    }
+
+    @Test
+    void laTablaParaMostrarTieneSeisTramosDeCincoACero() {
+        List<CalculoRebaja.TramoAsistencia> tramos = CalculoRebaja.tramosAsistencia();
+
+        assertEquals(6, tramos.size());
+        assertEquals(new CalculoRebaja.TramoAsistencia(0, 10, 5, 100), tramos.get(0));
+        assertEquals(new CalculoRebaja.TramoAsistencia(50, null, 0, 0), tramos.get(5));
     }
 
     @Test

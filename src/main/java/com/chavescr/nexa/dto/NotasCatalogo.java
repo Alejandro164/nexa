@@ -115,12 +115,15 @@ public class NotasCatalogo {
         private final Integer grado;
         private final String seccion;
         private final String etiqueta;
+        /** Nombre del ciclo (PRIMER_CICLO…): la vista de notas elige con él la escala de la sección. */
+        private final String ciclo;
 
-        public NivelOpcion(Long id, Integer grado, String seccion, String etiqueta) {
+        public NivelOpcion(Long id, Integer grado, String seccion, String etiqueta, String ciclo) {
             this.id = id;
             this.grado = grado;
             this.seccion = seccion;
             this.etiqueta = etiqueta;
+            this.ciclo = ciclo;
         }
 
         public Long getId() {
@@ -137,6 +140,10 @@ public class NotasCatalogo {
 
         public String getEtiqueta() {
             return etiqueta;
+        }
+
+        public String getCiclo() {
+            return ciclo;
         }
     }
 

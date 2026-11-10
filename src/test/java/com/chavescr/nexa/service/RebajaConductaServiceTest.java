@@ -2,6 +2,7 @@ package com.chavescr.nexa.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 import com.chavescr.nexa.entity.RebajaConducta;
+import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.RebajaConductaRepository;
 
@@ -126,44 +128,54 @@ class RebajaConductaServiceTest {
         RebajaConductaService service = new RebajaConductaService(null, null);
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> service.guardar(1L, RebajaConducta.REGLAS_PREDETERMINADAS,
-                        null, DestinoRebajaAsistencia.CONDUCTA));
+                () -> service.guardar(1L, RebajaConducta.REGLAS_PREDETERMINADAS, null, 2));
 
         assertEquals("Indica quién registra los puntos de las boletas", error.getMessage());
     }
 
     @Test
-    void pideDondeSeRebajanAusenciasYTardias() {
+    void pideCuantoValeCadaTardiaInjustificada() {
         RebajaConductaService service = new RebajaConductaService(null, null);
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> service.guardar(1L, RebajaConducta.REGLAS_PREDETERMINADAS,
-                        QuienRegistraPuntosBoleta.PROFESOR_GUIA, null));
+                        QuienRegistraPuntosBoleta.PROFESOR_GUIA, 3));
 
-        assertEquals("Indica dónde se rebajan las ausencias y tardías", error.getMessage());
+        assertEquals("Indica cuánto vale cada tardía injustificada", error.getMessage());
     }
 
     @Test
-    void elCalculoUsaLosGruposGuardados() {
+    void lasAusenciasYaNoRebajanLaConductaAunqueElDestinoViejoDigaConducta() {
         CalculoRebaja calculo = calculoDe(DestinoRebajaAsistencia.CONDUCTA, grupos());
-
-        assertEquals(9, calculo.puntosAsistencia(new int[] { 2, 4, 0, 3 }));
-        assertEquals(81, calculo.nota(10, new int[] { 2, 4, 0, 3 }));
-    }
-
-    @Test
-    void elCalculoIgnoraLaAsistenciaCuandoRebajaElComponente() {
-        CalculoRebaja calculo = calculoDe(DestinoRebajaAsistencia.COMPONENTE, grupos());
 
         assertEquals(0, calculo.puntosAsistencia(new int[] { 2, 4, 0, 3 }));
         assertEquals(90, calculo.nota(10, new int[] { 2, 4, 0, 3 }));
+        assertTrue(new RebajaConductaService(null, null).asistenciaRebajaComponente(2L));
+    }
+
+    @Test
+    void elCalculoUsaLaLlamadaDeAtencionGuardada() {
+        CalculoRebaja calculo = calculoDe(DestinoRebajaAsistencia.COMPONENTE, grupos());
+
+        assertEquals(10, calculo.puntos(TipoRebaja.LLAMADA, 2));
     }
 
     @Test
     void unTextoIlegibleVuelveALasReglasPredeterminadas() {
-        CalculoRebaja calculo = calculoDe(DestinoRebajaAsistencia.CONDUCTA, "no-es-json");
+        CalculoRebaja calculo = calculoDe(DestinoRebajaAsistencia.COMPONENTE, "no-es-json");
 
-        assertEquals(5, calculo.puntosAsistencia(new int[] { 0, 1, 0, 0 }));
+        assertEquals(5, calculo.puntos(TipoRebaja.LLAMADA, 1));
+    }
+
+    @Test
+    void elCalculoUsaLaEquivalenciaDeTardiasGuardada() {
+        RebajaConductaRepository repository = mock(RebajaConductaRepository.class);
+        RebajaConductaService service = new RebajaConductaService(repository, mock(DireccionRepository.class));
+        RebajaConducta rebaja = new RebajaConducta();
+        rebaja.setTardiasPorAusencia(1);
+        when(repository.findByDireccionId(2L)).thenReturn(Optional.of(rebaja));
+
+        assertEquals(1, service.calculo(2L).getTardiasPorAusencia());
     }
 
     private static CalculoRebaja calculoDe(DestinoRebajaAsistencia destino, String reglas) {

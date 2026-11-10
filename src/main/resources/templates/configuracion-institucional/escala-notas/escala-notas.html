@@ -4,916 +4,551 @@
      th:data-nota-maxima="${escalaNotas.notaMaxima}"
      th:data-decimales="${escalaNotas.decimales}"
      th:data-nota-aprobacion="${escalaNotas.notaAprobacion}"
-     th:data-tramos="${escalaNotas.tramos}">
+     th:data-tramos="${escalaNotas.tramos}"
+     th:data-rebajas="${rebajaConducta.reglas}"
+     th:data-quien-puntos-boleta="${rebajaConducta.quienRegistraPuntosBoleta}"
+     th:data-tardias-por-ausencia="${rebajaConducta.tardiasPorAusencia}">
     <style>
-        .escala-card { position: relative; overflow: visible; }
-        .escala-body {
+        #institucional-escala-notas-panel .escala-form {
+            position: relative;
             display: grid;
-            grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
-            align-items: start;
+            gap: 1.5rem;
         }
-        .escala-form {
-            padding: 1.35rem 1.5rem 1.6rem;
-            border-right: 1px solid var(--border);
+        #institucional-escala-notas-panel .card {
+            overflow: hidden;
         }
-        .escala-form .form-input,
-        .escala-form .form-select,
-        .escala-preview .form-input {
-            padding-left: 0.75rem;
-        }
-        .escala-section-head {
+        #institucional-escala-notas-panel .escala-ciclos {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 0.75rem;
-            margin-bottom: 0.85rem;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 1rem 1.5rem 0;
+            padding: 5px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #f8fafc;
         }
-        .escala-section-head h4 {
-            margin: 0;
-            font-size: 0.92rem;
+        #institucional-escala-notas-panel .escala-ciclo {
+            flex: 1 1 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            min-height: 44px;
+            padding: 0.45rem 0.75rem;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--text-secondary);
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #institucional-escala-notas-panel .escala-ciclo small {
+            font-size: 0.72rem;
+            font-weight: 500;
+        }
+        #institucional-escala-notas-panel .escala-ciclo:hover {
+            color: var(--primary);
+        }
+        #institucional-escala-notas-panel .escala-ciclo.is-on {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+        }
+        #institucional-escala-notas-panel .escala-ciclo-ayuda {
+            margin: 0.75rem 1.5rem 0;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        #institucional-escala-notas-panel .escala-regla {
+            padding: 1rem 1.5rem 0.5rem;
+        }
+        #institucional-escala-notas-panel .escala-barra {
+            display: flex;
+            height: 12px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: #e2e8f0;
+        }
+        #institucional-escala-notas-panel .escala-marcas {
+            position: relative;
+            height: 22px;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+        #institucional-escala-notas-panel .escala-marcas span {
+            position: absolute;
+            top: 0;
+            white-space: nowrap;
+        }
+        #institucional-escala-notas-panel .escala-marcas .is-aprueba {
+            transform: translateX(-50%);
             font-weight: 700;
             color: var(--text-primary);
         }
-        .escala-section-head p {
-            margin: 0.25rem 0 0;
-            color: var(--text-secondary);
-            font-size: 0.82rem;
-            line-height: 1.45;
+        #institucional-escala-notas-panel .escala-tabla td {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            vertical-align: middle;
         }
-        .escala-corte-elige {
+        #institucional-escala-notas-panel .escala-tramo-nombre {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        #institucional-escala-notas-panel .escala-punto {
+            flex: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        #institucional-escala-notas-panel .tono-excelente { background: #22c55e; }
+        #institucional-escala-notas-panel .tono-bueno { background: #3b82f6; }
+        #institucional-escala-notas-panel .tono-regular { background: #f59e0b; }
+        #institucional-escala-notas-panel .tono-aplazado { background: #ef4444; }
+        #institucional-escala-notas-panel .escala-tabla .form-input {
+            height: 40px;
+            padding: 0 0.75rem;
+        }
+        #institucional-escala-notas-panel .escala-input-nombre {
+            width: 100%;
+            max-width: 260px;
+        }
+        #institucional-escala-notas-panel .escala-input-num {
+            width: 88px;
+            text-align: right;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+        #institucional-escala-notas-panel .escala-input-num:disabled {
+            background: #f1f5f9;
+            color: var(--text-secondary);
+        }
+        #institucional-escala-notas-panel .escala-hasta {
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        #institucional-escala-notas-panel .escala-centro {
+            text-align: center;
+        }
+        #institucional-escala-notas-panel .escala-radio {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+        #institucional-escala-notas-panel .escala-quitar {
+            width: 40px;
+            height: 40px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            display: inline-grid;
+            place-items: center;
+            cursor: pointer;
+        }
+        #institucional-escala-notas-panel .escala-quitar:hover {
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+        #institucional-escala-notas-panel .escala-pie {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 0.45rem 0.7rem;
-            margin-bottom: 0.9rem;
-        }
-        .escala-corte-elige p {
-            margin: 0;
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .escala-corte-ops { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-        .escala-corte-ops button {
-            border: 1px solid var(--border-solid);
-            background: #fff;
-            color: var(--text-primary);
-            border-radius: 999px;
-            padding: 0.32rem 0.7rem;
-            font-family: inherit;
-            font-size: 0.75rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .escala-corte-ops button:hover { border-color: #cbd5e1; }
-        .escala-corte-ops button.is-on {
-            background: #0f172a;
-            border-color: #0f172a;
-            color: #fff;
-        }
-        .escala-tramos { display: grid; gap: 0.75rem; }
-        .escala-tramo {
-            display: grid;
-            grid-template-columns: 6px minmax(0, 1fr);
-            border: 1px solid var(--border-solid);
-            border-radius: 12px;
-            background: #fff;
-            overflow: hidden;
-        }
-        .escala-tramo.is-corte {
-            border-color: var(--primary);
-            box-shadow: inset 0 0 0 1px var(--primary);
-        }
-        .escala-tramo-tono { background: #cbd5e1; }
-        .escala-tramo-tono.is-excelente { background: #16a34a; }
-        .escala-tramo-tono.is-bueno { background: #2563eb; }
-        .escala-tramo-tono.is-regular { background: #d97706; }
-        .escala-tramo-tono.is-aplazado { background: #dc2626; }
-        .escala-tramo-body { padding: 0.85rem 0.95rem 0.95rem; }
-        .escala-tramo-top {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-        }
-        .escala-tramo-nombre {
-            flex: 1 1 auto;
-            min-width: 0;
-            font-weight: 700;
-        }
-        .escala-desde-grupo {
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            margin-top: 0.7rem;
-        }
-        .escala-num {
-            width: 5.4rem;
-            flex: 0 0 5.4rem;
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-            font-weight: 700;
-            padding-right: 0.55rem;
-        }
-        .escala-num:disabled {
-            opacity: 1;
-            color: var(--text-primary);
-            background: #f8fafc;
-            cursor: default;
-        }
-        .escala-tope {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-            font-variant-numeric: tabular-nums;
-        }
-        .escala-chip {
-            display: inline-flex;
-            align-items: center;
-            flex: 0 0 auto;
-            padding: 0.18rem 0.55rem;
-            border-radius: 999px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-        .escala-chip.is-aprueba { color: #166534; background: #dcfce7; }
-        .escala-chip.is-aplaza { color: #991b1b; background: #fee2e2; }
-        .escala-chip.is-corte { color: #92400e; background: #fef3c7; }
-        .escala-chip.is-excelente { color: #166534; background: #dcfce7; }
-        .escala-chip.is-bueno { color: #1e40af; background: #dbeafe; }
-        .escala-chip.is-regular { color: #92400e; background: #fef3c7; }
-        .escala-chip.is-aplazado { color: #991b1b; background: #fee2e2; }
-        .escala-quitar { flex: 0 0 auto; }
-        .escala-quitar.is-off { visibility: hidden; }
-        .escala-avisos { display: grid; gap: 0.4rem; margin-top: 0.85rem; }
-        .escala-aviso {
-            margin: 0;
-            padding: 0.55rem 0.75rem;
-            border-radius: 10px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-        .escala-aviso.is-error { color: #991b1b; background: #fef2f2; }
-        .escala-mas {
-            margin-top: 1.25rem;
-            border-top: 1px solid var(--border);
-            padding-top: 0.95rem;
-        }
-        .escala-mas summary {
-            cursor: pointer;
-            display: flex;
             justify-content: space-between;
             gap: 1rem;
-            align-items: baseline;
-            font-weight: 700;
-            font-size: 0.88rem;
-            color: var(--text-primary);
-            list-style: none;
-        }
-        .escala-mas summary::-webkit-details-marker { display: none; }
-        .escala-mas summary em {
-            font-style: normal;
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 0.78rem;
-            font-variant-numeric: tabular-nums;
-        }
-        .escala-mas-ayuda {
-            margin: 0.75rem 0 0.85rem;
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            line-height: 1.45;
-        }
-        .escala-fields {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.85rem;
-        }
-        .escala-preview {
-            display: flex;
-            flex-direction: column;
-            gap: 0.9rem;
-            min-height: 0;
-            padding: 1.35rem 1.35rem 1.6rem;
+            padding: 0.85rem 1.5rem;
+            border-top: 1px solid var(--border);
             background: #f8fafc;
-            position: sticky;
-            top: calc(var(--topbar-height) + 12px);
-            z-index: 4;
-            max-height: calc(100vh - var(--topbar-height) - 24px);
-            overflow: auto;
-            border-bottom-right-radius: var(--radius);
         }
-        .escala-preview-head {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 0.75rem;
-            margin: -1.35rem -1.35rem 0;
-            padding: 0.95rem 1.35rem 0.85rem;
-            background: #f8fafc;
-            border-bottom: 1px solid var(--border);
-        }
-        .escala-preview-head h4 {
-            margin: 0;
-            font-size: 0.92rem;
-            font-weight: 700;
-        }
-        .escala-preview-head span {
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-            font-variant-numeric: tabular-nums;
-        }
-        .escala-regla-wrap { position: relative; padding-top: 1.35rem; }
-        .escala-regla {
-            display: flex;
-            height: 22px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-solid);
-            background: #fff;
-        }
-        .escala-seg { height: 100%; min-width: 2px; }
-        .escala-seg.is-excelente { background: #16a34a; }
-        .escala-seg.is-bueno { background: #2563eb; }
-        .escala-seg.is-regular { background: #d97706; }
-        .escala-seg.is-aplazado { background: #dc2626; }
-        .escala-marca {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 0;
-            border-left: 2px solid #0f172a;
-            transform: translateX(-1px);
-            pointer-events: none;
-        }
-        .escala-marca span {
-            position: absolute;
-            top: 0;
-            left: 6px;
-            font-size: 0.65rem;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            line-height: 1;
-            text-transform: uppercase;
-            color: #0f172a;
-            white-space: nowrap;
-        }
-        .escala-marca.is-end span { left: auto; right: 4px; }
-        .escala-extremos {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 0.35rem;
-            margin-bottom: 0.15rem;
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-            font-variant-numeric: tabular-nums;
-        }
-        .escala-probar {
-            border: 1px solid var(--border-solid);
-            border-radius: 12px;
-            background: #fff;
-            padding: 0.9rem 1rem 1rem;
-        }
-        .escala-probar-head {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 0.75rem;
-            margin-bottom: 0.65rem;
-        }
-        .escala-probar-head h5 { margin: 0; font-size: 0.84rem; font-weight: 700; }
-        .escala-probar-head span { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); }
-        .escala-prueba-num {
-            font-size: 2rem;
-            font-weight: 800;
-            line-height: 1;
-            font-variant-numeric: tabular-nums;
-            margin: 0.85rem 0 0.45rem;
-        }
-        .escala-prueba-num.is-excelente { color: #166534; }
-        .escala-prueba-num.is-bueno { color: #1e40af; }
-        .escala-prueba-num.is-regular { color: #92400e; }
-        .escala-prueba-num.is-aplazado { color: #991b1b; }
-        .escala-prueba-pie {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.4rem;
-            margin-top: 0.35rem;
-        }
-        .escala-prueba-pie em {
-            font-style: normal;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        .escala-muestras { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.75rem; }
-        .escala-muestras button {
-            border: 1px solid var(--border-solid);
-            background: #fff;
-            color: var(--text-secondary);
-            border-radius: 9px;
-            padding: 0.32rem 0.6rem;
-            font-family: inherit;
-            font-size: 0.75rem;
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            cursor: pointer;
-        }
-        .escala-muestras button:hover { border-color: #cbd5e1; }
-        .escala-muestras button.is-on {
-            color: #fff;
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-        .escala-rango {
-            width: 100%;
-            accent-color: var(--primary);
-            margin-top: 0.35rem;
-        }
-        .escala-form-raiz .btn:disabled,
-        .rebaja-form .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-        .rebaja-parametros { margin-top: 1.25rem; overflow: hidden; }
-        .rebaja-card { margin-top: 0.85rem; position: relative; overflow: visible; }
-        .rebaja-body {
-            display: grid;
-            grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
-            align-items: start;
-        }
-        .rebaja-form-col {
-            padding: 1.35rem 1.5rem 1.6rem;
-            border-right: 1px solid var(--border);
-        }
-        .rebaja-form-col .form-input { padding-left: 0.55rem; padding-right: 0.45rem; }
-        .rebaja-head {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 5.4rem 5.4rem;
-            gap: 0.75rem;
-            margin-bottom: 0.45rem;
-            padding: 0 0.85rem 0 calc(6px + 0.85rem);
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-        }
-        .rebaja-filas { display: grid; gap: 0.65rem; }
-        .rebaja-fila {
-            display: grid;
-            grid-template-columns: 6px minmax(0, 1fr);
-            border: 1px solid var(--border-solid);
-            border-radius: 12px;
-            background: #fff;
-            overflow: hidden;
-        }
-        .rebaja-fila.is-cero { background: #f8fafc; }
-        .rebaja-tono { background: #cbd5e1; }
-        .rebaja-tono.is-llamada { background: #d97706; }
-        .rebaja-tono.is-tardia-no { background: #ea580c; }
-        .rebaja-tono.is-tardia-si { background: #2563eb; }
-        .rebaja-tono.is-ausencia-no { background: #dc2626; }
-        .rebaja-tono.is-ausencia-si { background: #64748b; }
-        .rebaja-cuerpo {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 5.4rem 5.4rem;
-            gap: 0.75rem;
-            align-items: center;
-            padding: 0.75rem 0.85rem;
-        }
-        .rebaja-nombre { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
-        .rebaja-detalle {
-            display: block;
-            margin-top: 0.15rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        .rebaja-politicas {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            background: #fff;
-        }
-        .rebaja-politica {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem 1rem;
-            padding: 0.9rem 1.15rem;
-        }
-        .rebaja-politica + .rebaja-politica { border-left: 1px solid var(--border); }
-        .rebaja-politica-texto strong {
-            display: block;
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .rebaja-politica-texto span {
-            display: block;
-            margin-top: 0.15rem;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        .rebaja-destino {
-            display: inline-flex;
-            padding: 3px;
-            border: 1px solid var(--border-solid);
-            border-radius: 999px;
-            background: #fff;
-        }
-        .rebaja-destino button {
+        #institucional-escala-notas-panel .escala-agregar {
+            min-height: 40px;
+            padding: 0 0.25rem;
             border: 0;
             background: transparent;
-            border-radius: 999px;
-            padding: 0.4rem 0.85rem;
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--text-secondary);
+            color: var(--primary);
+            font: inherit;
+            font-weight: 600;
+            font-size: 0.85rem;
             cursor: pointer;
         }
-        .rebaja-destino button.is-on {
-            background: #0f172a;
-            color: #fff;
+        #institucional-escala-notas-panel .escala-agregar:disabled {
+            color: var(--text-secondary);
+            cursor: not-allowed;
         }
-        .rebaja-resultados {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.65rem;
-        }
-        .rebaja-resultado {
-            background: #fff;
-            border: 1px solid var(--border-solid);
-            border-radius: 12px;
-            padding: 0.75rem 0.85rem;
-        }
-        .rebaja-resultado span {
-            display: block;
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
+        #institucional-escala-notas-panel .escala-rango {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.85rem;
             color: var(--text-secondary);
         }
-        .rebaja-resultado strong {
-            display: block;
-            margin-top: 0.28rem;
-            font-size: 1.65rem;
-            font-weight: 800;
-            line-height: 1;
-            font-variant-numeric: tabular-nums;
-        }
-        .rebaja-resultado strong.is-alta { color: #166534; }
-        .rebaja-resultado strong.is-media { color: #1e40af; }
-        .rebaja-resultado strong.is-baja { color: #92400e; }
-        .rebaja-resultado strong.is-cero { color: #991b1b; }
-        .rebaja-num {
-            width: 5.4rem;
+        #institucional-escala-notas-panel .escala-rango input.form-input {
+            width: 72px;
+            height: 40px;
+            padding: 0 0.6rem;
             text-align: right;
-            font-variant-numeric: tabular-nums;
-            font-weight: 700;
+            font-weight: 600;
         }
-        .rebaja-preview {
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-            padding: 1.35rem 1.35rem 1.5rem;
-            background: #f8fafc;
-            position: sticky;
-            top: calc(var(--topbar-height) + 12px);
-            border-bottom-right-radius: var(--radius);
+        /* El selector personalizado (static/js/componentes.js) ocupa todo el ancho; en esta fila, solo lo necesario. */
+        #institucional-escala-notas-panel .escala-rango .academic-select {
+            width: auto;
+            min-width: 160px;
         }
-        .rebaja-preview-head {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 0.75rem;
-            margin: -1.35rem -1.35rem 0;
-            padding: 0.95rem 1.35rem 0.85rem;
+        #institucional-escala-notas-panel .escala-separador {
+            color: #cbd5e1;
+        }
+        #institucional-escala-notas-panel .escala-politicas {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+            padding: 1rem 1.5rem;
             border-bottom: 1px solid var(--border);
         }
-        .rebaja-preview-head h4 { margin: 0; font-size: 0.92rem; font-weight: 700; }
-        .rebaja-preview-head span {
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-        }
-        .rebaja-lineas { display: grid; gap: 0.35rem; }
-        .rebaja-linea {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 3.25rem 8.75rem;
-            column-gap: 0.65rem;
-            align-items: center;
-            font-size: 0.78rem;
-        }
-        .rebaja-linea.is-head {
-            font-size: 0.68rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-        }
-        .rebaja-linea.is-head span:nth-child(2) { text-align: center; }
-        .rebaja-linea.is-head span:nth-child(3) { text-align: right; }
-        .rebaja-linea strong {
-            font-weight: 700;
-            min-width: 0;
-            line-height: 1.25;
-        }
-        .rebaja-preview .rebaja-ej {
-            width: 3.25rem;
-            height: 2rem;
-            margin: 0;
-            padding: 0 0.15rem;
-            text-align: center;
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            -moz-appearance: textfield;
-            appearance: textfield;
-        }
-        .rebaja-preview .rebaja-ej::-webkit-outer-spin-button,
-        .rebaja-preview .rebaja-ej::-webkit-inner-spin-button {
-            -webkit-appearance: none;
+        #institucional-escala-notas-panel .escala-politicas .form-group {
             margin: 0;
         }
-        .rebaja-baja {
-            display: grid;
-            grid-template-columns: 2.5rem minmax(0, 1fr);
-            align-items: baseline;
-            column-gap: 0.35rem;
-            font-weight: 700;
+        #institucional-escala-notas-panel .asistencia-de {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        #institucional-escala-notas-panel .asistencia-tabla td {
+            padding-top: 0.65rem;
+            padding-bottom: 0.65rem;
             font-variant-numeric: tabular-nums;
         }
-        .rebaja-baja em {
-            font-style: normal;
-            text-align: right;
-        }
-        .rebaja-baja small {
-            font-size: 0.68rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-align: left;
-        }
-        .rebaja-total {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.75rem;
+        #institucional-escala-notas-panel .asistencia-nota {
             margin: 0;
-            padding-top: 0.35rem;
+            padding: 0.75rem 1.5rem;
             border-top: 1px solid var(--border);
+            background: #f8fafc;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        #institucional-escala-notas-panel .rebaja-cantidad {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+        #institucional-escala-notas-panel .escala-errores {
+            display: grid;
+            gap: 0.35rem;
+            margin: 0;
+            padding: 0.75rem 1.5rem;
+            border-top: 1px solid #fecaca;
+            background: #fef2f2;
+            color: #991b1b;
             font-size: 0.82rem;
-            font-weight: 700;
         }
-        @media (max-width: 900px) {
-            .rebaja-politicas { grid-template-columns: 1fr; }
-            .rebaja-politica + .rebaja-politica { border-left: 0; border-top: 1px solid var(--border); }
-            .rebaja-body { grid-template-columns: 1fr; }
-            .rebaja-form-col { border-right: 0; border-bottom: 1px solid var(--border); }
-            .rebaja-preview { position: static; border-bottom-left-radius: var(--radius); }
+        #institucional-escala-notas-panel .escala-errores p {
+            margin: 0;
         }
-        @media (max-width: 640px) {
-            .rebaja-head { display: none; }
-            .rebaja-cuerpo { grid-template-columns: 1fr 1fr; }
-            .rebaja-cuerpo .rebaja-concepto { grid-column: 1 / -1; }
+        #institucional-escala-notas-panel .escala-guardar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.9rem 1.25rem;
         }
-        @media (max-width: 900px) {
-            .escala-body { grid-template-columns: 1fr; }
-            .escala-form { border-right: 0; border-bottom: 1px solid var(--border); }
-            .escala-preview {
-                position: static;
-                max-height: none;
-                border-bottom-left-radius: var(--radius);
+        #institucional-escala-notas-panel .escala-guardar p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        #institucional-escala-notas-panel .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        @media (max-width: 768px) {
+            #institucional-escala-notas-panel .escala-politicas {
+                grid-template-columns: 1fr;
             }
-            .escala-fields { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 640px) {
-            .escala-tramo-top { flex-wrap: wrap; }
-            .escala-quitar.is-off { display: none; }
         }
     </style>
 
-    <form class="escala-form-raiz"
+    <form class="escala-form"
           hx-post="/configuracion-institucional/escala-notas"
           hx-swap="none"
           hx-indicator="#escala-loading"
           hx-disabled-elt="find button[type='submit']"
           @submit.capture="prepararEnvio($event)"
+          @input="sucio = true"
+          @change="sucio = true"
+          @institucional-guardado.camel.document="sucio = false"
           autocomplete="off">
+        <div id="escala-loading" class="htmx-indicator panel-loading-overlay">
+            <div class="spinner"></div>
+            <span>Guardando...</span>
+        </div>
+        <input type="hidden" name="ciclo" th:value="${cicloSeleccionado.name()}">
         <input type="hidden" name="notaAprobacion" :value="notaAprobacion">
         <input type="hidden" name="tramos" :value="tramosJson">
-        <div class="card escala-card">
-            <div id="escala-loading" class="htmx-indicator panel-loading-overlay">
-                <div class="spinner"></div>
-                <span>Guardando...</span>
-            </div>
-            <div class="card-header">
-                <div>
-                    <h3 class="card-title">Escala de notas</h3>
-                </div>
-            </div>
-            <div class="escala-body">
-                <div class="escala-form">
-                    <section class="escala-section">
-                        <div class="escala-section-head">
-                            <div>
-                                <h4>Tramos</h4>
-                                <p>El número es el inicio del tramo. El de arriba termina justo antes.</p>
-                            </div>
-                            <button type="button" class="btn btn-secondary btn-sm" @click="agregarTramo()"
-                                    :disabled="!puedeAgregar" :title="motivoSinAgregar">Agregar tramo</button>
-                        </div>
-                        <div class="escala-corte-elige">
-                            <p id="escala-corte-label">Se aprueba desde</p>
-                            <div class="escala-corte-ops" role="radiogroup" aria-labelledby="escala-corte-label">
-                                <template x-for="tramo in tramos" :key="'corte-' + tramo.id">
-                                    <button type="button" role="radio"
-                                            x-show="tramo.id !== pisoId"
-                                            :aria-checked="tramo.id === corteId"
-                                            :class="{ 'is-on': tramo.id === corteId }"
-                                            @click="fijarCorte(tramo.id)"
-                                            x-text="(tramo.nombre || 'Sin nombre') + ' · ' + fmtEntero(tramo.desde)"></button>
-                                </template>
-                            </div>
-                        </div>
-                        <div class="escala-tramos">
-                            <template x-for="(tramo, i) in tramos" :key="tramo.id">
-                                <article class="escala-tramo" :class="{ 'is-corte': tramo.id === corteId }">
-                                    <div class="escala-tramo-tono" :class="'is-' + tonoDe(i)"></div>
-                                    <div class="escala-tramo-body">
-                                        <div class="escala-tramo-top">
-                                            <input class="form-input escala-tramo-nombre" type="text" maxlength="24" required
-                                                   x-model="tramo.nombre" @change="normalizarNombre(tramo)"
-                                                   :aria-label="'Nombre del tramo ' + (i + 1)" spellcheck="false">
-                                            <span class="escala-chip" :class="claseEstado(i)" x-text="textoEstado(i)"></span>
-                                            <button type="button" class="btn btn-ghost btn-sm escala-quitar"
-                                                    :class="{ 'is-off': !puedeQuitar(i) }"
-                                                    :disabled="!puedeQuitar(i)"
-                                                    :tabindex="puedeQuitar(i) ? 0 : -1"
-                                                    @click="quitarTramo(tramo.id)">Quitar</button>
-                                        </div>
-                                        <div class="escala-desde-grupo">
-                                            <input class="form-input escala-num" type="number" inputmode="numeric"
-                                                   step="1" required
-                                                   :min="limites(i).min" :max="limites(i).max"
-                                                   :disabled="esPiso(i)"
-                                                   x-model.number="tramo.desde"
-                                                   @change="alEditarCorte(tramo)"
-                                                   @wheel.prevent
-                                                   :aria-label="'Inicio de ' + (tramo.nombre || ('tramo ' + (i + 1)))">
-                                            <span class="escala-tope" x-text="textoTope(i)"></span>
-                                        </div>
-                                    </div>
-                                </article>
-                            </template>
-                        </div>
-                        <div class="escala-avisos" x-show="errores.length" x-cloak role="alert">
-                            <template x-for="error in errores" :key="error">
-                                <p class="escala-aviso is-error" x-text="error"></p>
-                            </template>
-                        </div>
-                    </section>
-
-                    <details class="escala-mas">
-                        <summary>
-                            <span>Rango y decimales</span>
-                            <em x-text="fmtEntero(notaMinima) + ' a ' + fmtEntero(notaMaxima) + ' · ' + (decimales === 0 ? 'promedio entero' : 'un decimal')"></em>
-                        </summary>
-                        <p class="escala-mas-ayuda">Casi todas las instituciones usan de 0 a 100. Los decimales definen cómo se muestra el promedio antes de etiquetarlo.</p>
-                        <div class="escala-fields">
-                            <div class="form-group" style="margin: 0;">
-                                <label class="form-label" for="escala-minima">Nota mínima</label>
-                                <input class="form-input" id="escala-minima" type="number" name="notaMinima"
-                                       min="0" max="99" step="1" required inputmode="numeric"
-                                       x-model.number="notaMinima" @change="alCambiarRango()" @wheel.prevent>
-                            </div>
-                            <div class="form-group" style="margin: 0;">
-                                <label class="form-label" for="escala-maxima">Nota máxima</label>
-                                <input class="form-input" id="escala-maxima" type="number" name="notaMaxima"
-                                       min="1" max="100" step="1" required inputmode="numeric"
-                                       x-model.number="notaMaxima" @change="alCambiarRango()" @wheel.prevent>
-                            </div>
-                            <div class="form-group" style="margin: 0;">
-                                <label class="form-label" for="escala-decimales">Decimales del promedio</label>
-                                <select class="form-select" id="escala-decimales" name="decimales"
-                                        x-model.number="decimales" @change="alCambiarRango()">
-                                    <option value="1">Un decimal</option>
-                                    <option value="0">Entero</option>
-                                </select>
-                            </div>
-                        </div>
-                    </details>
-
-                    <div class="institucional-actions">
-                        <button type="button" class="btn btn-ghost" @click="restablecer()">Restablecer</button>
-                        <button type="submit" class="btn btn-primary" :disabled="errores.length > 0">Guardar escala</button>
-                    </div>
-                </div>
-
-                <aside class="escala-preview">
-                    <div class="escala-preview-head">
-                        <h4>Vista previa</h4>
-                        <span x-text="'Aprueba desde ' + fmtEntero(notaAprobacion)"></span>
-                    </div>
-                    <div class="escala-regla-wrap">
-                        <div class="escala-marca" x-show="marcaAprobacion != null"
-                             :class="marcaAprobacion > 78 ? 'is-end' : ''"
-                             :style="'left:' + marcaAprobacion + '%'">
-                            <span>Aprueba</span>
-                        </div>
-                        <div class="escala-regla" aria-hidden="true">
-                            <template x-for="seg in barra" :key="seg.id">
-                                <div class="escala-seg" :class="'is-' + seg.tono" :style="'width:' + seg.ancho + '%'"></div>
-                            </template>
-                        </div>
-                    </div>
-                    <div class="escala-extremos" aria-hidden="true">
-                        <span x-text="fmt(notaMinima)"></span>
-                        <span x-text="fmt(notaMaxima)"></span>
-                    </div>
-                    <div class="escala-probar">
-                        <div class="escala-probar-head">
-                            <h5>Probar una nota</h5>
-                            <span x-text="decimales === 0 ? 'Se muestra entera' : 'Se muestra con un decimal'"></span>
-                        </div>
-                        <input class="form-input" id="escala-prueba" type="number"
-                               :min="notaMinima" :max="notaMaxima" :step="paso"
-                               x-model.number="prueba" @change="ajustarPrueba()" @wheel.prevent
-                               aria-label="Nota de prueba">
-                        <input class="escala-rango" type="range" :min="notaMinima" :max="notaMaxima" :step="paso"
-                               x-model.number="prueba" @change="ajustarPrueba()" aria-label="Recorrer la escala">
-                        <template x-if="resultado && !resultado.fuera">
-                            <div>
-                                <p class="escala-prueba-num" :class="'is-' + resultado.tono" x-text="resultado.nota"></p>
-                                <div class="escala-prueba-pie">
-                                    <span class="escala-chip" :class="'is-' + resultado.tono" x-text="resultado.nombre"></span>
-                                    <span class="escala-chip" :class="resultado.aprueba ? 'is-aprueba' : 'is-aplaza'"
-                                          x-text="resultado.aprueba ? 'Aprueba' : 'No aprueba'"></span>
-                                    <em x-text="resultado.rango"></em>
-                                </div>
-                            </div>
-                        </template>
-                        <p class="escala-aviso is-error" x-show="resultado && resultado.fuera" x-cloak style="margin-top: 0.75rem;">
-                            Esa nota queda fuera de la escala.
-                        </p>
-                        <div class="escala-muestras">
-                            <template x-for="muestra in muestras" :key="muestra">
-                                <button type="button"
-                                        :class="notaMostrada(prueba) === muestra ? 'is-on' : ''"
-                                        @click="prueba = muestra"
-                                        x-text="fmt(muestra)"></button>
-                            </template>
-                        </div>
-                    </div>
-                </aside>
-            </div>
-        </div>
-    </form>
-
-    <form class="rebaja-form"
-          hx-post="/configuracion-institucional/escala-notas/rebajas"
-          hx-swap="none"
-          hx-indicator="#rebaja-loading"
-          hx-disabled-elt="find button[type='submit']"
-          @submit.capture="prepararEnvio($event)"
-          autocomplete="off"
-          x-data="rebajaConducta($el)"
-          th:data-rebajas="${rebajaConducta.reglas}"
-          th:data-quien-puntos-boleta="${rebajaConducta.quienRegistraPuntosBoleta}"
-          th:data-destino-rebaja="${rebajaConducta.destinoRebajaAsistencia}">
         <input type="hidden" name="rebajas" :value="reglasJson">
-        <input type="hidden" name="quienRegistraPuntosBoleta" :value="quienPuntosBoleta">
-        <input type="hidden" name="destinoRebajaAsistencia" :value="destinoAsistencia">
-        <div class="card rebaja-parametros">
-            <div class="rebaja-politicas">
-                <div class="rebaja-politica">
-                    <div class="rebaja-politica-texto">
-                        <strong id="rebaja-boleta-label">Puntos de las boletas</strong>
-                        <span>Quién registra los puntos de cada boleta.</span>
-                    </div>
-                    <div class="rebaja-destino" role="radiogroup" aria-labelledby="rebaja-boleta-label">
-                        <button type="button" role="radio" :class="{ 'is-on': quienPuntosBoleta === 'PROFESOR_GUIA' }"
-                                :aria-checked="quienPuntosBoleta === 'PROFESOR_GUIA'"
-                                @click="quienPuntosBoleta = 'PROFESOR_GUIA'">Profesor guía</button>
-                        <button type="button" role="radio" :class="{ 'is-on': quienPuntosBoleta === 'PROFESOR_MATERIA' }"
-                                :aria-checked="quienPuntosBoleta === 'PROFESOR_MATERIA'"
-                                @click="quienPuntosBoleta = 'PROFESOR_MATERIA'">Profesor de la materia</button>
-                    </div>
-                </div>
-                <div class="rebaja-politica">
-                    <div class="rebaja-politica-texto">
-                        <strong id="rebaja-destino-label">Ausencias y tardías</strong>
-                        <span>Dónde se rebajan los puntos.</span>
-                    </div>
-                    <div class="rebaja-destino" role="radiogroup" aria-labelledby="rebaja-destino-label">
-                        <button type="button" role="radio" :class="{ 'is-on': destinoAsistencia === 'CONDUCTA' }"
-                                :aria-checked="destinoAsistencia === 'CONDUCTA'"
-                                @click="destinoAsistencia = 'CONDUCTA'">La conducta</button>
-                        <button type="button" role="radio" :class="{ 'is-on': destinoAsistencia === 'COMPONENTE' }"
-                                :aria-checked="destinoAsistencia === 'COMPONENTE'"
-                                @click="destinoAsistencia = 'COMPONENTE'">El componente</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="card rebaja-card">
-            <div id="rebaja-loading" class="htmx-indicator panel-loading-overlay">
-                <div class="spinner"></div>
-                <span>Guardando...</span>
-            </div>
+
+        <section class="card" aria-labelledby="escala-titulo">
             <div class="card-header">
                 <div>
-                    <h3 class="card-title">Rebajas</h3>
+                    <h3 class="card-title" id="escala-titulo">Escala de notas</h3>
+                    <p class="academic-help">Cada ciclo tiene su propia escala; los estudiantes usan la del ciclo de su sección.</p>
                 </div>
             </div>
-            <div class="rebaja-body">
-                <div class="rebaja-form-col">
-                    <div class="rebaja-head" aria-hidden="true">
-                        <span>Registro</span>
-                        <span>Cada</span>
-                        <span>Bajan</span>
-                    </div>
-                    <div class="rebaja-filas">
-                        <template x-for="fila in filas" :key="fila.id">
-                            <article class="rebaja-fila" :class="{ 'is-cero': Number(fila.puntos) === 0 }">
-                                <div class="rebaja-tono" :class="'is-' + fila.tono"></div>
-                                <div class="rebaja-cuerpo">
-                                    <div class="rebaja-concepto">
-                                        <span class="rebaja-nombre" x-text="fila.nombre"></span>
-                                        <span class="rebaja-detalle" x-text="textoRegla(fila)"></span>
+
+            <div class="escala-ciclos" role="tablist" aria-label="Ciclo de la escala">
+                <button th:each="c : ${ciclos}" type="button" role="tab" class="escala-ciclo"
+                        th:classappend="${c == cicloSeleccionado} ? 'is-on' : ''"
+                        th:attr="aria-selected=${c == cicloSeleccionado}, data-ciclo=${c.name()}"
+                        @click="cambiarCiclo($el.dataset.ciclo)">
+                    <span th:text="${c.etiqueta}">Primer Ciclo</span>
+                    <small th:with="n=${seccionesPorCiclo.get(c) ?: 0}"
+                           th:text="${n == 1 ? '1 sección' : n + ' secciones'}">0 secciones</small>
+                </button>
+            </div>
+            <p class="escala-ciclo-ayuda">
+                Cada tramo empieza en su número y termina justo antes del siguiente.
+            </p>
+
+            <div class="escala-regla">
+                <div class="escala-barra" aria-hidden="true">
+                    <template x-for="seg in barra" :key="'seg-' + seg.id">
+                        <div :class="'tono-' + seg.tono" :style="'width:' + seg.ancho + '%'"></div>
+                    </template>
+                </div>
+                <div class="escala-marcas" aria-hidden="true">
+                    <span style="left: 0;" x-text="fmtEntero(notaMinima)"></span>
+                    <span class="is-aprueba" x-show="marcaAprobacion != null"
+                          :style="'left:' + marcaAprobacion + '%'"
+                          x-text="fmtEntero(notaAprobacion) + ' · aprueba'"></span>
+                    <span style="right: 0;" x-text="fmtEntero(notaMaxima)"></span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table escala-tabla">
+                    <thead>
+                        <tr>
+                            <th>Tramo</th>
+                            <th>Desde</th>
+                            <th>Hasta</th>
+                            <th class="escala-centro">Aprueba desde</th>
+                            <th><span class="sr-only">Quitar</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(tramo, i) in tramos" :key="tramo.id">
+                            <tr>
+                                <td>
+                                    <div class="escala-tramo-nombre">
+                                        <span class="escala-punto" :class="'tono-' + tonoDe(i)" aria-hidden="true"></span>
+                                        <input class="form-input escala-input-nombre" type="text" maxlength="24" required
+                                               x-model="tramo.nombre" @change="normalizarNombre(tramo)" spellcheck="false"
+                                               :aria-label="'Nombre del tramo ' + (i + 1)">
                                     </div>
-                                    <input class="form-input rebaja-num" type="number" inputmode="numeric"
-                                           min="1" max="30" step="1" required
-                                           x-model.number="fila.cada" @change="normalizar(fila)" @wheel.prevent
-                                           :aria-label="'Cada cuántos registros de ' + fila.nombre">
-                                    <input class="form-input rebaja-num" type="number" inputmode="numeric"
-                                           min="0" max="100" step="1" required
-                                           x-model.number="fila.puntos" @change="normalizar(fila)" @wheel.prevent
-                                           :aria-label="'Puntos que bajan por ' + fila.nombre">
-                                </div>
-                            </article>
+                                </td>
+                                <td>
+                                    <input class="form-input escala-input-num" type="number" inputmode="numeric"
+                                           step="1" required
+                                           :min="limites(i).min" :max="limites(i).max"
+                                           :disabled="esPiso(i)"
+                                           x-model.number="tramo.desde"
+                                           @change="alEditarCorte(tramo)" @wheel.prevent
+                                           :aria-label="'Inicio de ' + (tramo.nombre || ('tramo ' + (i + 1)))">
+                                </td>
+                                <td class="escala-hasta" x-text="textoHasta(i)"></td>
+                                <td class="escala-centro">
+                                    <input class="escala-radio" type="radio" name="corteEscala"
+                                           x-show="!esPiso(i)"
+                                           :checked="tramo.id === corteId"
+                                           @change="fijarCorte(tramo.id)"
+                                           :aria-label="'Se aprueba desde ' + (tramo.nombre || ('tramo ' + (i + 1)))">
+                                </td>
+                                <td class="escala-centro">
+                                    <button type="button" class="escala-quitar" x-show="puedeQuitar(i)"
+                                            @click="quitarTramo(tramo.id)"
+                                            :aria-label="'Quitar ' + (tramo.nombre || ('tramo ' + (i + 1)))">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                            <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
                         </template>
-                    </div>
-                    <div class="escala-avisos" x-show="errores.length" x-cloak role="alert">
-                        <template x-for="error in errores" :key="error">
-                            <p class="escala-aviso is-error" x-text="error"></p>
-                        </template>
-                    </div>
-                    <div class="institucional-actions">
-                        <button type="button" class="btn btn-ghost" @click="restablecer()">Restablecer</button>
-                        <button type="submit" class="btn btn-primary" :disabled="errores.length > 0">Guardar rebajas</button>
-                    </div>
-                </div>
-                <aside class="rebaja-preview">
-                    <div class="rebaja-preview-head">
-                        <h4>Ejemplo del período</h4>
-                        <span>Parten de 100</span>
-                    </div>
-                    <div class="rebaja-resultados">
-                        <div class="rebaja-resultado">
-                            <span>Conducta</span>
-                            <strong :class="tonoDe(notaConducta)" x-text="notaConducta"></strong>
-                        </div>
-                        <div class="rebaja-resultado">
-                            <span>Componente</span>
-                            <strong :class="tonoDe(notaComponente)" x-text="notaComponente"></strong>
-                        </div>
-                    </div>
-                    <div class="rebaja-lineas">
-                        <div class="rebaja-linea is-head" aria-hidden="true">
-                            <span>Registro</span>
-                            <span>Cant.</span>
-                            <span>Rebaja</span>
-                        </div>
-                        <template x-for="fila in filas" :key="'ej-' + fila.id">
-                            <div class="rebaja-linea">
-                                <strong x-text="fila.nombre"></strong>
-                                <input class="form-input rebaja-ej" type="number" inputmode="numeric"
-                                       min="0" max="99" step="1"
-                                       x-model.number="fila.ejemplo" @change="normalizar(fila)" @wheel.prevent
-                                       :aria-label="'Cantidad de ejemplo de ' + fila.nombre">
-                                <span class="rebaja-baja">
-                                    <em x-text="textoMonto(fila)"></em>
-                                    <small x-text="textoDonde(fila)"></small>
-                                </span>
-                            </div>
-                        </template>
-                    </div>
-                    <p class="rebaja-total">
-                        <span x-text="'Conducta − ' + descuentoConducta"></span>
-                        <span x-text="'Componente − ' + descuentoComponente"></span>
-                    </p>
-                </aside>
+                    </tbody>
+                </table>
             </div>
+
+            <div class="escala-errores" x-show="erroresEscala.length" x-cloak role="alert">
+                <template x-for="error in erroresEscala" :key="error">
+                    <p x-text="error"></p>
+                </template>
+            </div>
+
+            <div class="escala-pie">
+                <button type="button" class="escala-agregar" @click="agregarTramo()"
+                        :disabled="!puedeAgregar" :title="motivoSinAgregar">+ Agregar tramo</button>
+                <div class="escala-rango">
+                    <label for="escala-minima">Escala de</label>
+                    <input class="form-input" id="escala-minima" type="number" name="notaMinima"
+                           min="0" max="99" step="1" required inputmode="numeric"
+                           x-model.number="notaMinima" @change="alCambiarRango()" @wheel.prevent>
+                    <label for="escala-maxima">a</label>
+                    <input class="form-input" id="escala-maxima" type="number" name="notaMaxima"
+                           min="1" max="100" step="1" required inputmode="numeric"
+                           x-model.number="notaMaxima" @change="alCambiarRango()" @wheel.prevent>
+                    <span class="escala-separador" aria-hidden="true">|</span>
+                    <label for="escala-decimales">Promedio con</label>
+                    <select class="form-input" id="escala-decimales" name="decimales"
+                            x-model.number="decimales" @change="alCambiarRango()">
+                        <option value="1" th:selected="${escalaNotas.decimales != 0}">un decimal</option>
+                        <option value="0" th:selected="${escalaNotas.decimales == 0}">número entero</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" aria-labelledby="asistencia-titulo">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title" id="asistencia-titulo">Asistencia</h3>
+                    <p class="academic-help">El rubro Asistencia de cada materia se asigna por período según el porcentaje de ausencias injustificadas sobre las lecciones registradas al pasar lista (Reglamento de Evaluación, artículo 37). Las ausencias y tardías justificadas no cuentan.</p>
+                </div>
+            </div>
+
+            <div class="escala-politicas">
+                <div class="form-group">
+                    <label class="form-label" for="asistencia-tardias">Cada tardía injustificada cuenta como</label>
+                    <select class="form-input" id="asistencia-tardias" name="tardiasPorAusencia"
+                            x-model.number="tardiasPorAusencia">
+                        <option value="2" th:selected="${rebajaConducta.tardiasPorAusencia != 1}">Media ausencia (llegó menos de 10 minutos tarde)</option>
+                        <option value="1" th:selected="${rebajaConducta.tardiasPorAusencia == 1}">Una ausencia (llegó más de 10 minutos tarde)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table escala-tabla asistencia-tabla">
+                    <thead>
+                        <tr>
+                            <th>Ausencias injustificadas del total de lecciones</th>
+                            <th>Se asigna</th>
+                            <th>Nota del rubro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="t : ${tablaAsistencia}">
+                            <td th:text="${t.hasta() != null
+                                    ? (t.desde() == 0 ? 'Menos de ' + t.hasta() + '%' : 'Del ' + t.desde() + '% a menos del ' + t.hasta() + '%')
+                                    : t.desde() + '% o más'}">Menos de 10%</td>
+                            <td><strong th:text="${t.asignacion() + '%'}">5%</strong> <span class="asistencia-de">de 5%</span></td>
+                            <td th:text="${t.nota()}">100</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="asistencia-nota">
+                La nota del rubro se pondera con el porcentaje de Asistencia del componente de evaluación de la materia; con 5% aporta exactamente lo que indica la tabla.
+            </p>
+        </section>
+
+        <section class="card" aria-labelledby="rebajas-titulo">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title" id="rebajas-titulo">Rebajas de conducta</h3>
+                    <p class="academic-help">La conducta parte de 100 y baja por las llamadas de atención y los puntos de las boletas.</p>
+                </div>
+            </div>
+
+            <div class="escala-politicas">
+                <div class="form-group">
+                    <label class="form-label" for="rebaja-quien">Los puntos de las boletas los registra</label>
+                    <select class="form-input" id="rebaja-quien" name="quienRegistraPuntosBoleta"
+                            x-model="quienPuntosBoleta">
+                        <option value="PROFESOR_GUIA"
+                                th:selected="${rebajaConducta.quienRegistraPuntosBoleta == null or rebajaConducta.quienRegistraPuntosBoleta.name() == 'PROFESOR_GUIA'}">El profesor guía</option>
+                        <option value="PROFESOR_MATERIA"
+                                th:selected="${rebajaConducta.quienRegistraPuntosBoleta != null and rebajaConducta.quienRegistraPuntosBoleta.name() == 'PROFESOR_MATERIA'}">El profesor de la materia</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table escala-tabla">
+                    <thead>
+                        <tr>
+                            <th>Registro</th>
+                            <th>Cada</th>
+                            <th>Bajan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="fila in rebajasConducta" :key="fila.id">
+                            <tr>
+                                <td style="font-weight: 500;" x-text="fila.nombre"></td>
+                                <td>
+                                    <div class="rebaja-cantidad">
+                                        <input class="form-input escala-input-num" type="number" inputmode="numeric"
+                                               min="1" max="30" step="1" required
+                                               x-model.number="fila.cada" @change="normalizarRebaja(fila)" @wheel.prevent
+                                               :aria-label="'Cada cuántos registros de ' + fila.nombre">
+                                        <span x-text="unidadDe(fila)"></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="rebaja-cantidad">
+                                        <input class="form-input escala-input-num" type="number" inputmode="numeric"
+                                               min="0" max="100" step="1" required
+                                               x-model.number="fila.puntos" @change="normalizarRebaja(fila)" @wheel.prevent
+                                               :aria-label="'Puntos que bajan por ' + fila.nombre">
+                                        <span x-text="Number(fila.puntos) === 1 ? 'punto' : 'puntos'"></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="escala-errores" x-show="erroresRebajas.length" x-cloak role="alert">
+                <template x-for="error in erroresRebajas" :key="error">
+                    <p x-text="error"></p>
+                </template>
+            </div>
+        </section>
+
+        <div class="card escala-guardar">
+            <p th:text="${'Guarda la escala del ' + cicloSeleccionado.etiqueta + ', la asistencia y las rebajas de conducta juntas.'}">Guarda la escala, la asistencia y las rebajas de conducta juntas.</p>
+            <button type="submit" class="btn btn-primary" :disabled="errores.length > 0">Guardar cambios</button>
         </div>
     </form>
 
     <script>
         window.escalaNotas = function escalaNotas(el) {
-            function plantilla() {
+            const DATOS = el && el.dataset ? el.dataset : {};
+            const MAX_TRAMOS = 5;
+            const REBAJAS_BASE = [
+                { id: 'llamada', nombre: 'Llamada de atención', unidad: ['llamada', 'llamadas'], cada: 1, puntos: 5 },
+                { id: 'tardia-injustificada', nombre: 'Tardía injustificada', unidad: ['tardía', 'tardías'], cada: 1, puntos: 2 },
+                { id: 'tardia-justificada', nombre: 'Tardía justificada', unidad: ['tardía', 'tardías'], cada: 1, puntos: 0 },
+                { id: 'ausencia-injustificada', nombre: 'Ausencia injustificada', unidad: ['ausencia', 'ausencias'], cada: 1, puntos: 5 },
+                { id: 'ausencia-justificada', nombre: 'Ausencia justificada', unidad: ['ausencia', 'ausencias'], cada: 1, puntos: 0 }
+            ];
+
+            function escalaPredeterminada() {
                 return {
                     notaMinima: 0,
                     notaMaxima: 100,
@@ -928,59 +563,90 @@
                 };
             }
 
-            function desdeElemento(nodo) {
-                var d = nodo && nodo.dataset ? nodo.dataset : {};
-                if (!d.tramos) return plantilla();
-                var crudos;
+            function leerEscala() {
+                if (!DATOS.tramos) return escalaPredeterminada();
+                let crudos;
                 try {
-                    crudos = JSON.parse(d.tramos);
+                    crudos = JSON.parse(DATOS.tramos);
                 } catch (e) {
-                    return plantilla();
+                    return escalaPredeterminada();
                 }
-                if (!Array.isArray(crudos) || crudos.length < 2) return plantilla();
-                var tramos = crudos.map(function (t, i) {
-                    return {
-                        id: Number(t && t.id) > 0 ? Number(t.id) : i + 1,
-                        nombre: String((t && t.nombre) || ''),
-                        desde: Number(t && t.desde)
-                    };
-                });
-                var min = Number(d.notaMinima);
-                var max = Number(d.notaMaxima);
-                var dec = Number(d.decimales);
-                var aprob = Number(d.notaAprobacion);
+                if (!Array.isArray(crudos) || crudos.length < 2) return escalaPredeterminada();
+                const min = Number(DATOS.notaMinima);
+                const max = Number(DATOS.notaMaxima);
+                const aprobacion = Number(DATOS.notaAprobacion);
                 return {
                     notaMinima: Number.isFinite(min) ? min : 0,
                     notaMaxima: Number.isFinite(max) ? max : 100,
-                    decimales: dec === 0 ? 0 : 1,
-                    notaAprobacion: Number.isFinite(aprob) ? aprob : 70,
-                    tramos: tramos
+                    decimales: Number(DATOS.decimales) === 0 ? 0 : 1,
+                    notaAprobacion: Number.isFinite(aprobacion) ? aprobacion : 70,
+                    tramos: crudos.map(function (t, i) {
+                        return {
+                            id: Number(t && t.id) > 0 ? Number(t.id) : i + 1,
+                            nombre: String((t && t.nombre) || ''),
+                            desde: Number(t && t.desde)
+                        };
+                    })
                 };
             }
 
-            var inicial = desdeElemento(el);
-            var maxId = 0;
-            var corteId = null;
-            for (var c = 0; c < inicial.tramos.length; c++) {
-                maxId = Math.max(maxId, Number(inicial.tramos[c].id) || 0);
-                if (c < inicial.tramos.length - 1
-                        && Number(inicial.tramos[c].desde) === Number(inicial.notaAprobacion)) {
-                    corteId = inicial.tramos[c].id;
+            function leerRebajas() {
+                let crudas = [];
+                try {
+                    crudas = JSON.parse(DATOS.rebajas || '[]');
+                } catch (e) {
+                    crudas = [];
                 }
+                const porId = {};
+                if (Array.isArray(crudas)) {
+                    crudas.forEach(function (regla) {
+                        if (regla && regla.id) porId[String(regla.id)] = regla;
+                    });
+                }
+                return REBAJAS_BASE.map(function (base) {
+                    const regla = porId[base.id];
+                    const cada = regla ? Number(regla.cada) : base.cada;
+                    const puntos = regla ? Number(regla.puntos) : base.puntos;
+                    return {
+                        id: base.id,
+                        nombre: base.nombre,
+                        unidad: base.unidad,
+                        cada: Number.isFinite(cada) ? cada : base.cada,
+                        puntos: Number.isFinite(puntos) ? puntos : base.puntos
+                    };
+                });
             }
+
+            function opcion(clave, permitidas, predeterminada) {
+                const valor = DATOS[clave];
+                return permitidas.indexOf(valor) >= 0 ? valor : predeterminada;
+            }
+
+            const inicial = leerEscala();
+            let maxId = 0;
+            let corteId = null;
+            inicial.tramos.forEach(function (tramo, i) {
+                maxId = Math.max(maxId, Number(tramo.id) || 0);
+                if (i < inicial.tramos.length - 1 && Number(tramo.desde) === Number(inicial.notaAprobacion)) {
+                    corteId = tramo.id;
+                }
+            });
             if (corteId == null) {
                 corteId = inicial.tramos[Math.max(0, inicial.tramos.length - 2)].id;
             }
-            var prueba = Number(inicial.notaAprobacion);
-            if (!Number.isFinite(prueba)) prueba = 70;
+
             return {
                 notaMinima: inicial.notaMinima,
                 notaMaxima: inicial.notaMaxima,
                 decimales: inicial.decimales,
-                prueba: prueba,
-                siguienteId: maxId + 1,
-                corteId: corteId,
                 tramos: inicial.tramos,
+                corteId: corteId,
+                siguienteId: maxId + 1,
+                rebajas: leerRebajas(),
+                sucio: false,
+                quienPuntosBoleta: opcion('quienPuntosBoleta', ['PROFESOR_GUIA', 'PROFESOR_MATERIA'], 'PROFESOR_GUIA'),
+                tardiasPorAusencia: Number(DATOS.tardiasPorAusencia) === 1 ? 1 : 2,
+
                 get paso() {
                     return Number(this.decimales) === 0 ? 1 : 0.1;
                 },
@@ -988,173 +654,133 @@
                     return this.tramos.length ? this.tramos[this.tramos.length - 1].id : null;
                 },
                 get notaAprobacion() {
-                    var corte = this.tramoCorte();
+                    const corte = this.tramos[this.indiceDe(this.corteId)];
                     return corte ? Number(corte.desde) : NaN;
                 },
                 fmt: function (valor) {
-                    var n = Number(valor);
+                    const n = Number(valor);
                     if (!Number.isFinite(n)) return '—';
                     return n.toFixed(Number(this.decimales) === 0 ? 0 : 1);
                 },
                 fmtEntero: function (valor) {
-                    var n = Number(valor);
-                    if (!Number.isFinite(n)) return '—';
-                    return String(Math.round(n));
+                    const n = Number(valor);
+                    return Number.isFinite(n) ? String(Math.round(n)) : '—';
                 },
                 redondear: function (valor) {
-                    var factor = Number(this.decimales) === 0 ? 1 : 10;
+                    const factor = Number(this.decimales) === 0 ? 1 : 10;
                     return Math.round(Number(valor) * factor) / factor;
                 },
                 indiceDe: function (id) {
-                    for (var i = 0; i < this.tramos.length; i++) {
-                        if (this.tramos[i].id === id) return i;
-                    }
-                    return -1;
-                },
-                indiceCorte: function () {
-                    return this.indiceDe(this.corteId);
-                },
-                tramoCorte: function () {
-                    var i = this.indiceCorte();
-                    return i >= 0 ? this.tramos[i] : null;
+                    return this.tramos.findIndex(function (tramo) { return tramo.id === id; });
                 },
                 esPiso: function (indice) {
                     return indice === this.tramos.length - 1;
                 },
                 apruebaEn: function (indice) {
-                    var corte = this.indiceCorte();
+                    const corte = this.indiceDe(this.corteId);
                     return corte >= 0 && indice <= corte;
                 },
                 tonoDe: function (indice) {
-                    var corte = this.indiceCorte();
+                    const corte = this.indiceDe(this.corteId);
                     if (corte < 0 || indice > corte) return 'aplazado';
                     if (corte === 0 || indice === 0) return 'excelente';
                     if (indice === corte) return 'regular';
                     return 'bueno';
                 },
-                textoEstado: function (indice) {
-                    if (this.tramos[indice].id === this.corteId) return 'Aprueba · corte';
-                    return this.apruebaEn(indice) ? 'Aprueba' : 'Aplaza';
-                },
-                claseEstado: function (indice) {
-                    if (this.tramos[indice].id === this.corteId) return 'is-corte';
-                    return this.apruebaEn(indice) ? 'is-aprueba' : 'is-aplaza';
-                },
-                textoTope: function (indice) {
-                    if (indice === 0) return 'a ' + this.fmtEntero(this.notaMaxima);
-                    return 'a menos de ' + this.fmtEntero(this.tramos[indice - 1].desde);
-                },
-                hastaVisible: function (indice) {
-                    if (indice === 0) return Number(this.notaMaxima);
-                    return this.redondear(Number(this.tramos[indice - 1].desde) - this.paso);
+                textoHasta: function (indice) {
+                    if (indice === 0) return 'hasta ' + this.fmtEntero(this.notaMaxima);
+                    return 'hasta ' + this.fmt(this.redondear(Number(this.tramos[indice - 1].desde) - this.paso));
                 },
                 limites: function (indice) {
-                    var min = Number(this.notaMinima);
-                    var max = Number(this.notaMaxima);
+                    const min = Number(this.notaMinima);
+                    const max = Number(this.notaMaxima);
                     if (this.esPiso(indice)) return { min: min, max: min };
-                    var alto = indice === 0 ? max - 1 : Number(this.tramos[indice - 1].desde) - 1;
-                    var bajo = Number(this.tramos[indice + 1].desde) + 1;
-                    if (alto < bajo) return { min: bajo, max: bajo };
-                    return { min: bajo, max: alto };
+                    const alto = indice === 0 ? max - 1 : Number(this.tramos[indice - 1].desde) - 1;
+                    const bajo = Number(this.tramos[indice + 1].desde) + 1;
+                    return alto < bajo ? { min: bajo, max: bajo } : { min: bajo, max: alto };
                 },
                 puedeQuitar: function (indice) {
                     return this.tramos.length > 2 && !this.esPiso(indice);
                 },
                 huecos: function () {
-                    var out = [];
-                    var max = Number(this.notaMaxima);
+                    const out = [];
+                    const max = Number(this.notaMaxima);
                     if (!this.tramos.length) return out;
-                    var primero = Number(this.tramos[0].desde);
+                    const primero = Number(this.tramos[0].desde);
                     if (max - primero >= 2) {
-                        var arriba = Math.round((max + primero) / 2);
-                        arriba = Math.min(max - 1, Math.max(primero + 1, arriba));
+                        const arriba = Math.min(max - 1, Math.max(primero + 1, Math.round((max + primero) / 2)));
                         out.push({ en: 0, tam: max - primero, medio: arriba });
                     }
-                    for (var i = 0; i < this.tramos.length - 1; i++) {
-                        var hi = Number(this.tramos[i].desde);
-                        var lo = Number(this.tramos[i + 1].desde);
+                    for (let i = 0; i < this.tramos.length - 1; i++) {
+                        const hi = Number(this.tramos[i].desde);
+                        const lo = Number(this.tramos[i + 1].desde);
                         if (hi - lo >= 2) {
-                            var medio = Math.round((hi + lo) / 2);
-                            medio = Math.min(hi - 1, Math.max(lo + 1, medio));
+                            const medio = Math.min(hi - 1, Math.max(lo + 1, Math.round((hi + lo) / 2)));
                             out.push({ en: i + 1, tam: hi - lo, medio: medio });
                         }
                     }
                     return out;
                 },
                 get puedeAgregar() {
-                    return this.tramos.length < 5 && this.huecos().length > 0 && this.errores.length === 0;
+                    return this.tramos.length < MAX_TRAMOS && this.huecos().length > 0 && this.erroresEscala.length === 0;
                 },
                 get motivoSinAgregar() {
                     if (this.puedeAgregar) return '';
-                    if (this.tramos.length >= 5) return 'Cinco tramos es el máximo.';
-                    if (this.errores.length) return 'Corrige la escala antes de agregar un tramo.';
+                    if (this.tramos.length >= MAX_TRAMOS) return 'Cinco tramos es el máximo.';
+                    if (this.erroresEscala.length) return 'Corrige la escala antes de agregar un tramo.';
                     return 'No queda espacio entre los cortes.';
                 },
-                get detalle() {
-                    var self = this;
-                    var max = Number(this.notaMaxima);
-                    var min = Number(this.notaMinima);
-                    return this.tramos.map(function (tramo, i) {
-                        var desde = Number(tramo.desde);
-                        var techo = i === 0 ? max : Number(self.tramos[i - 1].desde);
-                        var ancho = max > min ? Math.max(0, (techo - desde) / (max - min) * 100) : 0;
-                        return {
-                            id: tramo.id,
-                            nombre: tramo.nombre,
-                            desde: desde,
-                            hasta: self.hastaVisible(i),
-                            ancho: ancho,
-                            tono: self.tonoDe(i),
-                            aprueba: self.apruebaEn(i),
-                            incluyeHasta: i === 0
-                        };
-                    });
-                },
                 get barra() {
-                    return this.detalle.slice().reverse();
+                    const self = this;
+                    const max = Number(this.notaMaxima);
+                    const min = Number(this.notaMinima);
+                    return this.tramos.map(function (tramo, i) {
+                        const techo = i === 0 ? max : Number(self.tramos[i - 1].desde);
+                        const ancho = max > min ? Math.max(0, (techo - Number(tramo.desde)) / (max - min) * 100) : 0;
+                        return { id: tramo.id, ancho: ancho, tono: self.tonoDe(i) };
+                    }).reverse();
                 },
                 get marcaAprobacion() {
-                    var min = Number(this.notaMinima);
-                    var max = Number(this.notaMaxima);
-                    var nota = Number(this.notaAprobacion);
+                    const min = Number(this.notaMinima);
+                    const max = Number(this.notaMaxima);
+                    const nota = Number(this.notaAprobacion);
                     if (!(max > min) || !Number.isFinite(nota)) return null;
                     return Math.max(0, Math.min(100, (nota - min) / (max - min) * 100));
                 },
-                get errores() {
-                    var out = [];
-                    var min = Number(this.notaMinima);
-                    var max = Number(this.notaMaxima);
+                get erroresEscala() {
+                    const out = [];
+                    const min = Number(this.notaMinima);
+                    const max = Number(this.notaMaxima);
                     if (!Number.isFinite(min) || !Number.isFinite(max) || min >= max) {
                         out.push('La nota mínima tiene que ser menor que la máxima.');
                     } else if (max - min < this.tramos.length) {
                         out.push('Entre la mínima y la máxima no caben estos tramos.');
                     }
                     if (this.tramos.length < 2) out.push('Hacen falta al menos dos tramos.');
-                    if (this.tramos.length > 5) out.push('Cinco tramos es el máximo.');
-                    var nombres = {};
-                    var vacio = false;
-                    var repetido = false;
+                    if (this.tramos.length > MAX_TRAMOS) out.push('Cinco tramos es el máximo.');
+                    const nombres = {};
+                    let vacio = false;
+                    let repetido = false;
                     this.tramos.forEach(function (tramo) {
-                        var nombre = String(tramo.nombre || '').trim();
+                        const nombre = String(tramo.nombre || '').trim();
                         if (!nombre) {
                             vacio = true;
                             return;
                         }
-                        var clave = nombre.toLocaleLowerCase('es');
+                        const clave = nombre.toLocaleLowerCase('es');
                         if (nombres[clave]) repetido = true;
                         nombres[clave] = true;
                     });
                     if (vacio) out.push('Cada tramo necesita un nombre.');
                     if (repetido) out.push('Los nombres de los tramos no se pueden repetir.');
-                    var previo = max;
-                    for (var i = 0; i < this.tramos.length; i++) {
-                        var desde = Number(this.tramos[i].desde);
-                        var esPiso = i === this.tramos.length - 1;
+                    let previo = max;
+                    for (let i = 0; i < this.tramos.length; i++) {
+                        const desde = Number(this.tramos[i].desde);
                         if (!Number.isFinite(desde)) {
                             out.push('Cada tramo necesita un inicio numérico.');
                             break;
                         }
-                        if (esPiso) {
+                        if (this.esPiso(i)) {
                             if (Math.abs(desde - min) > 1e-9) {
                                 out.push('El tramo más bajo tiene que empezar en la nota mínima.');
                             }
@@ -1164,64 +790,31 @@
                         }
                         previo = desde;
                     }
-                    var corte = this.indiceCorte();
+                    const corte = this.indiceDe(this.corteId);
                     if (corte < 0 || corte >= this.tramos.length - 1) {
                         out.push('Elige el tramo desde el que se aprueba.');
                     }
                     return Array.from(new Set(out));
                 },
-                get muestras() {
-                    var self = this;
-                    var vistos = {};
-                    var candidatos = [
-                        Number(this.notaMaxima),
-                        this.tramos.length ? Number(this.tramos[0].desde) : NaN,
-                        Number(this.notaAprobacion),
-                        this.redondear(Number(this.notaAprobacion) - this.paso),
-                        Number(this.notaMinima)
-                    ];
-                    return candidatos.map(function (n) {
-                        return self.redondear(n);
-                    }).filter(function (n) {
-                        if (!Number.isFinite(n) || n < Number(self.notaMinima) || n > Number(self.notaMaxima) || vistos[n]) {
-                            return false;
+                get erroresRebajas() {
+                    const out = [];
+                    this.rebajas.forEach(function (fila) {
+                        const cada = Number(fila.cada);
+                        const puntos = Number(fila.puntos);
+                        if (!Number.isFinite(cada) || cada < 1) {
+                            out.push('«' + fila.nombre + '» necesita un grupo de al menos 1.');
                         }
-                        vistos[n] = true;
-                        return true;
-                    }).sort(function (a, b) { return b - a; });
-                },
-                notaMostrada: function (valor) {
-                    return this.redondear(valor);
-                },
-                get resultado() {
-                    var n = this.notaMostrada(this.prueba);
-                    var min = Number(this.notaMinima);
-                    var max = Number(this.notaMaxima);
-                    if (!Number.isFinite(n) || n < min || n > max) return { fuera: true };
-                    var hit = null;
-                    var lista = this.detalle;
-                    for (var i = 0; i < lista.length; i++) {
-                        var techo = i === 0 ? max : Number(this.tramos[i - 1].desde);
-                        var dentro = i === 0
-                            ? (n + 1e-9 >= lista[i].desde && n <= max + 1e-9)
-                            : (n + 1e-9 >= lista[i].desde && n < techo - 1e-9);
-                        if (dentro) {
-                            hit = lista[i];
-                            break;
+                        if (!Number.isFinite(puntos) || puntos < 0 || puntos > 100) {
+                            out.push('Los puntos de «' + fila.nombre + '» van de 0 a 100.');
                         }
-                    }
-                    if (!hit) return { fuera: true };
-                    return {
-                        fuera: false,
-                        nota: this.fmt(n),
-                        nombre: String(hit.nombre || '').trim() || 'Sin nombre',
-                        tono: hit.tono,
-                        aprueba: !!hit.aprueba,
-                        rango: this.fmt(hit.desde) + ' – ' + this.fmt(hit.hasta)
-                    };
+                    });
+                    return Array.from(new Set(out));
+                },
+                get errores() {
+                    return this.erroresEscala.concat(this.erroresRebajas);
                 },
                 get tramosJson() {
-                    var self = this;
+                    const self = this;
                     return JSON.stringify(this.tramos.map(function (tramo, i) {
                         return {
                             nombre: String(tramo.nombre || '').trim(),
@@ -1232,46 +825,41 @@
                         };
                     }));
                 },
-                restablecer: function () {
-                    var p = plantilla();
-                    this.notaMinima = p.notaMinima;
-                    this.notaMaxima = p.notaMaxima;
-                    this.decimales = p.decimales;
-                    this.tramos = p.tramos.map(function (t) {
-                        return { id: t.id, nombre: t.nombre, desde: t.desde };
-                    });
-                    var corte = this.tramos[0];
-                    for (var i = 0; i < this.tramos.length; i++) {
-                        if (this.tramos[i].desde === p.notaAprobacion) corte = this.tramos[i];
-                    }
-                    this.corteId = corte.id;
-                    this.siguienteId = this.tramos.length + 1;
-                    this.prueba = 85;
-                    this.ajustarPrueba();
+                get reglasJson() {
+                    return JSON.stringify(this.rebajas.map(function (fila) {
+                        return { id: fila.id, cada: Math.round(Number(fila.cada)), puntos: Math.round(Number(fila.puntos)) };
+                    }));
+                },
+                // Las ausencias y tardías van al rubro Asistencia (artículo 37); en conducta solo queda la llamada de
+                // atención. Las demás reglas se siguen enviando porque el servidor guarda la lista completa.
+                get rebajasConducta() {
+                    return this.rebajas.filter(function (fila) { return fila.id === 'llamada'; });
+                },
+                unidadDe: function (fila) {
+                    return Math.round(Number(fila.cada)) === 1 ? fila.unidad[0] : fila.unidad[1];
                 },
                 fijarCorte: function (id) {
-                    if (id === this.pisoId) return;
-                    if (this.indiceDe(id) < 0) return;
+                    if (id === this.pisoId || this.indiceDe(id) < 0) return;
                     this.corteId = id;
                 },
                 normalizarNombre: function (tramo) {
                     tramo.nombre = String(tramo.nombre || '').trim();
                 },
                 alEditarCorte: function (tramo) {
-                    var i = this.indiceDe(tramo.id);
+                    const i = this.indiceDe(tramo.id);
                     if (i < 0) return;
                     if (this.esPiso(i)) {
                         tramo.desde = Number(this.notaMinima);
                         return;
                     }
-                    var lim = this.limites(i);
-                    var n = Math.round(Number(tramo.desde));
+                    const lim = this.limites(i);
+                    let n = Math.round(Number(tramo.desde));
                     if (!Number.isFinite(n)) n = lim.min;
                     tramo.desde = Math.min(lim.max, Math.max(lim.min, n));
                 },
                 alCambiarRango: function () {
-                    var min = Math.round(Number(this.notaMinima));
-                    var max = Math.round(Number(this.notaMaxima));
+                    let min = Math.round(Number(this.notaMinima));
+                    let max = Math.round(Number(this.notaMaxima));
                     if (!Number.isFinite(min)) min = 0;
                     if (!Number.isFinite(max)) max = 100;
                     min = Math.max(0, Math.min(99, min));
@@ -1281,260 +869,86 @@
                     this.notaMinima = min;
                     this.notaMaxima = max;
                     this.decimales = Number(this.decimales) === 0 ? 0 : 1;
-                    var n = this.tramos.length;
-                    if (!n) {
-                        this.ajustarPrueba();
-                        return;
-                    }
-                    this.tramos[n - 1].desde = min;
-                    var techo = max;
-                    for (var i = 0; i < n - 1; i++) {
-                        var bajo = min + (n - 1 - i);
-                        var alto = techo - 1;
-                        var valor = Math.round(Number(this.tramos[i].desde));
+                    const n = this.tramos.length;
+                    if (!n) return;
+                    let techo = max;
+                    for (let i = 0; i < n - 1; i++) {
+                        const bajo = min + (n - 1 - i);
+                        const alto = techo - 1;
+                        let valor = Math.round(Number(this.tramos[i].desde));
                         if (!Number.isFinite(valor)) valor = bajo;
                         this.tramos[i].desde = alto < bajo ? alto : Math.min(alto, Math.max(bajo, valor));
                         techo = Number(this.tramos[i].desde);
                     }
                     this.tramos[n - 1].desde = min;
-                    this.ajustarPrueba();
-                },
-                ajustarPrueba: function () {
-                    var n = Number(this.prueba);
-                    if (!Number.isFinite(n)) n = Number(this.notaMinima);
-                    this.prueba = this.redondear(Math.min(Number(this.notaMaxima), Math.max(Number(this.notaMinima), n)));
                 },
                 agregarTramo: function () {
                     if (!this.puedeAgregar) return;
-                    var huecos = this.huecos().slice().sort(function (a, b) {
+                    const hueco = this.huecos().slice().sort(function (a, b) {
                         return b.tam - a.tam || b.en - a.en;
-                    });
-                    var hueco = huecos[0];
-                    var nombre = 'Nuevo tramo';
-                    var usados = {};
+                    })[0];
+                    const usados = {};
                     this.tramos.forEach(function (tramo) {
                         usados[String(tramo.nombre || '').trim().toLocaleLowerCase('es')] = true;
                     });
-                    if (usados[nombre.toLocaleLowerCase('es')]) {
-                        var k = 2;
-                        var candidato = nombre + ' ' + k;
-                        while (usados[candidato.toLocaleLowerCase('es')]) {
-                            k++;
-                            candidato = nombre + ' ' + k;
-                        }
-                        nombre = candidato;
+                    let nombre = 'Nuevo tramo';
+                    let k = 2;
+                    while (usados[nombre.toLocaleLowerCase('es')]) {
+                        nombre = 'Nuevo tramo ' + k;
+                        k++;
                     }
-                    this.tramos.splice(hueco.en, 0, {
-                        id: this.siguienteId++,
-                        nombre: nombre,
-                        desde: hueco.medio
-                    });
+                    this.tramos.splice(hueco.en, 0, { id: this.siguienteId++, nombre: nombre, desde: hueco.medio });
                 },
                 quitarTramo: function (id) {
-                    var i = this.indiceDe(id);
+                    const i = this.indiceDe(id);
                     if (i < 0 || !this.puedeQuitar(i)) return;
-                    var eraCorte = this.corteId === id;
-                    var idArriba = i > 0 ? this.tramos[i - 1].id : null;
+                    const eraCorte = this.corteId === id;
+                    const idArriba = i > 0 ? this.tramos[i - 1].id : null;
                     this.tramos.splice(i, 1);
                     if (!eraCorte) return;
                     if (idArriba != null && idArriba !== this.pisoId) {
                         this.corteId = idArriba;
-                        return;
+                    } else if (this.tramos.length > 1) {
+                        this.corteId = this.tramos[0].id;
                     }
-                    if (this.tramos.length > 1) this.corteId = this.tramos[0].id;
                 },
-                prepararEnvio: function (event) {
-                    this.alCambiarRango();
-                    this.tramos.forEach(function (tramo) {
-                        tramo.nombre = String(tramo.nombre || '').trim();
-                    });
-                    var form = event.currentTarget || event.target;
-                    if (form && form.querySelector) {
-                        var aprobacion = form.querySelector('[name="notaAprobacion"]');
-                        var tramos = form.querySelector('[name="tramos"]');
-                        var minima = form.querySelector('[name="notaMinima"]');
-                        var maxima = form.querySelector('[name="notaMaxima"]');
-                        var decimales = form.querySelector('[name="decimales"]');
-                        if (aprobacion) aprobacion.value = this.notaAprobacion;
-                        if (tramos) tramos.value = this.tramosJson;
-                        if (minima) minima.value = this.notaMinima;
-                        if (maxima) maxima.value = this.notaMaxima;
-                        if (decimales) decimales.value = this.decimales;
-                    }
-                    if (this.errores.length) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        document.dispatchEvent(new CustomEvent('institucionalError', {
-                            detail: { mensaje: this.errores[0] }
-                        }));
-                    }
-                }
-            };
-        };
-
-        window.rebajaConducta = function rebajaConducta(el) {
-            function base() {
-                return [
-                    { id: 'llamada', nombre: 'Llamada de atención', tono: 'llamada', cada: 1, puntos: 5, ejemplo: 2 },
-                    { id: 'tardia-injustificada', nombre: 'Tardía injustificada', tono: 'tardia-no', cada: 1, puntos: 2, ejemplo: 3 },
-                    { id: 'tardia-justificada', nombre: 'Tardía justificada', tono: 'tardia-si', cada: 1, puntos: 0, ejemplo: 1 },
-                    { id: 'ausencia-injustificada', nombre: 'Ausencia injustificada', tono: 'ausencia-no', cada: 1, puntos: 5, ejemplo: 1 },
-                    { id: 'ausencia-justificada', nombre: 'Ausencia justificada', tono: 'ausencia-si', cada: 1, puntos: 0, ejemplo: 0 }
-                ];
-            }
-
-            function copiar(filas) {
-                return filas.map(function (fila) {
-                    return {
-                        id: fila.id,
-                        nombre: fila.nombre,
-                        tono: fila.tono,
-                        cada: fila.cada,
-                        puntos: fila.puntos,
-                        ejemplo: fila.ejemplo
-                    };
-                });
-            }
-
-            function desdeElemento(nodo) {
-                var filas = base();
-                var crudas = [];
-                try {
-                    crudas = JSON.parse((nodo && nodo.dataset && nodo.dataset.rebajas) || '[]');
-                } catch (e) {
-                    return copiar(filas);
-                }
-                if (!Array.isArray(crudas)) return copiar(filas);
-                var porId = {};
-                crudas.forEach(function (regla) {
-                    if (regla && regla.id) porId[String(regla.id)] = regla;
-                });
-                return filas.map(function (fila) {
-                    var regla = porId[fila.id];
-                    var cada = regla ? Number(regla.cada) : fila.cada;
-                    var puntos = regla ? Number(regla.puntos) : fila.puntos;
-                    return {
-                        id: fila.id,
-                        nombre: fila.nombre,
-                        tono: fila.tono,
-                        cada: Number.isFinite(cada) ? cada : fila.cada,
-                        puntos: Number.isFinite(puntos) ? puntos : fila.puntos,
-                        ejemplo: fila.ejemplo
-                    };
-                });
-            }
-
-            function opcion(nodo, clave, permitidas, fallback) {
-                var valor = nodo && nodo.dataset ? nodo.dataset[clave] : '';
-                return permitidas.indexOf(valor) >= 0 ? valor : fallback;
-            }
-
-            return {
-                filas: desdeElemento(el),
-                destinoAsistencia: opcion(el, 'destinoRebaja', ['CONDUCTA', 'COMPONENTE'], 'CONDUCTA'),
-                quienPuntosBoleta: opcion(el, 'quienPuntosBoleta', ['PROFESOR_GUIA', 'PROFESOR_MATERIA'], 'PROFESOR_GUIA'),
-                gruposDe: function (fila) {
-                    var cada = Math.round(Number(fila.cada));
-                    var cantidad = Math.round(Number(fila.ejemplo));
-                    if (!Number.isFinite(cada) || cada < 1 || !Number.isFinite(cantidad) || cantidad < 0) return 0;
-                    return Math.floor(cantidad / cada);
-                },
-                descuentoDe: function (fila) {
-                    var puntos = Math.round(Number(fila.puntos));
-                    if (!Number.isFinite(puntos) || puntos < 0) return 0;
-                    return this.gruposDe(fila) * puntos;
-                },
-                destinoDe: function (fila) {
-                    if (fila.id === 'llamada') return 'conducta';
-                    return this.destinoAsistencia === 'COMPONENTE' ? 'componente' : 'conducta';
-                },
-                textoRegla: function (fila) {
-                    var cada = Math.round(Number(fila.cada));
-                    var puntos = Math.round(Number(fila.puntos));
-                    if (!Number.isFinite(puntos) || puntos <= 0) return 'No rebaja';
-                    var cuanto = puntos + (puntos === 1 ? ' punto' : ' puntos');
-                    if (!Number.isFinite(cada) || cada <= 1) return 'Cada registro baja ' + cuanto;
-                    return 'Cada ' + cada + ' bajan ' + cuanto;
-                },
-                textoMonto: function (fila) {
-                    return '− ' + this.descuentoDe(fila);
-                },
-                textoDonde: function (fila) {
-                    if (Math.round(Number(fila.puntos)) <= 0) return '';
-                    return this.destinoDe(fila) === 'componente' ? 'componente' : 'conducta';
-                },
-                descuentoHacia: function (destino) {
-                    var self = this;
-                    return this.filas.reduce(function (suma, fila) {
-                        if (self.destinoDe(fila) !== destino) return suma;
-                        return suma + self.descuentoDe(fila);
-                    }, 0);
-                },
-                get descuentoConducta() {
-                    return this.descuentoHacia('conducta');
-                },
-                get descuentoComponente() {
-                    return this.descuentoHacia('componente');
-                },
-                get notaConducta() {
-                    return Math.max(0, 100 - this.descuentoConducta);
-                },
-                get notaComponente() {
-                    return Math.max(0, 100 - this.descuentoComponente);
-                },
-                tonoDe: function (nota) {
-                    if (nota >= 90) return 'is-alta';
-                    if (nota >= 80) return 'is-media';
-                    if (nota >= 70) return 'is-baja';
-                    return 'is-cero';
-                },
-                get errores() {
-                    var out = [];
-                    this.filas.forEach(function (fila) {
-                        var cada = Number(fila.cada);
-                        var puntos = Number(fila.puntos);
-                        if (!Number.isFinite(cada) || cada < 1) {
-                            out.push('«' + fila.nombre + '» necesita un grupo de al menos 1.');
-                        }
-                        if (!Number.isFinite(puntos) || puntos < 0 || puntos > 100) {
-                            out.push('Los puntos de «' + fila.nombre + '» van de 0 a 100.');
-                        }
-                    });
-                    return Array.from(new Set(out));
-                },
-                get reglasJson() {
-                    return JSON.stringify(this.filas.map(function (fila) {
-                        return {
-                            id: fila.id,
-                            cada: Math.round(Number(fila.cada)),
-                            puntos: Math.round(Number(fila.puntos))
-                        };
-                    }));
-                },
-                normalizar: function (fila) {
-                    var cada = Math.round(Number(fila.cada));
-                    var puntos = Math.round(Number(fila.puntos));
-                    var ejemplo = Math.round(Number(fila.ejemplo));
+                normalizarRebaja: function (fila) {
+                    const cada = Math.round(Number(fila.cada));
+                    const puntos = Math.round(Number(fila.puntos));
                     fila.cada = Number.isFinite(cada) ? Math.min(30, Math.max(1, cada)) : 1;
                     fila.puntos = Number.isFinite(puntos) ? Math.min(100, Math.max(0, puntos)) : 0;
-                    fila.ejemplo = Number.isFinite(ejemplo) ? Math.min(99, Math.max(0, ejemplo)) : 0;
                 },
-                restablecer: function () {
-                    this.filas = copiar(base());
-                    this.destinoAsistencia = 'CONDUCTA';
-                    this.quienPuntosBoleta = 'PROFESOR_GUIA';
+                cambiarCiclo: function (ciclo) {
+                    if (!ciclo) return;
+                    if (this.sucio && !window.confirm('Tienes cambios sin guardar en esta escala. ¿Cambiar de ciclo y descartarlos?')) {
+                        return;
+                    }
+                    htmx.ajax('GET', '/configuracion-institucional/escala-notas?ciclo=' + encodeURIComponent(ciclo), {
+                        target: '#institucional-escala-notas-panel',
+                        swap: 'outerHTML'
+                    });
                 },
                 prepararEnvio: function (event) {
-                    var self = this;
-                    this.filas.forEach(function (fila) { self.normalizar(fila); });
-                    var form = event.currentTarget || event.target;
+                    const self = this;
+                    this.alCambiarRango();
+                    this.tramos.forEach(function (tramo) { self.normalizarNombre(tramo); });
+                    this.rebajas.forEach(function (fila) { self.normalizarRebaja(fila); });
+                    const form = event.currentTarget || event.target;
                     if (form && form.querySelector) {
-                        var input = form.querySelector('[name="rebajas"]');
-                        var quien = form.querySelector('[name="quienRegistraPuntosBoleta"]');
-                        var destino = form.querySelector('[name="destinoRebajaAsistencia"]');
-                        if (input) input.value = this.reglasJson;
-                        if (quien) quien.value = this.quienPuntosBoleta;
-                        if (destino) destino.value = this.destinoAsistencia;
+                        const valores = {
+                            notaAprobacion: this.notaAprobacion,
+                            tramos: this.tramosJson,
+                            rebajas: this.reglasJson,
+                            notaMinima: this.notaMinima,
+                            notaMaxima: this.notaMaxima,
+                            decimales: this.decimales,
+                            quienRegistraPuntosBoleta: this.quienPuntosBoleta,
+                            tardiasPorAusencia: this.tardiasPorAusencia
+                        };
+                        Object.keys(valores).forEach(function (nombre) {
+                            const campo = form.querySelector('[name="' + nombre + '"]');
+                            if (campo) campo.value = valores[nombre];
+                        });
                     }
                     if (this.errores.length) {
                         event.preventDefault();

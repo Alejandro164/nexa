@@ -38,7 +38,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 0.4rem;
-            margin: 0.85rem 1.5rem 0;
+            margin: 0.85rem 1.5rem;
         }
         #promedio-panel .promedio-final { background: rgba(45, 90, 135, 0.05); }
         #promedio-panel .promedio-final .cifra {
@@ -52,6 +52,32 @@
         #promedio-panel .nota-regular { color: #92400e; background: #fef3c7; }
         #promedio-panel .nota-aplazado { color: #991b1b; background: #fee2e2; }
         #promedio-panel .cifra { background: none; }
+        /* Mismo estilo que el total de la tabla de Pruebas (componente/lista.html). */
+        #promedio-panel .promedio-resumen tr {
+            background: rgba(45, 90, 135, 0.05);
+            font-weight: 700;
+        }
+        #promedio-panel .promedio-resumen tr:first-child {
+            border-top: 2px solid var(--border);
+        }
+        #promedio-panel .promedio-resumen-fila {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 2.5rem;
+        }
+        #promedio-panel .promedio-resumen-dato {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        #promedio-panel .promedio-resumen .cifra,
+        #promedio-panel .promedio-resumen-valor {
+            font-variant-numeric: tabular-nums;
+        }
+        #promedio-panel .promedio-resumen-valor {
+            color: var(--primary);
+        }
     </style>
     <div class="card">
         <div class="card-header" style="justify-content: flex-start;">
@@ -144,35 +170,39 @@
                             </td>
                         </tr>
                     </tbody>
+                    <tfoot th:if="${filas != null and !filas.empty}" class="promedio-resumen">
+                        <tr>
+                            <td th:attr="colspan=${columnasPromedio}">
+                                <div class="promedio-resumen-fila">
+                                    <span class="promedio-resumen-dato">Promedio del grupo
+                                        <span th:if="${estudiantesEvaluados == 0}">—</span>
+                                        <span th:if="${estudiantesEvaluados > 0}" class="cifra"
+                                              th:classappend="${'nota-' + escala.tono(promedioGrupo)}"
+                                              th:text="${#numbers.formatDecimal(promedioGrupo, 1, 2)}">0.00</span>
+                                    </span>
+                                    <span class="promedio-resumen-dato">Nota más alta
+                                        <span th:if="${estudiantesEvaluados == 0}">—</span>
+                                        <span th:if="${estudiantesEvaluados > 0}" class="cifra"
+                                              th:classappend="${'nota-' + escala.tono(notaMasAlta)}"
+                                              th:text="${#numbers.formatDecimal(notaMasAlta, 1, 2)}">0.00</span>
+                                    </span>
+                                    <span class="promedio-resumen-dato">Nota más baja
+                                        <span th:if="${estudiantesEvaluados == 0}">—</span>
+                                        <span th:if="${estudiantesEvaluados > 0}" class="cifra"
+                                              th:classappend="${'nota-' + escala.tono(notaMasBaja)}"
+                                              th:text="${#numbers.formatDecimal(notaMasBaja, 1, 2)}">0.00</span>
+                                    </span>
+                                    <span class="promedio-resumen-dato">Estudiantes evaluados
+                                        <span class="promedio-resumen-valor"
+                                              th:text="${estudiantesEvaluados + ' / ' + filas.size()}">0 / 0</span>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 
-            <div th:if="${filas != null and !filas.empty}"
-                 style="margin: 1.5rem; padding: 1rem; background: var(--input-bg); border-radius: 10px; display: flex; gap: 2rem; flex-wrap: wrap;">
-                <div>
-                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Promedio del grupo</span>
-                    <div style="font-size: 1.3rem; font-weight: 700;"
-                         th:classappend="${estudiantesEvaluados > 0 ? 'cifra nota-' + escala.tono(promedioGrupo) : ''}"
-                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(promedioGrupo, 1, 2) : '—'}">—</div>
-                </div>
-                <div>
-                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más alta</span>
-                    <div style="font-size: 1.3rem; font-weight: 700;"
-                         th:classappend="${estudiantesEvaluados > 0 ? 'cifra nota-' + escala.tono(notaMasAlta) : ''}"
-                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(notaMasAlta, 1, 2) : '—'}">—</div>
-                </div>
-                <div>
-                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Nota más baja</span>
-                    <div style="font-size: 1.3rem; font-weight: 700;"
-                         th:classappend="${estudiantesEvaluados > 0 ? 'cifra nota-' + escala.tono(notaMasBaja) : ''}"
-                         th:text="${estudiantesEvaluados > 0 ? #numbers.formatDecimal(notaMasBaja, 1, 2) : '—'}">—</div>
-                </div>
-                <div>
-                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Estudiantes evaluados</span>
-                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary);"
-                         th:text="${estudiantesEvaluados}">0</div>
-                </div>
-            </div>
         </th:block>
     </div>
 </div>

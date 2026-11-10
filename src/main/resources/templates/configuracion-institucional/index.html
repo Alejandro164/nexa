@@ -9,11 +9,11 @@
 <body>
 
     <h2 layout:fragment="page-title">Configuración Institucional</h2>
-    <p layout:fragment="page-subtitle">Jornada, componentes, escala de notas y lecciones bloqueadas o reservadas por tipo</p>
+    <p layout:fragment="page-subtitle">Jornada, componentes, tipos de materia, escala de notas y lecciones bloqueadas o reservadas por tipo</p>
 
     <th:block th:fragment="htmx-content">
     <h2 id="topbar-page-title" hx-swap-oob="true">Configuración Institucional</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Jornada, componentes, escala de notas y lecciones bloqueadas o reservadas por tipo</p>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Jornada, componentes, tipos de materia, escala de notas y lecciones bloqueadas o reservadas por tipo</p>
     <main layout:fragment="content">
         <style>
             .config-tabs-container {
@@ -387,6 +387,10 @@
                             @click="activeTab = 'componentes'">
                         Componentes
                     </button>
+                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'tipos-materia' }"
+                            @click="activeTab = 'tipos-materia'">
+                        Tipos de materia
+                    </button>
                     <button class="config-tab-btn" :class="{ 'active': activeTab === 'escala-notas' }"
                             @click="activeTab = 'escala-notas'">
                         Escala notas
@@ -399,6 +403,9 @@
             </div>
             <div x-show="activeTab === 'componentes'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-institucional/componentes/componentes :: content}"></div>
+            </div>
+            <div x-show="activeTab === 'tipos-materia'" class="tab-pane" x-cloak>
+                <div th:replace="~{configuracion-institucional/tipos-materia/tipos-materia :: content}"></div>
             </div>
             <div x-show="activeTab === 'escala-notas'" class="tab-pane" x-cloak>
                 <div th:replace="~{configuracion-institucional/escala-notas/escala-notas :: content}"></div>
@@ -774,8 +781,74 @@
                 ];
             }
 
+            function abrirModalInstitucional() {
+                const modal = document.getElementById('modal-container');
+                modal.classList.remove('modal-closing');
+                modal.classList.add('show');
+            }
+
+            function cerrarModalInstitucional() {
+                const modal = document.getElementById('modal-container');
+                if (!modal || !modal.classList.contains('show')) {
+                    return;
+                }
+                modal.classList.add('modal-closing');
+                window.setTimeout(function () {
+                    modal.classList.remove('show', 'modal-closing');
+                    modal.innerHTML = '';
+                }, 180);
+            }
+
+            // El diálogo #academic-delete-modal lo incluye el shell (templates/index.html) y sus botones
+            // llaman a estas funciones globales; cada módulo las define (ver configuracion-academica, personal).
+            // Aquí el toast de éxito o error lo da el HX-Trigger del servidor, no un mensaje fijo.
+            function abrirConfirmacionAcademica(trigger) {
+                window.academicDeleteRequest = {
+                    url: trigger.dataset.deleteUrl,
+                    target: trigger.dataset.deleteTarget,
+                    swap: trigger.dataset.deleteSwap || 'outerHTML'
+                };
+                document.getElementById('academic-delete-title').textContent =
+                    trigger.dataset.deleteTitle || 'Confirmar eliminación';
+                document.getElementById('academic-delete-message').textContent =
+                    trigger.dataset.deleteMessage || '¿Deseas eliminar este registro?';
+                const modal = document.getElementById('academic-delete-modal');
+                modal.style.display = 'flex';
+                modal.classList.remove('modal-visible', 'modal-closing');
+                void modal.offsetWidth;
+                modal.classList.add('modal-visible');
+            }
+
+            function cerrarConfirmacionAcademica() {
+                const modal = document.getElementById('academic-delete-modal');
+                if (modal && modal.style.display !== 'none') {
+                    modal.classList.remove('modal-visible');
+                    modal.classList.add('modal-closing');
+                    window.setTimeout(function () {
+                        modal.style.display = 'none';
+                        modal.classList.remove('modal-closing');
+                    }, 180);
+                }
+                window.academicDeleteRequest = null;
+            }
+
+            function confirmarEliminacionAcademica() {
+                const request = window.academicDeleteRequest;
+                if (!request || !request.url || !request.target) {
+                    cerrarConfirmacionAcademica();
+                    return;
+                }
+                htmx.ajax('DELETE', request.url, {
+                    target: request.target,
+                    swap: request.swap
+                }).then(cerrarConfirmacionAcademica);
+            }
+
             if (!window.institucionalEventsRegistrados) {
                 document.addEventListener('institucionalGuardado', function (event) {
+                    if (event.detail && event.detail.cerrarModal && typeof cerrarModalInstitucional === 'function') {
+                        cerrarModalInstitucional();
+                    }
                     if (typeof showNotification === 'function' && event.detail && event.detail.mensaje) {
                         showNotification(event.detail.mensaje);
                     }

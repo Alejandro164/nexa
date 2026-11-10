@@ -1,23 +1,34 @@
 package com.chavescr.nexa.service;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.dto.VistaEscala;
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.EscalaNotas;
+import com.chavescr.nexa.entity.NivelAcademico;
+import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.EscalaNotasRepository;
+import com.chavescr.nexa.repository.NivelAcademicoRepository;
+import com.chavescr.nexa.repository.UsuarioRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Escalas de notas de cada dirección, una por ciclo educativo. Los estudiantes de una sección usan la escala
+ * del ciclo de esa sección; un ciclo sin escala guardada usa la predeterminada.
+ */
 @Service
 @Transactional
 public class EscalaNotasService {
@@ -30,20 +41,80 @@ public class EscalaNotasService {
 
     private final EscalaNotasRepository repository;
     private final DireccionRepository direccionRepository;
+    private final NivelAcademicoRepository nivelRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    public EscalaNotasService(EscalaNotasRepository repository, DireccionRepository direccionRepository) {
+    public EscalaNotasService(EscalaNotasRepository repository, DireccionRepository direccionRepository,
+            NivelAcademicoRepository nivelRepository, UsuarioRepository usuarioRepository) {
         this.repository = repository;
         this.direccionRepository = direccionRepository;
+        this.nivelRepository = nivelRepository;
+        this.usuarioRepository = usuarioRepository;
+    }
+
+    /** Escala guardada del ciclo o, si no hay (o el ciclo es null), la predeterminada. */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public EscalaNotas obtener(Long direccionId, CicloEducativo ciclo) {
+        if (ciclo == null) {
+            return EscalaNotas.predeterminada();
+        }
+        return repository.findByDireccionIdAndCiclo(direccionId, ciclo).orElseGet(() -> {
+            EscalaNotas escala = EscalaNotas.predeterminada();
+            escala.setCiclo(ciclo);
+            return escala;
+        });
     }
 
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public EscalaNotas obtener(Long direccionId) {
-        return repository.findByDireccionId(direccionId).orElseGet(EscalaNotas::predeterminada);
+    public VistaEscala vista(Long direccionId, CicloEducativo ciclo) {
+        return vista(obtener(direccionId, ciclo));
     }
 
+    /** Escala del ciclo de la sección; la predeterminada si la sección no existe o no tiene ciclo. */
     @Transactional(readOnly = true, rollbackFor = Exception.class)
-    public VistaEscala vista(Long direccionId) {
-        return vista(obtener(direccionId));
+    public VistaEscala vistaDeNivel(Long direccionId, Long nivelId) {
+        CicloEducativo ciclo = nivelId == null ? null
+                : nivelRepository.findByIdAndDireccionId(nivelId, direccionId)
+                        .map(NivelAcademico::getCicloEfectivo)
+                        .orElse(null);
+        return vista(direccionId, ciclo);
+    }
+
+    /** Escala del ciclo de la sección del estudiante. */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public VistaEscala vistaDeEstudiante(Long direccionId, Long estudianteId) {
+        CicloEducativo ciclo = estudianteId == null ? null
+                : usuarioRepository.findEstudianteActivoConNivel(estudianteId, direccionId)
+                        .map(Usuario::getNivelAcademico)
+                        .map(NivelAcademico::getCicloEfectivo)
+                        .orElse(null);
+        return vista(direccionId, ciclo);
+    }
+
+    /** Cuántas secciones activas tiene cada ciclo en la dirección (por su ciclo o, si no tienen, por su grado). */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public Map<CicloEducativo, Long> seccionesPorCiclo(Long direccionId) {
+        Map<CicloEducativo, Long> conteo = new EnumMap<>(CicloEducativo.class);
+        for (CicloEducativo ciclo : CicloEducativo.values()) {
+            conteo.put(ciclo, 0L);
+        }
+        for (NivelAcademico nivel : nivelRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId)) {
+            CicloEducativo ciclo = nivel.getCicloEfectivo();
+            if (ciclo != null) {
+                conteo.merge(ciclo, 1L, Long::sum);
+            }
+        }
+        return conteo;
+    }
+
+    /** La escala de cada ciclo, para vistas que muestran estudiantes de varias secciones a la vez. */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public Map<CicloEducativo, VistaEscala> vistasPorCiclo(Long direccionId) {
+        Map<CicloEducativo, VistaEscala> vistas = new EnumMap<>(CicloEducativo.class);
+        for (CicloEducativo ciclo : CicloEducativo.values()) {
+            vistas.put(ciclo, vista(direccionId, ciclo));
+        }
+        return vistas;
     }
 
     static VistaEscala vista(EscalaNotas escala) {
@@ -66,10 +137,14 @@ public class EscalaNotasService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public EscalaNotas guardar(Long direccionId, Integer notaMinima, Integer notaMaxima,
+    public EscalaNotas guardar(Long direccionId, CicloEducativo ciclo, Integer notaMinima, Integer notaMaxima,
             Integer decimales, Integer notaAprobacion, String tramosJson) {
+        if (ciclo == null) {
+            throw new IllegalArgumentException("Elige el ciclo de la escala");
+        }
         String tramos = canonizar(notaMinima, notaMaxima, decimales, notaAprobacion, tramosJson);
-        EscalaNotas escala = repository.findByDireccionId(direccionId).orElseGet(() -> nueva(direccionId));
+        EscalaNotas escala = repository.findByDireccionIdAndCiclo(direccionId, ciclo)
+                .orElseGet(() -> nueva(direccionId, ciclo));
         escala.setNotaMinima(notaMinima);
         escala.setNotaMaxima(notaMaxima);
         escala.setDecimales(decimales);
@@ -91,11 +166,12 @@ public class EscalaNotasService {
         return canonico;
     }
 
-    private EscalaNotas nueva(Long direccionId) {
+    private EscalaNotas nueva(Long direccionId, CicloEducativo ciclo) {
         Direccion direccion = direccionRepository.findById(direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Dirección no encontrada"));
         EscalaNotas escala = new EscalaNotas();
         escala.setDireccion(direccion);
+        escala.setCiclo(ciclo);
         return escala;
     }
 

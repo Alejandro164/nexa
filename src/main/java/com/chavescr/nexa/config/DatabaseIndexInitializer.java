@@ -55,6 +55,39 @@ public class DatabaseIndexInitializer {
         eliminarExtraclase();
         copiarRubrosAComponentes();
         permitirOficiosSinDireccionDestinataria();
+        permitirMateriasSinCodigoNiArea();
+        asistenciaSiempreAlComponente();
+    }
+
+    /**
+     * Las ausencias y tardías ya no rebajan la conducta: forman el rubro Asistencia según el artículo 37 del
+     * Reglamento de Evaluación. Deja el destino viejo en COMPONENTE; en prod lo hace
+     * docker/migraciones/2026-11-10-asistencia-reglamento.sql.
+     */
+    private void asistenciaSiempreAlComponente() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE rebajas_conducta ALTER COLUMN destino_rebaja_asistencia "
+                    + "SET DEFAULT 'COMPONENTE'");
+            jdbcTemplate.update("UPDATE rebajas_conducta SET destino_rebaja_asistencia = 'COMPONENTE' "
+                    + "WHERE destino_rebaja_asistencia <> 'COMPONENTE'");
+        } catch (Exception e) {
+            log.warn("No se pudo dejar la asistencia en el componente: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * materias.codigo y materias.area dejaron de ser obligatorias (el formulario ya no las pide y la entidad
+     * las declara opcionales), pero Hibernate (ddl-auto=update) no quita un NOT NULL ya existente: sin esto,
+     * crear una materia falla con "null value in column area".
+     */
+    private void permitirMateriasSinCodigoNiArea() {
+        for (String columna : new String[] { "codigo", "area" }) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE materias ALTER COLUMN " + columna + " DROP NOT NULL");
+            } catch (Exception e) {
+                log.warn("No se pudo permitir materias sin {}: {}", columna, e.getMessage());
+            }
+        }
     }
 
     /**

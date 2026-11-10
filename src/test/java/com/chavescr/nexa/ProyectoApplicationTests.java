@@ -33,7 +33,8 @@ import com.chavescr.nexa.dto.VistaEscala;
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.DiaLaboral;
-import com.chavescr.nexa.entity.DistribucionPorcentual;
+import com.chavescr.nexa.entity.CicloEducativo;
+import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.EscalaNotas;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Materia;
@@ -148,6 +149,11 @@ class ProyectoApplicationTests {
 		context.setVariable("configJornada", configJornada);
 		context.setVariable("escalaNotas", EscalaNotas.predeterminada());
 		context.setVariable("rebajaConducta", RebajaConducta.predeterminada());
+		context.setVariable("ciclos", CicloEducativo.values());
+		context.setVariable("cicloSeleccionado", CicloEducativo.TERCER_CICLO);
+		Map<CicloEducativo, Long> seccionesPorCiclo = new java.util.EnumMap<>(CicloEducativo.class);
+		seccionesPorCiclo.put(CicloEducativo.TERCER_CICLO, 3L);
+		context.setVariable("seccionesPorCiclo", seccionesPorCiclo);
 		context.setVariable("franja", configJornada.franjas().get(1));
 		context.setVariable("diasCatalogo", DiaLaboral.CATALOGO);
 		context.setVariable("horario", Map.of("1-LUNES", List.of(leccion)));
@@ -204,12 +210,18 @@ class ProyectoApplicationTests {
 		String escalaRenderizada = templateEngine.process(
 				"configuracion-institucional/escala-notas/escala-notas", context);
 		assertTrue(escalaRenderizada.contains("/configuracion-institucional/escala-notas"));
-		assertTrue(escalaRenderizada.contains("/configuracion-institucional/escala-notas/rebajas"));
-		assertTrue(escalaRenderizada.contains("Guardar escala"));
-		assertTrue(escalaRenderizada.contains("Guardar rebajas"));
+		assertFalse(escalaRenderizada.contains("/configuracion-institucional/escala-notas/rebajas"));
+		assertTrue(escalaRenderizada.contains("Guardar cambios"));
+		assertTrue(escalaRenderizada.contains("name=\"ciclo\" value=\"TERCER_CICLO\""));
+		assertTrue(escalaRenderizada.contains("Cuarto Ciclo"));
+		assertTrue(escalaRenderizada.contains("3 secciones"));
+		assertFalse(escalaRenderizada.contains("Guardar escala"));
+		assertFalse(escalaRenderizada.contains("Guardar rebajas"));
 		assertTrue(escalaRenderizada.contains("data-rebajas"));
 		assertTrue(escalaRenderizada.contains("data-quien-puntos-boleta=\"PROFESOR_GUIA\""));
-		assertTrue(escalaRenderizada.contains("data-destino-rebaja=\"CONDUCTA\""));
+		assertTrue(escalaRenderizada.contains("data-tardias-por-ausencia=\"2\""));
+		assertFalse(escalaRenderizada.contains("destinoRebajaAsistencia"));
+		assertTrue(escalaRenderizada.contains("Cada tardía injustificada cuenta como"));
 		assertTrue(escalaRenderizada.contains("Excelente"));
 		assertTrue(escalaRenderizada.contains("data-nota-aprobacion=\"70\""));
 	}
@@ -265,39 +277,41 @@ class ProyectoApplicationTests {
 	}
 
 	@Test
-	void distribucionPideLaAsistenciaSoloSiRebajaElComponente() {
-		PeriodoAcademico periodo = new PeriodoAcademico();
-		periodo.setId(1L);
-		periodo.setCodigo("2026-II");
-
-		Materia materia = new Materia();
-		materia.setId(1L);
-		materia.setNombre("Ciencias");
-
-		DistribucionPorcentual distribucion = new DistribucionPorcentual();
-		distribucion.setCotidiano(40);
-		distribucion.setTareas(15);
-		distribucion.setProyectos(20);
-		distribucion.setExamenes(20);
-		distribucion.setAsistencia(5);
+	void componentesDeEvaluacionMuestranPorcentajesYAvisoDeAsistencia() {
+		ComponenteEvaluacion componente = new ComponenteEvaluacion();
+		componente.setId(1L);
+		componente.setNombre("III Ciclo — Básicas");
+		componente.setDescripcion("Art. 41 a)");
+		componente.setCotidiano(45);
+		componente.setTareas(10);
+		componente.setProyecto(0);
+		componente.setPruebas(40);
+		componente.setAsistencia(5);
 
 		Context context = new Context();
-		context.setVariable("periodos", List.of(periodo));
-		context.setVariable("materias", List.of(materia));
-		context.setVariable("periodoId", 1L);
-		context.setVariable("materiaId", 1L);
-		context.setVariable("distribucion", distribucion);
+		context.setVariable("componentesEvaluacion", List.of(componente));
+		context.setVariable("materiasPorComponente", Map.of(1L, 18L));
+		context.setVariable("componente", componente);
+		context.setVariable("materiasDelComponente", 18L);
 
-		context.setVariable("conAsistencia", true);
-		String conAsistencia = templateEngine.process("gestion-academica/distribucion/distribucion", context);
-		assertTrue(conAsistencia.contains("name=\"asistencia\""));
-		assertTrue(conAsistencia.contains("data-asistencia=\"5\""));
+		context.setVariable("asistenciaCuenta", true);
+		String tabla = templateEngine.process("configuracion-institucional/componentes/componentes", context);
+		assertTrue(tabla.contains("III Ciclo — Básicas"));
+		assertTrue(tabla.contains("Art. 41 a)"));
+		assertTrue(tabla.contains(">45%<"));
+		assertTrue(tabla.contains(">—<"));
+		assertTrue(tabla.contains(">100%<"));
+		assertTrue(tabla.contains(">18<"));
+		assertFalse(tabla.contains("rebajan la conducta"));
 
-		context.setVariable("conAsistencia", false);
-		String sinAsistencia = templateEngine.process("gestion-academica/distribucion/distribucion", context);
-		assertFalse(sinAsistencia.contains("name=\"asistencia\""));
-		assertTrue(sinAsistencia.contains("data-asistencia=\"0\""));
-		assertTrue(sinAsistencia.contains("Las ausencias y tardías rebajan la conducta"));
+		String formulario = templateEngine.process("configuracion-institucional/componentes/formulario", context);
+		assertTrue(formulario.contains("name=\"cotidiano\""));
+		assertTrue(formulario.contains("value=\"45\""));
+		assertTrue(formulario.contains("18 materias"));
+
+		context.setVariable("asistenciaCuenta", false);
+		String sinAsistencia = templateEngine.process("configuracion-institucional/componentes/componentes", context);
+		assertTrue(sinAsistencia.contains("rebajan la conducta"));
 	}
 
 	@Test

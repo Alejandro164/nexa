@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Aula;
+import com.chavescr.nexa.entity.CicloEducativo;
+import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
 import com.chavescr.nexa.entity.HorarioLeccion;
 import com.chavescr.nexa.entity.Direccion;
@@ -30,7 +32,6 @@ import com.chavescr.nexa.repository.MateriaRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 import com.chavescr.nexa.repository.TipoAulaRepository;
-import com.chavescr.nexa.repository.TipoMateriaRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 
 @Service
@@ -41,7 +42,8 @@ public class ConfiguracionAcademicaService {
     private final PeriodoAcademicoRepository periodoRepository;
     private final NivelAcademicoRepository nivelRepository;
     private final MateriaRepository materiaRepository;
-    private final TipoMateriaRepository tipoMateriaRepository;
+    private final TipoMateriaService tipoMateriaService;
+    private final ComponenteEvaluacionService componenteEvaluacionService;
     private final TipoAulaRepository tipoAulaRepository;
     private final HorarioLeccionRepository horarioRepository;
     private final UsuarioRepository usuarioRepository;
@@ -57,7 +59,8 @@ public class ConfiguracionAcademicaService {
             PeriodoAcademicoRepository periodoRepository,
             NivelAcademicoRepository nivelRepository,
             MateriaRepository materiaRepository,
-            TipoMateriaRepository tipoMateriaRepository,
+            TipoMateriaService tipoMateriaService,
+            ComponenteEvaluacionService componenteEvaluacionService,
             TipoAulaRepository tipoAulaRepository,
             HorarioLeccionRepository horarioRepository,
             UsuarioRepository usuarioRepository,
@@ -72,7 +75,8 @@ public class ConfiguracionAcademicaService {
         this.periodoRepository = periodoRepository;
         this.nivelRepository = nivelRepository;
         this.materiaRepository = materiaRepository;
-        this.tipoMateriaRepository = tipoMateriaRepository;
+        this.tipoMateriaService = tipoMateriaService;
+        this.componenteEvaluacionService = componenteEvaluacionService;
         this.tipoAulaRepository = tipoAulaRepository;
         this.horarioRepository = horarioRepository;
         this.usuarioRepository = usuarioRepository;
@@ -170,6 +174,11 @@ public class ConfiguracionAcademicaService {
         nivel.setDireccion(obtenerDireccion(direccionId));
         nivel.setGrado(datos.getGrado());
         nivel.setSeccion(datos.getSeccion().trim().toUpperCase());
+        CicloEducativo ciclo = datos.getCiclo() != null ? datos.getCiclo() : CicloEducativo.deGrado(datos.getGrado());
+        if (ciclo == null) {
+            throw new IllegalArgumentException("Elige el ciclo de la sección");
+        }
+        nivel.setCiclo(ciclo);
         nivel.setActivo(Boolean.TRUE.equals(datos.getActivo()));
         return nivelRepository.save(nivel);
     }
@@ -192,9 +201,12 @@ public class ConfiguracionAcademicaService {
         return materiaRepository.findByDireccionIdAndActivoTrueOrderByNombreAsc(direccionId);
     }
 
-    @Transactional(readOnly = true)
-    public List<TipoMateria> listarTiposMateriaActivos() {
-        return tipoMateriaRepository.findByActivoTrueOrderByOrdenAscNombreAsc();
+    public List<TipoMateria> listarTiposMateriaActivos(Long direccionId) {
+        return tipoMateriaService.listarActivos(direccionId);
+    }
+
+    public List<ComponenteEvaluacion> listarComponentesEvaluacionActivos(Long direccionId) {
+        return componenteEvaluacionService.listarActivos(direccionId);
     }
 
     @Transactional(readOnly = true)
@@ -205,24 +217,21 @@ public class ConfiguracionAcademicaService {
 
     public Materia guardarMateria(Long direccionId, Materia datos) {
         Materia materia = datos.getId() == null ? new Materia() : obtenerMateria(direccionId, datos.getId());
-        TipoMateria tipoMateria = resolverTipoMateria(datos);
+        TipoMateria tipoMateria = resolverTipoMateria(direccionId, datos);
         materia.setDireccion(obtenerDireccion(direccionId));
         materia.setNombre(datos.getNombre().trim());
         materia.setTipoMateria(tipoMateria);
         materia.setTipo(tipoMateria.getNombre());
+        Long componenteId = datos.getComponenteEvaluacion() != null ? datos.getComponenteEvaluacion().getId() : null;
+        materia.setComponenteEvaluacion(componenteEvaluacionService.obtenerActivo(direccionId, componenteId));
         materia.setColor(normalizarColor(datos.getColor()));
         materia.setActivo(Boolean.TRUE.equals(datos.getActivo()));
         return materiaRepository.save(materia);
     }
 
-    private TipoMateria resolverTipoMateria(Materia datos) {
+    private TipoMateria resolverTipoMateria(Long direccionId, Materia datos) {
         Long tipoMateriaId = datos.getTipoMateria() != null ? datos.getTipoMateria().getId() : null;
-        if (tipoMateriaId == null) {
-            throw new IllegalArgumentException("Debe seleccionar un tipo de materia");
-        }
-        return tipoMateriaRepository.findById(tipoMateriaId)
-                .filter(tipo -> Boolean.TRUE.equals(tipo.getActivo()))
-                .orElseThrow(() -> new IllegalArgumentException("Tipo de materia no encontrado"));
+        return tipoMateriaService.obtenerActivo(direccionId, tipoMateriaId);
     }
 
     public void eliminarMateria(Long direccionId, Long id) {

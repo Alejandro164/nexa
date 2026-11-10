@@ -18,14 +18,18 @@ import jakarta.persistence.Table;
  * Una configuración por dirección. {@code reglas} guarda, en este orden, cuántos
  * registros forman un grupo ({@code cada}) y cuántos puntos baja la nota por cada
  * grupo completo ({@code puntos}). Cero puntos significa que ese registro no rebaja.
- * Las llamadas de atención siempre rebajan la conducta: {@code destinoRebajaAsistencia}
- * solo decide a dónde van las ausencias y tardías.
+ * Las llamadas de atención rebajan la conducta. Las ausencias y tardías van siempre al
+ * rubro Asistencia de la nota, con la tabla del artículo 37 del Reglamento de Evaluación;
+ * {@code destinoRebajaAsistencia} queda en COMPONENTE y solo se conserva por compatibilidad.
  */
 @Entity
 @Table(name = "rebajas_conducta")
 public class RebajaConducta {
 
     public static final int MAX_REGLAS = 500;
+
+    /** Por defecto cada tardía injustificada es media ausencia (dos tardías forman una ausencia). */
+    public static final int TARDIAS_POR_AUSENCIA_PREDETERMINADO = 2;
 
     public static final String REGLAS_PREDETERMINADAS = reglasPredeterminadas();
 
@@ -46,9 +50,14 @@ public class RebajaConducta {
     private QuienRegistraPuntosBoleta quienRegistraPuntosBoleta = QuienRegistraPuntosBoleta.PROFESOR_GUIA;
 
     @Enumerated(EnumType.STRING)
-    @ColumnDefault("'CONDUCTA'")
+    @ColumnDefault("'COMPONENTE'")
     @Column(nullable = false, length = 30)
-    private DestinoRebajaAsistencia destinoRebajaAsistencia = DestinoRebajaAsistencia.CONDUCTA;
+    private DestinoRebajaAsistencia destinoRebajaAsistencia = DestinoRebajaAsistencia.COMPONENTE;
+
+    /** Tardías injustificadas que forman una ausencia: 2 = media ausencia cada una, 1 = una ausencia. */
+    @ColumnDefault("2")
+    @Column(nullable = false)
+    private Integer tardiasPorAusencia = TARDIAS_POR_AUSENCIA_PREDETERMINADO;
 
     public static RebajaConducta predeterminada() {
         return new RebajaConducta();
@@ -100,6 +109,14 @@ public class RebajaConducta {
 
     public void setQuienRegistraPuntosBoleta(QuienRegistraPuntosBoleta quienRegistraPuntosBoleta) {
         this.quienRegistraPuntosBoleta = quienRegistraPuntosBoleta;
+    }
+
+    public Integer getTardiasPorAusencia() {
+        return tardiasPorAusencia == null ? TARDIAS_POR_AUSENCIA_PREDETERMINADO : tardiasPorAusencia;
+    }
+
+    public void setTardiasPorAusencia(Integer tardiasPorAusencia) {
+        this.tardiasPorAusencia = tardiasPorAusencia;
     }
 
     public DestinoRebajaAsistencia getDestinoRebajaAsistencia() {

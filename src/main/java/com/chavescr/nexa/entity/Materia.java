@@ -38,6 +38,11 @@ public class Materia {
     @Column(nullable = false, length = 60)
     private String tipo;
 
+    /** Define los porcentajes de cada rubro en la nota. Nullable en el esquema solo para la migración. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "componente_evaluacion_id")
+    private ComponenteEvaluacion componenteEvaluacion;
+
     @Column(nullable = false, length = 7)
     private String color = "#2d5a87";
 
@@ -90,6 +95,14 @@ public class Materia {
 
     public void setTipoMateria(TipoMateria tipoMateria) {
         this.tipoMateria = tipoMateria;
+    }
+
+    public ComponenteEvaluacion getComponenteEvaluacion() {
+        return componenteEvaluacion;
+    }
+
+    public void setComponenteEvaluacion(ComponenteEvaluacion componenteEvaluacion) {
+        this.componenteEvaluacion = componenteEvaluacion;
     }
 
     public String getTipo() {

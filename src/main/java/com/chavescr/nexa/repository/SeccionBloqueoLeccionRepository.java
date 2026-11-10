@@ -21,4 +21,6 @@ public interface SeccionBloqueoLeccionRepository extends JpaRepository<SeccionBl
     void deleteByDireccionIdAndNivelId(Long direccionId, Long nivelId);
 
     void deleteByDireccionIdAndPeriodoId(Long direccionId, Long periodoId);
+
+    boolean existsByTipoMateriaId(Long tipoMateriaId);
 }
