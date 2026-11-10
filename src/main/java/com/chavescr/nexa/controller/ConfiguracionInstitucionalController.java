@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,11 +17,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.DiaLaboral;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
+import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.ConfiguracionDireccionService;
 import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.RebajaConductaService;
 import com.chavescr.nexa.service.TipoComponenteService;
+import com.chavescr.nexa.service.TipoMateriaService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,6 +40,9 @@ public class ConfiguracionInstitucionalController {
     private TipoComponenteService tipoComponenteService;
 
     @Autowired
+    private TipoMateriaService tipoMateriaService;
+
+    @Autowired
     private EscalaNotasService escalaNotasService;
 
     @Autowired
@@ -47,6 +53,7 @@ public class ConfiguracionInstitucionalController {
         Long direccionId = requerirDireccion(session);
         cargarJornada(model, direccionId);
         cargarComponentes(model, direccionId);
+        cargarTiposMateria(model, direccionId);
         cargarEscala(model, direccionId);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "configuracion-institucional/index :: htmx-content";
@@ -135,6 +142,59 @@ public class ConfiguracionInstitucionalController {
         return "configuracion-institucional/componentes/componentes :: content";
     }
 
+    @GetMapping("/tipos-materia")
+    public String tiposMateria(Model model, HttpSession session) {
+        cargarTiposMateria(model, requerirDireccion(session));
+        return "configuracion-institucional/tipos-materia/tipos-materia :: content";
+    }
+
+    @GetMapping("/tipos-materia/form")
+    public String nuevoTipoMateria(Model model) {
+        model.addAttribute("tipoMateria", new TipoMateria());
+        return "configuracion-institucional/tipos-materia/formulario :: form-content";
+    }
+
+    @GetMapping("/tipos-materia/form/{id}")
+    public String editarTipoMateria(@PathVariable Long id, Model model, HttpSession session) {
+        model.addAttribute("tipoMateria", tipoMateriaService.obtener(requerirDireccion(session), id));
+        return "configuracion-institucional/tipos-materia/formulario :: form-content";
+    }
+
+    @PostMapping("/tipos-materia")
+    public String guardarTipoMateria(@RequestParam(required = false) Long id, @RequestParam String nombre,
+            @RequestParam(defaultValue = "false") boolean activo,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            if (id == null) {
+                tipoMateriaService.crear(direccionId, nombre, activo);
+            } else {
+                tipoMateriaService.actualizar(direccionId, id, nombre, activo);
+            }
+            response.setHeader("HX-Trigger",
+                    "{\"institucionalGuardado\":{\"mensaje\":\"Tipo de materia guardado\",\"cerrarModal\":true}}");
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
+        }
+        cargarTiposMateria(model, direccionId);
+        return "configuracion-institucional/tipos-materia/tipos-materia :: content";
+    }
+
+    @DeleteMapping("/tipos-materia/{id}")
+    public String eliminarTipoMateria(@PathVariable Long id,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            tipoMateriaService.eliminar(direccionId, id);
+            response.setHeader("HX-Trigger",
+                    "{\"institucionalGuardado\":{\"mensaje\":\"Tipo de materia eliminado\"}}");
+        } catch (IllegalArgumentException e) {
+            notificarError(response, e.getMessage());
+        }
+        cargarTiposMateria(model, direccionId);
+        return "configuracion-institucional/tipos-materia/tipos-materia :: content";
+    }
+
     @GetMapping("/escala-notas")
     public String escalaNotas(Model model, HttpSession session) {
         cargarEscala(model, requerirDireccion(session));
@@ -185,6 +245,10 @@ public class ConfiguracionInstitucionalController {
 
     private void cargarComponentes(Model model, Long direccionId) {
         model.addAttribute("tiposComponente", tipoComponenteService.listar(direccionId));
+    }
+
+    private void cargarTiposMateria(Model model, Long direccionId) {
+        model.addAttribute("tiposMateria", tipoMateriaService.listar(direccionId));
     }
 
     private void cargarEscala(Model model, Long direccionId) {

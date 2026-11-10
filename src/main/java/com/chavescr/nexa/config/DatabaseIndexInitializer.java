@@ -55,6 +55,22 @@ public class DatabaseIndexInitializer {
         eliminarExtraclase();
         copiarRubrosAComponentes();
         permitirOficiosSinDireccionDestinataria();
+        permitirMateriasSinCodigoNiArea();
+    }
+
+    /**
+     * materias.codigo y materias.area dejaron de ser obligatorias (el formulario ya no las pide y la entidad
+     * las declara opcionales), pero Hibernate (ddl-auto=update) no quita un NOT NULL ya existente: sin esto,
+     * crear una materia falla con "null value in column area".
+     */
+    private void permitirMateriasSinCodigoNiArea() {
+        for (String columna : new String[] { "codigo", "area" }) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE materias ALTER COLUMN " + columna + " DROP NOT NULL");
+            } catch (Exception e) {
+                log.warn("No se pudo permitir materias sin {}: {}", columna, e.getMessage());
+            }
+        }
     }
 
     /**

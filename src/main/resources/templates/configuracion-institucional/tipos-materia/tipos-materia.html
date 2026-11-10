@@ -1,0 +1,54 @@
+<div th:fragment="content" id="institucional-tipos-materia-panel" xmlns:th="http://www.thymeleaf.org">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Tipos de materia</h3>
+                <p class="academic-help">Los tipos quedan solo en esta dirección. Se usan al registrar materias y al bloquear lecciones en el horario.</p>
+            </div>
+            <button class="btn-primary"
+                    hx-get="/configuracion-institucional/tipos-materia/form"
+                    hx-target="#modal-container"
+                    onclick="abrirModalInstitucional()">+ Nuevo tipo</button>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${tiposMateria == null or tiposMateria.empty}">
+                        <td colspan="3" class="table-empty">No hay tipos de materia registrados.</td>
+                    </tr>
+                    <tr th:each="tipo : ${tiposMateria}">
+                        <td th:text="${tipo.nombre}">Básica</td>
+                        <td>
+                            <span th:if="${tipo.activo}" class="badge badge-success">Activo</span>
+                            <span th:unless="${tipo.activo}" class="badge badge-secondary">Inactivo</span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-xs btn-ghost"
+                                        th:attr="hx-get=|/configuracion-institucional/tipos-materia/form/${tipo.id}|"
+                                        hx-target="#modal-container"
+                                        onclick="abrirModalInstitucional()"
+                                        title="Editar">✏️</button>
+                                <button type="button" class="btn-xs btn-danger-ghost"
+                                        th:attr="data-delete-url=|/configuracion-institucional/tipos-materia/${tipo.id}|,
+                                                 data-delete-message=|¿Deseas eliminar el tipo de materia ${tipo.nombre}? Solo se puede eliminar si ninguna materia ni lección bloqueada lo usa.|"
+                                        data-delete-title="Eliminar tipo de materia"
+                                        data-delete-target="#institucional-tipos-materia-panel"
+                                        data-delete-swap="outerHTML"
+                                        onclick="abrirConfirmacionAcademica(this)"
+                                        title="Eliminar">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -141,132 +141,6 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 1rem;
             }
-            .academic-native-select {
-                position: absolute !important;
-                width: 1px !important;
-                height: 1px !important;
-                padding: 0 !important;
-                margin: -1px !important;
-                overflow: hidden !important;
-                clip: rect(0, 0, 0, 0) !important;
-                white-space: nowrap !important;
-                border: 0 !important;
-            }
-            .academic-select {
-                position: relative;
-                width: 100%;
-            }
-            .academic-select-trigger {
-                width: 100%;
-                min-height: 38px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 1rem;
-                padding: 0.5rem 10px 0.5rem 0.75rem;
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                background: var(--surface-solid);
-                color: var(--text-primary);
-                font-family: inherit;
-                font-size: 0.875rem;
-                text-align: left;
-                cursor: pointer;
-                transition: border-color 0.2s, box-shadow 0.2s;
-            }
-            .academic-select-trigger:hover {
-                border-color: #cbd5e1;
-            }
-            .academic-select.open .academic-select-trigger,
-            .academic-select-trigger:focus {
-                border-color: var(--primary);
-                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
-                outline: none;
-            }
-            .academic-select-placeholder {
-                color: var(--text-light);
-            }
-            .academic-select-arrow {
-                width: 16px;
-                height: 16px;
-                flex: 0 0 16px;
-                color: var(--text-secondary);
-                transition: transform 0.2s;
-            }
-            .academic-select.open .academic-select-arrow {
-                transform: rotate(180deg);
-            }
-            .academic-select-options {
-                position: absolute;
-                z-index: 10020;
-                top: calc(100% + 6px);
-                left: 0;
-                right: 0;
-                max-height: 240px;
-                overflow-y: auto;
-                scrollbar-width: thin;
-                scrollbar-color: #cbd5e1 #ffffff;
-                padding: 0.35rem;
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                background: white;
-                box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
-                visibility: hidden;
-                opacity: 0;
-                transform: translateY(-7px) scale(0.98);
-                transform-origin: top center;
-                pointer-events: none;
-                transition:
-                    opacity 150ms ease,
-                    transform 180ms cubic-bezier(.22, 1, .36, 1),
-                    visibility 0s linear 180ms;
-            }
-            .academic-select-options::-webkit-scrollbar {
-                width: 12px;
-            }
-            .academic-select-options::-webkit-scrollbar-track {
-                background: #ffffff;
-            }
-            .academic-select-options::-webkit-scrollbar-thumb {
-                background: #cbd5e1;
-                background-clip: padding-box;
-                border-left: 3px solid transparent;
-                border-right: 5px solid transparent;
-                border-radius: 999px;
-            }
-            .academic-select-options::-webkit-scrollbar-thumb:hover {
-                background-color: #94a3b8;
-            }
-            .academic-select.open .academic-select-options {
-                visibility: visible;
-                opacity: 1;
-                transform: translateY(0) scale(1);
-                pointer-events: auto;
-                transition-delay: 0s;
-            }
-            .academic-select-option {
-                width: 100%;
-                padding: 0.6rem 0.7rem;
-                border: 0;
-                border-radius: 7px;
-                background: transparent;
-                color: var(--text-primary);
-                font-family: inherit;
-                font-size: 0.84rem;
-                text-align: left;
-                cursor: pointer;
-            }
-            .academic-select-option:hover,
-            .academic-select-option:focus {
-                background: var(--input-bg);
-                color: var(--primary);
-                outline: none;
-            }
-            .academic-select-option.selected {
-                background: rgba(45, 90, 135, 0.1);
-                color: var(--primary);
-                font-weight: 700;
-            }
             .subject-chip {
                 --subject-color: #2d5a87;
                 display: inline-flex;
@@ -860,15 +734,6 @@
                 htmx.ajax('GET', url, {target: '#subgrupos-panel', swap: 'outerHTML'});
             }
 
-            function cerrarSelectoresAcademicos(excepto) {
-                document.querySelectorAll('.academic-select.open').forEach(function (select) {
-                    if (select !== excepto) {
-                        select.classList.remove('open');
-                        select.querySelector('.academic-select-trigger').setAttribute('aria-expanded', 'false');
-                    }
-                });
-            }
-
             function abrirSelectorColorAcademico(trigger) {
                 var picker = trigger.closest('.academic-color-picker');
                 cerrarSelectoresAcademicos();
@@ -904,101 +769,19 @@
                 });
             }
 
-            function inicializarSelectoresAcademicos(root) {
-                var scope = root || document;
-                scope.querySelectorAll('select.form-input:not([data-academic-select])').forEach(function (nativeSelect) {
-                    nativeSelect.dataset.academicSelect = 'true';
-                    nativeSelect.classList.add('academic-native-select');
-
-                    var component = document.createElement('div');
-                    component.className = 'academic-select';
-
-                    var trigger = document.createElement('button');
-                    trigger.type = 'button';
-                    trigger.className = 'academic-select-trigger';
-                    trigger.setAttribute('aria-haspopup', 'listbox');
-                    trigger.setAttribute('aria-expanded', 'false');
-
-                    var label = document.createElement('span');
-                    var arrow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    arrow.setAttribute('class', 'academic-select-arrow');
-                    arrow.setAttribute('viewBox', '0 0 24 24');
-                    arrow.setAttribute('fill', 'none');
-                    arrow.setAttribute('stroke', 'currentColor');
-                    arrow.setAttribute('stroke-width', '2');
-                    arrow.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
-                    trigger.append(label, arrow);
-
-                    var options = document.createElement('div');
-                    options.className = 'academic-select-options';
-                    options.setAttribute('role', 'listbox');
-
-                    function actualizarSeleccion() {
-                        var selected = nativeSelect.options[nativeSelect.selectedIndex];
-                        label.textContent = selected ? selected.textContent.trim() : '';
-                        label.classList.toggle('academic-select-placeholder', !selected || !selected.value);
-                        options.querySelectorAll('.academic-select-option').forEach(function (option) {
-                            option.classList.toggle('selected', option.dataset.value === nativeSelect.value);
-                            option.setAttribute('aria-selected', String(option.dataset.value === nativeSelect.value));
-                        });
-                    }
-
-                    Array.from(nativeSelect.options).forEach(function (nativeOption) {
-                        if (nativeOption.hidden || nativeOption.disabled || !nativeOption.value) {
-                            return;
-                        }
-                        var option = document.createElement('button');
-                        option.type = 'button';
-                        option.className = 'academic-select-option';
-                        option.dataset.value = nativeOption.value;
-                        option.textContent = nativeOption.textContent.trim();
-                        option.setAttribute('role', 'option');
-                        option.addEventListener('click', function () {
-                            nativeSelect.value = option.dataset.value;
-                            actualizarSeleccion();
-                            component.classList.remove('open');
-                            trigger.setAttribute('aria-expanded', 'false');
-                            nativeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                        });
-                        options.appendChild(option);
-                    });
-
-                    trigger.addEventListener('click', function () {
-                        var abrir = !component.classList.contains('open');
-                        cerrarSelectoresAcademicos(component);
-                        component.classList.toggle('open', abrir);
-                        trigger.setAttribute('aria-expanded', String(abrir));
-                    });
-
-                    nativeSelect.addEventListener('change', actualizarSeleccion);
-                    nativeSelect.parentNode.insertBefore(component, nativeSelect);
-                    component.append(nativeSelect, trigger, options);
-                    actualizarSeleccion();
-                });
-            }
-
-            if (!window.academicSelectEventsRegistered) {
-                document.addEventListener('click', function (event) {
-                    if (!event.target.closest('.academic-select')) {
-                        cerrarSelectoresAcademicos();
-                    }
-                });
-                document.addEventListener('keydown', function (event) {
-                    if (event.key === 'Escape') {
-                        cerrarSelectoresAcademicos();
-                    }
-                });
-                document.addEventListener('DOMContentLoaded', function () {
-                    inicializarSelectoresAcademicos(document);
-                    inicializarSelectoresColorAcademicos(document);
-                });
+            // El selector personalizado (inicializarSelectoresAcademicos / cerrarSelectoresAcademicos) es el
+            // global de static/js/componentes.js: abre la lista colgada de <body> para que el modal no la recorte.
+            if (!window.academicColorEventsRegistered) {
                 document.addEventListener('htmx:load', function (event) {
-                    inicializarSelectoresAcademicos(event.detail.elt);
                     inicializarSelectoresColorAcademicos(event.detail.elt);
                 });
-                window.academicSelectEventsRegistered = true;
+                window.academicColorEventsRegistered = true;
             }
-            inicializarSelectoresAcademicos(document);
+            // En una carga completa este script corre antes que componentes.js (defer); en ese caso
+            // componentes.js inicializa los selectores por su cuenta al cargar.
+            if (typeof inicializarSelectoresAcademicos === 'function') {
+                inicializarSelectoresAcademicos(document);
+            }
             inicializarSelectoresColorAcademicos(document);
 
             function abrirConfirmacionAcademica(trigger) {

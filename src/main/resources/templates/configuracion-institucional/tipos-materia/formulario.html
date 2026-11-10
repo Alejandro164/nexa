@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="form-content">
+    <div class="modal-backdrop">
+        <div class="modal-dialog">
+            <div class="modal-loading-overlay htmx-indicator" id="modal-loading-overlay">
+                <div class="spinner"></div>
+                <span>Cargando...</span>
+            </div>
+            <div class="modal-header">
+                <h3 class="modal-title"
+                    th:text="${tipoMateria.id == null ? 'Registrar tipo de materia' : 'Editar tipo de materia'}">Tipo de materia</h3>
+                <button type="button" class="close-btn" onclick="cerrarModalInstitucional()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form hx-post="/configuracion-institucional/tipos-materia"
+                      hx-target="#institucional-tipos-materia-panel"
+                      hx-swap="outerHTML"
+                      hx-indicator="#modal-loading-overlay">
+                    <input type="hidden" name="id" th:value="${tipoMateria.id}">
+                    <div class="form-group">
+                        <label class="form-label" for="tipo-materia-nombre">Nombre</label>
+                        <input class="form-input" id="tipo-materia-nombre" name="nombre" maxlength="60" required
+                               th:value="${tipoMateria.nombre}" placeholder="Ej. Técnica, idioma, optativa">
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="custom-checkbox" name="activo"
+                                   th:checked="${tipoMateria.id == null or tipoMateria.activo}">
+                            <span class="custom-checkbox-control">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </span>
+                            <span>Tipo activo</span>
+                        </label>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="cerrarModalInstitucional()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar tipo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

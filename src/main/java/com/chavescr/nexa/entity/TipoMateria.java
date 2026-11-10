@@ -2,23 +2,34 @@ package com.chavescr.nexa.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "tipos_materia")
+@Table(name = "tipos_materia", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_tipo_materia_direccion_nombre", columnNames = { "direccion_id", "nombre" })
+})
 public class TipoMateria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 30)
-    private String codigo;
+    /**
+     * Dirección dueña del tipo. Nullable en el esquema solo para que ddl-auto=update pueda agregar la
+     * columna a una tabla con filas; TipoMateriaService siempre la asigna.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "direccion_id")
+    private Direccion direccion;
 
-    @Column(nullable = false, unique = true, length = 60)
+    @Column(nullable = false, length = 60)
     private String nombre;
 
     @Column(nullable = false)
@@ -35,12 +46,12 @@ public class TipoMateria {
         this.id = id;
     }
 
-    public String getCodigo() {
-        return codigo;
+    public Direccion getDireccion() {
+        return direccion;
     }
 
-    public void setCodigo(String codigo) {
-        this.codigo = codigo;
+    public void setDireccion(Direccion direccion) {
+        this.direccion = direccion;
     }
 
     public String getNombre() {

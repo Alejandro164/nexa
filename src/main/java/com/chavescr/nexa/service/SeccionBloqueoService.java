@@ -14,7 +14,6 @@ import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.PeriodoAcademicoRepository;
 import com.chavescr.nexa.repository.SeccionBloqueoLeccionRepository;
-import com.chavescr.nexa.repository.TipoMateriaRepository;
 
 @Service
 @Transactional
@@ -25,7 +24,7 @@ public class SeccionBloqueoService {
     private final NivelAcademicoRepository nivelRepository;
     private final PeriodoAcademicoRepository periodoRepository;
     private final DireccionRepository direccionRepository;
-    private final TipoMateriaRepository tipoMateriaRepository;
+    private final TipoMateriaService tipoMateriaService;
     private final ConfiguracionDireccionService configuracionDireccionService;
 
     public SeccionBloqueoService(SeccionBloqueoLeccionRepository bloqueoRepository,
@@ -33,14 +32,14 @@ public class SeccionBloqueoService {
             NivelAcademicoRepository nivelRepository,
             PeriodoAcademicoRepository periodoRepository,
             DireccionRepository direccionRepository,
-            TipoMateriaRepository tipoMateriaRepository,
+            TipoMateriaService tipoMateriaService,
             ConfiguracionDireccionService configuracionDireccionService) {
         this.bloqueoRepository = bloqueoRepository;
         this.horarioRepository = horarioRepository;
         this.nivelRepository = nivelRepository;
         this.periodoRepository = periodoRepository;
         this.direccionRepository = direccionRepository;
-        this.tipoMateriaRepository = tipoMateriaRepository;
+        this.tipoMateriaService = tipoMateriaService;
         this.configuracionDireccionService = configuracionDireccionService;
     }
 
@@ -100,9 +99,7 @@ public class SeccionBloqueoService {
                 .orElseThrow(() -> new IllegalArgumentException("Nivel no encontrado")));
         bloqueo.setPeriodo(periodoRepository.findByIdAndDireccionId(periodoId, direccionId)
                 .orElseThrow(() -> new IllegalArgumentException("Período no encontrado")));
-        bloqueo.setTipoMateria(tipoMateriaRepository.findById(tipoMateriaId)
-                .filter(tipo -> Boolean.TRUE.equals(tipo.getActivo()))
-                .orElseThrow(() -> new IllegalArgumentException("Tipo de materia no encontrado")));
+        bloqueo.setTipoMateria(tipoMateriaService.obtenerActivo(direccionId, tipoMateriaId));
         bloqueo.setDia(dia);
         bloqueo.setNumeroLeccion(numeroLeccion);
         bloqueoRepository.save(bloqueo);
