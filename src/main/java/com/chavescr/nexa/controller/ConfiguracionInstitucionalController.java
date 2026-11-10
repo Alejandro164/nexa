@@ -23,6 +23,7 @@ import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.ComponenteEvaluacionService;
 import com.chavescr.nexa.service.ConfiguracionDireccionService;
+import com.chavescr.nexa.service.EscalaEvaluacionService;
 import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.RebajaConductaService;
 import com.chavescr.nexa.service.TipoMateriaService;
@@ -46,6 +47,9 @@ public class ConfiguracionInstitucionalController {
 
     @Autowired
     private EscalaNotasService escalaNotasService;
+
+    @Autowired
+    private EscalaEvaluacionService escalaEvaluacionService;
 
     @Autowired
     private RebajaConductaService rebajaConductaService;
@@ -204,6 +208,7 @@ public class ConfiguracionInstitucionalController {
         return "configuracion-institucional/escala-notas/escala-notas :: content";
     }
 
+    /** Guarda la escala de notas y las rebajas juntas; si una no es válida, no se guarda ninguna. */
     @PostMapping("/escala-notas")
     public String guardarEscala(
             @RequestParam Integer notaMinima,
@@ -211,29 +216,16 @@ public class ConfiguracionInstitucionalController {
             @RequestParam Integer decimales,
             @RequestParam Integer notaAprobacion,
             @RequestParam String tramos,
-            Model model, HttpSession session, HttpServletResponse response) {
-        Long direccionId = requerirDireccion(session);
-        try {
-            escalaNotasService.guardar(direccionId, notaMinima, notaMaxima, decimales, notaAprobacion, tramos);
-            response.setHeader("HX-Trigger",
-                    "{\"institucionalGuardado\":{\"mensaje\":\"Escala de notas actualizada\"}}");
-        } catch (IllegalArgumentException e) {
-            notificarError(response, e.getMessage());
-        }
-        cargarEscala(model, direccionId);
-        return "configuracion-institucional/escala-notas/escala-notas :: content";
-    }
-
-    @PostMapping("/escala-notas/rebajas")
-    public String guardarRebajas(@RequestParam String rebajas,
+            @RequestParam String rebajas,
             @RequestParam QuienRegistraPuntosBoleta quienRegistraPuntosBoleta,
             @RequestParam DestinoRebajaAsistencia destinoRebajaAsistencia,
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
-            rebajaConductaService.guardar(direccionId, rebajas, quienRegistraPuntosBoleta, destinoRebajaAsistencia);
+            escalaEvaluacionService.guardar(direccionId, notaMinima, notaMaxima, decimales, notaAprobacion, tramos,
+                    rebajas, quienRegistraPuntosBoleta, destinoRebajaAsistencia);
             response.setHeader("HX-Trigger",
-                    "{\"institucionalGuardado\":{\"mensaje\":\"Rebajas actualizadas\"}}");
+                    "{\"institucionalGuardado\":{\"mensaje\":\"Escala de notas y rebajas actualizadas\"}}");
         } catch (IllegalArgumentException e) {
             notificarError(response, e.getMessage());
         }

@@ -204,9 +204,10 @@ class ProyectoApplicationTests {
 		String escalaRenderizada = templateEngine.process(
 				"configuracion-institucional/escala-notas/escala-notas", context);
 		assertTrue(escalaRenderizada.contains("/configuracion-institucional/escala-notas"));
-		assertTrue(escalaRenderizada.contains("/configuracion-institucional/escala-notas/rebajas"));
-		assertTrue(escalaRenderizada.contains("Guardar escala"));
-		assertTrue(escalaRenderizada.contains("Guardar rebajas"));
+		assertFalse(escalaRenderizada.contains("/configuracion-institucional/escala-notas/rebajas"));
+		assertTrue(escalaRenderizada.contains("Guardar cambios"));
+		assertFalse(escalaRenderizada.contains("Guardar escala"));
+		assertFalse(escalaRenderizada.contains("Guardar rebajas"));
 		assertTrue(escalaRenderizada.contains("data-rebajas"));
 		assertTrue(escalaRenderizada.contains("data-quien-puntos-boleta=\"PROFESOR_GUIA\""));
 		assertTrue(escalaRenderizada.contains("data-destino-rebaja=\"CONDUCTA\""));
