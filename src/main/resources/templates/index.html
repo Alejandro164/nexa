@@ -1755,6 +1755,9 @@
 
     <th:block th:replace="~{layout/toast :: toast}" />
 
+    <!-- Chat Asistente: solo si System Config lo activó en Configuración → Integraciones. -->
+    <th:block th:if="${asistenteDisponible}" th:insert="~{asistente/widget :: widget}"></th:block>
+
     <div id="modal-container" class="modal-overlay"></div>
 
     <div id="bitacora-overlay" class="bitacora-overlay" :class="{ 'is-open': bitacoraOpen }"

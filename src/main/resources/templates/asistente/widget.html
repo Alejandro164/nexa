@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+    <!-- Botón flotante y panel del Chat Asistente. Vive en el shell (index.html), fuera de .content-area,
+         así que sigue abierto al navegar entre módulos. -->
+    <div th:fragment="widget" class="asistente" x-data="asistenteChat()" @keydown.escape.window="cerrar()">
+        <style>
+            .asistente-boton {
+                position: fixed;
+                right: 24px;
+                bottom: 24px;
+                z-index: 900;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                border: none;
+                cursor: pointer;
+                color: #fff;
+                background: linear-gradient(135deg, #2d5a87, #7c3aed);
+                box-shadow: 0 10px 25px rgba(45, 90, 135, 0.35);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: transform 0.15s, box-shadow 0.15s;
+            }
+
+            .asistente-boton:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 14px 30px rgba(45, 90, 135, 0.4);
+            }
+
+            .asistente-boton:focus-visible {
+                outline: 3px solid rgba(124, 58, 237, 0.45);
+                outline-offset: 3px;
+            }
+
+            .asistente-boton svg {
+                width: 26px;
+                height: 26px;
+            }
+
+            .asistente-panel {
+                position: fixed;
+                right: 24px;
+                bottom: 92px;
+                z-index: 900;
+                width: 390px;
+                height: min(600px, calc(100vh - 120px));
+                background: #fff;
+                border: 1px solid var(--border-solid);
+                border-radius: 18px;
+                box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            @media (max-width: 520px) {
+                .asistente-panel {
+                    right: 12px;
+                    left: 12px;
+                    width: auto;
+                    bottom: 84px;
+                }
+
+                .asistente-boton {
+                    right: 16px;
+                    bottom: 16px;
+                }
+            }
+
+            .asistente-cabecera {
+                display: flex;
+                align-items: center;
+                gap: 0.7rem;
+                padding: 0.9rem 1rem;
+                color: #fff;
+                background: linear-gradient(135deg, #1e3a5f, #2d5a87 60%, #5b4bc4);
+            }
+
+            .asistente-cabecera-icono {
+                width: 34px;
+                height: 34px;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.16);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .asistente-cabecera-icono svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            .asistente-cabecera-texto {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .asistente-cabecera-titulo {
+                font-weight: 600;
+                font-size: 0.95rem;
+            }
+
+            .asistente-cabecera-sub {
+                font-size: 0.72rem;
+                color: rgba(255, 255, 255, 0.75);
+            }
+
+            .asistente-icono-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                border: none;
+                background: transparent;
+                color: rgba(255, 255, 255, 0.85);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .asistente-icono-btn:hover {
+                background: rgba(255, 255, 255, 0.14);
+                color: #fff;
+            }
+
+            .asistente-icono-btn svg {
+                width: 17px;
+                height: 17px;
+            }
+
+            #asistente-conversacion {
+                flex: 1;
+                overflow-y: auto;
+                padding: 1rem;
+                background: #f8fafc;
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+            }
+
+            .asistente-burbuja {
+                max-width: 88%;
+                padding: 0.6rem 0.8rem;
+                border-radius: 14px;
+                font-size: 0.86rem;
+                line-height: 1.45;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+
+            .asistente-burbuja.usuario {
+                align-self: flex-end;
+                background: var(--primary);
+                color: #fff;
+                border-bottom-right-radius: 4px;
+            }
+
+            .asistente-burbuja.asistente {
+                align-self: flex-start;
+                background: #fff;
+                color: var(--text-main);
+                border: 1px solid #e8edf3;
+                border-bottom-left-radius: 4px;
+            }
+
+            .asistente-burbuja.error {
+                background: rgba(220, 38, 38, 0.06);
+                border-color: rgba(220, 38, 38, 0.2);
+                color: #b91c1c;
+            }
+
+            .asistente-escribiendo {
+                align-self: flex-start;
+                display: inline-flex;
+                gap: 4px;
+                padding: 0.75rem 0.9rem;
+                background: #fff;
+                border: 1px solid #e8edf3;
+                border-radius: 14px;
+                border-bottom-left-radius: 4px;
+            }
+
+            .asistente-escribiendo span {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: #94a3b8;
+                animation: asistente-punto 1.2s infinite ease-in-out;
+            }
+
+            .asistente-escribiendo span:nth-child(2) { animation-delay: 0.15s; }
+            .asistente-escribiendo span:nth-child(3) { animation-delay: 0.3s; }
+
+            @keyframes asistente-punto {
+                0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+                40% { opacity: 1; transform: translateY(-3px); }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .asistente-escribiendo span { animation: none; }
+                .asistente-boton { transition: none; }
+            }
+
+            .asistente-bienvenida {
+                text-align: center;
+                padding: 1.25rem 0.5rem 0.5rem;
+                color: #475569;
+                font-size: 0.86rem;
+            }
+
+            .asistente-bienvenida strong {
+                display: block;
+                color: var(--text-main);
+                font-size: 0.95rem;
+                margin-bottom: 0.3rem;
+            }
+
+            .asistente-sugerencias {
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
+                margin-top: 0.9rem;
+            }
+
+            .asistente-sugerencia {
+                text-align: left;
+                font-family: inherit;
+                font-size: 0.82rem;
+                padding: 0.55rem 0.75rem;
+                border-radius: 10px;
+                border: 1px solid #e2e8f0;
+                background: #fff;
+                color: #334155;
+                cursor: pointer;
+            }
+
+            .asistente-sugerencia:hover {
+                border-color: #c7d2fe;
+                background: #f5f3ff;
+                color: #4c1d95;
+            }
+
+            .asistente-aviso {
+                text-align: center;
+                padding: 2rem 1rem;
+                color: #64748b;
+                font-size: 0.86rem;
+            }
+
+            .asistente-form {
+                display: flex;
+                gap: 0.5rem;
+                align-items: flex-end;
+                padding: 0.75rem;
+                border-top: 1px solid #eef2f6;
+                background: #fff;
+            }
+
+            .asistente-form textarea {
+                flex: 1;
+                resize: none;
+                max-height: 120px;
+                min-height: 40px;
+                padding: 0.55rem 0.75rem;
+                border-radius: 12px;
+                border: 1px solid var(--border-solid);
+                font-family: inherit;
+                font-size: 0.86rem;
+                line-height: 1.4;
+                outline: none;
+            }
+
+            .asistente-form textarea:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
+            }
+
+            .asistente-enviar {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+                border: none;
+                background: var(--primary);
+                color: #fff;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .asistente-enviar:disabled {
+                background: #cbd5e1;
+                cursor: not-allowed;
+            }
+
+            .asistente-enviar svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            .asistente-pie {
+                font-size: 0.68rem;
+                color: #94a3b8;
+                text-align: center;
+                padding: 0 0.75rem 0.6rem;
+                background: #fff;
+            }
+        </style>
+
+        <button type="button" class="asistente-boton" @click="alternar()" :aria-expanded="abierto.toString()"
+                aria-controls="asistente-panel" :aria-label="abierto ? 'Cerrar el asistente' : 'Abrir el asistente'">
+            <svg x-show="!abierto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg>
+            <svg x-show="abierto" x-cloak xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+
+        <section id="asistente-panel" class="asistente-panel" x-show="abierto" x-cloak
+                 x-transition.opacity.duration.150ms role="dialog" aria-label="Asistente de Nexa">
+            <header class="asistente-cabecera">
+                <div class="asistente-cabecera-icono">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z"/><path d="M19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></svg>
+                </div>
+                <div class="asistente-cabecera-texto">
+                    <div class="asistente-cabecera-titulo">Asistente de Nexa</div>
+                    <div class="asistente-cabecera-sub">Consulta los datos que tu usuario puede ver</div>
+                </div>
+                <button type="button" class="asistente-icono-btn" title="Nueva conversación" aria-label="Nueva conversación"
+                        hx-post="/asistente/nueva" hx-target="#asistente-conversacion" hx-swap="outerHTML">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+                <button type="button" class="asistente-icono-btn" @click="cerrar()" aria-label="Cerrar">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </header>
+
+            <div id="asistente-conversacion">
+                <div class="asistente-aviso">Cargando…</div>
+            </div>
+
+            <form class="asistente-form" hx-post="/asistente/mensaje" hx-target="#asistente-conversacion"
+                  hx-swap="outerHTML" x-on:htmx:before-request="enviando($event)"
+                  x-on:htmx:after-request="enviado($event)">
+                <textarea name="pregunta" rows="1" maxlength="2000" x-ref="pregunta" x-model="pregunta"
+                          placeholder="Escribe tu pregunta…" aria-label="Pregunta para el asistente"
+                          :disabled="ocupado" @keydown.enter="enter($event)" @input="ajustar()"></textarea>
+                <button type="submit" class="asistente-enviar" :disabled="ocupado || pregunta.trim() === ''"
+                        aria-label="Enviar">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </form>
+            <div class="asistente-pie">Las respuestas las genera una IA y pueden contener errores.</div>
+        </section>
+
+        <script>
+            function asistenteChat() {
+                return {
+                    abierto: false,
+                    cargado: false,
+                    ocupado: false,
+                    pregunta: '',
+                    alternar() {
+                        if (this.abierto) {
+                            this.cerrar();
+                        } else {
+                            this.abrir();
+                        }
+                    },
+                    abrir() {
+                        this.abierto = true;
+                        if (!this.cargado) {
+                            this.cargado = true;
+                            htmx.ajax('GET', '/asistente/conversacion',
+                                { target: '#asistente-conversacion', swap: 'outerHTML' });
+                        }
+                        this.$nextTick(() => {
+                            this.bajar();
+                            if (this.$refs.pregunta) {
+                                this.$refs.pregunta.focus();
+                            }
+                        });
+                    },
+                    cerrar() {
+                        this.abierto = false;
+                    },
+                    enter(event) {
+                        if (event.shiftKey || event.isComposing) {
+                            return;
+                        }
+                        event.preventDefault();
+                        if (!this.ocupado && this.pregunta.trim() !== '') {
+                            event.target.form.requestSubmit();
+                        }
+                    },
+                    ajustar() {
+                        const campo = this.$refs.pregunta;
+                        campo.style.height = 'auto';
+                        campo.style.height = Math.min(campo.scrollHeight, 120) + 'px';
+                    },
+                    /** Muestra la pregunta y los puntos de "escribiendo" mientras responde el servidor. */
+                    enviando(event) {
+                        const texto = this.pregunta.trim();
+                        if (texto === '' || this.ocupado) {
+                            event.preventDefault();
+                            return;
+                        }
+                        this.ocupado = true;
+                        const lista = document.getElementById('asistente-conversacion');
+                        const bienvenida = lista.querySelector('.asistente-bienvenida');
+                        if (bienvenida) {
+                            bienvenida.remove();
+                        }
+                        const burbuja = document.createElement('div');
+                        burbuja.className = 'asistente-burbuja usuario';
+                        burbuja.textContent = texto;
+                        lista.appendChild(burbuja);
+                        const escribiendo = document.createElement('div');
+                        escribiendo.className = 'asistente-escribiendo';
+                        escribiendo.setAttribute('aria-label', 'El asistente está escribiendo');
+                        escribiendo.innerHTML = '<span></span><span></span><span></span>';
+                        lista.appendChild(escribiendo);
+                        this.bajar();
+                        this.pregunta = '';
+                        this.$nextTick(() => this.ajustar());
+                    },
+                    enviado(event) {
+                        this.ocupado = false;
+                        if (event && event.detail && !event.detail.successful) {
+                            const lista = document.getElementById('asistente-conversacion');
+                            const escribiendo = lista ? lista.querySelector('.asistente-escribiendo') : null;
+                            if (escribiendo) {
+                                escribiendo.remove();
+                            }
+                            if (lista) {
+                                const error = document.createElement('div');
+                                error.className = 'asistente-burbuja asistente error';
+                                error.textContent = 'No se pudo enviar la pregunta. Revisa tu conexión o recarga la página.';
+                                lista.appendChild(error);
+                            }
+                        }
+                        this.$nextTick(() => {
+                            this.bajar();
+                            if (this.$refs.pregunta) {
+                                this.$refs.pregunta.focus();
+                            }
+                        });
+                    },
+                    usarSugerencia(texto) {
+                        this.pregunta = texto.trim();
+                        this.$nextTick(() => this.$refs.pregunta.form.requestSubmit());
+                    },
+                    bajar() {
+                        const lista = document.getElementById('asistente-conversacion');
+                        if (lista) {
+                            lista.scrollTop = lista.scrollHeight;
+                        }
+                    }
+                };
+            }
+
+            // Al llegar la conversación del servidor, se baja al último mensaje.
+            document.addEventListener('htmx:afterSwap', function (event) {
+                if (!event.detail.target || event.detail.target.id !== 'asistente-conversacion') {
+                    return;
+                }
+                const lista = document.getElementById('asistente-conversacion');
+                if (lista) {
+                    lista.scrollTop = lista.scrollHeight;
+                }
+            });
+        </script>
+    </div>
+
+    <!-- Mensajes de la conversación (llega por /asistente/conversacion, /mensaje y /nueva). -->
+    <div th:fragment="conversacion" id="asistente-conversacion">
+        <div class="asistente-aviso" th:if="${!asistenteDisponible}">
+            El asistente no está disponible en este momento.
+        </div>
+        <div class="asistente-aviso" th:if="${asistenteDisponible and asistenteSinDireccion}">
+            Selecciona una dirección para consultar sus datos con el asistente.
+        </div>
+        <th:block th:if="${asistenteDisponible and !asistenteSinDireccion}">
+            <div class="asistente-bienvenida" th:if="${#lists.isEmpty(mensajesAsistente)}">
+                <strong>¿En qué te ayudo?</strong>
+                Pregunta por asistencia, conducta, notas, horario, agenda o pendientes.
+                <div class="asistente-sugerencias">
+                    <th:block sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_SYSTEM_CONFIG')">
+                        <button type="button" class="asistente-sugerencia" @click="usarSugerencia($el.textContent)">¿Qué tengo pendiente hoy?</button>
+                        <button type="button" class="asistente-sugerencia" @click="usarSugerencia($el.textContent)">¿Qué estudiantes tienen materias bajo la nota de aprobación?</button>
+                        <button type="button" class="asistente-sugerencia" @click="usarSugerencia($el.textContent)">¿Qué actividades hay esta semana?</button>
+                    </th:block>
+                    <th:block sec:authorize="hasAuthority('ROLE_DOCENTE') and !hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_SYSTEM_CONFIG')">
+                        <button type="button" class="asistente-sugerencia" @click="usarSugerencia($el.textContent)">¿Qué lecciones tengo hoy?</button>
+                        <button type="button" class="asistente-sugerencia" @click="usarSugerencia($el.textContent)">¿Quién faltó hoy en mi sección guía?</button>
+                        <button type="button" class="asistente-sugerencia" @click="usarSugerencia($el.textContent)">¿Qué entregas académicas tengo pendientes?</button>
+                    </th:block>
+                    <th:block sec:authorize="hasAnyAuthority('ROLE_PADRE', 'ROLE_ESTUDIANTE') and !hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_SYSTEM_CONFIG', 'ROLE_DOCENTE')">
+                        <button type="button" class="asistente-sugerencia" @click="usarSugerencia($el.textContent)">¿Cómo van las notas este período?</button>
+                        <button type="button" class="asistente-sugerencia" @click="usarSugerencia($el.textContent)">¿Cuántas ausencias hay sin justificar?</button>
+                        <button type="button" class="asistente-sugerencia" @click="usarSugerencia($el.textContent)">¿Qué actividades vienen esta semana?</button>
+                    </th:block>
+                </div>
+            </div>
+            <div th:each="m : ${mensajesAsistente}" class="asistente-burbuja"
+                 th:classappend="${m.isDelUsuario() ? 'usuario' : 'asistente'} + ${m.error() ? ' error' : ''}"
+                 th:text="${m.texto()}">Mensaje</div>
+        </th:block>
+    </div>
+
+</body>
+</html>

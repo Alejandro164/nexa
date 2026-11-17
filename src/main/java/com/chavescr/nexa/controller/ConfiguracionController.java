@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.chavescr.nexa.entity.CorreoConfiguracion;
 import com.chavescr.nexa.entity.WhatsAppConfiguracion;
+import com.chavescr.nexa.service.AsistenteConfiguracionService;
 import com.chavescr.nexa.service.CorreoConfiguracionService;
 import com.chavescr.nexa.service.WhatsAppConfiguracionService;
 
@@ -19,11 +20,14 @@ public class ConfiguracionController {
 
     private final WhatsAppConfiguracionService whatsAppConfiguracionService;
     private final CorreoConfiguracionService correoConfiguracionService;
+    private final AsistenteConfiguracionService asistenteConfiguracionService;
 
     public ConfiguracionController(WhatsAppConfiguracionService whatsAppConfiguracionService,
-            CorreoConfiguracionService correoConfiguracionService) {
+            CorreoConfiguracionService correoConfiguracionService,
+            AsistenteConfiguracionService asistenteConfiguracionService) {
         this.whatsAppConfiguracionService = whatsAppConfiguracionService;
         this.correoConfiguracionService = correoConfiguracionService;
+        this.asistenteConfiguracionService = asistenteConfiguracionService;
     }
 
     @GetMapping
@@ -36,6 +40,8 @@ public class ConfiguracionController {
         model.addAttribute("correoConfig", direccionId != null
                 ? correoConfiguracionService.obtener(direccionId)
                 : CorreoConfiguracion.predeterminada(null));
+        model.addAttribute("asistenteConfig", asistenteConfiguracionService.obtener());
+        model.addAttribute("modelosAsistente", AsistenteConfiguracionService.MODELOS);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "configuracion/index :: htmx-content";
         }

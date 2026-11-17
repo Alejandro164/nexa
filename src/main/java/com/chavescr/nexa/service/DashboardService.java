@@ -305,6 +305,19 @@ public class DashboardService {
             }
         }
 
+        List<PanelInicio.Estudiante> tarjetas = resumenEstudiantes(direccionId, estudiantes);
+        List<Pendiente> pendientes = new ArrayList<>();
+        agregar(pendientes, "Comunicados sin leer", "Avisos de la institución",
+                comunicadoService.sinLeer(direccionId, usuarioId), "/comunicacion", "info");
+        return new PanelInicio.Familia(tarjetas, pendientes, periodo(periodoVigente(direccionId)),
+                agenda(direccionId, usuarioId, false), esEstudiante);
+    }
+
+    /**
+     * Cómo va cada estudiante en el período vigente: notas por materia, conducta, ausencias, tardías,
+     * llamadas, boletas y novedades de hoy. Quien llama ya validó que puede ver a esos estudiantes.
+     */
+    public List<PanelInicio.Estudiante> resumenEstudiantes(Long direccionId, List<Usuario> estudiantes) {
         PeriodoAcademico periodo = periodoVigente(direccionId);
         Map<Long, EstudianteOpcion> resumen = new HashMap<>();
         for (EstudianteOpcion opcion : notasConsultaService.resumenDelPeriodo(direccionId, estudiantes, periodo)) {
@@ -361,11 +374,7 @@ public class DashboardService {
                     delDia[1]));
         }
 
-        List<Pendiente> pendientes = new ArrayList<>();
-        agregar(pendientes, "Comunicados sin leer", "Avisos de la institución",
-                comunicadoService.sinLeer(direccionId, usuarioId), "/comunicacion", "info");
-        return new PanelInicio.Familia(tarjetas, pendientes, periodo(periodo),
-                agenda(direccionId, usuarioId, false), esEstudiante);
+        return tarjetas;
     }
 
     // ── Vista previa (admin y system config) ─────────────────────────────────
@@ -440,22 +449,39 @@ public class DashboardService {
                 periodo.getFechaFin(), restantes, avance);
     }
 
-    /** Lecciones de hoy (todas, o solo las de un docente) con si ya se pasó lista. */
     private List<Leccion> leccionesDeHoy(Long direccionId, PeriodoAcademico periodo, Long docenteId) {
-        String dia = diaDeHoy();
-        if (periodo == null || dia.isEmpty()) {
+        return lecciones(direccionId, periodo, diaDeHoy(), docenteId, null);
+    }
+
+    /**
+     * Lecciones de un día de la semana ("LUNES"...) en el período vigente, de un docente o de una sección
+     * (null = todas). La lista pasada y el estado (en curso, terminada) solo aplican si el día es hoy.
+     */
+    public List<Leccion> leccionesDelDia(Long direccionId, String dia, Long docenteId, Long nivelId) {
+        return lecciones(direccionId, periodoVigente(direccionId), dia, docenteId, nivelId);
+    }
+
+    private List<Leccion> lecciones(Long direccionId, PeriodoAcademico periodo, String dia, Long docenteId,
+            Long nivelId) {
+        if (periodo == null || dia == null || dia.isEmpty()) {
             return List.of();
         }
+        boolean esHoy = dia.equals(diaDeHoy());
         LocalDate hoy = LocalDate.now(ZONA);
-        LocalTime ahora = LocalTime.now(ZONA);
+        LocalTime ahora = esHoy ? LocalTime.now(ZONA) : LocalTime.MIN;
         Set<String> conLista = new HashSet<>();
-        for (Object[] fila : asistenciaRepository.findLeccionesConLista(direccionId, hoy)) {
-            conLista.add(clave(fila[0], fila[1], fila[2]));
+        if (esHoy) {
+            for (Object[] fila : asistenciaRepository.findLeccionesConLista(direccionId, hoy)) {
+                conLista.add(clave(fila[0], fila[1], fila[2]));
+            }
         }
         List<Leccion> lecciones = new ArrayList<>();
         Set<String> vistas = new HashSet<>();
         for (HorarioLeccion h : horarioRepository.findDelDia(direccionId, periodo.getId(), dia)) {
             if (docenteId != null && (h.getDocente() == null || !docenteId.equals(h.getDocente().getId()))) {
+                continue;
+            }
+            if (nivelId != null && !nivelId.equals(h.getNivel().getId())) {
                 continue;
             }
             String clave = clave(h.getNivel().getId(), h.getMateria().getId(), h.getNumeroLeccion());
@@ -503,8 +529,14 @@ public class DashboardService {
      */
     private List<EventoAgenda> agenda(Long direccionId, Long usuarioId, boolean conTareas) {
         LocalDate hoy = LocalDate.now(ZONA);
+        return agendaEntre(direccionId, usuarioId, hoy, hoy.plusDays(DIAS_AGENDA), conTareas, MAX_EVENTOS);
+    }
+
+    /** Eventos de la agenda entre dos fechas, cada uno una sola vez. */
+    public List<EventoAgenda> agendaEntre(Long direccionId, Long usuarioId, LocalDate desde, LocalDate hasta,
+            boolean conTareas, int maximo) {
         Map<LocalDate, List<EventoCalendarioDTO>> eventos = calendarioService.eventosEntre(direccionId, usuarioId,
-                hoy, hoy.plusDays(DIAS_AGENDA), conTareas);
+                desde, hasta, conTareas);
         Map<String, EventoAgenda> unicos = new LinkedHashMap<>();
         eventos.forEach((fecha, lista) -> {
             for (EventoCalendarioDTO ev : lista) {
@@ -517,7 +549,7 @@ public class DashboardService {
                         ev.getTipo().name().toLowerCase(), ev.getTipoLabel(), ev.getEnlace()));
             }
         });
-        return unicos.values().stream().limit(MAX_EVENTOS).toList();
+        return unicos.values().stream().limit(maximo).toList();
     }
 
     /** Último día visible en que aparece un evento de varios días. */

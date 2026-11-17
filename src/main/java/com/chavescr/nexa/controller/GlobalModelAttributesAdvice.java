@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 import com.chavescr.nexa.security.CustomUserDetails;
+import com.chavescr.nexa.service.AsistenteConfiguracionService;
 import com.chavescr.nexa.service.NotificacionService;
 import com.chavescr.nexa.service.SesionDireccionService;
 import com.chavescr.nexa.service.SesionDireccionService.Navegacion;
@@ -19,11 +20,26 @@ public class GlobalModelAttributesAdvice {
 
     private final NotificacionService notificacionService;
     private final SesionDireccionService sesionDireccionService;
+    private final AsistenteConfiguracionService asistenteConfiguracionService;
 
     public GlobalModelAttributesAdvice(NotificacionService notificacionService,
-            SesionDireccionService sesionDireccionService) {
+            SesionDireccionService sesionDireccionService,
+            AsistenteConfiguracionService asistenteConfiguracionService) {
         this.notificacionService = notificacionService;
         this.sesionDireccionService = sesionDireccionService;
+        this.asistenteConfiguracionService = asistenteConfiguracionService;
+    }
+
+    /**
+     * Si se muestra el botón del Chat Asistente. Vive en el shell, que solo se pinta en la página completa:
+     * en los fragmentos HTMX no se consulta.
+     */
+    @ModelAttribute("asistenteDisponible")
+    public boolean asistenteDisponible(@AuthenticationPrincipal CustomUserDetails usuario, HttpServletRequest request) {
+        if (usuario == null || "true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
+            return false;
+        }
+        return asistenteConfiguracionService.estaDisponible();
     }
 
     @ModelAttribute("notificacionesNoLeidas")
