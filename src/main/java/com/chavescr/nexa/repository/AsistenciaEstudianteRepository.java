@@ -80,4 +80,39 @@ public interface AsistenciaEstudianteRepository extends JpaRepository<Asistencia
             @Param("estudianteId") Long estudianteId,
             @Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta,
             @Param("presente") EstadoAsistencia presente);
+
+    /** Cuántos estudiantes distintos tienen cada estado ese día (resumen de asistencia del inicio). */
+    @Query("""
+            SELECT a.estado, COUNT(DISTINCT a.estudiante.id)
+            FROM AsistenciaEstudiante a
+            WHERE a.direccion.id = :direccionId
+              AND a.fecha = :fecha
+              AND a.estado IS NOT NULL
+            GROUP BY a.estado
+            """)
+    List<Object[]> contarEstudiantesPorEstado(@Param("direccionId") Long direccionId,
+            @Param("fecha") LocalDate fecha);
+
+    /** Lecciones (sección, materia, número) a las que ya se les pasó lista ese día. */
+    @Query("""
+            SELECT DISTINCT a.nivelAcademico.id, a.materia.id, a.numeroLeccion
+            FROM AsistenciaEstudiante a
+            WHERE a.direccion.id = :direccionId
+              AND a.fecha = :fecha
+              AND a.estado IS NOT NULL
+            """)
+    List<Object[]> findLeccionesConLista(@Param("direccionId") Long direccionId, @Param("fecha") LocalDate fecha);
+
+    /** Estado de cada lección del día de estos estudiantes, sin las de presente. */
+    @Query("""
+            SELECT a.estudiante.id, a.estado
+            FROM AsistenciaEstudiante a
+            WHERE a.direccion.id = :direccionId
+              AND a.fecha = :fecha
+              AND a.estudiante.id IN :estudianteIds
+              AND a.estado IS NOT NULL
+              AND a.estado <> :presente
+            """)
+    List<Object[]> findNovedadesDelDia(@Param("direccionId") Long direccionId, @Param("fecha") LocalDate fecha,
+            @Param("estudianteIds") Collection<Long> estudianteIds, @Param("presente") EstadoAsistencia presente);
 }

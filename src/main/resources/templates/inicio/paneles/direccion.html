@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <!-- Dirección y administración con dirección seleccionada: lo que pasa hoy y lo que requiere atención. -->
+    <div class="inicio-grid" th:fragment="panel">
+
+        <div class="inicio-col">
+            <!-- Asistencia de hoy -->
+            <section class="inicio-card" th:with="a=${panel.asistencia()}">
+                <div class="inicio-card-header">
+                    <div>
+                        <h3>Asistencia de hoy</h3>
+                        <div class="inicio-card-sub">Estudiantes con al menos una lección en ese estado</div>
+                    </div>
+                    <a class="inicio-card-link" href="/asistencia" hx-get="/asistencia"
+                       hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">Ir a asistencia</a>
+                </div>
+                <div class="inicio-card-body">
+                    <div class="inicio-kpis">
+                        <div class="inicio-kpi" th:classappend="${a.ausentes() > 0} ? 'danger'">
+                            <div class="inicio-kpi-valor" th:text="${a.ausentes()}">0</div>
+                            <div class="inicio-kpi-label">Ausentes sin justificar</div>
+                        </div>
+                        <div class="inicio-kpi" th:classappend="${a.tardias() > 0} ? 'warning'">
+                            <div class="inicio-kpi-valor" th:text="${a.tardias()}">0</div>
+                            <div class="inicio-kpi-label">Tardías sin justificar</div>
+                        </div>
+                        <div class="inicio-kpi">
+                            <div class="inicio-kpi-valor" th:text="${a.justificadas()}">0</div>
+                            <div class="inicio-kpi-label">Con justificación</div>
+                        </div>
+                        <div class="inicio-kpi">
+                            <div class="inicio-kpi-valor" th:text="${a.personalPresente()}">0</div>
+                            <div class="inicio-kpi-label">Personal presente</div>
+                        </div>
+                    </div>
+
+                    <div class="inicio-progreso" th:if="${a.hayClases()}">
+                        <div class="inicio-progreso-fila">
+                            <span>Lecciones de hoy con lista pasada</span>
+                            <strong th:text="${a.leccionesConLista() + ' de ' + a.leccionesDadas()}">0 de 0</strong>
+                        </div>
+                        <div class="inicio-barra"
+                             th:classappend="${a.getPorcentajeConLista() >= 90 ? 'ok' : (a.getPorcentajeConLista() >= 60 ? 'warning' : 'danger')}">
+                            <span th:style="'width:' + ${a.getPorcentajeConLista()} + '%'"></span>
+                        </div>
+                        <th:block th:if="${a.leccionesDadas() == 0}">
+                            <div class="inicio-card-sub" style="margin-top:0.4rem;">Todavía no ha empezado ninguna lección.</div>
+                        </th:block>
+                    </div>
+                    <div class="inicio-vacio" th:unless="${a.hayClases()}" style="padding-bottom:0;">
+                        Hoy no hay lecciones en el horario del período.
+                    </div>
+
+                    <th:block th:if="${!#lists.isEmpty(a.sinLista())}">
+                        <div class="inicio-subtitulo">Lecciones dadas sin lista</div>
+                        <ul class="inicio-lista">
+                            <li class="inicio-leccion" th:each="l : ${a.sinLista()}">
+                                <div class="inicio-leccion-hora">
+                                    <span th:text="${l.inicio() != null ? #temporals.format(l.inicio(), 'HH:mm') : 'L' + l.numero()}">07:00</span>
+                                    <small th:text="${'Lección ' + l.numero()}">Lección 1</small>
+                                </div>
+                                <div class="inicio-leccion-texto">
+                                    <div class="inicio-leccion-materia" th:text="${l.materia() + ' · ' + l.seccion()}">Matemática · 8-2</div>
+                                    <div class="inicio-leccion-detalle" th:text="${l.docente() != null ? l.docente() : 'Sin docente asignado'}">Docente</div>
+                                </div>
+                                <span class="inicio-tag danger">Sin lista</span>
+                            </li>
+                        </ul>
+                    </th:block>
+                </div>
+            </section>
+
+            <!-- Rendimiento: se calcula aparte para no demorar el inicio -->
+            <section class="inicio-card" hx-get="/inicio/rendimiento" hx-trigger="load" hx-swap="outerHTML">
+                <div class="inicio-card-header">
+                    <div>
+                        <h3>Rendimiento del período</h3>
+                        <div class="inicio-card-sub">Calculando las notas de la dirección…</div>
+                    </div>
+                </div>
+                <div class="inicio-card-body">
+                    <div class="inicio-cargando" aria-hidden="true"><span></span><span></span><span></span></div>
+                </div>
+            </section>
+        </div>
+
+        <div class="inicio-col">
+            <section class="inicio-card">
+                <div class="inicio-card-header">
+                    <div>
+                        <h3>Requiere atención</h3>
+                        <div class="inicio-card-sub">Pendientes que esperan una decisión</div>
+                    </div>
+                </div>
+                <div class="inicio-card-body">
+                    <th:block th:replace="~{inicio/paneles/comun :: pendientes(${panel.pendientes()}, 'Nada pendiente por ahora.')}"></th:block>
+                </div>
+            </section>
+
+            <th:block th:replace="~{inicio/paneles/comun :: periodo(${panel.periodo()})}"></th:block>
+            <th:block th:replace="~{inicio/paneles/comun :: agenda(${panel.agenda()}, true)}"></th:block>
+        </div>
+    </div>
+
+</body>
+</html>

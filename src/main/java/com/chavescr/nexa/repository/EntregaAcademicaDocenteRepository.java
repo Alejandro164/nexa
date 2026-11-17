@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.chavescr.nexa.entity.EntregaAcademicaDocente;
+import com.chavescr.nexa.entity.EntregaAcademicaDocente.EstadoPresentacion;
 
 public interface EntregaAcademicaDocenteRepository extends JpaRepository<EntregaAcademicaDocente, Long> {
 
@@ -20,4 +21,6 @@ public interface EntregaAcademicaDocenteRepository extends JpaRepository<Entrega
     List<EntregaAcademicaDocente> findByEntregaId(Long entregaId);
 
     boolean existsByEntregaId(Long entregaId);
+
+    long countByEntrega_Direccion_IdAndEstado(Long direccionId, EstadoPresentacion estado);
 }

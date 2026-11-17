@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.springframework.stereotype.Service;
 
@@ -115,11 +116,26 @@ public class CalendarioService {
                 .toList();
     }
 
+    /**
+     * Eventos de cada día entre {@code desde} y {@code hasta}, ordenados por fecha. Sin
+     * {@code conTareas} quedan fuera las tareas del plan de trabajo (son del personal, no de las familias).
+     */
+    public Map<LocalDate, List<EventoCalendarioDTO>> eventosEntre(Long direccionId, Long usuarioId,
+            LocalDate desde, LocalDate hasta, boolean conTareas) {
+        return new TreeMap<>(agruparEventos(direccionId, usuarioId, desde, hasta, conTareas));
+    }
+
     private Map<LocalDate, List<EventoCalendarioDTO>> agruparEventos(Long direccionId, Long usuarioId,
             LocalDate desde, LocalDate hasta) {
+        return agruparEventos(direccionId, usuarioId, desde, hasta, true);
+    }
+
+    private Map<LocalDate, List<EventoCalendarioDTO>> agruparEventos(Long direccionId, Long usuarioId,
+            LocalDate desde, LocalDate hasta, boolean conTareas) {
         Map<LocalDate, List<EventoCalendarioDTO>> mapa = new LinkedHashMap<>();
 
-        for (TareaPlanTrabajo t : planTrabajoService.listarTareasDireccion(direccionId)) {
+        for (TareaPlanTrabajo t : conTareas ? planTrabajoService.listarTareasDireccion(direccionId)
+                : List.<TareaPlanTrabajo>of()) {
             LocalDate f = t.getFechaLimite();
             if (f != null && !f.isBefore(desde) && !f.isAfter(hasta)) {
                 mapa.computeIfAbsent(f, k -> new ArrayList<>())

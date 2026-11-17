@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <!-- Familia (cada hijo) o estudiante (él mismo): cómo va en el período y los avisos de la institución. -->
+    <div class="inicio-grid" th:fragment="panel">
+
+        <div class="inicio-col">
+            <section class="inicio-card" th:each="e : ${panel.estudiantes()}">
+                <div class="inicio-card-header">
+                    <div class="inicio-persona" style="padding:0;">
+                        <div class="inicio-avatar" th:style="${e.color() != null} ? 'background:' + ${e.color()}" th:text="${e.iniciales()}">AB</div>
+                        <div class="inicio-persona-texto">
+                            <h3 th:text="${panel.esEstudiante() ? 'Mi período' : e.nombre()}">Estudiante</h3>
+                            <div class="inicio-card-sub" th:text="${e.seccion() != null ? 'Sección ' + e.seccion() : 'Sin sección asignada'}">Sección 8-2</div>
+                        </div>
+                    </div>
+                    <a class="inicio-card-link" href="/rendimiento-academico" hx-get="/rendimiento-academico"
+                       hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">Ver detalle</a>
+                </div>
+                <div class="inicio-card-body">
+                    <div class="inicio-kpis">
+                        <div class="inicio-kpi" th:classappend="${e.promedio() != null} ? (${e.promedio() >= e.notaAprobacion()} ? 'ok' : 'danger')">
+                            <div class="inicio-kpi-valor" th:text="${e.promedio() != null ? #numbers.formatDecimal(e.promedio(), 1, 1) : '—'}">85.0</div>
+                            <div class="inicio-kpi-label">Promedio del período</div>
+                        </div>
+                        <div class="inicio-kpi" th:classappend="${e.ausencias() > 0} ? 'danger'">
+                            <div class="inicio-kpi-valor" th:text="${e.ausencias()}">0</div>
+                            <div class="inicio-kpi-label">Ausencias sin justificar</div>
+                        </div>
+                        <div class="inicio-kpi" th:classappend="${e.tardias() > 0} ? 'warning'">
+                            <div class="inicio-kpi-valor" th:text="${e.tardias()}">0</div>
+                            <div class="inicio-kpi-label">Tardías sin justificar</div>
+                        </div>
+                        <div class="inicio-kpi" th:classappend="${e.conducta() != null} ? (${e.conducta() >= e.notaAprobacion()} ? (${e.llamadas() + e.boletas() > 0} ? 'warning' : 'ok') : 'danger')">
+                            <div class="inicio-kpi-valor" th:text="${e.conducta() != null ? #numbers.formatDecimal(e.conducta(), 1, 1) : '—'}">100.0</div>
+                            <div class="inicio-kpi-label"
+                                 th:text="${e.llamadas() + e.boletas() == 0 ? 'Conducta' : 'Conducta · ' + (e.llamadas() == 1 ? '1 llamada' : e.llamadas() + ' llamadas') + (e.boletas() > 0 ? ', ' + (e.boletas() == 1 ? '1 boleta' : e.boletas() + ' boletas') : '')}">Conducta</div>
+                        </div>
+                    </div>
+
+                    <div class="inicio-al-dia" th:if="${e.ausenciasHoy() > 0 or e.tardiasHoy() > 0}"
+                         style="color:#b45309;margin-top:0.85rem;">
+                        <span class="inicio-cuenta warning">!</span>
+                        <span th:text="${'Hoy: ' + (e.ausenciasHoy() > 0 ? (e.ausenciasHoy() == 1 ? 'ausente en 1 lección' : 'ausente en ' + e.ausenciasHoy() + ' lecciones') : '')
+                                + (e.ausenciasHoy() > 0 and e.tardiasHoy() > 0 ? ' y ' : '')
+                                + (e.tardiasHoy() > 0 ? (e.tardiasHoy() == 1 ? 'tardía en 1 lección' : 'tardía en ' + e.tardiasHoy() + ' lecciones') : '')}">Hoy: ausente</span>
+                    </div>
+
+                    <th:block th:if="${!#lists.isEmpty(e.materias())}">
+                        <div class="inicio-subtitulo"
+                             th:text="${e.getMateriasBajo() > 0 ? 'Notas del período · ' + e.getMateriasBajo() + (e.getMateriasBajo() == 1 ? ' materia' : ' materias') + ' bajo ' + e.notaAprobacion() : 'Notas del período'}">Notas del período</div>
+                        <ul class="inicio-lista">
+                            <li th:each="m : ${e.materias()}" style="padding:0.5rem 0;">
+                                <div class="inicio-progreso-fila" style="margin-bottom:0.3rem;">
+                                    <span th:text="${m.nombre()}">Matemática</span>
+                                    <strong th:style="${!m.aprobada()} ? 'color:#dc2626'"
+                                            th:text="${#numbers.formatDecimal(m.nota(), 1, 1)}">80.0</strong>
+                                </div>
+                                <div class="inicio-barra" th:classappend="${m.aprobada()} ? 'ok' : 'danger'">
+                                    <span th:style="'width:' + ${m.nota()} + '%'"></span>
+                                </div>
+                            </li>
+                        </ul>
+                    </th:block>
+                    <div class="inicio-vacio" th:if="${#lists.isEmpty(e.materias())}" style="padding-bottom:0;">
+                        Todavía no hay calificaciones en este período.
+                    </div>
+                </div>
+            </section>
+
+            <section class="inicio-card" th:if="${#lists.isEmpty(panel.estudiantes())}">
+                <div class="inicio-vacio"
+                     th:text="${panel.esEstudiante() ? 'Tu usuario todavía no tiene una sección asignada en esta dirección.' : 'No hay estudiantes vinculados a tu cuenta en esta dirección.'}">
+                    Sin estudiantes
+                </div>
+            </section>
+        </div>
+
+        <div class="inicio-col">
+            <section class="inicio-card">
+                <div class="inicio-card-header">
+                    <div>
+                        <h3>Avisos</h3>
+                        <div class="inicio-card-sub">Comunicados de la institución</div>
+                    </div>
+                </div>
+                <div class="inicio-card-body">
+                    <th:block th:replace="~{inicio/paneles/comun :: pendientes(${panel.pendientes()}, 'Leíste todos los comunicados.')}"></th:block>
+                </div>
+            </section>
+
+            <th:block th:replace="~{inicio/paneles/comun :: periodo(${panel.periodo()})}"></th:block>
+            <th:block th:replace="~{inicio/paneles/comun :: agenda(${panel.agenda()}, true)}"></th:block>
+        </div>
+    </div>
+
+</body>
+</html>

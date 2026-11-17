@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <!-- Llega por /inicio/rendimiento después de pintar el inicio, porque recorre las notas de toda la dirección. -->
+    <section class="inicio-card" th:fragment="rendimiento" th:with="r=${rendimiento}">
+        <div class="inicio-card-header">
+            <div>
+                <h3>Rendimiento del período</h3>
+                <div class="inicio-card-sub"
+                     th:text="${r.periodo() != null ? 'Período ' + r.periodo() + ' · notas según la escala de cada ciclo' : 'Notas según la escala de cada ciclo'}">Período</div>
+            </div>
+            <a class="inicio-card-link" href="/notas" hx-get="/notas"
+               hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">Ir a notas</a>
+        </div>
+        <div class="inicio-card-body">
+            <div class="inicio-vacio" th:if="${r.aviso() != null}" th:text="${r.aviso()}">Sin datos</div>
+
+            <th:block th:if="${r.aviso() == null}">
+                <div class="inicio-kpis" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                    <div class="inicio-kpi" th:classappend="${r.totalEnRiesgo() > 0} ? 'danger' : 'ok'">
+                        <div class="inicio-kpi-valor" th:text="${r.totalEnRiesgo()}">0</div>
+                        <div class="inicio-kpi-label">Estudiantes con materias bajo la nota de aprobación</div>
+                    </div>
+                    <div class="inicio-kpi">
+                        <div class="inicio-kpi-valor" th:text="${r.estudiantesConNotas()}">0</div>
+                        <div class="inicio-kpi-label">Estudiantes con calificaciones en el período</div>
+                    </div>
+                </div>
+
+                <th:block th:if="${!#lists.isEmpty(r.enRiesgo())}">
+                    <div class="inicio-subtitulo">Requieren seguimiento</div>
+                    <ul class="inicio-lista">
+                        <li class="inicio-persona" th:each="e : ${r.enRiesgo()}">
+                            <div class="inicio-avatar" th:style="${e.color() != null} ? 'background:' + ${e.color()}" th:text="${e.iniciales()}">AB</div>
+                            <div class="inicio-persona-texto">
+                                <div class="inicio-persona-nombre" th:text="${e.nombre()}">Estudiante</div>
+                                <div class="inicio-persona-detalle"
+                                     th:text="${e.seccion() + ' · ' + #strings.listJoin(e.materias(), ', ')}">8-2 · Matemática</div>
+                            </div>
+                            <span class="inicio-tag danger"
+                                  th:text="${e.materias().size() == 1 ? '1 materia' : e.materias().size() + ' materias'}">1 materia</span>
+                            <span class="inicio-nota" th:text="${#numbers.formatDecimal(e.peorNota(), 1, 1)}" title="Nota más baja">55.0</span>
+                        </li>
+                    </ul>
+                    <div class="inicio-card-sub" style="margin-top:0.5rem;"
+                         th:if="${r.totalEnRiesgo() > #lists.size(r.enRiesgo())}"
+                         th:text="${'Y ' + (r.totalEnRiesgo() - #lists.size(r.enRiesgo())) + ' estudiantes más. El detalle está en Notas.'}">Y más</div>
+                </th:block>
+
+                <th:block th:if="${!#lists.isEmpty(r.seccionesMasBajas())}">
+                    <div class="inicio-subtitulo">Secciones con el promedio más bajo</div>
+                    <ul class="inicio-lista">
+                        <li th:each="s : ${r.seccionesMasBajas()}" style="padding:0.55rem 0;">
+                            <div class="inicio-progreso-fila" style="margin-bottom:0.3rem;">
+                                <span>
+                                    <strong th:text="${s.seccion()}">8-2</strong>
+                                    <span style="color:#94a3b8;"
+                                          th:text="${' · ' + s.estudiantes() + ' estudiantes' + (s.enRiesgo() > 0 ? ', ' + s.enRiesgo() + ' con materias bajo la nota' : '')}"> · 30 estudiantes</span>
+                                </span>
+                                <strong th:text="${#numbers.formatDecimal(s.promedio(), 1, 1)}">75.0</strong>
+                            </div>
+                            <div class="inicio-barra"
+                                 th:classappend="${s.enRiesgo() == 0 ? 'ok' : (s.enRiesgo() * 4 < s.estudiantes() ? 'warning' : 'danger')}">
+                                <span th:style="'width:' + ${s.promedio()} + '%'"></span>
+                            </div>
+                        </li>
+                    </ul>
+                </th:block>
+            </th:block>
+        </div>
+    </section>
+
+</body>
+</html>

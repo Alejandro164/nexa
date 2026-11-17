@@ -1,10 +1,16 @@
 package com.chavescr.nexa.controller;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,13 +19,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.dto.DireccionDTO;
 import com.chavescr.nexa.dto.UsuarioDTO;
-import com.chavescr.nexa.entity.NivelAcademico;
-import com.chavescr.nexa.entity.PeriodoAcademico;
+import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.security.CustomUserDetails;
-import com.chavescr.nexa.service.ConfiguracionAcademicaService;
-import com.chavescr.nexa.service.HistorialCambioService;
+import com.chavescr.nexa.service.DashboardService;
 import com.chavescr.nexa.service.DireccionService;
-import com.chavescr.nexa.service.RegistroAsistenciaService;
 import com.chavescr.nexa.service.SesionDireccionService;
 import com.chavescr.nexa.service.UsuarioService;
 
@@ -32,6 +35,12 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 public class MainController {
 
+    private static final Locale ES = Locale.forLanguageTag("es-CR");
+
+    /** Modos del menú lateral ("Ver el menú como"). */
+    private static final Set<String> MODOS = Set.of("admin", "system", "director", "docente", "estudiante", "padre",
+            "auxiliar", "guarda");
+
     @Autowired
     private UsuarioService usuarioService;
 
@@ -42,13 +51,7 @@ public class MainController {
     private SesionDireccionService sesionDireccionService;
 
     @Autowired
-    private ConfiguracionAcademicaService configuracionAcademicaService;
-
-    @Autowired
-    private RegistroAsistenciaService registroAsistenciaService;
-
-    @Autowired
-    private HistorialCambioService historialCambioService;
+    private DashboardService dashboardService;
 
     @GetMapping("/")
     public String index(@AuthenticationPrincipal CustomUserDetails usuario, Model model,
@@ -72,17 +75,35 @@ public class MainController {
         model.addAttribute("sinDireccionAdmin",
                 request.isUserInRole("ROLE_ADMIN") && session.getAttribute("SESSION_DIRECCION_ID") == null);
 
-        cargarDashboard(model, session);
+        cargarDashboard(model, session, request, null);
         return "inicio/inicio";
     }
 
+    /**
+     * @param modo el "Modo" del menú lateral (admin, director, docente, padre, estudiante...). Solo lo
+     *             respetan admin y system config, para previsualizar el inicio de otro rol.
+     */
     @GetMapping("/inicio")
-    public String inicio(Model model, HttpServletRequest request, HttpSession session) {
-        cargarDashboard(model, session);
+    public String inicio(@RequestParam(required = false) String modo, Model model, HttpServletRequest request,
+            HttpSession session) {
+        cargarDashboard(model, session, request, modo);
         if ("true".equals(request.getHeader("HX-Request"))) {
             return "inicio/inicio :: htmx-content";
         }
         return "inicio/inicio";
+    }
+
+    /** Rendimiento del período: recorre las notas de toda la dirección, por eso llega aparte del inicio. */
+    @GetMapping("/inicio/rendimiento")
+    public String rendimiento(Model model, HttpServletRequest request, HttpServletResponse response,
+            HttpSession session) throws IOException {
+        Long direccionId = direccionActual(session);
+        if (direccionId == null || !esGestion(request)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return null;
+        }
+        model.addAttribute("rendimiento", dashboardService.rendimiento(direccionId));
+        return "inicio/paneles/rendimiento :: rendimiento";
     }
 
     @GetMapping("/inicio/direcciones-modal")
@@ -121,7 +142,7 @@ public class MainController {
         model.addAttribute("puedeCambiarInstitucion", nav.puedeCambiarInstitucion());
         session.setAttribute("SESSION_PUEDE_CAMBIAR_INSTITUCION", nav.puedeCambiarInstitucion());
         model.addAttribute("sincronizarSwitcher", true);
-        cargarDashboard(model, session);
+        cargarDashboard(model, session, request, null);
         response.setHeader("Cache-Control", "no-store");
         response.setHeader("HX-Retarget", ".content-area");
         response.setHeader("HX-Reswap", "innerHTML");
@@ -139,34 +160,120 @@ public class MainController {
         return request.isUserInRole("ROLE_SYSTEM_CONFIG");
     }
 
-    private void cargarDashboard(Model model, HttpSession session) {
+    private static String saludo(LocalTime hora) {
+        if (hora.getHour() < 12) {
+            return "Buenos días";
+        }
+        return hora.getHour() < 19 ? "Buenas tardes" : "Buenas noches";
+    }
+
+    /** Admin, dirección y system config ven el panel de la dirección (system config ve todas). */
+    private static boolean esGestion(HttpServletRequest request) {
+        return request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR")
+                || request.isUserInRole("ROLE_SYSTEM_CONFIG");
+    }
+
+    /** Puede cambiar el "Modo" del menú y ver el inicio de otro rol. */
+    private static boolean puedePrevisualizar(HttpServletRequest request) {
+        return request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_SYSTEM_CONFIG");
+    }
+
+    /** El modo en que se ve el menú cuando no se eligió otro: el del rol real. */
+    private static String modoPropio(HttpServletRequest request) {
+        return request.isUserInRole("ROLE_ADMIN") ? "admin" : "system";
+    }
+
+    /**
+     * Cada rol ve su propio panel: la dirección lo que pasa hoy y lo que requiere su atención, el docente
+     * sus lecciones y pendientes, y la familia o el estudiante cómo va en el período.
+     * Admin y system config pueden pedir el de otro rol con {@code modo}; se arma con un usuario de muestra
+     * de la dirección, porque ellos no tienen lecciones ni hijos propios.
+     */
+    private void cargarDashboard(Model model, HttpSession session, HttpServletRequest request, String modo) {
         String direccionActivaNombre = (String) session.getAttribute("SESSION_DIRECCION_NOMBRE");
         model.addAttribute("direccionActivaNombre", direccionActivaNombre);
+        model.addAttribute("saludo", saludo(LocalTime.now(DashboardService.ZONA)));
+        String fecha = LocalDate.now(DashboardService.ZONA).format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", ES));
+        model.addAttribute("fechaHoy", Character.toUpperCase(fecha.charAt(0)) + fecha.substring(1));
+        if (SecurityContextHolder.getContext().getAuthentication() != null
+                && SecurityContextHolder.getContext().getAuthentication().getPrincipal() instanceof CustomUserDetails u
+                && u.getNombre() != null && !u.getNombre().isBlank()) {
+            model.addAttribute("primerNombre", u.getNombre().trim().split("\\s+")[0]);
+        }
 
-        Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
+        boolean previsualiza = puedePrevisualizar(request);
+        String modoInicio = previsualiza && modo != null && MODOS.contains(modo) ? modo : null;
+        model.addAttribute("puedePrevisualizar", previsualiza);
+        model.addAttribute("modoInicio", previsualiza ? (modoInicio != null ? modoInicio : modoPropio(request)) : "");
+
+        Long direccionId = direccionActual(session);
         if (direccionId == null) {
             model.addAttribute("sinDireccion", true);
+            model.addAttribute("vistaInicio", "global");
             cargarResumenGlobal(model);
             return;
         }
 
-        long totalEstudiantes = usuarioService.contarActivosPorDireccionYRol(direccionId, "ROLE_ESTUDIANTE");
-        long totalDocentes = usuarioService.contarActivosPorDireccionYRol(direccionId, "ROLE_DOCENTE");
+        if (modoInicio != null && cargarVistaPrevia(model, direccionId, modoInicio)) {
+            return;
+        }
 
-        Map<String, Long> asistenciaHoy = registroAsistenciaService.obtenerConteoPersonalPresente(direccionId);
+        Object idSesion = session.getAttribute("SESSION_USUARIO_ID");
+        Long usuarioId = idSesion instanceof Long id ? id : null;
+        if (esGestion(request)) {
+            model.addAttribute("vistaInicio", "direccion");
+            model.addAttribute("panel", dashboardService.direccion(direccionId, usuarioId));
+        } else if (request.isUserInRole("ROLE_DOCENTE")) {
+            model.addAttribute("vistaInicio", "docente");
+            model.addAttribute("panel", dashboardService.docente(direccionId, usuarioId));
+        } else if (request.isUserInRole("ROLE_PADRE") || request.isUserInRole("ROLE_ESTUDIANTE")) {
+            boolean esEstudiante = !request.isUserInRole("ROLE_PADRE");
+            model.addAttribute("vistaInicio", "familia");
+            model.addAttribute("panel", dashboardService.familia(direccionId, usuarioId, esEstudiante));
+        } else {
+            model.addAttribute("vistaInicio", "vacio");
+        }
+    }
 
-        List<PeriodoAcademico> periodosActivos = configuracionAcademicaService.listarPeriodosActivos(direccionId);
-        PeriodoAcademico periodoActivo = periodosActivos.isEmpty() ? null : periodosActivos.get(0);
-
-        List<NivelAcademico> niveles = configuracionAcademicaService.listarNivelesActivos(direccionId);
-
-        model.addAttribute("totalEstudiantes", totalEstudiantes);
-        model.addAttribute("totalDocentes", totalDocentes);
-        model.addAttribute("personalPresenteHoy", asistenciaHoy.getOrDefault("presentes", 0L));
-        model.addAttribute("totalRegistrosHoy", asistenciaHoy.getOrDefault("totalRegistros", 0L));
-        model.addAttribute("periodoActivo", periodoActivo);
-        model.addAttribute("niveles", niveles);
-        model.addAttribute("actividadReciente", historialCambioService.listarRecientes(direccionId));
+    /**
+     * Inicio de docente, padre o estudiante visto por admin o system config, con un usuario de muestra.
+     * Devuelve false en los modos que ven el panel de la dirección (admin, director, auxiliar, guarda...).
+     */
+    private boolean cargarVistaPrevia(Model model, Long direccionId, String modo) {
+        Optional<Usuario> muestra;
+        String rol;
+        switch (modo) {
+            case "docente" -> {
+                muestra = dashboardService.docenteDeMuestra(direccionId);
+                rol = "docente";
+            }
+            case "padre" -> {
+                muestra = dashboardService.padreDeMuestra(direccionId);
+                rol = "padre de familia";
+            }
+            case "estudiante" -> {
+                muestra = dashboardService.estudianteDeMuestra(direccionId);
+                rol = "estudiante";
+            }
+            default -> {
+                return false;
+            }
+        }
+        model.addAttribute("vistaPreviaRol", rol);
+        if (muestra.isEmpty()) {
+            model.addAttribute("vistaInicio", "sin-muestra");
+            return true;
+        }
+        Usuario usuario = muestra.get();
+        model.addAttribute("vistaPreviaNombre", usuario.getNombre());
+        if ("docente".equals(modo)) {
+            model.addAttribute("vistaInicio", "docente");
+            model.addAttribute("panel", dashboardService.docente(direccionId, usuario.getId()));
+        } else {
+            model.addAttribute("vistaInicio", "familia");
+            model.addAttribute("panel", dashboardService.familia(direccionId, usuario.getId(), "estudiante".equals(modo)));
+        }
+        return true;
     }
 
     /**

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.chavescr.nexa.entity.IncidenteConducta;
+import com.chavescr.nexa.entity.IncidenteConducta.EstadoIncidente;
 import com.chavescr.nexa.entity.IncidenteConducta.TipoIncidente;
 
 public interface IncidenteConductaRepository extends JpaRepository<IncidenteConducta, Long> {
@@ -92,4 +93,6 @@ public interface IncidenteConductaRepository extends JpaRepository<IncidenteCond
             @Param("periodoIds") Collection<Long> periodoIds,
             @Param("estudianteIds") Collection<Long> estudianteIds,
             @Param("tipo") TipoIncidente tipo);
+
+    long countByDireccionIdAndEstadoIn(Long direccionId, Collection<EstadoIncidente> estados);
 }
