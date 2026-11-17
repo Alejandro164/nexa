@@ -7,7 +7,9 @@
      th:data-tramos="${escalaNotas.tramos}"
      th:data-rebajas="${rebajaConducta.reglas}"
      th:data-quien-puntos-boleta="${rebajaConducta.quienRegistraPuntosBoleta}"
-     th:data-tardias-por-ausencia="${rebajaConducta.tardiasPorAusencia}">
+     th:data-tardias-por-ausencia="${rebajaConducta.tardiasPorAusencia}"
+     th:data-modo-asistencia="${rebajaConducta.modoAsistencia}"
+     th:data-destino-rebaja="${rebajaConducta.destinoRebajaAsistencia}">
     <style>
         #institucional-escala-notas-panel .escala-form {
             position: relative;
@@ -425,12 +427,21 @@
             <div class="card-header">
                 <div>
                     <h3 class="card-title" id="asistencia-titulo">Asistencia</h3>
-                    <p class="academic-help">El rubro Asistencia de cada materia se asigna por período según el porcentaje de ausencias injustificadas sobre las lecciones registradas al pasar lista (Reglamento de Evaluación, artículo 37). Las ausencias y tardías justificadas no cuentan.</p>
+                    <p class="academic-help">Cómo afectan las ausencias y tardías injustificadas, por materia y período. Las justificadas no cuentan.</p>
                 </div>
             </div>
 
             <div class="escala-politicas">
                 <div class="form-group">
+                    <label class="form-label" for="asistencia-modo">Cálculo de la asistencia</label>
+                    <select class="form-input" id="asistencia-modo" name="modoAsistencia" x-model="modoAsistencia">
+                        <option value="REGLAMENTO_MEP"
+                                th:selected="${rebajaConducta.modoAsistencia.name() == 'REGLAMENTO_MEP'}">Reglamento del MEP (artículo 37)</option>
+                        <option value="PERSONALIZADO"
+                                th:selected="${rebajaConducta.modoAsistencia.name() == 'PERSONALIZADO'}">Valores propios del colegio</option>
+                    </select>
+                </div>
+                <div class="form-group" x-show="modoAsistencia === 'REGLAMENTO_MEP'">
                     <label class="form-label" for="asistencia-tardias">Cada tardía injustificada cuenta como</label>
                     <select class="form-input" id="asistencia-tardias" name="tardiasPorAusencia"
                             x-model.number="tardiasPorAusencia">
@@ -438,38 +449,93 @@
                         <option value="1" th:selected="${rebajaConducta.tardiasPorAusencia == 1}">Una ausencia (llegó más de 10 minutos tarde)</option>
                     </select>
                 </div>
+                <div class="form-group" x-show="modoAsistencia === 'PERSONALIZADO'" x-cloak>
+                    <label class="form-label" for="asistencia-destino">Las ausencias y tardías rebajan</label>
+                    <select class="form-input" id="asistencia-destino" name="destinoRebajaAsistencia"
+                            x-model="destinoAsistencia">
+                        <option value="COMPONENTE"
+                                th:selected="${rebajaConducta.destinoRebajaAsistencia == null or rebajaConducta.destinoRebajaAsistencia.name() == 'COMPONENTE'}">El porcentaje de asistencia</option>
+                        <option value="CONDUCTA"
+                                th:selected="${rebajaConducta.destinoRebajaAsistencia != null and rebajaConducta.destinoRebajaAsistencia.name() == 'CONDUCTA'}">El total de la conducta</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="table-container">
-                <table class="table escala-tabla asistencia-tabla">
-                    <thead>
-                        <tr>
-                            <th>Ausencias injustificadas del total de lecciones</th>
-                            <th>Se asigna</th>
-                            <th>Nota del rubro</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="t : ${tablaAsistencia}">
-                            <td th:text="${t.hasta() != null
-                                    ? (t.desde() == 0 ? 'Menos de ' + t.hasta() + '%' : 'Del ' + t.desde() + '% a menos del ' + t.hasta() + '%')
-                                    : t.desde() + '% o más'}">Menos de 10%</td>
-                            <td><strong th:text="${t.asignacion() + '%'}">5%</strong> <span class="asistencia-de">de 5%</span></td>
-                            <td th:text="${t.nota()}">100</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div x-show="modoAsistencia === 'REGLAMENTO_MEP'">
+                <div class="table-container">
+                    <table class="table escala-tabla asistencia-tabla">
+                        <thead>
+                            <tr>
+                                <th>Ausencias injustificadas del total de lecciones</th>
+                                <th>Se asigna</th>
+                                <th>Nota del rubro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="t : ${tablaAsistencia}">
+                                <td th:text="${t.hasta() != null
+                                        ? (t.desde() == 0 ? 'Menos de ' + t.hasta() + '%' : 'Del ' + t.desde() + '% a menos del ' + t.hasta() + '%')
+                                        : t.desde() + '% o más'}">Menos de 10%</td>
+                                <td><strong th:text="${t.asignacion() + '%'}">5%</strong> <span class="asistencia-de">de 5%</span></td>
+                                <td th:text="${t.nota()}">100</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="asistencia-nota">
+                    Se calcula sobre las lecciones registradas al pasar lista y va al rubro Asistencia de la materia. La nota del rubro se pondera con el porcentaje de Asistencia del componente de evaluación; con 5% aporta exactamente lo que indica la tabla.
+                </p>
             </div>
-            <p class="asistencia-nota">
-                La nota del rubro se pondera con el porcentaje de Asistencia del componente de evaluación de la materia; con 5% aporta exactamente lo que indica la tabla.
-            </p>
+
+            <div x-show="modoAsistencia === 'PERSONALIZADO'" x-cloak>
+                <div class="table-container">
+                    <table class="table escala-tabla">
+                        <thead>
+                            <tr>
+                                <th>Registro</th>
+                                <th>Cada</th>
+                                <th>Bajan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="fila in rebajasAsistencia" :key="fila.id">
+                                <tr>
+                                    <td style="font-weight: 500;" x-text="fila.nombre"></td>
+                                    <td>
+                                        <div class="rebaja-cantidad">
+                                            <input class="form-input escala-input-num" type="number" inputmode="numeric"
+                                                   min="1" max="30" step="1" required
+                                                   x-model.number="fila.cada" @change="normalizarRebaja(fila)" @wheel.prevent
+                                                   :aria-label="'Cada cuántos registros de ' + fila.nombre">
+                                            <span x-text="unidadDe(fila)"></span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="rebaja-cantidad">
+                                            <input class="form-input escala-input-num" type="number" inputmode="numeric"
+                                                   min="0" max="100" step="1" required
+                                                   x-model.number="fila.puntos" @change="normalizarRebaja(fila)" @wheel.prevent
+                                                   :aria-label="'Puntos que bajan por ' + fila.nombre">
+                                            <span x-text="Number(fila.puntos) === 1 ? 'punto' : 'puntos'"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="asistencia-nota"
+                   x-text="destinoAsistencia === 'CONDUCTA'
+                       ? 'Los puntos se restan de la nota de conducta del período, que parte de 100. La asistencia no entra en la nota de las materias.'
+                       : 'El rubro Asistencia de cada materia parte de 100 y se le restan estos puntos. Cero puntos significa que ese registro no rebaja.'"></p>
+            </div>
         </section>
 
         <section class="card" aria-labelledby="rebajas-titulo">
             <div class="card-header">
                 <div>
                     <h3 class="card-title" id="rebajas-titulo">Rebajas de conducta</h3>
-                    <p class="academic-help">La conducta parte de 100 y baja por las llamadas de atención y los puntos de las boletas.</p>
+                    <p class="academic-help">La conducta parte de 100 y baja por las llamadas de atención, los puntos de las boletas y, si así se elige en Asistencia, por las ausencias y tardías.</p>
                 </div>
             </div>
 
@@ -646,6 +712,8 @@
                 sucio: false,
                 quienPuntosBoleta: opcion('quienPuntosBoleta', ['PROFESOR_GUIA', 'PROFESOR_MATERIA'], 'PROFESOR_GUIA'),
                 tardiasPorAusencia: Number(DATOS.tardiasPorAusencia) === 1 ? 1 : 2,
+                modoAsistencia: opcion('modoAsistencia', ['REGLAMENTO_MEP', 'PERSONALIZADO'], 'REGLAMENTO_MEP'),
+                destinoAsistencia: opcion('destinoRebaja', ['COMPONENTE', 'CONDUCTA'], 'COMPONENTE'),
 
                 get paso() {
                     return Number(this.decimales) === 0 ? 1 : 0.1;
@@ -830,10 +898,13 @@
                         return { id: fila.id, cada: Math.round(Number(fila.cada)), puntos: Math.round(Number(fila.puntos)) };
                     }));
                 },
-                // Las ausencias y tardías van al rubro Asistencia (artículo 37); en conducta solo queda la llamada de
-                // atención. Las demás reglas se siguen enviando porque el servidor guarda la lista completa.
+                // La llamada de atención siempre rebaja la conducta; las ausencias y tardías se editan en el card de
+                // Asistencia (solo con valores propios). El servidor guarda la lista completa de reglas.
                 get rebajasConducta() {
                     return this.rebajas.filter(function (fila) { return fila.id === 'llamada'; });
+                },
+                get rebajasAsistencia() {
+                    return this.rebajas.filter(function (fila) { return fila.id !== 'llamada'; });
                 },
                 unidadDe: function (fila) {
                     return Math.round(Number(fila.cada)) === 1 ? fila.unidad[0] : fila.unidad[1];
@@ -943,7 +1014,9 @@
                             notaMaxima: this.notaMaxima,
                             decimales: this.decimales,
                             quienRegistraPuntosBoleta: this.quienPuntosBoleta,
-                            tardiasPorAusencia: this.tardiasPorAusencia
+                            tardiasPorAusencia: this.tardiasPorAusencia,
+                            modoAsistencia: this.modoAsistencia,
+                            destinoRebajaAsistencia: this.destinoAsistencia
                         };
                         Object.keys(valores).forEach(function (nombre) {
                             const campo = form.querySelector('[name="' + nombre + '"]');

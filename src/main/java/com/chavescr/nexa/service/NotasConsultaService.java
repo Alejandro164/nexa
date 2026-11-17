@@ -418,6 +418,12 @@ public class NotasConsultaService {
     /** Explica el cálculo del artículo 37: ausencias equivalentes, porcentaje, asignación y nota. */
     static String leyendaAsistencia(CalculoRebaja calculo, int[] conteo, int lecciones, int nota, int pesoNota,
             String materia) {
+        if (!calculo.isReglamentoMep()) {
+            int rebaja = calculo.rebajaAsistencia(conteo);
+            return "Parte de 100. Las ausencias y tardías rebajan " + rebaja
+                    + (rebaja == 1 ? " punto" : " puntos") + ", así que la asistencia queda en " + nota
+                    + ". Vale " + pesoNota + "% de la nota de " + materia + ".";
+        }
         double ausencias = calculo.ausenciasEquivalentes(conteo);
         double porcentaje = calculo.porcentajeAusencias(conteo, lecciones);
         int asignacion = CalculoRebaja.asignacionAsistencia(porcentaje);

@@ -18,9 +18,10 @@ import jakarta.persistence.Table;
  * Una configuración por dirección. {@code reglas} guarda, en este orden, cuántos
  * registros forman un grupo ({@code cada}) y cuántos puntos baja la nota por cada
  * grupo completo ({@code puntos}). Cero puntos significa que ese registro no rebaja.
- * Las llamadas de atención rebajan la conducta. Las ausencias y tardías van siempre al
- * rubro Asistencia de la nota, con la tabla del artículo 37 del Reglamento de Evaluación;
- * {@code destinoRebajaAsistencia} queda en COMPONENTE y solo se conserva por compatibilidad.
+ * Las llamadas de atención rebajan la conducta. Las ausencias y tardías se calculan según
+ * {@code modoAsistencia}: con el reglamento del MEP van al rubro Asistencia con la tabla del
+ * artículo 37; con valores propios usan {@code reglas} y {@code destinoRebajaAsistencia} decide
+ * si rebajan el rubro Asistencia o el total de la conducta.
  */
 @Entity
 @Table(name = "rebajas_conducta")
@@ -53,6 +54,11 @@ public class RebajaConducta {
     @ColumnDefault("'COMPONENTE'")
     @Column(nullable = false, length = 30)
     private DestinoRebajaAsistencia destinoRebajaAsistencia = DestinoRebajaAsistencia.COMPONENTE;
+
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'REGLAMENTO_MEP'")
+    @Column(nullable = false, length = 20)
+    private ModoAsistencia modoAsistencia = ModoAsistencia.REGLAMENTO_MEP;
 
     /** Tardías injustificadas que forman una ausencia: 2 = media ausencia cada una, 1 = una ausencia. */
     @ColumnDefault("2")
@@ -109,6 +115,14 @@ public class RebajaConducta {
 
     public void setQuienRegistraPuntosBoleta(QuienRegistraPuntosBoleta quienRegistraPuntosBoleta) {
         this.quienRegistraPuntosBoleta = quienRegistraPuntosBoleta;
+    }
+
+    public ModoAsistencia getModoAsistencia() {
+        return modoAsistencia == null ? ModoAsistencia.REGLAMENTO_MEP : modoAsistencia;
+    }
+
+    public void setModoAsistencia(ModoAsistencia modoAsistencia) {
+        this.modoAsistencia = modoAsistencia;
     }
 
     public Integer getTardiasPorAusencia() {

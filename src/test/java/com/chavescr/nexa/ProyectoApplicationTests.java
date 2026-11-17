@@ -220,7 +220,10 @@ class ProyectoApplicationTests {
 		assertTrue(escalaRenderizada.contains("data-rebajas"));
 		assertTrue(escalaRenderizada.contains("data-quien-puntos-boleta=\"PROFESOR_GUIA\""));
 		assertTrue(escalaRenderizada.contains("data-tardias-por-ausencia=\"2\""));
-		assertFalse(escalaRenderizada.contains("destinoRebajaAsistencia"));
+		assertTrue(escalaRenderizada.contains("name=\"destinoRebajaAsistencia\""));
+		assertTrue(escalaRenderizada.contains("name=\"modoAsistencia\""));
+		assertTrue(escalaRenderizada.contains("data-modo-asistencia=\"REGLAMENTO_MEP\""));
+		assertTrue(escalaRenderizada.contains("Valores propios del colegio"));
 		assertTrue(escalaRenderizada.contains("Cada tardía injustificada cuenta como"));
 		assertTrue(escalaRenderizada.contains("Excelente"));
 		assertTrue(escalaRenderizada.contains("data-nota-aprobacion=\"70\""));

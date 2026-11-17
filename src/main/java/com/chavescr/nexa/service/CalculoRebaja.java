@@ -14,9 +14,10 @@ import com.chavescr.nexa.entity.TipoRebaja;
  * Conducta: un grupo completo ({@code cantidad / cada}) baja {@code puntos}; lo que no llega a completar un grupo
  * no rebaja. Cero puntos apaga ese registro.
  * <p>
- * Asistencia (artículo 37 del Reglamento de Evaluación de los Aprendizajes): sale del porcentaje de ausencias
- * injustificadas sobre las lecciones impartidas en el período, según {@link #TABLA_ASISTENCIA}. Cada tardía
- * injustificada vale {@code 1 / tardiasPorAusencia} ausencias; las justificadas no cuentan.
+ * Asistencia con el reglamento del MEP (artículo 37 del Reglamento de Evaluación de los Aprendizajes): sale del
+ * porcentaje de ausencias injustificadas sobre las lecciones impartidas en el período, según
+ * {@link #TABLA_ASISTENCIA}. Cada tardía injustificada vale {@code 1 / tardiasPorAusencia} ausencias; las
+ * justificadas no cuentan. Con valores propios, el rubro parte de 100 y resta los puntos de las reglas.
  */
 public final class CalculoRebaja {
 
@@ -37,12 +38,20 @@ public final class CalculoRebaja {
     private final Map<TipoRebaja, int[]> reglas;
     private final boolean asistenciaEnConducta;
     private final int tardiasPorAusencia;
+    private final boolean reglamentoMep;
 
+    /** Valores propios: el rubro Asistencia parte de 100 y resta los puntos de las reglas. */
     public CalculoRebaja(Map<TipoRebaja, int[]> reglas, boolean asistenciaEnConducta) {
-        this(reglas, asistenciaEnConducta, TARDIAS_POR_AUSENCIA_PREDETERMINADO);
+        this(reglas, asistenciaEnConducta, TARDIAS_POR_AUSENCIA_PREDETERMINADO, false);
     }
 
-    public CalculoRebaja(Map<TipoRebaja, int[]> reglas, boolean asistenciaEnConducta, int tardiasPorAusencia) {
+    /**
+     * @param reglamentoMep true: el rubro Asistencia sigue la tabla del artículo 37 (y la asistencia nunca rebaja
+     *                      la conducta); false: valores propios.
+     */
+    public CalculoRebaja(Map<TipoRebaja, int[]> reglas, boolean asistenciaEnConducta, int tardiasPorAusencia,
+            boolean reglamentoMep) {
+        this.reglamentoMep = reglamentoMep;
         this.tardiasPorAusencia = tardiasPorAusencia == 1 ? 1 : TARDIAS_POR_AUSENCIA_PREDETERMINADO;
         this.reglas = new EnumMap<>(TipoRebaja.class);
         if (reglas != null) {
@@ -52,7 +61,7 @@ public final class CalculoRebaja {
                 }
             });
         }
-        this.asistenciaEnConducta = asistenciaEnConducta;
+        this.asistenciaEnConducta = asistenciaEnConducta && !reglamentoMep;
     }
 
     public boolean asistenciaRebajaConducta() {
@@ -135,6 +144,10 @@ public final class CalculoRebaja {
                 + bruto(TipoRebaja.TARDIA_INJUSTIFICADA, conteo[3]);
     }
 
+    public boolean isReglamentoMep() {
+        return reglamentoMep;
+    }
+
     public int getTardiasPorAusencia() {
         return tardiasPorAusencia;
     }
@@ -181,11 +194,14 @@ public final class CalculoRebaja {
     }
 
     /**
-     * Nota del rubro Asistencia de 0 a 100: la parte de la asignación máxima que conserva el estudiante
-     * (5 de 5 = 100, 4 de 5 = 80, …). Así, con un peso de 5% en el componente, aporta exactamente el porcentaje
-     * de la tabla.
+     * Nota del rubro Asistencia de 0 a 100. Con el reglamento del MEP es la parte de la asignación máxima que
+     * conserva el estudiante (5 de 5 = 100, 4 de 5 = 80, …): con un peso de 5% en el componente aporta exactamente
+     * el porcentaje de la tabla. Con valores propios parte de 100 y resta {@link #rebajaAsistencia}.
      */
     public int notaAsistencia(int[] conteo, int lecciones) {
+        if (!reglamentoMep) {
+            return Math.max(0, NOTA_INICIAL - rebajaAsistencia(conteo));
+        }
         if (lecciones <= 0) {
             return NOTA_INICIAL;
         }

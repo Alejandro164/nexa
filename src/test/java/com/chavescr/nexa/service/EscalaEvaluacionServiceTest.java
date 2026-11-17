@@ -16,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.chavescr.nexa.entity.CicloEducativo;
+import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
+import com.chavescr.nexa.entity.ModoAsistencia;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,10 +41,12 @@ class EscalaEvaluacionServiceTest {
     @Test
     void guardaLaEscalaYLasRebajas() {
         service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO, 0, 100, 1, 70, "[]", "[]",
-                QuienRegistraPuntosBoleta.PROFESOR_GUIA, 2);
+                QuienRegistraPuntosBoleta.PROFESOR_GUIA, ModoAsistencia.PERSONALIZADO, DestinoRebajaAsistencia.CONDUCTA,
+                2);
 
         verify(escalaNotasService).guardar(DIRECCION, CicloEducativo.TERCER_CICLO, 0, 100, 1, 70, "[]");
-        verify(rebajaConductaService).guardar(DIRECCION, "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA, 2);
+        verify(rebajaConductaService).guardar(DIRECCION, "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA,
+                ModoAsistencia.PERSONALIZADO, DestinoRebajaAsistencia.CONDUCTA, 2);
     }
 
     @Test
@@ -51,17 +55,18 @@ class EscalaEvaluacionServiceTest {
                 .thenThrow(new IllegalArgumentException("Hacen falta al menos dos tramos"));
 
         assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO,
-                0, 100, 1, 70, "[]", "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA, 2));
+                0, 100, 1, 70, "[]", "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA, ModoAsistencia.REGLAMENTO_MEP,
+                null, 2));
 
         verifyNoInteractions(rebajaConductaService);
     }
 
     @Test
     void siLasRebajasNoSonValidasFallaTodoElGuardado() {
-        when(rebajaConductaService.guardar(anyLong(), anyString(), any(), any()))
+        when(rebajaConductaService.guardar(anyLong(), anyString(), any(), any(), any(), any()))
                 .thenThrow(new IllegalArgumentException("Indica quién registra los puntos de las boletas"));
 
         assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO,
-                0, 100, 1, 70, "[]", "[]", null, 2));
+                0, 100, 1, 70, "[]", "[]", null, ModoAsistencia.REGLAMENTO_MEP, null, 2));
     }
 }

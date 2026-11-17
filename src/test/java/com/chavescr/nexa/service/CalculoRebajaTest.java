@@ -40,7 +40,7 @@ class CalculoRebajaTest {
 
     @Test
     void laAsistenciaSigueLaTablaDelArticulo37() {
-        CalculoRebaja calculo = new CalculoRebaja(Map.of(), false);
+        CalculoRebaja calculo = new CalculoRebaja(Map.of(), false, 2, true);
 
         assertEquals(100, calculo.notaAsistencia(conteo(0, 0, 0, 0), 20));
         assertEquals(100, calculo.notaAsistencia(conteo(0, 1, 0, 0), 20));
@@ -53,7 +53,7 @@ class CalculoRebajaTest {
 
     @Test
     void lasJustificadasNoCuentanYSinLeccionesQuedaEnCien() {
-        CalculoRebaja calculo = new CalculoRebaja(Map.of(), false);
+        CalculoRebaja calculo = new CalculoRebaja(Map.of(), false, 2, true);
 
         assertEquals(100, calculo.notaAsistencia(conteo(8, 0, 8, 0), 20));
         assertEquals(100, calculo.notaAsistencia(conteo(0, 3, 0, 0), 0));
@@ -61,13 +61,30 @@ class CalculoRebajaTest {
 
     @Test
     void cadaTardiaInjustificadaValeMediaAusenciaOUnaSegunLaConfiguracion() {
-        CalculoRebaja media = new CalculoRebaja(Map.of(), false, 2);
-        CalculoRebaja completa = new CalculoRebaja(Map.of(), false, 1);
+        CalculoRebaja media = new CalculoRebaja(Map.of(), false, 2, true);
+        CalculoRebaja completa = new CalculoRebaja(Map.of(), false, 1, true);
 
         assertEquals(2.0, media.ausenciasEquivalentes(conteo(0, 0, 0, 4)));
         assertEquals(80, media.notaAsistencia(conteo(0, 0, 0, 4), 20));
         assertEquals(4.0, completa.ausenciasEquivalentes(conteo(0, 0, 0, 4)));
         assertEquals(60, completa.notaAsistencia(conteo(0, 0, 0, 4), 20));
+    }
+
+    @Test
+    void conValoresPropiosLaAsistenciaParteDeCienYRestaLosPuntos() {
+        CalculoRebaja calculo = calculo(false, TipoRebaja.AUSENCIA_INJUSTIFICADA, 3, 5);
+
+        assertEquals(10, calculo.rebajaAsistencia(conteo(0, 7, 0, 0)));
+        assertEquals(90, calculo.notaAsistencia(conteo(0, 7, 0, 0), 20));
+    }
+
+    @Test
+    void conElReglamentoLaAsistenciaNuncaRebajaLaConducta() {
+        CalculoRebaja calculo = new CalculoRebaja(Map.of(TipoRebaja.AUSENCIA_INJUSTIFICADA, new int[] { 1, 5 }),
+                true, 2, true);
+
+        assertEquals(false, calculo.asistenciaRebajaConducta());
+        assertEquals(0, calculo.puntosAsistencia(conteo(0, 3, 0, 0)));
     }
 
     @Test
