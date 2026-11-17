@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.ComponenteEvaluacion;
+import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
 import com.chavescr.nexa.entity.DiaLaboral;
+import com.chavescr.nexa.entity.ModoAsistencia;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
@@ -221,12 +223,15 @@ public class ConfiguracionInstitucionalController {
             @RequestParam String tramos,
             @RequestParam String rebajas,
             @RequestParam QuienRegistraPuntosBoleta quienRegistraPuntosBoleta,
+            @RequestParam ModoAsistencia modoAsistencia,
+            @RequestParam(required = false) DestinoRebajaAsistencia destinoRebajaAsistencia,
             @RequestParam Integer tardiasPorAusencia,
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
             escalaEvaluacionService.guardar(direccionId, ciclo, notaMinima, notaMaxima, decimales, notaAprobacion,
-                    tramos, rebajas, quienRegistraPuntosBoleta, tardiasPorAusencia);
+                    tramos, rebajas, quienRegistraPuntosBoleta, modoAsistencia, destinoRebajaAsistencia,
+                    tardiasPorAusencia);
             response.setHeader("HX-Trigger", "{\"institucionalGuardado\":{\"mensaje\":\"Escala del "
                     + escaparJson(ciclo.getEtiqueta()) + " y rebajas actualizadas\"}}");
         } catch (IllegalArgumentException e) {

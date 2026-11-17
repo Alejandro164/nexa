@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <!-- Docente: sus lecciones de hoy, lo que tiene pendiente y su sección guía. -->
+    <div class="inicio-grid" th:fragment="panel">
+
+        <div class="inicio-col">
+            <section class="inicio-card">
+                <div class="inicio-card-header">
+                    <div>
+                        <h3>Mis lecciones de hoy</h3>
+                        <div class="inicio-card-sub"
+                             th:text="${#lists.isEmpty(panel.clases()) ? 'Según el horario del período' : #lists.size(panel.clases()) + (#lists.size(panel.clases()) == 1 ? ' lección' : ' lecciones') + ' en el horario'}">Horario</div>
+                    </div>
+                    <a class="inicio-card-link" href="/horario" hx-get="/horario"
+                       hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">Ver horario</a>
+                </div>
+                <div class="inicio-card-body">
+                    <ul class="inicio-lista" th:if="${!#lists.isEmpty(panel.clases())}">
+                        <li class="inicio-leccion" th:each="l : ${panel.clases()}"
+                            th:classappend="${l.estado().name() == 'EN_CURSO'} ? 'en-curso'">
+                            <div class="inicio-leccion-hora">
+                                <span th:text="${l.inicio() != null ? #temporals.format(l.inicio(), 'HH:mm') : 'L' + l.numero()}">07:00</span>
+                                <small th:if="${l.fin() != null}" th:text="${#temporals.format(l.fin(), 'HH:mm')}">07:40</small>
+                            </div>
+                            <div class="inicio-leccion-texto">
+                                <div class="inicio-leccion-materia" th:text="${l.materia() + ' · ' + l.seccion()}">Matemática · 8-2</div>
+                                <div class="inicio-leccion-detalle"
+                                     th:text="${'Lección ' + l.numero() + (l.aula() != null ? ' · ' + l.aula() : '')}">Lección 1 · Aula 3</div>
+                            </div>
+                            <span class="inicio-tag ok" th:if="${l.listaPasada()}">Lista pasada</span>
+                            <a class="inicio-tag danger" th:if="${l.isSinLista()}" href="/asistencia" hx-get="/asistencia"
+                               hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true"
+                               style="text-decoration:none;">Pasar lista</a>
+                            <span class="inicio-tag" th:if="${!l.listaPasada() and l.estado().name() == 'PROXIMA'}">Próxima</span>
+                        </li>
+                    </ul>
+                    <div class="inicio-vacio" th:if="${#lists.isEmpty(panel.clases())}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                        <span th:text="${panel.diaSinClases()}">Hoy no tienes lecciones.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="inicio-card" th:if="${!#lists.isEmpty(panel.guia())}">
+                <div class="inicio-card-header">
+                    <div>
+                        <h3>Mi sección guía</h3>
+                        <div class="inicio-card-sub">Estudiantes con ausencias o tardías hoy</div>
+                    </div>
+                    <a class="inicio-card-link" href="/notas" hx-get="/notas"
+                       hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">Ver notas</a>
+                </div>
+                <div class="inicio-card-body">
+                    <ul class="inicio-lista">
+                        <li class="inicio-persona" th:each="g : ${panel.guia()}">
+                            <div class="inicio-avatar" th:text="${g.seccion()}">8-2</div>
+                            <div class="inicio-persona-texto">
+                                <div class="inicio-persona-nombre" th:text="${'Sección ' + g.seccion()}">Sección 8-2</div>
+                                <div class="inicio-persona-detalle" th:text="${g.estudiantes() + ' estudiantes'}">30 estudiantes</div>
+                            </div>
+                            <span class="inicio-tag" th:classappend="${g.ausentesHoy() > 0} ? 'danger' : 'ok'"
+                                  th:text="${g.ausentesHoy() == 1 ? '1 con ausencias' : g.ausentesHoy() + ' con ausencias'}">0 con ausencias</span>
+                            <span class="inicio-tag warning" th:if="${g.tardiasHoy() > 0}"
+                                  th:text="${g.tardiasHoy() == 1 ? '1 con tardías' : g.tardiasHoy() + ' con tardías'}">1 con tardías</span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+
+        <div class="inicio-col">
+            <section class="inicio-card">
+                <div class="inicio-card-header">
+                    <div>
+                        <h3>Pendientes</h3>
+                        <div class="inicio-card-sub">Lo que espera algo de ti</div>
+                    </div>
+                </div>
+                <div class="inicio-card-body">
+                    <th:block th:replace="~{inicio/paneles/comun :: pendientes(${panel.pendientes()}, 'Estás al día.')}"></th:block>
+                </div>
+            </section>
+
+            <th:block th:replace="~{inicio/paneles/comun :: periodo(${panel.periodo()})}"></th:block>
+            <th:block th:replace="~{inicio/paneles/comun :: agenda(${panel.agenda()}, true)}"></th:block>
+        </div>
+    </div>
+
+</body>
+</html>

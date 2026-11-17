@@ -160,4 +160,12 @@ public interface HorarioLeccionRepository extends JpaRepository<HorarioLeccion, 
             @Param("direccionId") Long direccionId,
             @Param("periodoIds") Collection<Long> periodoIds,
             @Param("nivelIds") Collection<Long> nivelIds);
+
+    /** Lecciones de un día de la semana ("LUNES"...) en el período, para el resumen del inicio. */
+    @Query("SELECT h FROM HorarioLeccion h "
+            + "JOIN FETCH h.materia JOIN FETCH h.nivel LEFT JOIN FETCH h.docente LEFT JOIN FETCH h.aula "
+            + "WHERE h.direccion.id = :direccionId AND h.periodo.id = :periodoId AND h.dia = :dia "
+            + "ORDER BY h.numeroLeccion, h.nivel.grado, h.nivel.seccion")
+    List<HorarioLeccion> findDelDia(@Param("direccionId") Long direccionId, @Param("periodoId") Long periodoId,
+            @Param("dia") String dia);
 }

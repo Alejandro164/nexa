@@ -5,13 +5,13 @@
       layout:decorate="~{index}">
 
 <head>
-    <title>Dashboard — Nexa</title>
+    <title>Inicio — Nexa</title>
 </head>
 
 <body>
 
-    <h2 layout:fragment="page-title">Dashboard</h2>
-    <p layout:fragment="page-subtitle">Resumen de tu dirección</p>
+    <h2 layout:fragment="page-title">Inicio</h2>
+    <p layout:fragment="page-subtitle">Lo que pasa hoy en tu dirección</p>
 
     <th:block th:fragment="htmx-content">
     <!-- Al cambiar de dirección el selector del menú se actualiza en el mismo paso.
@@ -19,65 +19,52 @@
     <th:block th:if="${sincronizarSwitcher}" th:insert="~{layout/aside :: switcher}"></th:block>
     <!-- OOB: al navegar por htmx solo se reemplaza .content-area, así que el título del topbar
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
-    <h2 id="topbar-page-title" hx-swap-oob="true">Dashboard</h2>
-    <p id="topbar-page-subtitle" hx-swap-oob="true">Resumen de tu dirección</p>
+    <h2 id="topbar-page-title" hx-swap-oob="true">Inicio</h2>
+    <p id="topbar-page-subtitle" hx-swap-oob="true">Lo que pasa hoy en tu dirección</p>
     <main layout:fragment="content">
 
         <style>
-            .direccion-selector {
+            .inicio-hero {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                background: #ffffff;
-                border: 1px solid #e2e8f0;
-                border-radius: 14px;
-                padding: 1rem 1.5rem;
+                gap: 1rem;
+                flex-wrap: wrap;
+                background: linear-gradient(135deg, #1e3a5f, #2d5a87 60%, #3b76ad);
+                color: #fff;
+                border-radius: 16px;
+                padding: 1.4rem 1.6rem;
                 margin-bottom: 1.5rem;
             }
 
-            .direccion-selector-info {
+            .inicio-hero-saludo {
+                font-size: 1.35rem;
+                font-weight: 700;
+                letter-spacing: -0.01em;
+            }
+
+            .inicio-hero-sub {
+                margin-top: 0.25rem;
+                font-size: 0.88rem;
+                color: rgba(255, 255, 255, 0.78);
                 display: flex;
+                flex-wrap: wrap;
+                gap: 0.35rem 0.9rem;
                 align-items: center;
-                gap: 1rem;
             }
 
-            .direccion-selector-icon {
-                width: 44px;
-                height: 44px;
-                border-radius: 12px;
-                background: linear-gradient(135deg, #2d5a87, #60a5fa);
-                display: flex;
+            .inicio-hero-sub span {
+                display: inline-flex;
                 align-items: center;
-                justify-content: center;
-                color: white;
-                flex-shrink: 0;
+                gap: 0.35rem;
             }
 
-            .direccion-selector-icon svg {
-                width: 22px;
-                height: 22px;
+            .inicio-hero-sub svg {
+                width: 15px;
+                height: 15px;
             }
 
-            .direccion-selector-label {
-                font-size: 0.75rem;
-                color: #94a3b8;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                font-weight: 600;
-            }
-
-            .direccion-selector-name {
-                font-size: 1rem;
-                font-weight: 600;
-                color: #1e293b;
-            }
-
-            .direccion-selector-name.placeholder {
-                color: #94a3b8;
-                font-weight: 400;
-            }
-
-            .btn-switch-inst {
+            .inicio-hero .btn-switch-inst {
                 display: inline-flex;
                 align-items: center;
                 gap: 0.5rem;
@@ -86,189 +73,411 @@
                 font-weight: 500;
                 font-size: 0.85rem;
                 cursor: pointer;
-                border: 1px solid var(--border);
-                background: var(--input-bg);
-                color: var(--text-primary);
+                border: 1px solid rgba(255, 255, 255, 0.35);
+                background: rgba(255, 255, 255, 0.12);
+                color: #fff;
                 font-family: inherit;
-                transition: all 0.2s;
+                transition: background 0.2s;
             }
 
-            .btn-switch-inst:hover {
-                background: var(--border);
-                border-color: var(--text-light);
+            .inicio-hero .btn-switch-inst:hover {
+                background: rgba(255, 255, 255, 0.22);
             }
-        </style>
 
-        <!-- Selector de Dirección -->
-        <div class="direccion-selector">
-            <div class="direccion-selector-info">
-                <div class="direccion-selector-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="direccion-selector-label">Dirección Actual</div>
-                    <div class="direccion-selector-name"
-                         th:text="${direccionActivaNombre != null ? direccionActivaNombre : 'Sin dirección seleccionada'}"
-                         th:classappend="${direccionActivaNombre == null ? 'placeholder' : ''}">
-                        Sin dirección seleccionada
-                    </div>
-                </div>
-            </div>
-            <button class="btn-switch-inst"
-                    th:if="${puedeCambiarInstitucion}"
-                    hx-get="/inicio/direcciones-modal"
-                    hx-target="#modal-container"
-                    hx-swap="innerHTML"
-                    onclick="document.getElementById('modal-container').classList.add('show')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="17 1 21 5 17 9"></polyline>
-                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                    <polyline points="7 23 3 19 7 15"></polyline>
-                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-                </svg>
-                Cambiar institución
-            </button>
-        </div>
-
-        <style>
-            .dash-stats {
+            /* ── Rejilla y tarjetas ───────────────────────────────────────── */
+            .inicio-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-                gap: 1.5rem;
-                margin-bottom: 2rem;
+                grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+                gap: 1.25rem;
+                align-items: start;
             }
 
-            .dash-stat-card {
-                background: #ffffff;
-                border: 1px solid #e2e8f0;
-                border-radius: 14px;
-                padding: 1.5rem;
+            .inicio-col {
                 display: flex;
-                align-items: flex-start;
-                gap: 1rem;
-                transition: box-shadow 0.2s, transform 0.2s;
+                flex-direction: column;
+                gap: 1.25rem;
+                min-width: 0;
             }
 
-            .dash-stat-card:hover {
-                box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-                transform: translateY(-2px);
-            }
-
-            .dash-stat-icon {
-                width: 52px;
-                height: 52px;
-                border-radius: 14px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
-            }
-
-            .dash-stat-icon.users {
-                background: linear-gradient(135deg, rgba(45,90,135,0.12), rgba(96,165,250,0.18));
-                color: #2d5a87;
-            }
-
-            .dash-stat-icon.empresas {
-                background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.18));
-                color: #16a34a;
-            }
-
-            .dash-stat-icon.activos {
-                background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,191,36,0.18));
-                color: #d97706;
-            }
-
-            .dash-stat-icon.roles {
-                background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(167,139,250,0.18));
-                color: #7c3aed;
-            }
-
-            .dash-stat-value {
-                font-size: 1.75rem;
-                font-weight: 700;
-                color: #1e293b;
-                line-height: 1.2;
-            }
-
-            .dash-stat-value.text {
-                font-size: 1.15rem;
-            }
-
-            .dash-stat-label {
-                font-size: 0.8rem;
-                color: #64748b;
-                margin-top: 2px;
-            }
-
-            .dash-stat-detail {
-                font-size: 0.75rem;
-                color: #94a3b8;
-                margin-top: 4px;
-            }
-
-            .dash-widgets {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1.5rem;
-                margin-bottom: 2rem;
-            }
-
-            @media (max-width: 900px) {
-                .dash-widgets {
-                    grid-template-columns: 1fr;
+            @media (max-width: 1100px) {
+                .inicio-grid {
+                    grid-template-columns: minmax(0, 1fr);
                 }
             }
 
-            .dash-card {
-                background: #ffffff;
-                border: 1px solid #e2e8f0;
+            .inicio-card {
+                background: #fff;
+                border: 1px solid var(--border-solid);
                 border-radius: 14px;
                 overflow: hidden;
             }
 
-            .dash-card-header {
-                padding: 1.25rem 1.5rem;
-                border-bottom: 1px solid #e2e8f0;
+            .inicio-card-header {
                 display: flex;
+                align-items: center;
                 justify-content: space-between;
-                align-items: center;
-            }
-
-            .dash-card-header h3 {
-                font-size: 0.95rem;
-                font-weight: 600;
-                color: #1e293b;
-            }
-
-            .dash-card-body {
-                padding: 1.25rem 1.5rem;
-            }
-
-            /* Limita la altura a ~5 filas (64px c/u); si hay más, se hace scroll en vez de estirar el card. */
-            .dash-card-body-scroll {
-                max-height: 360px;
-                overflow-y: auto;
-            }
-
-            .dash-list-item {
-                display: flex;
-                align-items: center;
                 gap: 0.75rem;
-                padding: 0.75rem 0;
+                padding: 1rem 1.25rem;
                 border-bottom: 1px solid #f1f5f9;
             }
 
-            .dash-list-item:last-child {
-                border-bottom: none;
+            .inicio-card-header h3 {
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: var(--text-main);
+                margin: 0;
             }
 
-            .dash-avatar {
-                width: 38px;
+            .inicio-card-header .inicio-card-sub {
+                font-size: 0.75rem;
+                color: #94a3b8;
+                margin-top: 2px;
+            }
+
+            .inicio-card-link {
+                font-size: 0.8rem;
+                font-weight: 500;
+                color: var(--primary);
+                text-decoration: none;
+                white-space: nowrap;
+            }
+
+            .inicio-card-link:hover {
+                text-decoration: underline;
+            }
+
+            .inicio-card-body {
+                padding: 1rem 1.25rem 1.15rem;
+            }
+
+            .inicio-vacio {
+                text-align: center;
+                padding: 1.25rem 0.5rem;
+                color: #94a3b8;
+                font-size: 0.85rem;
+            }
+
+            .inicio-vacio svg {
+                width: 28px;
+                height: 28px;
+                display: block;
+                margin: 0 auto 0.4rem;
+                color: #cbd5e1;
+            }
+
+            /* ── Indicadores ─────────────────────────────────────────────── */
+            .inicio-kpis {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 0.75rem;
+            }
+
+            @media (max-width: 640px) {
+                .inicio-kpis {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+
+            .inicio-kpi {
+                background: #f8fafc;
+                border: 1px solid #eef2f6;
+                border-radius: 12px;
+                padding: 0.8rem 0.9rem;
+            }
+
+            .inicio-kpi-valor {
+                font-size: 1.6rem;
+                font-weight: 700;
+                color: var(--text-main);
+                line-height: 1.1;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .inicio-kpi-label {
+                font-size: 0.75rem;
+                color: #64748b;
+                margin-top: 0.2rem;
+            }
+
+            .inicio-kpi.danger .inicio-kpi-valor { color: #dc2626; }
+            .inicio-kpi.warning .inicio-kpi-valor { color: #d97706; }
+            .inicio-kpi.ok .inicio-kpi-valor { color: #16a34a; }
+
+            .inicio-barra {
+                height: 8px;
+                border-radius: 999px;
+                background: #eef2f6;
+                overflow: hidden;
+            }
+
+            .inicio-barra > span {
+                display: block;
+                height: 100%;
+                border-radius: inherit;
+                background: var(--primary);
+            }
+
+            .inicio-barra.ok > span { background: #22c55e; }
+            .inicio-barra.warning > span { background: #f59e0b; }
+            .inicio-barra.danger > span { background: #ef4444; }
+
+            .inicio-progreso {
+                margin-top: 1rem;
+            }
+
+            .inicio-progreso-fila {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                font-size: 0.82rem;
+                color: #475569;
+                margin-bottom: 0.4rem;
+            }
+
+            .inicio-progreso-fila strong {
+                color: var(--text-main);
+                font-variant-numeric: tabular-nums;
+            }
+
+            /* ── Listas ──────────────────────────────────────────────────── */
+            .inicio-lista {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .inicio-lista > li + li {
+                border-top: 1px solid #f1f5f9;
+            }
+
+            .inicio-subtitulo {
+                font-size: 0.72rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #94a3b8;
+                margin: 1.1rem 0 0.35rem;
+            }
+
+            .inicio-pendiente {
+                display: flex;
+                align-items: center;
+                gap: 0.8rem;
+                padding: 0.7rem 0;
+                text-decoration: none;
+                color: inherit;
+            }
+
+            .inicio-pendiente:hover .inicio-pendiente-titulo {
+                color: var(--primary);
+            }
+
+            .inicio-cuenta {
+                min-width: 38px;
                 height: 38px;
+                padding: 0 0.4rem;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 0.95rem;
+                flex-shrink: 0;
+                font-variant-numeric: tabular-nums;
+                background: rgba(45, 90, 135, 0.1);
+                color: #2d5a87;
+            }
+
+            .inicio-cuenta.warning { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+            .inicio-cuenta.danger { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+
+            .inicio-pendiente-texto {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .inicio-pendiente-titulo {
+                font-weight: 500;
+                font-size: 0.88rem;
+                color: var(--text-main);
+            }
+
+            .inicio-pendiente-detalle {
+                font-size: 0.75rem;
+                color: #94a3b8;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .inicio-chevron {
+                width: 16px;
+                height: 16px;
+                color: #cbd5e1;
+                flex-shrink: 0;
+            }
+
+            .inicio-al-dia {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.4rem 0;
+                color: #166534;
+                font-size: 0.88rem;
+            }
+
+            .inicio-al-dia .inicio-cuenta {
+                background: rgba(34, 197, 94, 0.12);
+                color: #16a34a;
+            }
+
+            .inicio-al-dia svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            /* ── Agenda ──────────────────────────────────────────────────── */
+            .inicio-evento {
+                display: flex;
+                align-items: center;
+                gap: 0.8rem;
+                padding: 0.6rem 0;
+            }
+
+            .inicio-fecha {
+                width: 42px;
+                flex-shrink: 0;
+                text-align: center;
+                border-radius: 10px;
+                border: 1px solid var(--border-solid);
+                padding: 0.25rem 0;
+                line-height: 1.1;
+            }
+
+            .inicio-fecha small {
+                display: block;
+                font-size: 0.62rem;
+                text-transform: uppercase;
+                color: #94a3b8;
+                font-weight: 600;
+            }
+
+            .inicio-fecha strong {
+                font-size: 1rem;
+                color: var(--text-main);
+            }
+
+            .inicio-fecha.hoy {
+                background: var(--primary);
+                border-color: var(--primary);
+            }
+
+            .inicio-fecha.hoy small,
+            .inicio-fecha.hoy strong {
+                color: #fff;
+            }
+
+            .inicio-evento-texto {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .inicio-evento-titulo {
+                font-size: 0.86rem;
+                font-weight: 500;
+                color: var(--text-main);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .inicio-evento-titulo a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            .inicio-evento-titulo a:hover {
+                color: var(--primary);
+                text-decoration: underline;
+            }
+
+            .inicio-evento-cuando {
+                font-size: 0.75rem;
+                color: #94a3b8;
+            }
+
+            .inicio-tag {
+                display: inline-flex;
+                align-items: center;
+                font-size: 0.68rem;
+                font-weight: 600;
+                padding: 0.15rem 0.5rem;
+                border-radius: 999px;
+                white-space: nowrap;
+                flex-shrink: 0;
+                background: #f1f5f9;
+                color: #475569;
+            }
+
+            .inicio-tag.institucional { background: rgba(45, 90, 135, 0.1); color: #2d5a87; }
+            .inicio-tag.tarea { background: rgba(139, 92, 246, 0.12); color: #6d28d9; }
+            .inicio-tag.recordatorio { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+            .inicio-tag.ok { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+            .inicio-tag.danger { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+            .inicio-tag.warning { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+            .inicio-tag.info { background: rgba(96, 165, 250, 0.16); color: #1d4ed8; }
+
+            /* ── Lecciones ───────────────────────────────────────────────── */
+            .inicio-leccion {
+                display: flex;
+                align-items: center;
+                gap: 0.85rem;
+                padding: 0.65rem 0;
+            }
+
+            .inicio-leccion-hora {
+                width: 64px;
+                flex-shrink: 0;
+                font-size: 0.8rem;
+                color: #475569;
+                font-variant-numeric: tabular-nums;
+                line-height: 1.25;
+            }
+
+            .inicio-leccion-hora small {
+                display: block;
+                color: #94a3b8;
+                font-size: 0.7rem;
+            }
+
+            .inicio-leccion.en-curso {
+                background: linear-gradient(90deg, rgba(45, 90, 135, 0.06), transparent);
+                margin: 0 -1.25rem;
+                padding-left: 1.25rem;
+                padding-right: 1.25rem;
+                box-shadow: inset 3px 0 0 var(--primary);
+            }
+
+            .inicio-leccion-texto {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .inicio-leccion-materia {
+                font-weight: 500;
+                font-size: 0.88rem;
+                color: var(--text-main);
+            }
+
+            .inicio-leccion-detalle {
+                font-size: 0.75rem;
+                color: #94a3b8;
+            }
+
+            /* ── Personas ────────────────────────────────────────────────── */
+            .inicio-avatar {
+                width: 34px;
+                height: 34px;
                 border-radius: 10px;
                 background: linear-gradient(135deg, #2d5a87, #60a5fa);
                 color: #fff;
@@ -276,427 +485,189 @@
                 align-items: center;
                 justify-content: center;
                 font-weight: 700;
-                font-size: 0.85rem;
+                font-size: 0.78rem;
                 flex-shrink: 0;
             }
 
-            .dash-avatar.alt {
-                background: linear-gradient(135deg, #7c3aed, #a78bfa);
-            }
-
-            .dash-activity-icon {
-                width: 38px;
-                height: 38px;
-                border-radius: 10px;
+            .inicio-persona {
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                flex-shrink: 0;
+                gap: 0.75rem;
+                padding: 0.6rem 0;
             }
 
-            .dash-activity-icon svg { width: 17px; height: 17px; }
+            .inicio-persona-texto {
+                flex: 1;
+                min-width: 0;
+            }
 
-            .dash-activity-icon.crear { background: rgba(34,197,94,0.12); color: #16a34a; }
-            .dash-activity-icon.editar { background: rgba(45,90,135,0.1); color: #2d5a87; }
-            .dash-activity-icon.eliminar { background: rgba(220,38,38,0.1); color: #dc2626; }
-            .dash-activity-icon.calificar { background: rgba(139,92,246,0.12); color: #7c3aed; }
-
-            .dash-list-name {
+            .inicio-persona-nombre {
+                font-size: 0.86rem;
                 font-weight: 500;
-                color: #1e293b;
-                font-size: 0.88rem;
+                color: var(--text-main);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
-            .dash-list-sub {
+            .inicio-persona-detalle {
                 font-size: 0.75rem;
                 color: #94a3b8;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
-            .dash-quick-actions {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                gap: 1rem;
-                margin-bottom: 1rem;
+            .inicio-nota {
+                font-weight: 700;
+                font-size: 0.9rem;
+                font-variant-numeric: tabular-nums;
+                color: #dc2626;
+                flex-shrink: 0;
             }
 
-            .dash-action-btn {
+            .inicio-cargando {
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+            }
+
+            .inicio-cargando span {
+                height: 14px;
+                border-radius: 6px;
+                background: linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9);
+                background-size: 200% 100%;
+                animation: inicio-brillo 1.2s ease-in-out infinite;
+            }
+
+            .inicio-cargando span:nth-child(2) { width: 80%; }
+            .inicio-cargando span:nth-child(3) { width: 60%; }
+
+            @keyframes inicio-brillo {
+                from { background-position: 200% 0; }
+                to { background-position: -200% 0; }
+            }
+
+            .inicio-vista-previa {
                 display: flex;
                 align-items: center;
-                gap: 10px;
-                padding: 14px 18px;
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
+                gap: 0.6rem;
+                padding: 0.7rem 1rem;
+                margin-bottom: 1.25rem;
                 border-radius: 12px;
-                text-decoration: none;
-                font-weight: 500;
-                font-size: 0.88rem;
-                color: #334155;
-                transition: all 0.2s;
+                border: 1px solid rgba(245, 158, 11, 0.35);
+                background: rgba(245, 158, 11, 0.08);
+                color: #92400e;
+                font-size: 0.85rem;
             }
 
-            .dash-action-btn:hover {
-                background: #f1f5f9;
-                border-color: #cbd5e1;
-                color: #1e293b;
-            }
-
-            .dash-action-btn svg {
-                width: 20px;
-                height: 20px;
+            .inicio-vista-previa svg {
+                width: 18px;
+                height: 18px;
                 flex-shrink: 0;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .inicio-cargando span { animation: none; }
             }
         </style>
 
-        <!-- Resumen global: solo para el admin sin dirección seleccionada -->
-        <th:block th:if="${sinDireccion}">
-
-        <div class="dash-stats">
-            <div class="dash-stat-card">
-                <div class="dash-stat-icon users">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="dash-stat-value" th:text="${totalUsuarios}">0</div>
-                    <div class="dash-stat-label">Usuarios Totales</div>
-                    <div class="dash-stat-detail" th:text="${usuariosActivos} + ' activos'">0 activos</div>
+        <!-- Saludo, fecha y dirección actual -->
+        <section class="inicio-hero">
+            <div>
+                <div class="inicio-hero-saludo"
+                     th:text="${primerNombre != null ? saludo + ', ' + primerNombre : saludo}">Buenos días</div>
+                <div class="inicio-hero-sub">
+                    <span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        <span th:text="${fechaHoy}">Lunes 1 de enero</span>
+                    </span>
+                    <span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                        <span th:text="${direccionActivaNombre != null ? direccionActivaNombre : 'Sin dirección seleccionada'}">Dirección</span>
+                    </span>
                 </div>
             </div>
+            <button class="btn-switch-inst" type="button"
+                    th:if="${puedeCambiarInstitucion}"
+                    hx-get="/inicio/direcciones-modal"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    onclick="document.getElementById('modal-container').classList.add('show')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <polyline points="7 23 3 19 7 15"></polyline>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+                Cambiar institución
+            </button>
+        </section>
 
-            <div class="dash-stat-card">
-                <div class="dash-stat-icon empresas">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="dash-stat-value" th:text="${totalDirecciones}">0</div>
-                    <div class="dash-stat-label">Instituciones educativas</div>
-                    <div class="dash-stat-detail" th:text="${direccionesActivas} + ' activas'">0 activos</div>
-                </div>
+        <!-- data-modo: el "Modo" del menú con que se armó este inicio. Si el menú está en otro, el script
+             de abajo lo vuelve a pedir (solo admin y system config pueden cambiar de modo). -->
+        <div id="inicio-raiz" th:data-modo="${modoInicio}" th:data-previsualiza="${puedePrevisualizar}">
+
+            <div class="inicio-vista-previa" th:if="${vistaPreviaRol != null}" role="status">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span th:if="${vistaPreviaNombre != null}">
+                    Vista previa del inicio de un <strong th:text="${vistaPreviaRol}">docente</strong>, con los datos de
+                    <strong th:text="${vistaPreviaNombre}">Nombre</strong>. Seguís siendo administrador.
+                </span>
+                <span th:unless="${vistaPreviaNombre != null}">
+                    Vista previa del inicio de un <strong th:text="${vistaPreviaRol}">docente</strong>.
+                </span>
             </div>
 
-            <div class="dash-stat-card">
-                <div class="dash-stat-icon activos">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                    </svg>
+            <th:block th:switch="${vistaInicio}">
+                <th:block th:case="'global'" th:insert="~{inicio/paneles/global :: panel}"></th:block>
+                <th:block th:case="'direccion'" th:insert="~{inicio/paneles/direccion :: panel}"></th:block>
+                <th:block th:case="'docente'" th:insert="~{inicio/paneles/docente :: panel}"></th:block>
+                <th:block th:case="'familia'" th:insert="~{inicio/paneles/familia :: panel}"></th:block>
+                <div th:case="'sin-muestra'" class="inicio-card">
+                    <div class="inicio-vacio"
+                         th:text="${'Esta dirección no tiene ningún ' + vistaPreviaRol + ' activo para mostrar su inicio.'}">Sin usuario de muestra.</div>
                 </div>
-                <div>
-                    <div class="dash-stat-value" th:text="${porcentajeActivos} + '%'">0%</div>
-                    <div class="dash-stat-label">Tasa de Actividad</div>
-                    <div class="dash-stat-detail">Usuarios activos del total</div>
+                <div th:case="*" class="inicio-card">
+                    <div class="inicio-vacio">Tu usuario no tiene un rol con resumen de inicio.</div>
                 </div>
-            </div>
-
-            <div class="dash-stat-card">
-                <div class="dash-stat-icon roles">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="dash-stat-value" th:text="${totalRoles}">0</div>
-                    <div class="dash-stat-label">Roles Configurados</div>
-                    <div class="dash-stat-detail">Perfiles del sistema</div>
-                </div>
-            </div>
+            </th:block>
         </div>
 
-        <div class="dash-widgets">
-            <div class="dash-card">
-                <div class="dash-card-header">
-                    <h3>Usuarios Recientes</h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </div>
-                <div class="dash-card-body dash-card-body-scroll">
-                    <th:block th:each="usuario, iterStat : ${ultimosUsuarios}">
-                        <div class="dash-list-item">
-                            <div class="dash-avatar" th:classappend="${iterStat.odd} ? 'alt'">
-                                <span th:text="${#strings.substring(usuario.nombre, 0, 1)}">U</span>
-                            </div>
-                            <div style="flex:1;min-width:0;">
-                                <div class="dash-list-name" th:text="${usuario.nombre}">Nombre</div>
-                                <div class="dash-list-sub" th:text="${usuario.email}">email</div>
-                            </div>
-                            <span class="badge badge-primary" th:if="${usuario.activo}" style="font-size:0.7rem;">Activo</span>
-                            <span class="badge badge-danger" th:unless="${usuario.activo}" style="font-size:0.7rem;background:rgba(220,38,38,0.1);color:#dc2626;">Inactivo</span>
-                        </div>
-                    </th:block>
-                    <div th:if="${#lists.isEmpty(ultimosUsuarios)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
-                        No hay usuarios registrados aún.
-                    </div>
-                </div>
-            </div>
-
-            <div class="dash-card">
-                <div class="dash-card-header">
-                    <h3>Instituciones educativas</h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                </div>
-                <div class="dash-card-body dash-card-body-scroll">
-                    <th:block th:each="direccion : ${ultimasDirecciones}">
-                        <div class="dash-list-item">
-                            <div class="dash-avatar alt" style="background:linear-gradient(135deg,#16a34a,#4ade80);">
-                                <span th:text="${#strings.substring(direccion.nombre, 0, 1)}">C</span>
-                            </div>
-                            <div style="flex:1;min-width:0;">
-                                <div class="dash-list-name" th:text="${direccion.nombre}">Nombre</div>
-                                <div class="dash-list-sub" th:text="${direccion.codigo}">código</div>
-                            </div>
-                            <span class="badge badge-success" th:if="${direccion.activa}" style="font-size:0.7rem;">Activo</span>
-                            <span class="badge badge-danger" th:unless="${direccion.activa}" style="font-size:0.7rem;background:rgba(220,38,38,0.1);color:#dc2626;">Inactivo</span>
-                        </div>
-                    </th:block>
-                    <div th:if="${#lists.isEmpty(ultimasDirecciones)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
-                        No hay instituciones educativas registradas.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="dash-card">
-            <div class="dash-card-header">
-                <h3>Acciones Rápidas</h3>
-            </div>
-            <div class="dash-card-body">
-                <div class="dash-quick-actions">
-                    <a href="/usuarios" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
-                       hx-get="/usuarios" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2d5a87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                        Gestionar Usuarios
-                    </a>
-                    <a href="/direcciones" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
-                       hx-get="/direcciones" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                        </svg>
-                        Gestionar Instituciones
-                    </a>
-                    <a href="/seguridad" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
-                       hx-get="/seguridad" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/>
-                        </svg>
-                        Seguridad
-                    </a>
-                    <a href="/configuracion" class="dash-action-btn" sec:authorize="hasAuthority('ROLE_SYSTEM_CONFIG')"
-                       hx-get="/configuracion" hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        </svg>
-                        Configuración
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        </th:block>
-
-        <!-- Panel scoped a la dirección activa -->
-        <th:block th:unless="${sinDireccion}">
-
-        <!-- Stats Cards -->
-        <div class="dash-stats">
-            <div class="dash-stat-card">
-                <div class="dash-stat-icon users">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="dash-stat-value" th:text="${totalEstudiantes}">0</div>
-                    <div class="dash-stat-label">Estudiantes Activos</div>
-                    <div class="dash-stat-detail">Matriculados en esta dirección</div>
-                </div>
-            </div>
-
-            <div class="dash-stat-card">
-                <div class="dash-stat-icon empresas">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                        <circle cx="10" cy="7" r="4"/>
-                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="dash-stat-value" th:text="${totalDocentes}">0</div>
-                    <div class="dash-stat-label">Docentes Activos</div>
-                    <div class="dash-stat-detail">Con acceso a esta dirección</div>
-                </div>
-            </div>
-
-            <div class="dash-stat-card">
-                <div class="dash-stat-icon activos">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        <circle cx="12" cy="16" r="1"/>
-                    </svg>
-                </div>
-                <div>
-                    <div class="dash-stat-value" th:text="${personalPresenteHoy}">0</div>
-                    <div class="dash-stat-label">Personal Presente Hoy</div>
-                    <div class="dash-stat-detail" th:text="${totalRegistrosHoy} + ' marcas de entrada/salida hoy'">0 registros hoy</div>
-                </div>
-            </div>
-
-            <div class="dash-stat-card">
-                <div class="dash-stat-icon roles">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
-                </div>
-                <div th:if="${periodoActivo != null}">
-                    <div class="dash-stat-value text" th:text="${periodoActivo.codigo}">—</div>
-                    <div class="dash-stat-label">Período Activo</div>
-                    <div class="dash-stat-detail"
-                         th:text="${#temporals.format(periodoActivo.fechaInicio, 'dd/MM/yyyy')} + ' – ' + ${#temporals.format(periodoActivo.fechaFin, 'dd/MM/yyyy')}">—</div>
-                </div>
-                <div th:if="${periodoActivo == null}">
-                    <div class="dash-stat-value text" style="color:#94a3b8;">Sin definir</div>
-                    <div class="dash-stat-label">Período Activo</div>
-                    <div class="dash-stat-detail">No hay un período académico activo</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Widgets Row -->
-        <div class="dash-widgets">
-            <!-- Actividad Reciente -->
-            <div class="dash-card">
-                <div class="dash-card-header">
-                    <h3>Actividad Académica Reciente</h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </div>
-                <div class="dash-card-body dash-card-body-scroll">
-                    <th:block th:each="evento : ${actividadReciente}">
-                        <div class="dash-list-item">
-                            <div class="dash-activity-icon"
-                                 th:classappend="${#strings.toLowerCase(evento.accion.name())}">
-                                <svg th:if="${evento.accion.name() == 'CREAR'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                <svg th:if="${evento.accion.name() == 'EDITAR'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                <svg th:if="${evento.accion.name() == 'ELIMINAR'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                <svg th:if="${evento.accion.name() == 'CALIFICAR'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                            </div>
-                            <div style="flex:1;min-width:0;">
-                                <div class="dash-list-name">
-                                    <span th:text="${evento.usuarioNombre}">Usuario</span>
-                                    <span style="font-weight:400;color:#64748b;" th:switch="${evento.accion.name()}">
-                                        <span th:case="'CREAR'">creó</span>
-                                        <span th:case="'EDITAR'">editó</span>
-                                        <span th:case="'ELIMINAR'">eliminó</span>
-                                        <span th:case="'CALIFICAR'">calificó</span>
-                                    </span>
-                                    <span th:switch="${evento.modulo.name()}">
-                                        <span th:case="'COTIDIANO'">un indicador cotidiano</span>
-                                        <span th:case="'TAREA'">una tarea</span>
-                                        <span th:case="'PROYECTO'">un proyecto</span>
-                                        <span th:case="'EXAMEN'">una prueba</span>
-                                        <span th:case="'EXTRACLASE'">un trabajo extraclase</span>
-                                    </span>
-                                </div>
-                                <div class="dash-list-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" th:text="${evento.itemTitulo}">Título</div>
-                            </div>
-                            <span class="dash-list-sub" style="flex-shrink:0;" th:text="${#temporals.format(evento.fecha, 'dd/MM HH:mm')}">fecha</span>
-                        </div>
-                    </th:block>
-                    <div th:if="${#lists.isEmpty(actividadReciente)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
-                        Todavía no hay actividad académica registrada.
-                    </div>
-                </div>
-            </div>
-
-            <!-- Niveles Educativos -->
-            <div class="dash-card">
-                <div class="dash-card-header">
-                    <h3>Niveles Educativos</h3>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                </div>
-                <div class="dash-card-body dash-card-body-scroll">
-                    <th:block th:each="nivel, iterStat : ${niveles}">
-                        <div class="dash-list-item">
-                            <div class="dash-avatar" th:classappend="${iterStat.odd} ? 'alt'">
-                                <span th:text="${nivel.grado}">1</span>
-                            </div>
-                            <div style="flex:1;">
-                                <div class="dash-list-name" th:text="${nivel.nombreCompleto}">Nivel</div>
-                                <div class="dash-list-sub">Nivel activo</div>
-                            </div>
-                        </div>
-                    </th:block>
-                    <div th:if="${#lists.isEmpty(niveles)}" style="text-align:center;padding:1rem 0;color:#94a3b8;font-size:0.85rem;">
-                        No hay niveles educativos configurados aún.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="dash-card">
-            <div class="dash-card-header">
-                <h3>Acciones Rápidas</h3>
-            </div>
-            <div class="dash-card-body">
-                <div class="dash-quick-actions">
-                    <a href="/estudiantes" class="dash-action-btn"
-                       hx-get="/estudiantes"
-                       hx-target=".content-area"
-                       hx-swap="innerHTML"
-                       hx-push-url="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#2d5a87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                        </svg>
-                        Ver Estudiantes
-                    </a>
-                    <a href="/docentes" class="dash-action-btn"
-                       hx-get="/docentes"
-                       hx-target=".content-area"
-                       hx-swap="innerHTML"
-                       hx-push-url="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                        Ver Docentes
-                    </a>
-                    <a href="/control-de-acceso" class="dash-action-btn" sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_DIRECTOR')"
-                       hx-get="/control-de-acceso"
-                       hx-target=".content-area"
-                       hx-swap="innerHTML"
-                       hx-push-url="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/>
-                        </svg>
-                        Control de Acceso
-                    </a>
-                    <a href="/configuracion-academica" class="dash-action-btn"
-                       hx-get="/configuracion-academica"
-                       hx-target=".content-area"
-                       hx-swap="innerHTML"
-                       hx-push-url="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                        </svg>
-                        Config. Académica
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        </th:block>
+        <script th:inline="none">
+            // El selector "Modo" del menú guarda el rol en sessionStorage y avisa con el evento nexa-modo.
+            // El inicio se arma en el servidor, así que cuando el modo no coincide se vuelve a pedir.
+            (function () {
+                const raiz = document.getElementById('inicio-raiz');
+                if (!raiz || raiz.dataset.previsualiza !== 'true') {
+                    return;
+                }
+                const sincronizar = function (modo) {
+                    const actual = document.getElementById('inicio-raiz');
+                    // System config navega a Configuración desde el propio menú: no se pide el inicio.
+                    if (!actual || !modo || modo === 'system' || modo === actual.dataset.modo) {
+                        return;
+                    }
+                    actual.dataset.modo = modo;
+                    htmx.ajax('GET', '/inicio?modo=' + encodeURIComponent(modo),
+                        { target: '.content-area', swap: 'innerHTML' });
+                };
+                let guardado = null;
+                try {
+                    guardado = sessionStorage.getItem('nexa-modo-menu');
+                } catch (e) {
+                    guardado = null;
+                }
+                sincronizar(guardado);
+                if (window.__inicioModo) {
+                    window.removeEventListener('nexa-modo', window.__inicioModo);
+                }
+                window.__inicioModo = function (event) {
+                    sincronizar(event.detail);
+                };
+                window.addEventListener('nexa-modo', window.__inicioModo);
+            })();
+        </script>
 
     </main>
     </th:block>

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.DestinoRebajaAsistencia;
+import com.chavescr.nexa.entity.ModoAsistencia;
 import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.QuienRegistraPuntosBoleta;
 import com.chavescr.nexa.entity.RebajaConducta;
@@ -42,12 +43,13 @@ public class RebajaConductaService {
     }
 
     /**
-     * Las ausencias y tardías siempre forman el rubro Asistencia de la nota (artículo 37 del Reglamento de
-     * Evaluación); ya no rebajan la conducta. Se mantiene para las vistas que muestran u ocultan ese rubro.
+     * true si las ausencias y tardías forman el rubro Asistencia de la nota: siempre con el reglamento del MEP, y
+     * con valores propios cuando el destino elegido es el componente.
      */
-    @Transactional(readOnly = true, rollbackFor = Exception.class)
     public boolean asistenciaRebajaComponente(Long direccionId) {
-        return true;
+        RebajaConducta rebaja = obtener(direccionId);
+        return rebaja.getModoAsistencia() == ModoAsistencia.REGLAMENTO_MEP
+                || rebaja.getDestinoRebajaAsistencia() == DestinoRebajaAsistencia.COMPONENTE;
     }
 
     /** Reglas listas para restar de la nota. Si el texto guardado no se puede leer, usa las predeterminadas. */
@@ -59,15 +61,25 @@ public class RebajaConductaService {
         for (TipoRebaja tipo : TipoRebaja.values()) {
             reglas.put(tipo, reglaDe(porId.get(tipo.id()), tipo));
         }
-        return new CalculoRebaja(reglas, false, rebaja.getTardiasPorAusencia());
+        boolean reglamentoMep = rebaja.getModoAsistencia() == ModoAsistencia.REGLAMENTO_MEP;
+        boolean enConducta = !reglamentoMep
+                && rebaja.getDestinoRebajaAsistencia() == DestinoRebajaAsistencia.CONDUCTA;
+        return new CalculoRebaja(reglas, enConducta, rebaja.getTardiasPorAusencia(), reglamentoMep);
     }
 
     @Transactional(rollbackFor = Exception.class)
     public RebajaConducta guardar(Long direccionId, String reglasJson,
-            QuienRegistraPuntosBoleta quienRegistraPuntosBoleta, Integer tardiasPorAusencia) {
+            QuienRegistraPuntosBoleta quienRegistraPuntosBoleta, ModoAsistencia modoAsistencia,
+            DestinoRebajaAsistencia destinoRebajaAsistencia, Integer tardiasPorAusencia) {
         String canonico = canonizar(reglasJson);
         if (quienRegistraPuntosBoleta == null) {
             throw new IllegalArgumentException("Indica quién registra los puntos de las boletas");
+        }
+        if (modoAsistencia == null) {
+            throw new IllegalArgumentException("Indica cómo se calcula la asistencia");
+        }
+        if (modoAsistencia == ModoAsistencia.PERSONALIZADO && destinoRebajaAsistencia == null) {
+            throw new IllegalArgumentException("Indica qué rebajan las ausencias y tardías");
         }
         if (tardiasPorAusencia == null || (tardiasPorAusencia != 1 && tardiasPorAusencia != 2)) {
             throw new IllegalArgumentException("Indica cuánto vale cada tardía injustificada");
@@ -75,7 +87,11 @@ public class RebajaConductaService {
         RebajaConducta rebaja = repository.findByDireccionId(direccionId).orElseGet(() -> nueva(direccionId));
         rebaja.setReglas(canonico);
         rebaja.setQuienRegistraPuntosBoleta(quienRegistraPuntosBoleta);
-        rebaja.setDestinoRebajaAsistencia(DestinoRebajaAsistencia.COMPONENTE);
+        rebaja.setModoAsistencia(modoAsistencia);
+        // Con el reglamento del MEP la asistencia siempre es el rubro de la nota (artículo 37).
+        rebaja.setDestinoRebajaAsistencia(modoAsistencia == ModoAsistencia.REGLAMENTO_MEP
+                ? DestinoRebajaAsistencia.COMPONENTE
+                : destinoRebajaAsistencia);
         rebaja.setTardiasPorAusencia(tardiasPorAusencia);
         return repository.save(rebaja);
     }

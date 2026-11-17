@@ -29,6 +29,7 @@ import com.chavescr.nexa.dto.NotasConductaDetalle.Cuenta;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Linea;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Registro;
 import com.chavescr.nexa.dto.NotasDesgloseFila;
+import com.chavescr.nexa.dto.PanelInicio;
 import com.chavescr.nexa.dto.VistaEscala;
 import com.chavescr.nexa.entity.Aula;
 import com.chavescr.nexa.entity.ConfiguracionDireccion;
@@ -220,7 +221,10 @@ class ProyectoApplicationTests {
 		assertTrue(escalaRenderizada.contains("data-rebajas"));
 		assertTrue(escalaRenderizada.contains("data-quien-puntos-boleta=\"PROFESOR_GUIA\""));
 		assertTrue(escalaRenderizada.contains("data-tardias-por-ausencia=\"2\""));
-		assertFalse(escalaRenderizada.contains("destinoRebajaAsistencia"));
+		assertTrue(escalaRenderizada.contains("name=\"destinoRebajaAsistencia\""));
+		assertTrue(escalaRenderizada.contains("name=\"modoAsistencia\""));
+		assertTrue(escalaRenderizada.contains("data-modo-asistencia=\"REGLAMENTO_MEP\""));
+		assertTrue(escalaRenderizada.contains("Valores propios del colegio"));
 		assertTrue(escalaRenderizada.contains("Cada tardía injustificada cuenta como"));
 		assertTrue(escalaRenderizada.contains("Excelente"));
 		assertTrue(escalaRenderizada.contains("data-nota-aprobacion=\"70\""));
@@ -764,5 +768,76 @@ class ProyectoApplicationTests {
 		assertTrue(conError.contains("El título es obligatorio"));
 		// Un tercero sin permisos de supervisión no ve el botón de eliminar el comentario ajeno
 		assertFalse(conError.contains("/agenda/tareas/10/detalle/comentarios/1"));
+	}
+
+	@Test
+	void inicioMuestraElPanelDeCadaRol() {
+		LocalDate hoy = LocalDate.now();
+		PanelInicio.Periodo periodo = new PanelInicio.Periodo("III-2026", null, hoy.minusDays(10), hoy.plusDays(20),
+				20, 33);
+		List<PanelInicio.EventoAgenda> agenda = List.of(
+				new PanelInicio.EventoAgenda(hoy, hoy.plusDays(2), null, "Semana de la ciencia", "institucional",
+						"Evento Institucional", "https://www.mep.go.cr"),
+				new PanelInicio.EventoAgenda(hoy.plusDays(1), null, LocalTime.of(14, 0), "Reunión de nivel",
+						"recordatorio", "Recordatorio", null));
+		List<PanelInicio.Pendiente> pendientes = List.of(new PanelInicio.Pendiente(
+				"Entregas académicas por revisar", "Presentadas por docentes y sin revisión", 3,
+				"/entregas-academicas", "info"));
+		PanelInicio.Leccion sinLista = new PanelInicio.Leccion(2, LocalTime.of(7, 40), LocalTime.of(8, 20),
+				"Matemáticas", "8-2", "Docente de prueba", "Aula 101", false, PanelInicio.Leccion.Estado.TERMINADA);
+		PanelInicio.Leccion conLista = new PanelInicio.Leccion(1, LocalTime.of(7, 0), LocalTime.of(7, 40),
+				"Ciencias", "8-2", "Docente de prueba", null, true, PanelInicio.Leccion.Estado.TERMINADA);
+		PanelInicio.Leccion proxima = new PanelInicio.Leccion(5, LocalTime.of(10, 0), LocalTime.of(10, 40),
+				"Inglés", "9-1", "Docente de prueba", null, false, PanelInicio.Leccion.Estado.PROXIMA);
+
+		Context context = new Context();
+		context.setVariable("panel", new PanelInicio.Direccion(
+				new PanelInicio.AsistenciaHoy(4, 2, 1, 10, 9, List.of(sinLista), 25, true), pendientes, periodo,
+				agenda));
+		String direccion = templateEngine.process("inicio/paneles/direccion", context);
+		assertTrue(direccion.contains("Ausentes sin justificar"));
+		assertTrue(direccion.contains("9 de 10"));
+		assertTrue(direccion.contains("Lecciones dadas sin lista"));
+		assertTrue(direccion.contains("Matemáticas · 8-2"));
+		assertTrue(direccion.contains("hx-get=\"/inicio/rendimiento\""));
+		assertTrue(direccion.contains("Entregas académicas por revisar"));
+		assertTrue(direccion.contains("Semana de la ciencia"));
+		assertTrue(direccion.contains("Faltan 20 días"));
+
+		context.setVariable("rendimiento", new PanelInicio.Rendimiento("III-2026", 30, 9,
+				List.of(new PanelInicio.EstudianteEnRiesgo(1L, "Ana Mora", "8-2", "AM", "#2d5a87",
+						List.of("Matemáticas", "Conducta"), 55.5)),
+				List.of(new PanelInicio.SeccionPromedio(80L, "8-2", 68.4, 28, 6)), null));
+		String rendimiento = templateEngine.process("inicio/paneles/rendimiento",
+				Set.of("rendimiento"), context);
+		assertTrue(rendimiento.contains("Ana Mora"));
+		assertTrue(rendimiento.contains("8-2 · Matemáticas, Conducta"));
+		assertTrue(rendimiento.contains("2 materias"));
+		assertTrue(rendimiento.contains("55.5"));
+		assertTrue(rendimiento.contains("Y 8 estudiantes más"));
+		assertTrue(rendimiento.contains("68.4"));
+
+		context.setVariable("panel", new PanelInicio.Docente(List.of(conLista, sinLista, proxima),
+				pendientes, List.of(new PanelInicio.SeccionGuia(80L, "8-2", 28, 3, 1)), periodo, agenda, null));
+		String docente = templateEngine.process("inicio/paneles/docente", context);
+		assertTrue(docente.contains("3 lecciones en el horario"));
+		assertTrue(docente.contains("Lista pasada"));
+		assertTrue(docente.contains("Pasar lista"));
+		assertTrue(docente.contains("Próxima"));
+		assertTrue(docente.contains("Mi sección guía"));
+		assertTrue(docente.contains("3 con ausencias"));
+
+		PanelInicio.Estudiante hijo = new PanelInicio.Estudiante(7L, "Diego Ramírez", "1-B", "DR", "#059669",
+				72.5, 70, List.of(new PanelInicio.MateriaNota("Matemáticas", 60.0, false),
+						new PanelInicio.MateriaNota("Español", 85.0, true)),
+				95.0, 2, 1, 1, 0, 1, 0);
+		context.setVariable("panel", new PanelInicio.Familia(List.of(hijo), List.of(), periodo, agenda, false));
+		String familia = templateEngine.process("inicio/paneles/familia", context);
+		assertTrue(familia.contains("Diego Ramírez"));
+		assertTrue(familia.contains("72.5"));
+		assertTrue(familia.contains("Notas del período · 1 materia bajo 70"));
+		assertTrue(familia.contains("Conducta · 1 llamada"));
+		assertTrue(familia.contains("Hoy: ausente en 1 lección"));
+		assertTrue(familia.contains("Leíste todos los comunicados."));
 	}
 }

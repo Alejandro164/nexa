@@ -1,0 +1,163 @@
+<div th:fragment="content" id="asistente-config-panel" xmlns:th="http://www.thymeleaf.org">
+
+    <style>
+        .asistente-help {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin: 4px 0 0;
+        }
+
+        .asistente-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .asistente-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .asistente-toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 0.5rem;
+        }
+
+        .asistente-toggle {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .asistente-toggle input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .asistente-toggle-track {
+            position: absolute;
+            inset: 0;
+            background: #e2e8f0;
+            border-radius: 9999px;
+            pointer-events: none;
+            transition: background .15s;
+        }
+
+        .asistente-toggle input:checked + .asistente-toggle-track {
+            background: var(--primary);
+        }
+
+        .asistente-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+            pointer-events: none;
+            transition: transform .15s;
+        }
+
+        .asistente-toggle input:checked ~ .asistente-toggle-thumb {
+            transform: translateX(18px);
+        }
+
+        .asistente-permisos {
+            margin: 0;
+            padding-left: 1.1rem;
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+    </style>
+
+    <div class="card">
+        <form hx-post="/configuracion/asistente" hx-target="#asistente-config-panel" hx-swap="outerHTML"
+              hx-indicator="#asistente-loading">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Asistente IA (Grok de xAI)</h3>
+                    <p class="asistente-help">Un chat en todas las páginas que responde preguntas sobre asistencia,
+                        conducta, notas, horario, agenda y pendientes. Solo lee datos y cada usuario ve lo mismo que
+                        ve en Nexa.</p>
+                </div>
+                <span class="badge" th:classappend="${asistenteConfig.isDisponible()} ? 'badge-success' : 'badge-secondary'"
+                      th:text="${asistenteConfig.isDisponible()} ? 'Activo' : 'Desactivado'">Desactivado</span>
+            </div>
+
+            <div id="asistente-loading" class="htmx-indicator panel-loading-overlay"
+                 style="align-items: center; justify-content: flex-start; padding-top: 4rem;">
+                <div class="spinner"></div>
+                <span>Guardando...</span>
+            </div>
+
+            <div style="padding: 2rem;">
+                <div class="asistente-form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="asistente-api-key">API key de xAI</label>
+                        <input class="form-input" id="asistente-api-key" type="password" name="apiKey" autocomplete="off"
+                               th:placeholder="${asistenteConfig.tieneApiKey()} ? 'Dejar en blanco para mantener la llave actual' : 'xai-...'">
+                        <p class="asistente-help">Se crea en console.x.ai, en API Keys. Se guarda cifrada y es una
+                            sola para todo el sistema. La cuenta debe tener créditos.</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="asistente-modelo">Modelo</label>
+                        <select class="form-input" id="asistente-modelo" name="modelo">
+                            <option th:each="m : ${modelosAsistente}" th:value="${m.key}" th:text="${m.value}"
+                                    th:selected="${m.key == asistenteConfig.modelo}">Grok 4.7</option>
+                        </select>
+                        <p class="asistente-help">Grok 4.7 cuesta $2 por millón de tokens de entrada y $6 por millón de
+                            salida. Cada pregunta usa varios miles de tokens.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <span class="form-label">Qué puede consultar cada rol</span>
+                    <ul class="asistente-permisos">
+                        <li>Dirección y administración: toda la dirección (asistencia, pendientes, rendimiento, notas, horario y agenda).</li>
+                        <li>Docente: sus lecciones, sus pendientes y los estudiantes de su sección guía.</li>
+                        <li>Padres de familia: sus hijos. Estudiantes: sus propios datos.</li>
+                    </ul>
+                </div>
+
+                <p class="asistente-help" th:if="${asistenteConfig.ultimaPruebaExitosa != null}"
+                   th:text="${'Última prueba correcta: ' + #temporals.format(asistenteConfig.ultimaPruebaExitosa, 'dd/MM/yyyy HH:mm')}">
+                    Última prueba correcta</p>
+
+                <div class="asistente-toggle-row">
+                    <label class="asistente-toggle">
+                        <input type="checkbox" name="activo" value="true" th:checked="${asistenteConfig.activo}"
+                               aria-label="Mostrar el asistente a los usuarios">
+                        <span class="asistente-toggle-track"></span><span class="asistente-toggle-thumb"></span>
+                    </label>
+                    <div>
+                        <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">Mostrar el
+                            asistente a los usuarios</div>
+                        <div class="asistente-help">Con esto desactivado, la llave queda guardada pero el botón del
+                            chat no aparece.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" th:if="${asistenteConfig.tieneApiKey()}"
+                            hx-post="/configuracion/asistente/probar" hx-target="#asistente-config-panel"
+                            hx-swap="outerHTML" hx-indicator="#asistente-loading">Probar conexión</button>
+                    <button type="submit" class="btn btn-primary">Guardar configuración</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

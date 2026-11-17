@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <!-- Lista de pendientes; si no hay ninguno, un mensaje de todo al día. -->
+    <th:block th:fragment="pendientes(lista, alDia)">
+        <ul class="inicio-lista" th:if="${!#lists.isEmpty(lista)}">
+            <li th:each="p : ${lista}">
+                <a class="inicio-pendiente" th:href="${p.enlace()}" th:hx-get="${p.enlace()}"
+                   hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">
+                    <span class="inicio-cuenta" th:classappend="${p.tono()}" th:text="${p.cantidad()}">3</span>
+                    <span class="inicio-pendiente-texto">
+                        <span class="inicio-pendiente-titulo" th:text="${p.titulo()}">Pendiente</span>
+                        <span class="inicio-pendiente-detalle" th:text="${p.detalle()}" style="display:block;">Detalle</span>
+                    </span>
+                    <svg class="inicio-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+            </li>
+        </ul>
+        <div class="inicio-al-dia" th:if="${#lists.isEmpty(lista)}">
+            <span class="inicio-cuenta">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span th:text="${alDia}">Todo al día.</span>
+        </div>
+    </th:block>
+
+    <!-- Agenda de los próximos días. -->
+    <section class="inicio-card" th:fragment="agenda(eventos, conEnlace)">
+        <div class="inicio-card-header">
+            <div>
+                <h3>Próximos 7 días</h3>
+                <div class="inicio-card-sub">Agenda y calendario del MEP</div>
+            </div>
+            <a class="inicio-card-link" th:if="${conEnlace}" href="/agenda" hx-get="/agenda"
+               hx-target=".content-area" hx-swap="innerHTML" hx-push-url="true">Ver agenda</a>
+        </div>
+        <div class="inicio-card-body">
+            <ul class="inicio-lista" th:if="${!#lists.isEmpty(eventos)}">
+                <li class="inicio-evento" th:each="ev : ${eventos}">
+                    <div class="inicio-fecha" th:classappend="${ev.isHoy()} ? 'hoy'">
+                        <small th:text="${ev.getDiaSemanaCorto()}">lun</small>
+                        <strong th:text="${ev.fecha().dayOfMonth}">1</strong>
+                    </div>
+                    <div class="inicio-evento-texto">
+                        <div class="inicio-evento-titulo">
+                            <a th:if="${ev.enlace() != null and !#strings.isEmpty(ev.enlace())}"
+                               th:href="${ev.enlace()}" target="_blank" rel="noopener" th:text="${ev.titulo()}">Evento</a>
+                            <span th:unless="${ev.enlace() != null and !#strings.isEmpty(ev.enlace())}"
+                                  th:text="${ev.titulo()}">Evento</span>
+                        </div>
+                        <div class="inicio-evento-cuando" th:text="${ev.getCuando()}">Hoy</div>
+                    </div>
+                    <span class="inicio-tag" th:classappend="${ev.tipo()}"
+                          th:text="${ev.tipo() == 'institucional' ? 'Institucional' : ev.tipoEtiqueta()}">Tipo</span>
+                </li>
+            </ul>
+            <div class="inicio-vacio" th:if="${#lists.isEmpty(eventos)}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                No hay actividades en los próximos 7 días.
+            </div>
+        </div>
+    </section>
+
+    <!-- Período vigente con su avance. -->
+    <section class="inicio-card" th:fragment="periodo(periodo)">
+        <div class="inicio-card-header">
+            <div>
+                <h3>Período</h3>
+                <div class="inicio-card-sub" th:if="${periodo != null}"
+                     th:text="${#temporals.format(periodo.inicio(), 'dd/MM/yyyy') + ' – ' + #temporals.format(periodo.fin(), 'dd/MM/yyyy')}">01/02 – 30/06</div>
+            </div>
+            <span class="inicio-tag info" th:if="${periodo != null}" th:text="${periodo.codigo()}">I-2026</span>
+        </div>
+        <div class="inicio-card-body">
+            <th:block th:if="${periodo != null}">
+                <div class="inicio-progreso-fila">
+                    <span th:text="${periodo.diasRestantes() == 0 ? 'Termina hoy' : (periodo.diasRestantes() == 1 ? 'Falta 1 día' : 'Faltan ' + periodo.diasRestantes() + ' días')}">Faltan 30 días</span>
+                    <strong th:text="${periodo.avance() + '%'}">50%</strong>
+                </div>
+                <div class="inicio-barra" role="progressbar" aria-label="Avance del período"
+                     th:attr="aria-valuenow=${periodo.avance()}" aria-valuemin="0" aria-valuemax="100">
+                    <span th:style="'width:' + ${periodo.avance()} + '%'"></span>
+                </div>
+            </th:block>
+            <div class="inicio-vacio" th:if="${periodo == null}">No hay un período académico activo.</div>
+        </div>
+    </section>
+
+</body>
+</html>

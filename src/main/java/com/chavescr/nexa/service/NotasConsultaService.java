@@ -69,7 +69,8 @@ import com.chavescr.nexa.repository.UsuarioRepository;
 @Transactional(readOnly = true, rollbackFor = Exception.class)
 public class NotasConsultaService {
 
-    private static final long CONDUCTA_ID = -1L;
+    /** Id de la fila de conducta entre las materias de un estudiante. */
+    public static final long CONDUCTA_ID = -1L;
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String[] COLORES = {
             "#2d5a87", "#059669", "#0284c7", "#7c3aed", "#e11d48", "#ca8a04", "#db2777", "#0891b2"
@@ -418,6 +419,12 @@ public class NotasConsultaService {
     /** Explica el cálculo del artículo 37: ausencias equivalentes, porcentaje, asignación y nota. */
     static String leyendaAsistencia(CalculoRebaja calculo, int[] conteo, int lecciones, int nota, int pesoNota,
             String materia) {
+        if (!calculo.isReglamentoMep()) {
+            int rebaja = calculo.rebajaAsistencia(conteo);
+            return "Parte de 100. Las ausencias y tardías rebajan " + rebaja
+                    + (rebaja == 1 ? " punto" : " puntos") + ", así que la asistencia queda en " + nota
+                    + ". Vale " + pesoNota + "% de la nota de " + materia + ".";
+        }
         double ausencias = calculo.ausenciasEquivalentes(conteo);
         double porcentaje = calculo.porcentajeAusencias(conteo, lecciones);
         int asignacion = CalculoRebaja.asignacionAsistencia(porcentaje);
@@ -1252,6 +1259,30 @@ public class NotasConsultaService {
             case PROYECTO -> dist[2];
             case EXAMEN -> dist[3];
         };
+    }
+
+    /**
+     * Notas por materia, ausencias y llamadas o boletas de estos estudiantes en un solo período, con las
+     * mismas reglas que la consulta de Notas. Lo usa el resumen del inicio. Los estudiantes sin sección
+     * quedan fuera.
+     */
+    public List<EstudianteOpcion> resumenDelPeriodo(Long direccionId, List<Usuario> estudiantes,
+            PeriodoAcademico periodo) {
+        List<Usuario> conNivel = estudiantes.stream().filter(u -> u.getNivelAcademico() != null).toList();
+        if (periodo == null || conNivel.isEmpty()) {
+            return List.of();
+        }
+        List<Long> nivelIds = conNivel.stream().map(u -> u.getNivelAcademico().getId()).distinct().toList();
+        List<PeriodoAcademico> periodos = List.of(periodo);
+        NotasArmadas armadas = materiasPorEstudiante(direccionId, nivelIds, conNivel, periodos);
+        Map<Long, List<SeguimientoPeriodo>> seguimiento = seguimientoDe(direccionId, conNivel, periodos);
+        return conNivel.stream()
+                .map(u -> estudiante(u,
+                        armadas.materias().getOrDefault(u.getId(), List.of()),
+                        armadas.ausencias().getOrDefault(u.getId(), List.of()),
+                        List.of(),
+                        seguimiento.getOrDefault(u.getId(), List.of())))
+                .toList();
     }
 
     private List<NivelAcademico> nivelesVisibles(Long direccionId, Long usuarioId, boolean catalogoCompleto) {

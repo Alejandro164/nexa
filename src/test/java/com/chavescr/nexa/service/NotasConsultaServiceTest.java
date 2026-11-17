@@ -179,7 +179,7 @@ class NotasConsultaServiceTest {
         for (TipoRebaja tipo : TipoRebaja.values()) {
             reglas.put(tipo, new int[] { tipo.cada(), tipo.puntos() });
         }
-        return new CalculoRebaja(reglas, false);
+        return new CalculoRebaja(reglas, false, 2, true);
     }
 
     private void conCotidianoDe80() {
