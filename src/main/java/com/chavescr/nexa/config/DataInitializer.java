@@ -19,10 +19,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
+import com.chavescr.nexa.entity.OfertaEducativa;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.TipoMateria;
 import com.chavescr.nexa.entity.Usuario;
@@ -249,6 +251,8 @@ public class DataInitializer implements ApplicationRunner {
         todosLosEstudiantes.addAll(estudiantesGenerados);
         asignarPadresFaltantes(todosLosEstudiantes, todosLosPadres);
 
+        sembrarInstitucionesCostaRica(rolAdmin, rolSystemConfig, rolDirector, rolDocente, rolPadre, rolEstudiante);
+
         log.info("=== [DataInitializer] Datos iniciales listos ===");
     }
 
@@ -473,5 +477,195 @@ public class DataInitializer implements ApplicationRunner {
         return Normalizer.normalize(texto, Normalizer.Form.NFD)
                 .replaceAll("[^\\p{ASCII}]", "")
                 .toLowerCase();
+    }
+
+    /**
+     * Cinco instituciones con datos al estilo de Costa Rica, un usuario de cada rol
+     * y treinta estudiantes por institución. La sección del estudiante pertenece a
+     * su misma dirección y el grado cabe en la oferta (primaria 1.º-6.º, secundaria 7.º-11.º o 7.º-12.º).
+     * Idempotente: reconoce instituciones por cédula jurídica y personas por correo.
+     * Contraseña de estas cuentas: {@code nexa2026}.
+     */
+    private void sembrarInstitucionesCostaRica(Rol rolAdmin, Rol rolSystemConfig, Rol rolDirector,
+            Rol rolDocente, Rol rolPadre, Rol rolEstudiante) {
+        List<ColegioCostaRica> colegios = List.of(
+                new ColegioCostaRica("Escuela República de Costa Rica", "2511001001001", "3-101-700001",
+                        "De la iglesia de González Lahmann, 200 m este, San José", "2221-4501",
+                        "direccion.republica@mep.go.cr", OfertaEducativa.PRIMARIA, 1, 6, 5, 1),
+                new ColegioCostaRica("Liceo de San Pedro", "2512001001002", "3-101-700002",
+                        "Barrio Pinto, de la iglesia católica 100 m norte, Montes de Oca, San José", "2225-3102",
+                        "direccion.sanpedro@mep.go.cr", OfertaEducativa.SECUNDARIA, 7, 5, 6, 1),
+                new ColegioCostaRica("Colegio Técnico Profesional de Grecia", "2523001001003", "3-002-700003",
+                        "Del parque central de Grecia, 300 m oeste, Alajuela", "2494-2203",
+                        "direccion.ctpgrecia@mep.go.cr", OfertaEducativa.SECUNDARIA, 7, 6, 5, 2),
+                new ColegioCostaRica("Escuela José Martí", "2534001001004", "3-003-700004",
+                        "Paraíso centro, del parque 50 m sur, Cartago", "2574-1804",
+                        "direccion.josemarti@mep.go.cr", OfertaEducativa.PRIMARIA, 1, 6, 5, 3),
+                new ColegioCostaRica("Liceo de Liberia", "2555001001005", "3-005-700005",
+                        "De la esquina noreste del parque de Liberia, 150 m este, Guanacaste", "2666-0905",
+                        "direccion.liberia@mep.go.cr", OfertaEducativa.SECUNDARIA, 7, 5, 6, 5));
+
+        List<Direccion> direcciones = new ArrayList<>();
+        for (ColegioCostaRica colegio : colegios) {
+            direcciones.add(asegurarColegio(colegio));
+        }
+
+        crearUsuarioSiNoExiste("Elena Vargas Solís", "elena.vargas@mep.go.cr", "admin.cr",
+                "1-8100-0001", CLAVE_COSTA_RICA, true, Set.of(rolAdmin), new HashSet<>(direcciones));
+        Usuario configCr = crearUsuarioSiNoExiste("Roberto Quesada Mora", "roberto.quesada@mep.go.cr", "config.cr",
+                "1-8100-0002", CLAVE_COSTA_RICA, true, Set.of(rolAdmin, rolSystemConfig), new HashSet<>(direcciones));
+        asegurarRol(configCr, rolAdmin);
+        asegurarRol(configCr, rolSystemConfig);
+        crearUsuarioSiNoExiste("María Campos Araya", "maria.campos@mep.go.cr", "director.cr",
+                "1-8100-0003", CLAVE_COSTA_RICA, true, Set.of(rolDirector), new HashSet<>(direcciones));
+        crearUsuarioSiNoExiste("Andrés Calderón Jiménez", "andres.calderon@mep.go.cr", "docente.cr",
+                "1-8100-0004", CLAVE_COSTA_RICA, true, Set.of(rolDocente), Set.of(direcciones.get(1)));
+        Usuario padre = crearUsuarioSiNoExiste("Laura Méndez Rojas", "laura.mendez@mep.go.cr", "padre.cr",
+                "1-8100-0005", CLAVE_COSTA_RICA, true, Set.of(rolPadre), Set.of(direcciones.get(0)));
+
+        int estudiantes = 0;
+        List<Usuario> hijosDeLaura = new ArrayList<>();
+        for (int s = 0; s < colegios.size(); s++) {
+            ColegioCostaRica colegio = colegios.get(s);
+            Direccion direccion = direcciones.get(s);
+            for (int i = 0; i < ColegioCostaRica.ESTUDIANTES_POR_INSTITUCION; i++) {
+                int grado = colegio.gradoDesde + (i / colegio.porGrado);
+                NivelAcademico nivel = asegurarNivel(direccion, grado, "A");
+                Usuario estudiante = crearEstudianteCostaRica(s, i, colegio, direccion, nivel, rolEstudiante);
+                if (s == 0 && hijosDeLaura.size() < 2) {
+                    hijosDeLaura.add(estudiante);
+                }
+                estudiantes++;
+            }
+        }
+        for (Usuario hijo : hijosDeLaura) {
+            vincularPadreEstudiante(padre, hijo);
+        }
+        if (estudiantes != colegios.size() * ColegioCostaRica.ESTUDIANTES_POR_INSTITUCION) {
+            throw new IllegalStateException("Se esperaban "
+                    + (colegios.size() * ColegioCostaRica.ESTUDIANTES_POR_INSTITUCION)
+                    + " estudiantes y se generaron " + estudiantes);
+        }
+        log.info("  [COSTA RICA] {} instituciones, {} estudiantes, un usuario por rol",
+                colegios.size(), estudiantes);
+    }
+
+    private Direccion asegurarColegio(ColegioCostaRica colegio) {
+        colegio.validar();
+        Institucion institucion = institucionRepository.findByCedula(colegio.cedula).orElseGet(Institucion::new);
+        institucion.setCedula(colegio.cedula);
+        institucion.setNombre(colegio.nombre);
+        institucion.setDireccion(colegio.direccion);
+        institucion.setTelefono(colegio.telefono);
+        institucion.setEmail(colegio.email);
+        institucion.setActiva(true);
+        institucionRepository.save(institucion);
+
+        Direccion registro = direccionRepository.findByCodigo(colegio.codigo)
+                .or(() -> direccionRepository.findByCedula(colegio.cedula))
+                .orElseGet(() -> new Direccion(colegio.nombre, colegio.codigo));
+        registro.setInstitucion(institucion);
+        registro.setNombre(colegio.nombre);
+        registro.setCodigo(colegio.codigo);
+        registro.setCedula(colegio.cedula);
+        registro.setDireccion(colegio.direccion);
+        registro.setTelefono(colegio.telefono);
+        registro.setEmail(colegio.email);
+        registro.setActiva(true);
+        registro.setOferta(colegio.oferta);
+        registro.setPrincipal(true);
+        direccionRepository.save(registro);
+        log.info("  [INSTITUCION] {} ({})", colegio.nombre, colegio.oferta.getEtiqueta());
+        return registro;
+    }
+
+    private NivelAcademico asegurarNivel(Direccion direccion, int grado, String seccion) {
+        return nivelAcademicoRepository.findByDireccionIdOrderByGradoAscSeccionAsc(direccion.getId()).stream()
+                .filter(nivel -> grado == nivel.getGrado() && seccion.equals(nivel.getSeccion()))
+                .findFirst()
+                .orElseGet(() -> {
+                    NivelAcademico nivel = new NivelAcademico();
+                    nivel.setDireccion(direccion);
+                    nivel.setGrado(grado);
+                    nivel.setSeccion(seccion);
+                    nivel.setCiclo(CicloEducativo.deGrado(grado));
+                    nivel.setActivo(true);
+                    return nivelAcademicoRepository.save(nivel);
+                });
+    }
+
+    private Usuario crearEstudianteCostaRica(int colegioIdx, int indice, ColegioCostaRica colegio,
+            Direccion direccion, NivelAcademico nivel, Rol rolEstudiante) {
+        String nombre = NOMBRES_COSTA_RICA[indice % NOMBRES_COSTA_RICA.length];
+        String apellido1 = APELLIDOS_COSTA_RICA[(indice + colegioIdx * 2) % APELLIDOS_COSTA_RICA.length];
+        String apellido2 = APELLIDOS_COSTA_RICA[(indice + colegioIdx * 2 + 7) % APELLIDOS_COSTA_RICA.length];
+        if (apellido1.equals(apellido2)) {
+            apellido2 = APELLIDOS_COSTA_RICA[(indice + colegioIdx * 2 + 8) % APELLIDOS_COSTA_RICA.length];
+        }
+        String marca = String.format("%04d", 8300 + colegioIdx);
+        String handle = normalizarParaHandle(nombre) + "." + normalizarParaHandle(apellido1) + "." + marca;
+        String email = handle + "@mep.go.cr";
+        String cedula = String.format("%d-%s-%04d", colegio.provinciaCedula, marca, indice + 1);
+        String telefono = String.format("8%d%02d%04d", colegio.provinciaCedula, colegioIdx, indice + 1);
+
+        Usuario estudiante = crearUsuarioSiNoExiste(nombre + " " + apellido1 + " " + apellido2, email, handle,
+                cedula, CLAVE_COSTA_RICA, true, Set.of(rolEstudiante), Set.of(direccion));
+        if (nivel.getDireccion() == null || nivel.getDireccion().getId() == null
+                || !nivel.getDireccion().getId().equals(direccion.getId())) {
+            throw new IllegalStateException("La sección no pertenece a la institución del estudiante " + email);
+        }
+        int grado = nivel.getGrado();
+        int gradoHasta = colegio.gradoDesde + colegio.grados - 1;
+        if (grado < colegio.gradoDesde || grado > gradoHasta) {
+            throw new IllegalStateException("El grado " + grado + " no cabe en " + colegio.nombre);
+        }
+        if (estudiante.getNivelAcademico() == null) {
+            estudiante.setNivelAcademico(nivel);
+        }
+        if (estudiante.getTelefono() == null) {
+            estudiante.setTelefono(telefono);
+        }
+        return usuarioRepository.save(estudiante);
+    }
+
+    private static final String CLAVE_COSTA_RICA = "nexa2026";
+
+    private static final String[] NOMBRES_COSTA_RICA = {
+            "Sofía", "Mateo", "Valentina", "Santiago", "Isabella", "Diego", "Camila", "Sebastián",
+            "Mariana", "Andrés", "Lucía", "Gabriel", "Daniela", "Tomás", "Valeria", "Nicolás",
+            "Natalia", "Emilio", "Jimena", "Adrián", "Paula", "Fernando", "Victoria", "Ignacio",
+            "Abigail", "Martín", "Alejandra", "Joaquín", "Fabiola", "Esteban"
+    };
+
+    private static final String[] APELLIDOS_COSTA_RICA = {
+            "Rodríguez", "González", "Hernández", "Mora", "Jiménez", "Vargas", "Solís", "Araya",
+            "Quesada", "Chaves", "Calderón", "Campos", "Méndez", "Rojas", "Alfaro", "Brenes"
+    };
+
+    /** Institución con una sola dirección (la oferta principal) y sus secciones. */
+    private record ColegioCostaRica(String nombre, String codigo, String cedula, String direccion,
+            String telefono, String email, OfertaEducativa oferta, int gradoDesde, int grados, int porGrado,
+            int provinciaCedula) {
+
+        static final int ESTUDIANTES_POR_INSTITUCION = 30;
+
+        void validar() {
+            if (porGrado * grados != ESTUDIANTES_POR_INSTITUCION) {
+                throw new IllegalStateException(nombre + " no reparte 30 estudiantes en sus grados");
+            }
+            int gradoHasta = gradoDesde + grados - 1;
+            if (gradoDesde < 1 || gradoHasta > 12) {
+                throw new IllegalStateException(nombre + " tiene grados fuera de 1.º a 12.º");
+            }
+            if (oferta == OfertaEducativa.PRIMARIA && (gradoDesde != 1 || gradoHasta > 6)) {
+                throw new IllegalStateException(nombre + " es primaria y debe cubrir solo de 1.º a 6.º");
+            }
+            if (oferta == OfertaEducativa.SECUNDARIA && gradoDesde < 7) {
+                throw new IllegalStateException(nombre + " es secundaria y debe empezar en 7.º o después");
+            }
+            if (provinciaCedula < 1 || provinciaCedula > 7) {
+                throw new IllegalStateException(nombre + " tiene una provincia de cédula inválida");
+            }
+        }
     }
 }

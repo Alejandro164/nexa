@@ -1,5 +1,7 @@
 <div th:fragment="content" id="institucional-escala-notas-panel" xmlns:th="http://www.thymeleaf.org"
      x-data="escalaNotas($el)"
+     th:data-ciclo="${cicloSeleccionado.name()}"
+     th:data-ciclo-etiqueta="${cicloSeleccionado.etiqueta}"
      th:data-nota-minima="${escalaNotas.notaMinima}"
      th:data-nota-maxima="${escalaNotas.notaMaxima}"
      th:data-decimales="${escalaNotas.decimales}"
@@ -17,7 +19,7 @@
             gap: 1.5rem;
         }
         #institucional-escala-notas-panel .card {
-            overflow: hidden;
+            overflow: visible;
         }
         #institucional-escala-notas-panel .escala-ciclos {
             display: flex;
@@ -34,51 +36,78 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1px;
-            min-height: 44px;
+            justify-content: center;
+            gap: 2px;
+            min-height: 48px;
             padding: 0.45rem 0.75rem;
-            border: 0;
+            border: 1px solid transparent;
             border-radius: 9px;
             background: transparent;
-            color: var(--text-secondary);
+            color: #475569;
             font: inherit;
             font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
         }
         #institucional-escala-notas-panel .escala-ciclo small {
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             font-weight: 500;
+            color: #64748b;
         }
         #institucional-escala-notas-panel .escala-ciclo:hover {
             color: var(--primary);
+            background: rgba(255, 255, 255, 0.7);
         }
         #institucional-escala-notas-panel .escala-ciclo.is-on {
             background: #ffffff;
             color: var(--primary);
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+        }
+        #institucional-escala-notas-panel .escala-ciclo.is-on small {
+            color: var(--primary);
+        }
+        #institucional-escala-notas-panel .escala-confirm-ciclo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin: 0.85rem 1.5rem 0;
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            border: 1px solid #fde68a;
+            background: #fffbeb;
+            color: #92400e;
+            font-size: 0.83rem;
+        }
+        #institucional-escala-notas-panel .escala-confirm-ciclo-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
         #institucional-escala-notas-panel .escala-ciclo-ayuda {
             margin: 0.75rem 1.5rem 0;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+            font-size: 0.82rem;
+            color: #475569;
         }
         #institucional-escala-notas-panel .escala-regla {
-            padding: 1rem 1.5rem 0.5rem;
+            padding: 1rem 1.5rem 0.6rem;
         }
         #institucional-escala-notas-panel .escala-barra {
             display: flex;
-            height: 12px;
+            height: 14px;
             border-radius: 999px;
             overflow: hidden;
             background: #e2e8f0;
         }
         #institucional-escala-notas-panel .escala-marcas {
             position: relative;
-            height: 22px;
-            margin-top: 6px;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
+            height: 26px;
+            margin-top: 8px;
+            font-size: 0.76rem;
+            color: #475569;
             font-variant-numeric: tabular-nums;
         }
         #institucional-escala-notas-panel .escala-marcas span {
@@ -89,17 +118,27 @@
         #institucional-escala-notas-panel .escala-marcas .is-aprueba {
             transform: translateX(-50%);
             font-weight: 700;
-            color: var(--text-primary);
+            color: #0f172a;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 1px 8px;
+            border-radius: 999px;
         }
         #institucional-escala-notas-panel .escala-tabla td {
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
+            padding-top: 0.55rem;
+            padding-bottom: 0.55rem;
             vertical-align: middle;
+        }
+        #institucional-escala-notas-panel .escala-tabla tr.is-corte-row {
+            background: #f8fafc;
+        }
+        #institucional-escala-notas-panel .escala-tabla tr.is-invalid-row {
+            background: #fef2f2;
         }
         #institucional-escala-notas-panel .escala-tramo-nombre {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.65rem;
         }
         #institucional-escala-notas-panel .escala-punto {
             flex: none;
@@ -107,35 +146,66 @@
             height: 12px;
             border-radius: 50%;
         }
-        #institucional-escala-notas-panel .tono-excelente { background: #22c55e; }
-        #institucional-escala-notas-panel .tono-bueno { background: #3b82f6; }
-        #institucional-escala-notas-panel .tono-regular { background: #f59e0b; }
-        #institucional-escala-notas-panel .tono-aplazado { background: #ef4444; }
+        #institucional-escala-notas-panel .tono-excelente { background: #16a34a; }
+        #institucional-escala-notas-panel .tono-bueno { background: #2563eb; }
+        #institucional-escala-notas-panel .tono-regular { background: #d97706; }
+        #institucional-escala-notas-panel .tono-aplazado { background: #dc2626; }
+        #institucional-escala-notas-panel .escala-estado-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        #institucional-escala-notas-panel .escala-estado-pill.is-pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+        #institucional-escala-notas-panel .escala-estado-pill.is-fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
         #institucional-escala-notas-panel .escala-tabla .form-input {
             height: 40px;
             padding: 0 0.75rem;
         }
+        #institucional-escala-notas-panel .form-input[aria-invalid="true"] {
+            border-color: #dc2626;
+            background: #fff5f5;
+        }
         #institucional-escala-notas-panel .escala-input-nombre {
             width: 100%;
-            max-width: 260px;
+            max-width: 240px;
         }
         #institucional-escala-notas-panel .escala-input-num {
-            width: 88px;
+            width: 94px;
+            padding: 0 0.65rem;
             text-align: right;
             font-weight: 600;
             font-variant-numeric: tabular-nums;
         }
         #institucional-escala-notas-panel .escala-input-num:disabled {
             background: #f1f5f9;
-            color: var(--text-secondary);
+            color: #64748b;
         }
         #institucional-escala-notas-panel .escala-hasta {
-            color: var(--text-secondary);
+            color: #475569;
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
         }
         #institucional-escala-notas-panel .escala-centro {
             text-align: center;
+        }
+        #institucional-escala-notas-panel .escala-radio-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            min-height: 40px;
+            cursor: pointer;
         }
         #institucional-escala-notas-panel .escala-radio {
             width: 20px;
@@ -143,65 +213,79 @@
             accent-color: var(--primary);
             cursor: pointer;
         }
-        #institucional-escala-notas-panel .escala-quitar {
-            width: 40px;
-            height: 40px;
-            border: 0;
-            border-radius: 8px;
-            background: transparent;
-            color: var(--text-secondary);
-            display: inline-grid;
-            place-items: center;
-            cursor: pointer;
-        }
-        #institucional-escala-notas-panel .escala-quitar:hover {
-            background: var(--input-bg);
-            color: var(--text-primary);
-        }
         #institucional-escala-notas-panel .escala-pie {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            padding: 0.85rem 1.5rem;
+            padding: 0.9rem 1.5rem;
             border-top: 1px solid var(--border);
             background: #f8fafc;
+            border-bottom-left-radius: var(--radius);
+            border-bottom-right-radius: var(--radius);
+        }
+        #institucional-escala-notas-panel .escala-pie-acciones {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.65rem;
         }
         #institucional-escala-notas-panel .escala-agregar {
-            min-height: 40px;
-            padding: 0 0.25rem;
-            border: 0;
-            background: transparent;
+            min-height: 38px;
+            padding: 0 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #ffffff;
             color: var(--primary);
             font: inherit;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.83rem;
             cursor: pointer;
         }
+        #institucional-escala-notas-panel .escala-agregar:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
         #institucional-escala-notas-panel .escala-agregar:disabled {
-            color: var(--text-secondary);
+            color: #94a3b8;
+            background: #f8fafc;
             cursor: not-allowed;
+        }
+        #institucional-escala-notas-panel .escala-reset-btn {
+            min-height: 38px;
+            padding: 0 0.65rem;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: #475569;
+            font: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #institucional-escala-notas-panel .escala-reset-btn:hover {
+            background: #e2e8f0;
+            color: var(--text-primary);
         }
         #institucional-escala-notas-panel .escala-rango {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 0.6rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
+            gap: 0.55rem;
+            font-size: 0.84rem;
+            color: #334155;
         }
         #institucional-escala-notas-panel .escala-rango input.form-input {
-            width: 72px;
+            width: 82px;
             height: 40px;
             padding: 0 0.6rem;
             text-align: right;
             font-weight: 600;
         }
-        /* El selector personalizado (static/js/componentes.js) ocupa todo el ancho; en esta fila, solo lo necesario. */
         #institucional-escala-notas-panel .escala-rango .academic-select {
             width: auto;
-            min-width: 160px;
+            min-width: 165px;
         }
         #institucional-escala-notas-panel .escala-separador {
             color: #cbd5e1;
@@ -217,7 +301,7 @@
             margin: 0;
         }
         #institucional-escala-notas-panel .asistencia-de {
-            color: var(--text-secondary);
+            color: #475569;
             font-size: 0.8rem;
         }
         #institucional-escala-notas-panel .asistencia-tabla td {
@@ -227,58 +311,77 @@
         }
         #institucional-escala-notas-panel .asistencia-nota {
             margin: 0;
-            padding: 0.75rem 1.5rem;
+            padding: 0.85rem 1.5rem;
             border-top: 1px solid var(--border);
             background: #f8fafc;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: #475569;
+            border-bottom-left-radius: var(--radius);
+            border-bottom-right-radius: var(--radius);
         }
         #institucional-escala-notas-panel .rebaja-cantidad {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            color: var(--text-secondary);
+            color: #334155;
         }
         #institucional-escala-notas-panel .escala-errores {
-            display: grid;
-            gap: 0.35rem;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
             margin: 0;
-            padding: 0.75rem 1.5rem;
+            padding: 0.85rem 1.5rem;
             border-top: 1px solid #fecaca;
             background: #fef2f2;
             color: #991b1b;
-            font-size: 0.82rem;
+            font-size: 0.83rem;
+        }
+        #institucional-escala-notas-panel .escala-errores-lista {
+            display: grid;
+            gap: 0.25rem;
         }
         #institucional-escala-notas-panel .escala-errores p {
             margin: 0;
         }
         #institucional-escala-notas-panel .escala-guardar {
+            position: sticky;
+            bottom: 12px;
+            z-index: 8;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            padding: 0.9rem 1.25rem;
+            padding: 0.95rem 1.35rem;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+            border: 1px solid #cbd5e1;
+        }
+        #institucional-escala-notas-panel .escala-guardar-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
         #institucional-escala-notas-panel .escala-guardar p {
             margin: 0;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
+            font-size: 0.84rem;
+            color: #475569;
         }
-        #institucional-escala-notas-panel .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
+        #institucional-escala-notas-panel .escala-guardar-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
         }
         @media (max-width: 768px) {
             #institucional-escala-notas-panel .escala-politicas {
                 grid-template-columns: 1fr;
+            }
+            #institucional-escala-notas-panel .escala-guardar {
+                position: static;
+                box-shadow: var(--shadow-sm);
             }
         }
     </style>
@@ -291,37 +394,56 @@
           @submit.capture="prepararEnvio($event)"
           @input="sucio = true"
           @change="sucio = true"
-          @institucional-guardado.camel.document="sucio = false"
+          @institucional-guardado.camel.document="sucio = false; cicloPendiente = null"
           autocomplete="off">
         <div id="escala-loading" class="htmx-indicator panel-loading-overlay">
             <div class="spinner"></div>
-            <span>Guardando...</span>
+            <span>Guardando configuración...</span>
         </div>
         <input type="hidden" name="ciclo" th:value="${cicloSeleccionado.name()}">
         <input type="hidden" name="notaAprobacion" :value="notaAprobacion">
         <input type="hidden" name="tramos" :value="tramosJson">
         <input type="hidden" name="rebajas" :value="reglasJson">
 
+        <!-- ── 1. Escala de notas por ciclo ── -->
         <section class="card" aria-labelledby="escala-titulo">
             <div class="card-header">
                 <div>
-                    <h3 class="card-title" id="escala-titulo">Escala de notas</h3>
-                    <p class="academic-help">Cada ciclo tiene su propia escala; los estudiantes usan la del ciclo de su sección.</p>
+                    <h3 class="card-title" id="escala-titulo">1. Escala de notas</h3>
+                    <p class="academic-help">Cada ciclo educativo tiene su propia escala. Los estudiantes se evalúan según el ciclo asignado a su sección.</p>
                 </div>
             </div>
 
-            <div class="escala-ciclos" role="tablist" aria-label="Ciclo de la escala">
+            <div class="escala-ciclos" role="tablist" aria-label="Seleccionar ciclo educativo"
+                 @keydown="onCicloKeydown($event)">
                 <button th:each="c : ${ciclos}" type="button" role="tab" class="escala-ciclo"
                         th:classappend="${c == cicloSeleccionado} ? 'is-on' : ''"
-                        th:attr="aria-selected=${c == cicloSeleccionado}, data-ciclo=${c.name()}"
-                        @click="cambiarCiclo($el.dataset.ciclo)">
+                        th:attr="aria-selected=${c == cicloSeleccionado},
+                                 tabindex=${c == cicloSeleccionado ? 0 : -1},
+                                 data-ciclo=${c.name()},
+                                 data-etiqueta=${c.etiqueta}"
+                        @click="solicitarCambioCiclo($el.dataset.ciclo, $el.dataset.etiqueta)">
                     <span th:text="${c.etiqueta}">Primer Ciclo</span>
                     <small th:with="n=${seccionesPorCiclo.get(c) ?: 0}"
                            th:text="${n == 1 ? '1 sección' : n + ' secciones'}">0 secciones</small>
                 </button>
             </div>
+
+            <div class="escala-confirm-ciclo" x-show="cicloPendiente !== null" x-cloak role="alert">
+                <span>
+                    Tienes cambios sin guardar en <strong th:text="${cicloSeleccionado.etiqueta}">este ciclo</strong>.
+                    ¿Deseas descartarlos y abrir <strong x-text="cicloPendiente ? cicloPendiente.etiqueta : ''"></strong>?
+                </span>
+                <div class="escala-confirm-ciclo-actions">
+                    <button type="button" class="btn btn-secondary" style="min-height: 34px; padding: 4px 12px;"
+                            @click="cicloPendiente = null">Seguir editando</button>
+                    <button type="button" class="btn btn-primary" style="min-height: 34px; padding: 4px 12px;"
+                            @click="confirmarCambioCiclo()">Descartar y cambiar</button>
+                </div>
+            </div>
+
             <p class="escala-ciclo-ayuda">
-                Cada tramo empieza en su número y termina justo antes del siguiente.
+                Cada tramo inicia en su valor «Desde» y termina justo antes del tramo superior. Selecciona en la columna <strong>Aprueba desde</strong> el tramo mínimo para aprobar.
             </p>
 
             <div class="escala-regla">
@@ -331,60 +453,73 @@
                     </template>
                 </div>
                 <div class="escala-marcas" aria-hidden="true">
-                    <span style="left: 0;" x-text="fmtEntero(notaMinima)"></span>
+                    <span style="left: 0;" x-text="'Mín. ' + fmtEntero(notaMinima)"></span>
                     <span class="is-aprueba" x-show="marcaAprobacion != null"
-                          :style="'left:' + marcaAprobacion + '%'"
-                          x-text="fmtEntero(notaAprobacion) + ' · aprueba'"></span>
-                    <span style="right: 0;" x-text="fmtEntero(notaMaxima)"></span>
+                          :style="'left:' + marcaAprobacionVisual + '%'"
+                          x-text="'Aprueba ≥ ' + fmtEntero(notaAprobacion)"></span>
+                    <span style="right: 0;" x-text="'Máx. ' + fmtEntero(notaMaxima)"></span>
                 </div>
             </div>
 
-            <div class="table-container">
+            <div class="table-container" tabindex="0" aria-label="Tabla de tramos de la escala de notas">
                 <table class="table escala-tabla">
+                    <caption class="sr-only">Tramos de calificación, rangos y nota mínima de aprobación</caption>
                     <thead>
                         <tr>
-                            <th>Tramo</th>
-                            <th>Desde</th>
-                            <th>Hasta</th>
-                            <th class="escala-centro">Aprueba desde</th>
-                            <th><span class="sr-only">Quitar</span></th>
+                            <th scope="col">Tramo</th>
+                            <th scope="col">Condición</th>
+                            <th scope="col">Desde</th>
+                            <th scope="col">Hasta</th>
+                            <th scope="col" class="escala-centro">Aprueba desde</th>
+                            <th scope="col"><span class="sr-only">Quitar tramo</span></th>
                         </tr>
                     </thead>
                     <tbody>
                         <template x-for="(tramo, i) in tramos" :key="tramo.id">
-                            <tr>
+                            <tr :class="{ 'is-corte-row': tramo.id === corteId, 'is-invalid-row': tramoInvalido(i) }">
                                 <td>
                                     <div class="escala-tramo-nombre">
                                         <span class="escala-punto" :class="'tono-' + tonoDe(i)" aria-hidden="true"></span>
                                         <input class="form-input escala-input-nombre" type="text" maxlength="24" required
                                                x-model="tramo.nombre" @change="normalizarNombre(tramo)" spellcheck="false"
+                                               :aria-invalid="!String(tramo.nombre || '').trim() ? 'true' : 'false'"
                                                :aria-label="'Nombre del tramo ' + (i + 1)">
                                     </div>
                                 </td>
                                 <td>
+                                    <span class="escala-estado-pill"
+                                          :class="apruebaEn(i) ? 'is-pass' : 'is-fail'"
+                                          x-text="apruebaEn(i) ? 'Aprueba' : 'Reprueba'"></span>
+                                </td>
+                                <td>
                                     <input class="form-input escala-input-num" type="number" inputmode="numeric"
                                            step="1" required
-                                           :min="limites(i).min" :max="limites(i).max"
+                                           :min="notaMinima" :max="notaMaxima"
                                            :disabled="esPiso(i)"
+                                           :aria-invalid="tramoInvalido(i) ? 'true' : 'false'"
                                            x-model.number="tramo.desde"
                                            @change="alEditarCorte(tramo)" @wheel.prevent
-                                           :aria-label="'Inicio de ' + (tramo.nombre || ('tramo ' + (i + 1)))">
+                                           :aria-label="'Nota inicial de ' + (tramo.nombre || ('tramo ' + (i + 1)))">
                                 </td>
                                 <td class="escala-hasta" x-text="textoHasta(i)"></td>
                                 <td class="escala-centro">
-                                    <input class="escala-radio" type="radio" name="corteEscala"
-                                           x-show="!esPiso(i)"
-                                           :checked="tramo.id === corteId"
-                                           @change="fijarCorte(tramo.id)"
-                                           :aria-label="'Se aprueba desde ' + (tramo.nombre || ('tramo ' + (i + 1)))">
+                                    <label class="escala-radio-wrap" x-show="!esPiso(i)">
+                                        <input class="escala-radio" type="radio" name="corteEscala"
+                                               :checked="tramo.id === corteId"
+                                               @change="fijarCorte(tramo.id)"
+                                               :aria-label="'Se aprueba desde ' + (tramo.nombre || ('tramo ' + (i + 1)))">
+                                    </label>
                                 </td>
                                 <td class="escala-centro">
-                                    <button type="button" class="escala-quitar" x-show="puedeQuitar(i)"
+                                    <button type="button" class="inst-icon-btn inst-icon-btn--danger"
+                                            x-show="puedeQuitar(i)"
                                             @click="quitarTramo(tramo.id)"
-                                            :aria-label="'Quitar ' + (tramo.nombre || ('tramo ' + (i + 1)))">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            :aria-label="'Quitar tramo ' + (tramo.nombre || (i + 1))"
+                                            title="Quitar tramo">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                              stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                                            <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                                            <path d="M18 6 6 18"></path>
+                                            <path d="m6 6 12 12"></path>
                                         </svg>
                                     </button>
                                 </td>
@@ -395,26 +530,40 @@
             </div>
 
             <div class="escala-errores" x-show="erroresEscala.length" x-cloak role="alert">
-                <template x-for="error in erroresEscala" :key="error">
-                    <p x-text="error"></p>
-                </template>
+                <div class="escala-errores-lista">
+                    <template x-for="error in erroresEscala" :key="error">
+                        <p x-text="error"></p>
+                    </template>
+                </div>
+                <button type="button" class="btn btn-secondary" style="min-height: 34px; padding: 4px 12px;"
+                        @click="reajustarTramos()">
+                    Reajustar cortes automáticamente
+                </button>
             </div>
 
             <div class="escala-pie">
-                <button type="button" class="escala-agregar" @click="agregarTramo()"
-                        :disabled="!puedeAgregar" :title="motivoSinAgregar">+ Agregar tramo</button>
+                <div class="escala-pie-acciones">
+                    <button type="button" class="escala-agregar" @click="agregarTramo()"
+                            :disabled="!puedeAgregar" :title="motivoSinAgregar">+ Agregar tramo</button>
+                    <button type="button" class="escala-reset-btn" @click="restablecerPredeterminada()">
+                        Restablecer escala MEP (0–100)
+                    </button>
+                </div>
                 <div class="escala-rango">
                     <label for="escala-minima">Escala de</label>
                     <input class="form-input" id="escala-minima" type="number" name="notaMinima"
                            min="0" max="99" step="1" required inputmode="numeric"
+                           aria-label="Nota mínima de la escala"
                            x-model.number="notaMinima" @change="alCambiarRango()" @wheel.prevent>
                     <label for="escala-maxima">a</label>
                     <input class="form-input" id="escala-maxima" type="number" name="notaMaxima"
                            min="1" max="100" step="1" required inputmode="numeric"
+                           aria-label="Nota máxima de la escala"
                            x-model.number="notaMaxima" @change="alCambiarRango()" @wheel.prevent>
                     <span class="escala-separador" aria-hidden="true">|</span>
                     <label for="escala-decimales">Promedio con</label>
                     <select class="form-input" id="escala-decimales" name="decimales"
+                            aria-label="Decimales del promedio"
                             x-model.number="decimales" @change="alCambiarRango()">
                         <option value="1" th:selected="${escalaNotas.decimales != 0}">un decimal</option>
                         <option value="0" th:selected="${escalaNotas.decimales == 0}">número entero</option>
@@ -423,18 +572,20 @@
             </div>
         </section>
 
+        <!-- ── 2. Asistencia ── -->
         <section class="card" aria-labelledby="asistencia-titulo">
             <div class="card-header">
                 <div>
-                    <h3 class="card-title" id="asistencia-titulo">Asistencia</h3>
-                    <p class="academic-help">Cómo afectan las ausencias y tardías injustificadas, por materia y período. Las justificadas no cuentan.</p>
+                    <h3 class="card-title" id="asistencia-titulo">2. Política de asistencia</h3>
+                    <p class="academic-help">Define cómo impactan las ausencias y tardías injustificadas por materia y período. Las justificadas no penalizan.</p>
                 </div>
             </div>
 
             <div class="escala-politicas">
                 <div class="form-group">
                     <label class="form-label" for="asistencia-modo">Cálculo de la asistencia</label>
-                    <select class="form-input" id="asistencia-modo" name="modoAsistencia" x-model="modoAsistencia">
+                    <select class="form-input" id="asistencia-modo" name="modoAsistencia"
+                            x-model="modoAsistencia" @change="alCambiarModoAsistencia()">
                         <option value="REGLAMENTO_MEP"
                                 th:selected="${rebajaConducta.modoAsistencia.name() == 'REGLAMENTO_MEP'}">Reglamento del MEP (artículo 37)</option>
                         <option value="PERSONALIZADO"
@@ -445,8 +596,8 @@
                     <label class="form-label" for="asistencia-tardias">Cada tardía injustificada cuenta como</label>
                     <select class="form-input" id="asistencia-tardias" name="tardiasPorAusencia"
                             x-model.number="tardiasPorAusencia">
-                        <option value="2" th:selected="${rebajaConducta.tardiasPorAusencia != 1}">Media ausencia (llegó menos de 10 minutos tarde)</option>
-                        <option value="1" th:selected="${rebajaConducta.tardiasPorAusencia == 1}">Una ausencia (llegó más de 10 minutos tarde)</option>
+                        <option value="2" th:selected="${rebajaConducta.tardiasPorAusencia != 1}">Media ausencia (menos de 10 minutos tarde)</option>
+                        <option value="1" th:selected="${rebajaConducta.tardiasPorAusencia == 1}">Una ausencia (más de 10 minutos tarde)</option>
                     </select>
                 </div>
                 <div class="form-group" x-show="modoAsistencia === 'PERSONALIZADO'" x-cloak>
@@ -462,13 +613,14 @@
             </div>
 
             <div x-show="modoAsistencia === 'REGLAMENTO_MEP'">
-                <div class="table-container">
+                <div class="table-container" tabindex="0" aria-label="Tabla de asistencia según artículo 37 del MEP">
                     <table class="table escala-tabla asistencia-tabla">
+                        <caption class="sr-only">Equivalencia de porcentaje de ausencias injustificadas a nota del rubro de asistencia</caption>
                         <thead>
                             <tr>
-                                <th>Ausencias injustificadas del total de lecciones</th>
-                                <th>Se asigna</th>
-                                <th>Nota del rubro</th>
+                                <th scope="col">Ausencias injustificadas del total de lecciones</th>
+                                <th scope="col">Se asigna</th>
+                                <th scope="col">Nota del rubro</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -483,28 +635,30 @@
                     </table>
                 </div>
                 <p class="asistencia-nota">
-                    Se calcula sobre las lecciones registradas al pasar lista y va al rubro Asistencia de la materia. La nota del rubro se pondera con el porcentaje de Asistencia del componente de evaluación; con 5% aporta exactamente lo que indica la tabla.
+                    Se calcula sobre las lecciones registradas al pasar lista y va al rubro <strong>Asistencia</strong> de cada materia. Con un 5% de peso en el componente, aporta exactamente lo indicado en la tabla.
                 </p>
             </div>
 
             <div x-show="modoAsistencia === 'PERSONALIZADO'" x-cloak>
-                <div class="table-container">
+                <div class="table-container" tabindex="0" aria-label="Reglas personalizadas de asistencia">
                     <table class="table escala-tabla">
+                        <caption class="sr-only">Rebajas personalizadas por tardías y ausencias</caption>
                         <thead>
                             <tr>
-                                <th>Registro</th>
-                                <th>Cada</th>
-                                <th>Bajan</th>
+                                <th scope="col">Registro</th>
+                                <th scope="col">Cada</th>
+                                <th scope="col">Bajan</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="fila in rebajasAsistencia" :key="fila.id">
                                 <tr>
-                                    <td style="font-weight: 500;" x-text="fila.nombre"></td>
+                                    <td style="font-weight: 600;" x-text="fila.nombre"></td>
                                     <td>
                                         <div class="rebaja-cantidad">
                                             <input class="form-input escala-input-num" type="number" inputmode="numeric"
                                                    min="1" max="30" step="1" required
+                                                   :disabled="modoAsistencia !== 'PERSONALIZADO'"
                                                    x-model.number="fila.cada" @change="normalizarRebaja(fila)" @wheel.prevent
                                                    :aria-label="'Cada cuántos registros de ' + fila.nombre">
                                             <span x-text="unidadDe(fila)"></span>
@@ -514,6 +668,7 @@
                                         <div class="rebaja-cantidad">
                                             <input class="form-input escala-input-num" type="number" inputmode="numeric"
                                                    min="0" max="100" step="1" required
+                                                   :disabled="modoAsistencia !== 'PERSONALIZADO'"
                                                    x-model.number="fila.puntos" @change="normalizarRebaja(fila)" @wheel.prevent
                                                    :aria-label="'Puntos que bajan por ' + fila.nombre">
                                             <span x-text="Number(fila.puntos) === 1 ? 'punto' : 'puntos'"></span>
@@ -526,16 +681,17 @@
                 </div>
                 <p class="asistencia-nota"
                    x-text="destinoAsistencia === 'CONDUCTA'
-                       ? 'Los puntos se restan de la nota de conducta del período, que parte de 100. La asistencia no entra en la nota de las materias.'
-                       : 'El rubro Asistencia de cada materia parte de 100 y se le restan estos puntos. Cero puntos significa que ese registro no rebaja.'"></p>
+                       ? 'Los puntos se restan de la nota de conducta del período (que parte de 100). La asistencia no entra en la nota de las materias.'
+                       : 'El rubro Asistencia de cada materia parte de 100 y se le restan estos puntos. Usar 0 puntos significa que ese registro no rebaja.'"></p>
             </div>
         </section>
 
+        <!-- ── 3. Rebajas de conducta ── -->
         <section class="card" aria-labelledby="rebajas-titulo">
             <div class="card-header">
                 <div>
-                    <h3 class="card-title" id="rebajas-titulo">Rebajas de conducta</h3>
-                    <p class="academic-help">La conducta parte de 100 y baja por las llamadas de atención, los puntos de las boletas y, si así se elige en Asistencia, por las ausencias y tardías.</p>
+                    <h3 class="card-title" id="rebajas-titulo">3. Rebajas de conducta</h3>
+                    <p class="academic-help">La conducta parte de 100 y disminuye según las llamadas de atención, los puntos de boletas y, si se elige arriba, la asistencia.</p>
                 </div>
             </div>
 
@@ -552,19 +708,20 @@
                 </div>
             </div>
 
-            <div class="table-container">
+            <div class="table-container" tabindex="0" aria-label="Tabla de rebajas de conducta">
                 <table class="table escala-tabla">
+                    <caption class="sr-only">Puntos rebajados por llamadas de atención</caption>
                     <thead>
                         <tr>
-                            <th>Registro</th>
-                            <th>Cada</th>
-                            <th>Bajan</th>
+                            <th scope="col">Registro</th>
+                            <th scope="col">Cada</th>
+                            <th scope="col">Bajan</th>
                         </tr>
                     </thead>
                     <tbody>
                         <template x-for="fila in rebajasConducta" :key="fila.id">
                             <tr>
-                                <td style="font-weight: 500;" x-text="fila.nombre"></td>
+                                <td style="font-weight: 600;" x-text="fila.nombre"></td>
                                 <td>
                                     <div class="rebaja-cantidad">
                                         <input class="form-input escala-input-num" type="number" inputmode="numeric"
@@ -590,15 +747,33 @@
             </div>
 
             <div class="escala-errores" x-show="erroresRebajas.length" x-cloak role="alert">
-                <template x-for="error in erroresRebajas" :key="error">
-                    <p x-text="error"></p>
-                </template>
+                <div class="escala-errores-lista">
+                    <template x-for="error in erroresRebajas" :key="error">
+                        <p x-text="error"></p>
+                    </template>
+                </div>
             </div>
         </section>
 
+        <!-- ── Barra de guardado sticky ── -->
         <div class="card escala-guardar">
-            <p th:text="${'Guarda la escala del ' + cicloSeleccionado.etiqueta + ', la asistencia y las rebajas de conducta juntas.'}">Guarda la escala, la asistencia y las rebajas de conducta juntas.</p>
-            <button type="submit" class="btn btn-primary" :disabled="errores.length > 0">Guardar cambios</button>
+            <div class="escala-guardar-info">
+                <p th:text="${'Guarda la escala del ' + cicloSeleccionado.etiqueta + ', la política de asistencia y las rebajas de conducta.'}">
+                    Guarda la escala, la asistencia y las rebajas de conducta juntas.
+                </p>
+                <span style="font-size: 0.78rem; color: #991b1b; font-weight: 600;"
+                      x-show="errores.length > 0" x-cloak role="status" aria-live="polite"
+                      x-text="'Revisa ' + errores.length + (errores.length === 1 ? ' ajuste pendiente' : ' ajustes pendientes') + ' arriba antes de guardar.'"></span>
+            </div>
+            <div class="escala-guardar-actions">
+                <span class="inst-unsaved-badge" x-show="sucio" x-cloak aria-live="polite">
+                    <span class="inst-unsaved-dot" aria-hidden="true"></span>
+                    Cambios sin guardar
+                </span>
+                <button type="submit" class="btn btn-primary" :disabled="errores.length > 0">
+                    Guardar cambios
+                </button>
+            </div>
         </div>
     </form>
 
@@ -702,6 +877,8 @@
             }
 
             return {
+                cicloActual: DATOS.ciclo || '',
+                cicloPendiente: null,
                 notaMinima: inicial.notaMinima,
                 notaMaxima: inicial.notaMaxima,
                 decimales: inicial.decimales,
@@ -755,17 +932,25 @@
                     if (indice === corte) return 'regular';
                     return 'bueno';
                 },
-                textoHasta: function (indice) {
-                    if (indice === 0) return 'hasta ' + this.fmtEntero(this.notaMaxima);
-                    return 'hasta ' + this.fmt(this.redondear(Number(this.tramos[indice - 1].desde) - this.paso));
-                },
-                limites: function (indice) {
+                tramoInvalido: function (indice) {
+                    const tramo = this.tramos[indice];
+                    if (!tramo) return false;
+                    const desde = Number(tramo.desde);
                     const min = Number(this.notaMinima);
                     const max = Number(this.notaMaxima);
-                    if (this.esPiso(indice)) return { min: min, max: min };
-                    const alto = indice === 0 ? max - 1 : Number(this.tramos[indice - 1].desde) - 1;
-                    const bajo = Number(this.tramos[indice + 1].desde) + 1;
-                    return alto < bajo ? { min: bajo, max: bajo } : { min: bajo, max: alto };
+                    if (!Number.isFinite(desde)) return true;
+                    if (this.esPiso(indice)) {
+                        return Math.abs(desde - min) > 1e-9;
+                    }
+                    const techo = indice === 0 ? max : Number(this.tramos[indice - 1].desde);
+                    const suelo = Number(this.tramos[indice + 1].desde);
+                    return !(desde < techo && desde > suelo);
+                },
+                textoHasta: function (indice) {
+                    if (indice === 0) return 'hasta ' + this.fmtEntero(this.notaMaxima);
+                    const arriba = Number(this.tramos[indice - 1].desde);
+                    if (!Number.isFinite(arriba)) return '—';
+                    return 'hasta ' + this.fmt(this.redondear(arriba - this.paso));
                 },
                 puedeQuitar: function (indice) {
                     return this.tramos.length > 2 && !this.esPiso(indice);
@@ -794,9 +979,9 @@
                 },
                 get motivoSinAgregar() {
                     if (this.puedeAgregar) return '';
-                    if (this.tramos.length >= MAX_TRAMOS) return 'Cinco tramos es el máximo.';
-                    if (this.erroresEscala.length) return 'Corrige la escala antes de agregar un tramo.';
-                    return 'No queda espacio entre los cortes.';
+                    if (this.tramos.length >= MAX_TRAMOS) return 'Cinco tramos es el máximo permitido.';
+                    if (this.erroresEscala.length) return 'Corrige los tramos antes de agregar uno nuevo.';
+                    return 'No queda espacio libre entre los cortes actuales.';
                 },
                 get barra() {
                     const self = this;
@@ -815,6 +1000,11 @@
                     if (!(max > min) || !Number.isFinite(nota)) return null;
                     return Math.max(0, Math.min(100, (nota - min) / (max - min) * 100));
                 },
+                get marcaAprobacionVisual() {
+                    const m = this.marcaAprobacion;
+                    if (m == null) return 50;
+                    return Math.max(14, Math.min(86, m));
+                },
                 get erroresEscala() {
                     const out = [];
                     const min = Number(this.notaMinima);
@@ -822,7 +1012,7 @@
                     if (!Number.isFinite(min) || !Number.isFinite(max) || min >= max) {
                         out.push('La nota mínima tiene que ser menor que la máxima.');
                     } else if (max - min < this.tramos.length) {
-                        out.push('Entre la mínima y la máxima no caben estos tramos.');
+                        out.push('Entre la nota mínima y máxima deben caber al menos ' + this.tramos.length + ' puntos para estos tramos.');
                     }
                     if (this.tramos.length < 2) out.push('Hacen falta al menos dos tramos.');
                     if (this.tramos.length > MAX_TRAMOS) out.push('Cinco tramos es el máximo.');
@@ -850,10 +1040,10 @@
                         }
                         if (this.esPiso(i)) {
                             if (Math.abs(desde - min) > 1e-9) {
-                                out.push('El tramo más bajo tiene que empezar en la nota mínima.');
+                                out.push('El tramo más bajo debe iniciar en la nota mínima (' + min + ').');
                             }
                         } else if (!(desde < previo && desde > Number(this.tramos[i + 1].desde))) {
-                            out.push('Cada inicio tiene que quedar entre el tramo de abajo y el de arriba.');
+                            out.push('Los cortes deben ir estrictamente de mayor a menor (sin repetirse ni cruzarse).');
                             break;
                         }
                         previo = desde;
@@ -866,11 +1056,12 @@
                 },
                 get erroresRebajas() {
                     const out = [];
-                    this.rebajas.forEach(function (fila) {
+                    const activas = this.modoAsistencia === 'PERSONALIZADO' ? this.rebajas : this.rebajasConducta;
+                    activas.forEach(function (fila) {
                         const cada = Number(fila.cada);
                         const puntos = Number(fila.puntos);
-                        if (!Number.isFinite(cada) || cada < 1) {
-                            out.push('«' + fila.nombre + '» necesita un grupo de al menos 1.');
+                        if (!Number.isFinite(cada) || cada < 1 || cada > 30) {
+                            out.push('«' + fila.nombre + '» debe agruparse entre 1 y 30 registros.');
                         }
                         if (!Number.isFinite(puntos) || puntos < 0 || puntos > 100) {
                             out.push('Los puntos de «' + fila.nombre + '» van de 0 a 100.');
@@ -886,8 +1077,8 @@
                     return JSON.stringify(this.tramos.map(function (tramo, i) {
                         return {
                             nombre: String(tramo.nombre || '').trim(),
-                            desde: Number(tramo.desde),
-                            hasta: i === 0 ? Number(self.notaMaxima) : Number(self.tramos[i - 1].desde),
+                            desde: Math.round(Number(tramo.desde)),
+                            hasta: i === 0 ? Number(self.notaMaxima) : Math.round(Number(self.tramos[i - 1].desde)),
                             incluyeHasta: i === 0,
                             aprueba: self.apruebaEn(i)
                         };
@@ -895,11 +1086,15 @@
                 },
                 get reglasJson() {
                     return JSON.stringify(this.rebajas.map(function (fila) {
-                        return { id: fila.id, cada: Math.round(Number(fila.cada)), puntos: Math.round(Number(fila.puntos)) };
+                        const cada = Math.round(Number(fila.cada));
+                        const puntos = Math.round(Number(fila.puntos));
+                        return {
+                            id: fila.id,
+                            cada: Number.isFinite(cada) ? Math.min(30, Math.max(1, cada)) : 1,
+                            puntos: Number.isFinite(puntos) ? Math.min(100, Math.max(0, puntos)) : 0
+                        };
                     }));
                 },
-                // La llamada de atención siempre rebaja la conducta; las ausencias y tardías se editan en el card de
-                // Asistencia (solo con valores propios). El servidor guarda la lista completa de reglas.
                 get rebajasConducta() {
                     return this.rebajas.filter(function (fila) { return fila.id === 'llamada'; });
                 },
@@ -912,6 +1107,7 @@
                 fijarCorte: function (id) {
                     if (id === this.pisoId || this.indiceDe(id) < 0) return;
                     this.corteId = id;
+                    this.sucio = true;
                 },
                 normalizarNombre: function (tramo) {
                     tramo.nombre = String(tramo.nombre || '').trim();
@@ -923,10 +1119,46 @@
                         tramo.desde = Number(this.notaMinima);
                         return;
                     }
-                    const lim = this.limites(i);
                     let n = Math.round(Number(tramo.desde));
-                    if (!Number.isFinite(n)) n = lim.min;
-                    tramo.desde = Math.min(lim.max, Math.max(lim.min, n));
+                    if (!Number.isFinite(n)) n = Number(this.notaMinima) + 1;
+                    tramo.desde = Math.min(Number(this.notaMaxima) - 1, Math.max(Number(this.notaMinima) + 1, n));
+                },
+                reajustarTramos: function () {
+                    const n = this.tramos.length;
+                    if (n < 2) return;
+                    let min = Math.round(Number(this.notaMinima));
+                    let max = Math.round(Number(this.notaMaxima));
+                    if (!Number.isFinite(min)) min = 0;
+                    if (!Number.isFinite(max)) max = 100;
+                    min = Math.max(0, Math.min(99, min));
+                    max = Math.max(1, Math.min(100, max));
+                    if (max - min < n) {
+                        max = Math.min(100, min + n);
+                        if (max - min < n) min = Math.max(0, max - n);
+                    }
+                    this.notaMinima = min;
+                    this.notaMaxima = max;
+                    let techo = max;
+                    for (let i = 0; i < n - 1; i++) {
+                        const bajo = min + (n - 1 - i);
+                        const alto = techo - 1;
+                        let valor = Math.round(Number(this.tramos[i].desde));
+                        if (!Number.isFinite(valor)) valor = Math.round(min + ((max - min) * (n - i) / (n + 1)));
+                        this.tramos[i].desde = Math.min(alto, Math.max(bajo, valor));
+                        techo = Number(this.tramos[i].desde);
+                    }
+                    this.tramos[n - 1].desde = min;
+                    this.sucio = true;
+                },
+                restablecerPredeterminada: function () {
+                    const base = escalaPredeterminada();
+                    this.notaMinima = base.notaMinima;
+                    this.notaMaxima = base.notaMaxima;
+                    this.decimales = base.decimales;
+                    this.tramos = base.tramos;
+                    this.corteId = 3;
+                    this.siguienteId = 5;
+                    this.sucio = true;
                 },
                 alCambiarRango: function () {
                     let min = Math.round(Number(this.notaMinima));
@@ -935,23 +1167,21 @@
                     if (!Number.isFinite(max)) max = 100;
                     min = Math.max(0, Math.min(99, min));
                     max = Math.max(1, Math.min(100, max));
-                    if (min >= max) max = Math.min(100, min + 1);
-                    if (min >= max) min = max - 1;
+                    const n = Math.max(2, this.tramos.length);
+                    if (max - min < n) {
+                        max = Math.min(100, min + n);
+                        if (max - min < n) min = Math.max(0, max - n);
+                    }
                     this.notaMinima = min;
                     this.notaMaxima = max;
                     this.decimales = Number(this.decimales) === 0 ? 0 : 1;
-                    const n = this.tramos.length;
-                    if (!n) return;
-                    let techo = max;
-                    for (let i = 0; i < n - 1; i++) {
-                        const bajo = min + (n - 1 - i);
-                        const alto = techo - 1;
-                        let valor = Math.round(Number(this.tramos[i].desde));
-                        if (!Number.isFinite(valor)) valor = bajo;
-                        this.tramos[i].desde = alto < bajo ? alto : Math.min(alto, Math.max(bajo, valor));
-                        techo = Number(this.tramos[i].desde);
-                    }
-                    this.tramos[n - 1].desde = min;
+                    this.reajustarTramos();
+                },
+                alCambiarModoAsistencia: function () {
+                    const self = this;
+                    this.rebajasAsistencia.forEach(function (fila) {
+                        self.normalizarRebaja(fila);
+                    });
                 },
                 agregarTramo: function () {
                     if (!this.puedeAgregar) return;
@@ -969,6 +1199,7 @@
                         k++;
                     }
                     this.tramos.splice(hueco.en, 0, { id: this.siguienteId++, nombre: nombre, desde: hueco.medio });
+                    this.sucio = true;
                 },
                 quitarTramo: function (id) {
                     const i = this.indiceDe(id);
@@ -976,6 +1207,7 @@
                     const eraCorte = this.corteId === id;
                     const idArriba = i > 0 ? this.tramos[i - 1].id : null;
                     this.tramos.splice(i, 1);
+                    this.sucio = true;
                     if (!eraCorte) return;
                     if (idArriba != null && idArriba !== this.pisoId) {
                         this.corteId = idArriba;
@@ -989,11 +1221,36 @@
                     fila.cada = Number.isFinite(cada) ? Math.min(30, Math.max(1, cada)) : 1;
                     fila.puntos = Number.isFinite(puntos) ? Math.min(100, Math.max(0, puntos)) : 0;
                 },
-                cambiarCiclo: function (ciclo) {
-                    if (!ciclo) return;
-                    if (this.sucio && !window.confirm('Tienes cambios sin guardar en esta escala. ¿Cambiar de ciclo y descartarlos?')) {
+                onCicloKeydown: function (event) {
+                    const teclas = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+                    if (!teclas.includes(event.key)) return;
+                    const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+                    if (!tabs.length) return;
+                    const idx = tabs.indexOf(document.activeElement);
+                    if (idx < 0) return;
+                    let next = idx;
+                    if (event.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+                    if (event.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+                    if (event.key === 'Home') next = 0;
+                    if (event.key === 'End') next = tabs.length - 1;
+                    event.preventDefault();
+                    tabs[next].focus();
+                },
+                solicitarCambioCiclo: function (ciclo, etiqueta) {
+                    if (!ciclo || ciclo === this.cicloActual) return;
+                    if (this.sucio) {
+                        this.cicloPendiente = { ciclo: ciclo, etiqueta: etiqueta || ciclo };
                         return;
                     }
+                    this.cargarCiclo(ciclo);
+                },
+                confirmarCambioCiclo: function () {
+                    if (!this.cicloPendiente) return;
+                    const destino = this.cicloPendiente.ciclo;
+                    this.cicloPendiente = null;
+                    this.cargarCiclo(destino);
+                },
+                cargarCiclo: function (ciclo) {
                     htmx.ajax('GET', '/configuracion-institucional/escala-notas?ciclo=' + encodeURIComponent(ciclo), {
                         target: '#institucional-escala-notas-panel',
                         swap: 'outerHTML'
@@ -1001,7 +1258,6 @@
                 },
                 prepararEnvio: function (event) {
                     const self = this;
-                    this.alCambiarRango();
                     this.tramos.forEach(function (tramo) { self.normalizarNombre(tramo); });
                     this.rebajas.forEach(function (fila) { self.normalizarRebaja(fila); });
                     const form = event.currentTarget || event.target;

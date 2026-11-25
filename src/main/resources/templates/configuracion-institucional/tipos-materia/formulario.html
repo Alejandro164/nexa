@@ -2,31 +2,36 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:fragment="form-content">
-    <div class="modal-backdrop">
-        <div class="modal-dialog">
+    <div class="modal-backdrop" onclick="if (event.target === this) cerrarModalInstitucional()">
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-tipo-materia-titulo">
             <div class="modal-loading-overlay htmx-indicator" id="modal-loading-overlay">
                 <div class="spinner"></div>
-                <span>Cargando...</span>
+                <span>Guardando tipo...</span>
             </div>
             <div class="modal-header">
-                <h3 class="modal-title"
+                <h3 class="modal-title" id="modal-tipo-materia-titulo"
                     th:text="${tipoMateria.id == null ? 'Registrar tipo de materia' : 'Editar tipo de materia'}">Tipo de materia</h3>
-                <button type="button" class="close-btn" onclick="cerrarModalInstitucional()">&times;</button>
+                <button type="button" class="close-btn" aria-label="Cerrar diálogo"
+                        onclick="cerrarModalInstitucional()">&times;</button>
             </div>
             <div class="modal-body">
                 <form hx-post="/configuracion-institucional/tipos-materia"
                       hx-target="#institucional-tipos-materia-panel"
                       hx-swap="outerHTML"
-                      hx-indicator="#modal-loading-overlay">
+                      hx-indicator="#modal-loading-overlay"
+                      hx-disabled-elt="find button[type='submit']">
                     <input type="hidden" name="id" th:value="${tipoMateria.id}">
                     <div class="form-group">
                         <label class="form-label" for="tipo-materia-nombre">Nombre</label>
                         <input class="form-input" id="tipo-materia-nombre" name="nombre" maxlength="60" required
-                               th:value="${tipoMateria.nombre}" placeholder="Ej. Técnica, idioma, optativa">
+                               aria-describedby="tipo-materia-nombre-hint"
+                               th:value="${tipoMateria.nombre}" placeholder="Ej. Básica, Técnica, Idioma, Optativa">
+                        <p class="academic-help" id="tipo-materia-nombre-hint">Máximo 60 caracteres. Debe ser único en esta dirección.</p>
                     </div>
                     <div class="form-group">
                         <label class="checkbox-label">
                             <input type="checkbox" class="custom-checkbox" name="activo"
+                                   aria-describedby="tipo-materia-activo-hint"
                                    th:checked="${tipoMateria.id == null or tipoMateria.activo}">
                             <span class="custom-checkbox-control">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
@@ -35,6 +40,7 @@
                             </span>
                             <span>Tipo activo</span>
                         </label>
+                        <p class="academic-help" id="tipo-materia-activo-hint">Los tipos inactivos no aparecen al crear nuevas materias, pero conservan su historial.</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn-secondary" onclick="cerrarModalInstitucional()">Cancelar</button>

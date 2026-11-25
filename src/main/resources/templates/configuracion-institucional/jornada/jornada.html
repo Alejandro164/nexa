@@ -9,97 +9,264 @@
               hx-target="#institucional-jornada-panel"
               hx-swap="outerHTML"
               hx-indicator="#jornada-loading"
-              @submit="prepararEnvio($event)">
+              hx-disabled-elt="find button[type='submit']"
+              @submit.capture="prepararEnvio($event)"
+              @input="sucio = true; errorFormulario = ''"
+              @change="sucio = true; errorFormulario = ''"
+              @institucional-guardado.camel.document="sucio = false">
             <input type="hidden" name="bloquesJornada" :value="bloquesSerializados"
                    th:value="${configJornada.serializarBloques()}">
+
             <div class="card-header">
                 <div>
                     <h3 class="card-title">Jornada lectiva</h3>
-                    <p class="academic-help">Reloj propio de esta dirección. El horario y la disponibilidad de docentes se arman con estos valores.</p>
+                    <p class="academic-help">Define los días laborales, el horario base y los descansos de esta dirección. El horario escolar se arma automáticamente con estos valores.</p>
                 </div>
-                <button type="submit" class="btn btn-primary">Guardar jornada</button>
+                <div class="jornada-header-actions">
+                    <span class="inst-unsaved-badge" x-show="sucio" x-cloak aria-live="polite">
+                        <span class="inst-unsaved-dot" aria-hidden="true"></span>
+                        Cambios sin guardar
+                    </span>
+                    <button type="submit" class="btn btn-primary" :disabled="erroresJornada.length > 0">
+                        Guardar jornada
+                    </button>
+                </div>
             </div>
 
-            <div id="jornada-loading" class="htmx-indicator panel-loading-overlay" style="align-items: center; justify-content: flex-start; padding-top: 4rem;">
+            <div id="jornada-loading" class="htmx-indicator panel-loading-overlay"
+                 style="align-items: center; justify-content: flex-start; padding-top: 4rem;">
                 <div class="spinner"></div>
-                <span>Guardando...</span>
+                <span>Guardando jornada...</span>
+            </div>
+
+            <div class="jornada-kpis" aria-live="polite">
+                <div class="jornada-kpi">
+                    <span class="jornada-kpi-label">Lecciones diarias</span>
+                    <span class="jornada-kpi-value" x-text="cantidadLecciones + ' / 16'">12 / 16</span>
+                    <span class="jornada-kpi-sub"
+                          x-text="bloques.length + (bloques.length === 1 ? ' bloque' : ' bloques')">6 bloques</span>
+                </div>
+                <div class="jornada-kpi">
+                    <span class="jornada-kpi-label">Horario estimado</span>
+                    <span class="jornada-kpi-value" x-text="(inicioJornada || '07:00') + ' – ' + finJornada">07:00 – 15:50</span>
+                    <span class="jornada-kpi-sub" x-text="'Duración total: ' + duracionTotalTexto">Duración total: 8h 50m</span>
+                </div>
+                <div class="jornada-kpi">
+                    <span class="jornada-kpi-label">Por lección</span>
+                    <span class="jornada-kpi-value" x-text="(Number(minutosLeccion) || 40) + ' min'">40 min</span>
+                    <span class="jornada-kpi-sub">Rango permitido: 20–90 min</span>
+                </div>
+                <div class="jornada-kpi">
+                    <span class="jornada-kpi-label">Días activos</span>
+                    <span class="jornada-kpi-value"
+                          x-text="diasSeleccionados.length + (diasSeleccionados.length === 1 ? ' día' : ' días')">5 días</span>
+                    <span class="jornada-kpi-sub" x-text="diasSeleccionados.length ? 'Visible en la grilla semanal' : 'Selecciona al menos uno'">Visible en la grilla semanal</span>
+                </div>
             </div>
 
             <div class="jornada-body">
                 <div class="jornada-form">
-                    <section class="jornada-section">
+                    <div class="inst-alert inst-alert--error" style="margin-bottom: 1.25rem;"
+                         x-show="errorFormulario || erroresJornada.length > 0" x-cloak role="alert">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span x-text="errorFormulario || erroresJornada[0]"></span>
+                    </div>
+
+                    <fieldset class="jornada-section">
                         <div class="jornada-section-head">
-                            <h4>Días laborales</h4>
-                            <p>La grilla semanal solo muestra los días activos.</p>
+                            <div>
+                                <legend>1. Días laborales</legend>
+                                <p>Marca los días en que hay lecciones. La grilla semanal solo mostrará los días seleccionados.</p>
+                            </div>
+                            <div class="jornada-presets" aria-label="Atajos de días laborales">
+                                <button type="button" class="jornada-preset-btn"
+                                        @click="aplicarDiasPreset(['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES'])">
+                                    Lun–Vie
+                                </button>
+                                <button type="button" class="jornada-preset-btn"
+                                        @click="aplicarDiasPreset(['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES','SABADO'])">
+                                    Lun–Sáb
+                                </button>
+                            </div>
                         </div>
-                        <div class="jornada-days" role="group" aria-label="Días laborales">
+                        <div class="jornada-days" role="group" aria-label="Seleccionar días laborales">
                             <label th:each="dia : ${diasCatalogo}" class="jornada-day"
                                    :class="{ 'is-on': diasSeleccionados.includes($el.dataset.dia) }"
                                    th:attr="data-dia=${dia}">
                                 <input type="checkbox" name="dias" th:value="${dia}"
                                        th:checked="${configJornada.dias.contains(dia)}"
                                        x-model="diasSeleccionados">
+                                <svg class="jornada-day-check" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
                                 <span th:text="${T(com.chavescr.nexa.entity.DiaLaboral).etiquetaCorta(dia)}">Lun</span>
                             </label>
                         </div>
-                    </section>
+                    </fieldset>
 
-                    <section class="jornada-section">
+                    <fieldset class="jornada-section">
                         <div class="jornada-section-head">
-                            <h4>Reloj de lecciones</h4>
-                            <p>La cantidad de lecciones sale de los bloques. Cada bloque suma las suyas al total del día.</p>
+                            <div>
+                                <legend>2. Reloj base</legend>
+                                <p>Hora en que inicia la primera lección y duración estándar de cada clase.</p>
+                            </div>
                         </div>
                         <div class="jornada-fields">
-                            <div class="jornada-total" aria-live="polite">
-                                <span class="jornada-total-num" x-text="cantidadLecciones">12</span>
-                                <span class="jornada-total-label">
-                                    <span x-text="cantidadLecciones === 1 ? 'lección' : 'lecciones'">lecciones</span>
-                                    en
-                                    <span x-text="bloques.length">6</span>
-                                    <span x-text="bloques.length === 1 ? 'bloque' : 'bloques'">bloques</span>
-                                </span>
-                            </div>
                             <div class="form-group">
-                                <label class="form-label">Inicio de jornada</label>
-                                <input class="form-input" type="time" name="inicioJornada" required
+                                <label class="form-label" for="jornada-inicio">Inicio de jornada</label>
+                                <input class="form-input" id="jornada-inicio" type="time" name="inicioJornada" required
+                                       aria-describedby="jornada-inicio-hint"
                                        x-model="inicioJornada"
                                        th:value="${#temporals.format(configJornada.inicioJornada, 'HH:mm')}">
+                                <span class="jornada-field-hint" id="jornada-inicio-hint">Primera lección del día.</span>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Minutos por lección</label>
-                                <input class="form-input" type="number" name="minutosLeccion" min="20" max="90" required
+                                <label class="form-label" for="jornada-minutos">Minutos por lección</label>
+                                <input class="form-input" id="jornada-minutos" type="number" name="minutosLeccion"
+                                       min="20" max="90" step="1" inputmode="numeric" required
+                                       aria-describedby="jornada-minutos-hint"
+                                       :aria-invalid="!(Number(minutosLeccion) >= 20 && Number(minutosLeccion) <= 90) ? 'true' : 'false'"
                                        x-model.number="minutosLeccion"
+                                       @change="normalizarMinutosLeccion()"
+                                       @wheel.prevent
                                        th:value="${configJornada.minutosLeccion}">
+                                <span class="jornada-field-hint" id="jornada-minutos-hint">Entre 20 y 90 minutos (MEP estándar: 40 min).</span>
                             </div>
                         </div>
-                    </section>
+                    </fieldset>
 
-                    <section class="jornada-section">
+                    <fieldset class="jornada-section">
                         <div class="jornada-section-head">
-                            <h4>Bloques</h4>
-                            <p>Después de cada bloque elige receso o almuerzo y sus minutos. El último bloque cierra la jornada.</p>
+                            <div>
+                                <legend>3. Bloques de lecciones y pausas</legend>
+                                <p>Organiza las lecciones en bloques consecutivos y define el receso o almuerzo entre cada uno. El último bloque cierra la jornada.</p>
+                            </div>
                         </div>
-                        <div class="jornada-bloques"
-                             @click="onBloquesClick($event)"
-                             @input="onBloquesInput($event)"
-                             @change="onBloquesChange($event)"
-                             x-html="bloquesHtml"></div>
-                        <button type="button" class="btn btn-secondary jornada-add-bloque"
-                                @click="agregarBloque()"
-                                :disabled="cantidadLecciones >= 16">
-                            Agregar bloque
-                        </button>
-                        <p class="academic-help" x-show="cantidadLecciones >= 16">El día ya tiene 16 lecciones, el máximo de la grilla.</p>
-                    </section>
+
+                        <div class="jornada-bloques">
+                            <template x-for="(bloque, i) in bloques" :key="bloque.id">
+                                <article class="jornada-bloque" :aria-label="'Bloque ' + (i + 1)">
+                                    <header class="jornada-bloque-head">
+                                        <div class="jornada-bloque-meta">
+                                            <span class="jornada-bloque-num" x-text="'B' + (i + 1)"></span>
+                                            <div>
+                                                <h5 x-text="rangoBloque(i)"></h5>
+                                                <span class="jornada-bloque-rango" x-text="horarioBloque(i)"></span>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="inst-icon-btn inst-icon-btn--danger"
+                                                x-show="bloques.length > 1"
+                                                @click="quitarBloque(i)"
+                                                :aria-label="'Quitar bloque ' + (i + 1)"
+                                                title="Quitar bloque">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                        </button>
+                                    </header>
+
+                                    <div class="jornada-bloque-body">
+                                        <div class="form-group" style="margin: 0;">
+                                            <label class="form-label" :for="'lecciones-bloque-' + bloque.id">Lecciones</label>
+                                            <div class="jornada-stepper">
+                                                <button type="button"
+                                                        @click="ajustarLecciones(i, -1)"
+                                                        :disabled="(Number(bloque.lecciones) || 1) <= 1"
+                                                        :aria-label="'Disminuir lecciones del bloque ' + (i + 1)">−</button>
+                                                <input class="form-input" type="number" min="1"
+                                                       :max="maxLeccionesBloque(i)"
+                                                       inputmode="numeric"
+                                                       :id="'lecciones-bloque-' + bloque.id"
+                                                       x-model.number="bloque.lecciones"
+                                                       @change="normalizarLecciones(i)"
+                                                       @wheel.prevent>
+                                                <button type="button"
+                                                        @click="ajustarLecciones(i, 1)"
+                                                        :disabled="(Number(bloque.lecciones) || 1) >= maxLeccionesBloque(i)"
+                                                        :aria-label="'Aumentar lecciones del bloque ' + (i + 1)">+</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="jornada-bloque-pausa" x-show="i < bloques.length - 1">
+                                            <span class="form-label">Pausa al terminar este bloque</span>
+                                            <div class="jornada-pausa-ops" role="group" :aria-label="'Tipo de pausa después del bloque ' + (i + 1)">
+                                                <button type="button"
+                                                        :class="{ 'is-on': bloque.pausa === 'receso' }"
+                                                        :aria-pressed="bloque.pausa === 'receso' ? 'true' : 'false'"
+                                                        @click="asignarPausa(bloque, 'receso')">Receso</button>
+                                                <button type="button"
+                                                        :class="{ 'is-on': bloque.pausa === 'almuerzo' }"
+                                                        :aria-pressed="bloque.pausa === 'almuerzo' ? 'true' : 'false'"
+                                                        @click="asignarPausa(bloque, 'almuerzo')">Almuerzo</button>
+                                                <button type="button"
+                                                        :class="{ 'is-on': bloque.pausa === 'ninguna' }"
+                                                        :aria-pressed="bloque.pausa === 'ninguna' ? 'true' : 'false'"
+                                                        @click="asignarPausa(bloque, 'ninguna')">Sin pausa</button>
+                                            </div>
+                                            <div class="jornada-recreo-min" x-show="bloque.pausa !== 'ninguna'">
+                                                <label class="sr-only" :for="'pausa-min-' + bloque.id"
+                                                       x-text="'Minutos de ' + bloque.pausa + ' después del bloque ' + (i + 1)"></label>
+                                                <input class="form-input" type="number" min="0"
+                                                       :max="bloque.pausa === 'almuerzo' ? 120 : 60"
+                                                       inputmode="numeric"
+                                                       :id="'pausa-min-' + bloque.id"
+                                                       x-model.number="bloque.minutos"
+                                                       @change="normalizarMinutos(bloque)"
+                                                       @wheel.prevent>
+                                                <span x-text="'min (máx. ' + (bloque.pausa === 'almuerzo' ? '120' : '60') + ')'"></span>
+                                            </div>
+                                        </div>
+
+                                        <div x-show="i === bloques.length - 1">
+                                            <p class="jornada-bloque-fin">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                </svg>
+                                                Cierre de la jornada
+                                            </p>
+                                        </div>
+                                    </div>
+                                </article>
+                            </template>
+                        </div>
+
+                        <div class="jornada-add-row">
+                            <button type="button" class="btn btn-secondary"
+                                    @click="agregarBloque()"
+                                    :disabled="cantidadLecciones >= 16">
+                                + Agregar bloque
+                            </button>
+                            <span class="academic-help" style="margin: 0;"
+                                  x-text="leccionesDisponibles > 0
+                                      ? ('Quedan ' + leccionesDisponibles + (leccionesDisponibles === 1 ? ' lección disponible' : ' lecciones disponibles') + ' (máx. 16).')
+                                      : 'Has alcanzado el máximo de 16 lecciones diarias.'"></span>
+                        </div>
+                    </fieldset>
                 </div>
 
-                <aside class="jornada-preview" aria-live="polite">
+                <aside class="jornada-preview" aria-label="Vista previa de la jornada" aria-live="polite">
                     <div class="jornada-preview-head">
-                        <h4>Vista previa</h4>
-                        <span x-text="'Termina a las ' + finJornada">Termina a las 15:50</span>
+                        <h4>Vista previa del día</h4>
+                        <span x-text="'Cierra ' + finJornada">Cierra 15:50</span>
                     </div>
-                    <ol class="jornada-timeline" x-html="lineasHtml"></ol>
-                    <p class="academic-help" x-show="diasSeleccionados.length === 0">Selecciona al menos un día laboral.</p>
+                    <ol class="jornada-timeline">
+                        <template x-for="linea in lineas" :key="linea.clave">
+                            <li :class="linea.tipo === 'recreo' ? 'is-break' : (linea.tipo === 'almuerzo' ? 'is-lunch' : 'is-lesson')">
+                                <span class="jornada-time" x-text="linea.inicio + ' – ' + linea.fin"></span>
+                                <span class="jornada-label" x-text="linea.etiqueta"></span>
+                                <span class="jornada-tag" x-text="linea.badge"></span>
+                            </li>
+                        </template>
+                    </ol>
                 </aside>
             </div>
         </form>

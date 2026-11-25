@@ -1,54 +1,123 @@
 <div th:fragment="content" id="institucional-tipos-materia-panel" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        .tipos-materia-nota {
+            display: flex;
+            gap: 0.65rem;
+            align-items: flex-start;
+            padding: 0.95rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.83rem;
+            line-height: 1.5;
+        }
+        .tipos-materia-nota svg {
+            flex: none;
+            margin-top: 2px;
+            color: var(--primary);
+        }
+        .tipos-materia-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 2rem 1rem;
+            color: #475569;
+        }
+    </style>
+
     <div class="card">
         <div class="card-header">
             <div>
-                <h3 class="card-title">Tipos de materia</h3>
-                <p class="academic-help">Los tipos quedan solo en esta dirección. Se usan al registrar materias y al bloquear lecciones en el horario.</p>
+                <h3 class="card-title">
+                    Tipos de materia
+                    <span class="inst-pill-count"
+                          th:text="${(tiposMateria == null ? 0 : tiposMateria.size()) + ' registrados'}">0 registrados</span>
+                </h3>
+                <p class="academic-help">Categorías propias de esta dirección. Se usan al registrar materias y al bloquear o reservar lecciones en el horario.</p>
             </div>
-            <button class="btn-primary"
+            <button type="button" class="btn btn-primary"
                     hx-get="/configuracion-institucional/tipos-materia/form"
                     hx-target="#modal-container"
-                    onclick="abrirModalInstitucional()">+ Nuevo tipo</button>
+                    onclick="abrirModalInstitucional(this)">+ Nuevo tipo</button>
         </div>
-        <div class="table-container">
+
+        <div class="table-container" tabindex="0" aria-label="Tabla de tipos de materia">
             <table class="table">
+                <caption class="sr-only">Lista de tipos de materia configurados en la dirección</caption>
                 <thead>
                     <tr>
-                        <th>Nombre</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:if="${tiposMateria == null or tiposMateria.empty}">
-                        <td colspan="3" class="table-empty">No hay tipos de materia registrados.</td>
+                        <td colspan="3" class="table-empty">
+                            <div class="tipos-materia-empty">
+                                <span>No hay tipos de materia registrados todavía.</span>
+                                <button type="button" class="btn btn-secondary"
+                                        hx-get="/configuracion-institucional/tipos-materia/form"
+                                        hx-target="#modal-container"
+                                        onclick="abrirModalInstitucional(this)">+ Crear primer tipo</button>
+                            </div>
+                        </td>
                     </tr>
                     <tr th:each="tipo : ${tiposMateria}">
-                        <td th:text="${tipo.nombre}">Básica</td>
+                        <td>
+                            <strong th:text="${tipo.nombre}">Básica</strong>
+                        </td>
                         <td>
                             <span th:if="${tipo.activo}" class="badge badge-success">Activo</span>
                             <span th:unless="${tipo.activo}" class="badge badge-secondary">Inactivo</span>
                         </td>
                         <td>
                             <div class="table-actions">
-                                <button class="btn-xs btn-ghost"
-                                        th:attr="hx-get=|/configuracion-institucional/tipos-materia/form/${tipo.id}|"
+                                <button type="button" class="inst-icon-btn"
+                                        th:attr="hx-get=|/configuracion-institucional/tipos-materia/form/${tipo.id}|,
+                                                 aria-label=|Editar tipo de materia ${tipo.nombre}|"
                                         hx-target="#modal-container"
-                                        onclick="abrirModalInstitucional()"
-                                        title="Editar">✏️</button>
-                                <button type="button" class="btn-xs btn-danger-ghost"
+                                        onclick="abrirModalInstitucional(this)"
+                                        title="Editar tipo de materia">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                                <button type="button" class="inst-icon-btn inst-icon-btn--danger"
                                         th:attr="data-delete-url=|/configuracion-institucional/tipos-materia/${tipo.id}|,
-                                                 data-delete-message=|¿Deseas eliminar el tipo de materia ${tipo.nombre}? Solo se puede eliminar si ninguna materia ni lección bloqueada lo usa.|"
+                                                 data-delete-message=|¿Deseas eliminar el tipo de materia «${tipo.nombre}»? Solo se puede eliminar si ninguna materia ni lección bloqueada lo usa.|,
+                                                 aria-label=|Eliminar tipo de materia ${tipo.nombre}|"
                                         data-delete-title="Eliminar tipo de materia"
                                         data-delete-target="#institucional-tipos-materia-panel"
                                         data-delete-swap="outerHTML"
                                         onclick="abrirConfirmacionAcademica(this)"
-                                        title="Eliminar">🗑️</button>
+                                        title="Eliminar tipo de materia">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div class="tipos-materia-nota">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
+            </svg>
+            <span>
+                Si un tipo ya está asignado a materias o bloqueos de horario y no deseas usarlo en nuevos registros, edítalo y márcalo como <strong>Inactivo</strong> en lugar de eliminarlo.
+            </span>
         </div>
     </div>
 </div>

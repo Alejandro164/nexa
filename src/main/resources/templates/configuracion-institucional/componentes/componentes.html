@@ -8,22 +8,56 @@
         }
         .comp-eval-table .comp-eval-total {
             font-weight: 700;
+            color: #166534;
+        }
+        .comp-eval-table .comp-eval-cero {
+            color: #94a3b8;
         }
         .comp-eval-detalle {
             display: block;
             margin-top: 2px;
             font-size: 0.78rem;
-            color: var(--text-secondary);
+            color: #475569;
+            line-height: 1.4;
+        }
+        .comp-eval-mini-bar {
+            display: flex;
+            height: 6px;
+            width: 140px;
+            max-width: 100%;
+            margin-top: 6px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: #e2e8f0;
+        }
+        .comp-eval-mini-bar .seg-cot { background: #2563eb; }
+        .comp-eval-mini-bar .seg-tar { background: #0891b2; }
+        .comp-eval-mini-bar .seg-pro { background: #7c3aed; }
+        .comp-eval-mini-bar .seg-pru { background: #ea580c; }
+        .comp-eval-mini-bar .seg-asi { background: #16a34a; }
+        .comp-eval-uso-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            background: #f1f5f9;
+            color: #334155;
+        }
+        .comp-eval-uso-pill.is-used {
+            background: #eff6ff;
+            color: #1d4ed8;
         }
         .comp-eval-nota {
             display: flex;
-            gap: 0.6rem;
+            gap: 0.65rem;
             align-items: flex-start;
-            padding: 0.9rem 1.5rem;
+            padding: 0.95rem 1.5rem;
             border-top: 1px solid var(--border);
             background: #f8fafc;
-            color: var(--text-secondary);
-            font-size: 0.82rem;
+            color: #475569;
+            font-size: 0.83rem;
             line-height: 1.5;
         }
         .comp-eval-nota svg {
@@ -31,86 +65,160 @@
             margin-top: 2px;
             color: var(--primary);
         }
+        .comp-eval-leyenda {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.1rem;
+            padding: 0.65rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: #f8fafc;
+            font-size: 0.76rem;
+            color: #475569;
+        }
+        .comp-eval-leyenda-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+        .comp-eval-leyenda-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
     </style>
 
     <div class="card">
         <div class="card-header">
             <div>
-                <h3 class="card-title">Componentes de evaluación</h3>
-                <p class="academic-help">Cada componente define cuánto vale cada rubro en la nota del período. Al crear una materia se le asigna un componente; si cambias un porcentaje, todas sus materias se calculan con el nuevo valor.</p>
+                <h3 class="card-title">
+                    Componentes de evaluación
+                    <span class="inst-pill-count"
+                          th:text="${(componentesEvaluacion == null ? 0 : componentesEvaluacion.size()) + ' registrados'}">0 registrados</span>
+                </h3>
+                <p class="academic-help">Define cuánto vale cada rubro en la nota del período. Si ajustas un porcentaje, todas las materias asociadas se recalculan automáticamente.</p>
             </div>
-            <button class="btn-primary"
+            <button type="button" class="btn btn-primary"
                     hx-get="/configuracion-institucional/componentes/form"
                     hx-target="#modal-container"
-                    onclick="abrirModalInstitucional()">+ Nuevo componente</button>
+                    onclick="abrirModalInstitucional(this)">+ Nuevo componente</button>
         </div>
-        <div class="table-container">
+
+        <div class="comp-eval-leyenda" aria-hidden="true">
+            <span class="comp-eval-leyenda-item"><span class="comp-eval-leyenda-dot" style="background:#2563eb;"></span>Cotidiano</span>
+            <span class="comp-eval-leyenda-item"><span class="comp-eval-leyenda-dot" style="background:#0891b2;"></span>Tareas</span>
+            <span class="comp-eval-leyenda-item"><span class="comp-eval-leyenda-dot" style="background:#7c3aed;"></span>Proyecto</span>
+            <span class="comp-eval-leyenda-item"><span class="comp-eval-leyenda-dot" style="background:#ea580c;"></span>Pruebas</span>
+            <span class="comp-eval-leyenda-item"><span class="comp-eval-leyenda-dot" style="background:#16a34a;"></span>Asistencia</span>
+        </div>
+
+        <div class="table-container" tabindex="0" aria-label="Tabla de componentes de evaluación">
             <table class="table comp-eval-table">
+                <caption class="sr-only">Lista de componentes de evaluación y distribución porcentual por rubro</caption>
                 <thead>
                     <tr>
-                        <th>Componente</th>
-                        <th class="comp-eval-num">Cotidiano</th>
-                        <th class="comp-eval-num">Tareas</th>
-                        <th class="comp-eval-num">Proyecto</th>
-                        <th class="comp-eval-num">Pruebas</th>
-                        <th class="comp-eval-num">Asistencia</th>
-                        <th class="comp-eval-num">Total</th>
-                        <th class="comp-eval-num">Materias</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
+                        <th scope="col">Componente</th>
+                        <th scope="col" class="comp-eval-num">Cotidiano</th>
+                        <th scope="col" class="comp-eval-num">Tareas</th>
+                        <th scope="col" class="comp-eval-num">Proyecto</th>
+                        <th scope="col" class="comp-eval-num">Pruebas</th>
+                        <th scope="col" class="comp-eval-num">Asistencia</th>
+                        <th scope="col" class="comp-eval-num">Total</th>
+                        <th scope="col" class="comp-eval-num">Materias</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:if="${componentesEvaluacion == null or componentesEvaluacion.empty}">
-                        <td colspan="10" class="table-empty">No hay componentes registrados.</td>
+                        <td colspan="10" class="table-empty">
+                            No hay componentes registrados todavía. Crea uno nuevo con el botón «+ Nuevo componente».
+                        </td>
                     </tr>
                     <tr th:each="c : ${componentesEvaluacion}"
                         th:with="materias=${materiasPorComponente.get(c.id) ?: 0}">
                         <td>
                             <strong th:text="${c.nombre}">General</strong>
                             <span class="comp-eval-detalle" th:if="${c.descripcion != null}" th:text="${c.descripcion}">Art. 41 a)</span>
+                            <div class="comp-eval-mini-bar" aria-hidden="true">
+                                <span class="seg-cot" th:if="${c.cotidiano > 0}" th:style="'width:' + ${c.cotidiano} + '%'"></span>
+                                <span class="seg-tar" th:if="${c.tareas > 0}" th:style="'width:' + ${c.tareas} + '%'"></span>
+                                <span class="seg-pro" th:if="${c.proyecto > 0}" th:style="'width:' + ${c.proyecto} + '%'"></span>
+                                <span class="seg-pru" th:if="${c.pruebas > 0}" th:style="'width:' + ${c.pruebas} + '%'"></span>
+                                <span class="seg-asi" th:if="${c.asistencia > 0}" th:style="'width:' + ${c.asistencia} + '%'"></span>
+                            </div>
                         </td>
-                        <td class="comp-eval-num" th:text="${c.cotidiano > 0 ? c.cotidiano + '%' : '—'}">40%</td>
-                        <td class="comp-eval-num" th:text="${c.tareas > 0 ? c.tareas + '%' : '—'}">15%</td>
-                        <td class="comp-eval-num" th:text="${c.proyecto > 0 ? c.proyecto + '%' : '—'}">20%</td>
-                        <td class="comp-eval-num" th:text="${c.pruebas > 0 ? c.pruebas + '%' : '—'}">20%</td>
-                        <td class="comp-eval-num" th:text="${c.asistencia > 0 ? c.asistencia + '%' : '—'}">5%</td>
+                        <td class="comp-eval-num" th:classappend="${c.cotidiano == 0} ? ' comp-eval-cero' : ''"
+                            th:text="${c.cotidiano > 0 ? c.cotidiano + '%' : '—'}">40%</td>
+                        <td class="comp-eval-num" th:classappend="${c.tareas == 0} ? ' comp-eval-cero' : ''"
+                            th:text="${c.tareas > 0 ? c.tareas + '%' : '—'}">15%</td>
+                        <td class="comp-eval-num" th:classappend="${c.proyecto == 0} ? ' comp-eval-cero' : ''"
+                            th:text="${c.proyecto > 0 ? c.proyecto + '%' : '—'}">20%</td>
+                        <td class="comp-eval-num" th:classappend="${c.pruebas == 0} ? ' comp-eval-cero' : ''"
+                            th:text="${c.pruebas > 0 ? c.pruebas + '%' : '—'}">20%</td>
+                        <td class="comp-eval-num" th:classappend="${c.asistencia == 0} ? ' comp-eval-cero' : ''"
+                            th:text="${c.asistencia > 0 ? c.asistencia + '%' : '—'}">5%</td>
                         <td class="comp-eval-num comp-eval-total" th:text="${c.total + '%'}">100%</td>
-                        <td class="comp-eval-num" th:text="${materias}">0</td>
+                        <td class="comp-eval-num">
+                            <span class="comp-eval-uso-pill" th:classappend="${materias > 0} ? ' is-used' : ''"
+                                  th:text="${materias}">0</span>
+                        </td>
                         <td>
                             <span th:if="${c.activo}" class="badge badge-success">Activo</span>
                             <span th:unless="${c.activo}" class="badge badge-secondary">Inactivo</span>
                         </td>
                         <td>
                             <div class="table-actions">
-                                <button class="btn-xs btn-ghost"
-                                        th:attr="hx-get=|/configuracion-institucional/componentes/form/${c.id}|"
+                                <button type="button" class="inst-icon-btn"
+                                        th:attr="hx-get=|/configuracion-institucional/componentes/form/${c.id}|,
+                                                 aria-label=|Editar componente ${c.nombre}|"
                                         hx-target="#modal-container"
-                                        onclick="abrirModalInstitucional()"
-                                        title="Editar">✏️</button>
-                                <button type="button" class="btn-xs btn-danger-ghost"
+                                        onclick="abrirModalInstitucional(this)"
+                                        title="Editar componente">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                                <button type="button" class="inst-icon-btn inst-icon-btn--danger"
                                         th:attr="data-delete-url=|/configuracion-institucional/componentes/${c.id}|,
-                                                 data-delete-message=|¿Deseas eliminar el componente ${c.nombre}? Solo se puede eliminar si ninguna materia lo usa.|"
+                                                 data-delete-message=${materias > 0
+                                                     ? 'El componente «' + c.nombre + '» está asignado a ' + (materias == 1 ? '1 materia' : materias + ' materias') + '. Para eliminarlo primero cámbialas de componente, o edítalo para desactivarlo.'
+                                                     : '¿Deseas eliminar el componente «' + c.nombre + '»? Esta acción no se puede deshacer.'},
+                                                 aria-label=|Eliminar componente ${c.nombre}|"
                                         data-delete-title="Eliminar componente"
                                         data-delete-target="#institucional-componentes-panel"
                                         data-delete-swap="outerHTML"
                                         onclick="abrirConfirmacionAcademica(this)"
-                                        title="Eliminar">🗑️</button>
+                                        th:title="${materias > 0 ? 'En uso por ' + materias + ' materia(s)' : 'Eliminar componente'}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
         <div class="comp-eval-nota">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path>
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
             </svg>
             <span>
                 Porcentajes precargados según los artículos 40 y 41 del Reglamento de Evaluación de los Aprendizajes.
                 Un rubro con «—» no forma parte de la nota de ese componente.
-                <th:block th:unless="${asistenciaCuenta}">En esta dirección las ausencias y tardías rebajan la conducta, así que la asistencia no entra en la nota: su porcentaje se reparte entre los demás rubros.</th:block>
+                <th:block th:unless="${asistenciaCuenta}">
+                    <strong>Nota activa:</strong> en esta dirección las ausencias y tardías rebajan la conducta, por lo que el porcentaje de asistencia se redistribuye entre los demás rubros.
+                </th:block>
             </span>
         </div>
     </div>
