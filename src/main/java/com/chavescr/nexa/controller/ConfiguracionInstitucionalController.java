@@ -226,12 +226,13 @@ public class ConfiguracionInstitucionalController {
             @RequestParam ModoAsistencia modoAsistencia,
             @RequestParam(required = false) DestinoRebajaAsistencia destinoRebajaAsistencia,
             @RequestParam Integer tardiasPorAusencia,
+            @RequestParam(defaultValue = "0") Integer justificadasPorAusencia,
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
             escalaEvaluacionService.guardar(direccionId, ciclo, notaMinima, notaMaxima, decimales, notaAprobacion,
                     tramos, rebajas, quienRegistraPuntosBoleta, modoAsistencia, destinoRebajaAsistencia,
-                    tardiasPorAusencia);
+                    tardiasPorAusencia, justificadasPorAusencia);
             response.setHeader("HX-Trigger", "{\"institucionalGuardado\":{\"mensaje\":\"Escala del "
                     + escaparJson(ciclo.getEtiqueta()) + " y rebajas actualizadas\"}}");
         } catch (IllegalArgumentException e) {

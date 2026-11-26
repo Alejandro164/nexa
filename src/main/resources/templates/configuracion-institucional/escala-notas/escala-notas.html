@@ -8,9 +8,23 @@
      th:data-rebajas="${rebajaConducta.reglas}"
      th:data-quien-puntos-boleta="${rebajaConducta.quienRegistraPuntosBoleta}"
      th:data-tardias-por-ausencia="${rebajaConducta.tardiasPorAusencia}"
+     th:data-justificadas-por-ausencia="${rebajaConducta.justificadasPorAusencia}"
      th:data-modo-asistencia="${rebajaConducta.modoAsistencia}"
      th:data-destino-rebaja="${rebajaConducta.destinoRebajaAsistencia}">
     <style>
+        #institucional-escala-notas-panel .rebaja-inactiva td {
+            color: var(--text-secondary);
+        }
+        #institucional-escala-notas-panel .rebaja-inactiva .form-input {
+            opacity: 0.55;
+        }
+        #institucional-escala-notas-panel .rebaja-reemplazada {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
         #institucional-escala-notas-panel .escala-form {
             position: relative;
             display: grid;
@@ -427,7 +441,11 @@
             <div class="card-header">
                 <div>
                     <h3 class="card-title" id="asistencia-titulo">Asistencia</h3>
-                    <p class="academic-help">Cómo afectan las ausencias y tardías injustificadas, por materia y período. Las justificadas no cuentan.</p>
+                    <p class="academic-help"
+                       x-text="'Cómo afectan las ausencias y tardías injustificadas, por materia y período. '
+                           + (Number(justificadasPorAusencia) > 0
+                               ? 'Las ausencias justificadas cuentan según el ajuste de abajo; las tardías justificadas no cuentan.'
+                               : (modoAsistencia === 'REGLAMENTO_MEP' ? 'Las justificadas no cuentan.' : 'Las justificadas siguen su propia regla.'))">Cómo afectan las ausencias y tardías injustificadas, por materia y período. Las justificadas no cuentan.</p>
                 </div>
             </div>
 
@@ -449,6 +467,7 @@
                         <option value="1" th:selected="${rebajaConducta.tardiasPorAusencia == 1}">Una ausencia (llegó más de 10 minutos tarde)</option>
                     </select>
                 </div>
+                <!-- "Rebajan" ocupa la misma casilla que "Tardías" (nunca se ven juntas), así Justificadas no cambia de lugar. -->
                 <div class="form-group" x-show="modoAsistencia === 'PERSONALIZADO'" x-cloak>
                     <label class="form-label" for="asistencia-destino">Las ausencias y tardías rebajan</label>
                     <select class="form-input" id="asistencia-destino" name="destinoRebajaAsistencia"
@@ -458,6 +477,28 @@
                         <option value="CONDUCTA"
                                 th:selected="${rebajaConducta.destinoRebajaAsistencia != null and rebajaConducta.destinoRebajaAsistencia.name() == 'CONDUCTA'}">El total de la conducta</option>
                     </select>
+                </div>
+                <!-- Aplica en los dos modos: con valores propios los grupos entran a la regla de ausencia injustificada. -->
+                <div class="form-group">
+                    <label class="form-label" for="asistencia-justificadas">Ausencias justificadas que forman una injustificada</label>
+                    <div class="rebaja-cantidad">
+                        <input class="form-input escala-input-num" type="number" inputmode="numeric"
+                               id="asistencia-justificadas" name="justificadasPorAusencia"
+                               min="0" max="30" step="1" required
+                               x-model.number="justificadasPorAusencia" @change="normalizarJustificadas()" @wheel.prevent
+                               aria-describedby="asistencia-justificadas-ayuda"
+                               th:value="${rebajaConducta.justificadasPorAusencia}">
+                        <span x-text="Number(justificadasPorAusencia) === 1 ? 'ausencia' : 'ausencias'">ausencias</span>
+                    </div>
+                    <small class="academic-help" id="asistencia-justificadas-ayuda"
+                           x-text="Number(justificadasPorAusencia) > 0
+                               ? (Number(justificadasPorAusencia) === 1
+                                   ? 'Cada ausencia justificada cuenta como una injustificada.'
+                                   : 'Cada ' + justificadasPorAusencia + ' ausencias justificadas suman una injustificada; las que no completan el grupo no cuentan.')
+                                 + (modoAsistencia === 'PERSONALIZADO' ? ' Entran a la regla de «Ausencia injustificada».' : '')
+                               : (modoAsistencia === 'REGLAMENTO_MEP'
+                                   ? '0 = no cuentan, como indica el reglamento.'
+                                   : '0 = las ausencias justificadas siguen su propia regla en la tabla.')">0 = no cuentan, como indica el reglamento.</small>
                 </div>
             </div>
 
@@ -499,12 +540,17 @@
                         </thead>
                         <tbody>
                             <template x-for="fila in rebajasAsistencia" :key="fila.id">
-                                <tr>
-                                    <td style="font-weight: 500;" x-text="fila.nombre"></td>
+                                <tr :class="{ 'rebaja-inactiva': reemplazadaPorJustificadas(fila) }">
+                                    <td style="font-weight: 500;">
+                                        <span x-text="fila.nombre"></span>
+                                        <small class="rebaja-reemplazada" x-show="reemplazadaPorJustificadas(fila)"
+                                               x-text="'No aplica: cada ' + justificadasPorAusencia + (Number(justificadasPorAusencia) === 1 ? ' cuenta' : ' cuentan') + ' como una ausencia injustificada.'"></small>
+                                    </td>
                                     <td>
                                         <div class="rebaja-cantidad">
                                             <input class="form-input escala-input-num" type="number" inputmode="numeric"
                                                    min="1" max="30" step="1" required
+                                                   :disabled="reemplazadaPorJustificadas(fila)"
                                                    x-model.number="fila.cada" @change="normalizarRebaja(fila)" @wheel.prevent
                                                    :aria-label="'Cada cuántos registros de ' + fila.nombre">
                                             <span x-text="unidadDe(fila)"></span>
@@ -514,6 +560,7 @@
                                         <div class="rebaja-cantidad">
                                             <input class="form-input escala-input-num" type="number" inputmode="numeric"
                                                    min="0" max="100" step="1" required
+                                                   :disabled="reemplazadaPorJustificadas(fila)"
                                                    x-model.number="fila.puntos" @change="normalizarRebaja(fila)" @wheel.prevent
                                                    :aria-label="'Puntos que bajan por ' + fila.nombre">
                                             <span x-text="Number(fila.puntos) === 1 ? 'punto' : 'puntos'"></span>
@@ -712,6 +759,7 @@
                 sucio: false,
                 quienPuntosBoleta: opcion('quienPuntosBoleta', ['PROFESOR_GUIA', 'PROFESOR_MATERIA'], 'PROFESOR_GUIA'),
                 tardiasPorAusencia: Number(DATOS.tardiasPorAusencia) === 1 ? 1 : 2,
+                justificadasPorAusencia: Math.min(30, Math.max(0, Math.round(Number(DATOS.justificadasPorAusencia) || 0))),
                 modoAsistencia: opcion('modoAsistencia', ['REGLAMENTO_MEP', 'PERSONALIZADO'], 'REGLAMENTO_MEP'),
                 destinoAsistencia: opcion('destinoRebaja', ['COMPONENTE', 'CONDUCTA'], 'COMPONENTE'),
 
@@ -989,6 +1037,15 @@
                     fila.cada = Number.isFinite(cada) ? Math.min(30, Math.max(1, cada)) : 1;
                     fila.puntos = Number.isFinite(puntos) ? Math.min(100, Math.max(0, puntos)) : 0;
                 },
+                // Con valores propios, si las justificadas forman injustificadas, su propia regla no aplica.
+                reemplazadaPorJustificadas: function (fila) {
+                    return fila.id === 'ausencia-justificada' && Number(this.justificadasPorAusencia) > 0;
+                },
+                // 0 = las ausencias justificadas no cuentan; de 1 a 30 = cuántas forman una injustificada.
+                normalizarJustificadas: function () {
+                    const valor = Math.round(Number(this.justificadasPorAusencia));
+                    this.justificadasPorAusencia = Number.isFinite(valor) ? Math.min(30, Math.max(0, valor)) : 0;
+                },
                 cambiarCiclo: function (ciclo) {
                     if (!ciclo) return;
                     if (this.sucio && !window.confirm('Tienes cambios sin guardar en esta escala. ¿Cambiar de ciclo y descartarlos?')) {
@@ -1004,6 +1061,7 @@
                     this.alCambiarRango();
                     this.tramos.forEach(function (tramo) { self.normalizarNombre(tramo); });
                     this.rebajas.forEach(function (fila) { self.normalizarRebaja(fila); });
+                    this.normalizarJustificadas();
                     const form = event.currentTarget || event.target;
                     if (form && form.querySelector) {
                         const valores = {
@@ -1015,6 +1073,7 @@
                             decimales: this.decimales,
                             quienRegistraPuntosBoleta: this.quienPuntosBoleta,
                             tardiasPorAusencia: this.tardiasPorAusencia,
+                            justificadasPorAusencia: this.justificadasPorAusencia,
                             modoAsistencia: this.modoAsistencia,
                             destinoRebajaAsistencia: this.destinoAsistencia
                         };

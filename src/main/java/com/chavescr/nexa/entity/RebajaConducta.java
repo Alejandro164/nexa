@@ -65,6 +65,14 @@ public class RebajaConducta {
     @Column(nullable = false)
     private Integer tardiasPorAusencia = TARDIAS_POR_AUSENCIA_PREDETERMINADO;
 
+    /**
+     * Ausencias justificadas que forman una injustificada con el reglamento del MEP. 0 = no cuentan (lo que dice el
+     * reglamento); N = cada N justificadas completas suman una injustificada.
+     */
+    @ColumnDefault("0")
+    @Column(name = "justificadas_por_ausencia", nullable = false)
+    private Integer justificadasPorAusencia = 0;
+
     public static RebajaConducta predeterminada() {
         return new RebajaConducta();
     }
@@ -139,5 +147,13 @@ public class RebajaConducta {
 
     public void setDestinoRebajaAsistencia(DestinoRebajaAsistencia destinoRebajaAsistencia) {
         this.destinoRebajaAsistencia = destinoRebajaAsistencia;
+    }
+
+    public Integer getJustificadasPorAusencia() {
+        return justificadasPorAusencia == null ? 0 : justificadasPorAusencia;
+    }
+
+    public void setJustificadasPorAusencia(Integer justificadasPorAusencia) {
+        this.justificadasPorAusencia = justificadasPorAusencia;
     }
 }

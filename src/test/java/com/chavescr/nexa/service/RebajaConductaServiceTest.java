@@ -131,7 +131,7 @@ class RebajaConductaServiceTest {
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> service.guardar(1L, RebajaConducta.REGLAS_PREDETERMINADAS, null,
-                        ModoAsistencia.REGLAMENTO_MEP, null, 2));
+                        ModoAsistencia.REGLAMENTO_MEP, null, 2, 0));
 
         assertEquals("Indica quién registra los puntos de las boletas", error.getMessage());
     }
@@ -142,9 +142,24 @@ class RebajaConductaServiceTest {
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> service.guardar(1L, RebajaConducta.REGLAS_PREDETERMINADAS,
-                        QuienRegistraPuntosBoleta.PROFESOR_GUIA, ModoAsistencia.REGLAMENTO_MEP, null, 3));
+                        QuienRegistraPuntosBoleta.PROFESOR_GUIA, ModoAsistencia.REGLAMENTO_MEP, null, 3, 0));
 
         assertEquals("Indica cuánto vale cada tardía injustificada", error.getMessage());
+    }
+
+    @Test
+    void lasJustificadasQueFormanUnaInjustificadaVanDeCeroATreinta() {
+        RebajaConductaService service = new RebajaConductaService(null, null);
+
+        for (int invalido : new int[] { -1, 31 }) {
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                    () -> service.guardar(1L, RebajaConducta.REGLAS_PREDETERMINADAS,
+                            QuienRegistraPuntosBoleta.PROFESOR_GUIA, ModoAsistencia.REGLAMENTO_MEP, null, 2,
+                            invalido));
+
+            assertEquals("Las ausencias justificadas que forman una injustificada van de 0 a 30 (0 = no cuentan)",
+                    error.getMessage());
+        }
     }
 
     @Test
@@ -153,7 +168,7 @@ class RebajaConductaServiceTest {
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> service.guardar(1L, RebajaConducta.REGLAS_PREDETERMINADAS,
-                        QuienRegistraPuntosBoleta.PROFESOR_GUIA, ModoAsistencia.PERSONALIZADO, null, 2));
+                        QuienRegistraPuntosBoleta.PROFESOR_GUIA, ModoAsistencia.PERSONALIZADO, null, 2, 0));
 
         assertEquals("Indica qué rebajan las ausencias y tardías", error.getMessage());
     }

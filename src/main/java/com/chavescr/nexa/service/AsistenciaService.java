@@ -27,7 +27,6 @@ import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
-import com.chavescr.nexa.entity.TipoRebaja;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.AsistenciaEstudianteRepository;
 import com.chavescr.nexa.repository.HorarioLeccionRepository;
@@ -397,30 +396,38 @@ public class AsistenciaService {
         }
         int[] conteo = new int[4];
         List<Fila> lista = new ArrayList<>();
+        List<EstadoAsistencia> estados = new ArrayList<>();
         for (Object[] fila : delPeriodo) {
             EstadoAsistencia estado = (EstadoAsistencia) fila[2];
             CalculoRebaja.sumar(conteo, estado, 1);
+            estados.add(estado);
             lista.add(filaDe(fila, estado));
         }
         String codigo = periodo.getCodigo() == null || periodo.getCodigo().isBlank() ? "Período" : periodo.getCodigo();
         String rango = periodo.getFechaInicio().format(FECHA_PERIODO) + " – " + periodo.getFechaFin().format(FECHA_PERIODO);
-        return new DetalleAsistencia.Periodo(periodo.getId(), codigo, rango, cuadros(conteo, calculo), lista, actual);
+        return new DetalleAsistencia.Periodo(periodo.getId(), codigo, rango, cuadros(conteo, estados, calculo), lista,
+                actual);
     }
 
-    private static List<Cuadro> cuadros(int[] conteo, CalculoRebaja calculo) {
+    /**
+     * Puntos de cada tipo: la suma de lo que carga cada registro, en orden. Así los grupos de ausencias
+     * justificadas que cuentan como injustificadas (si la dirección lo configuró) quedan en el tipo del registro
+     * que completó el grupo, y el total cuadra con la nota.
+     */
+    private static List<Cuadro> cuadros(int[] conteo, List<EstadoAsistencia> estados, CalculoRebaja calculo) {
+        int[] marcas = calculo.puntosPorRegistroAsistencia(estados);
+        int[] puntos = new int[4];
+        for (int i = 0; i < marcas.length; i++) {
+            int indice = CalculoRebaja.indice(estados.get(i));
+            if (indice >= 0) {
+                puntos[indice] += marcas[i];
+            }
+        }
         return List.of(
-                cuadro("is-ausente-injustificada", "Ausencias injustificadas", conteo[1],
-                        TipoRebaja.AUSENCIA_INJUSTIFICADA, calculo),
-                cuadro("is-ausente-justificada", "Ausencias justificadas", conteo[0],
-                        TipoRebaja.AUSENCIA_JUSTIFICADA, calculo),
-                cuadro("is-tardia-injustificada", "Tardías injustificadas", conteo[3],
-                        TipoRebaja.TARDIA_INJUSTIFICADA, calculo),
-                cuadro("is-tardia-justificada", "Tardías justificadas", conteo[2],
-                        TipoRebaja.TARDIA_JUSTIFICADA, calculo));
-    }
-
-    private static Cuadro cuadro(String clase, String etiqueta, int cantidad, TipoRebaja tipo, CalculoRebaja calculo) {
-        return new Cuadro(clase, etiqueta, cantidad, calculo.puntos(tipo, cantidad));
+                new Cuadro("is-ausente-injustificada", "Ausencias injustificadas", conteo[1], puntos[1]),
+                new Cuadro("is-ausente-justificada", "Ausencias justificadas", conteo[0], puntos[0]),
+                new Cuadro("is-tardia-injustificada", "Tardías injustificadas", conteo[3], puntos[3]),
+                new Cuadro("is-tardia-justificada", "Tardías justificadas", conteo[2], puntos[2]));
     }
 
     private static Fila filaDe(Object[] fila, EstadoAsistencia estado) {

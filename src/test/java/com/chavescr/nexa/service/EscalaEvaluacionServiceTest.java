@@ -42,11 +42,11 @@ class EscalaEvaluacionServiceTest {
     void guardaLaEscalaYLasRebajas() {
         service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO, 0, 100, 1, 70, "[]", "[]",
                 QuienRegistraPuntosBoleta.PROFESOR_GUIA, ModoAsistencia.PERSONALIZADO, DestinoRebajaAsistencia.CONDUCTA,
-                2);
+                2, 3);
 
         verify(escalaNotasService).guardar(DIRECCION, CicloEducativo.TERCER_CICLO, 0, 100, 1, 70, "[]");
         verify(rebajaConductaService).guardar(DIRECCION, "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA,
-                ModoAsistencia.PERSONALIZADO, DestinoRebajaAsistencia.CONDUCTA, 2);
+                ModoAsistencia.PERSONALIZADO, DestinoRebajaAsistencia.CONDUCTA, 2, 3);
     }
 
     @Test
@@ -56,17 +56,17 @@ class EscalaEvaluacionServiceTest {
 
         assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO,
                 0, 100, 1, 70, "[]", "[]", QuienRegistraPuntosBoleta.PROFESOR_GUIA, ModoAsistencia.REGLAMENTO_MEP,
-                null, 2));
+                null, 2, 0));
 
         verifyNoInteractions(rebajaConductaService);
     }
 
     @Test
     void siLasRebajasNoSonValidasFallaTodoElGuardado() {
-        when(rebajaConductaService.guardar(anyLong(), anyString(), any(), any(), any(), any()))
+        when(rebajaConductaService.guardar(anyLong(), anyString(), any(), any(), any(), any(), any()))
                 .thenThrow(new IllegalArgumentException("Indica quién registra los puntos de las boletas"));
 
         assertThrows(IllegalArgumentException.class, () -> service.guardar(DIRECCION, CicloEducativo.TERCER_CICLO,
-                0, 100, 1, 70, "[]", "[]", null, ModoAsistencia.REGLAMENTO_MEP, null, 2));
+                0, 100, 1, 70, "[]", "[]", null, ModoAsistencia.REGLAMENTO_MEP, null, 2, 0));
     }
 }
