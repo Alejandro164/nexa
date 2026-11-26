@@ -67,7 +67,9 @@ Varios shells viven en `MenuController` (`/personal`, `/agenda`, `/gestion-acade
 
 Mutaciones HTMX (el caso normal): el controller devuelve el fragmento ya actualizado (la lista o la tabla). El aviso al usuario es un header `HX-Trigger` con un evento que esa pantalla escucha. El toast global (`layout/toast.html`) solo escucha `notify` con `{type, message}`. `successMsg` / `errorMsg` por flash solo los pinta control de acceso y el login; un redirect con flash no aparece solo en el toast.
 
-Si el formulario debe quedarse abierto con el error, responde con `HX-Retarget` y `HX-Reswap` hacia el contenedor del modal (véase `PersonalController.directorioGuardar`) o con 422 para que HTMX no sustituya el contenido (véase `ClassroomController`).
+Si el formulario debe quedarse abierto con el error, responde con `HX-Retarget` y `HX-Reswap` hacia el contenedor del modal (véase `PersonalController.directorioGuardar`) o con 422 para que HTMX no sustituya el contenido (véase `ClassroomController`). En el `hx-on:htmx:after-request` que cierra el modal, comprueba `!event.detail.xhr.getResponseHeader('HX-Retarget')` para no cerrarlo cuando vuelve con error.
+
+Modales: deben ser **minimalistas**, sin fondos de color ni elementos decorativos innecesarios. Superficie blanca (`#ffffff`), borde fino (`#e2e8f0`), divisores sutiles, tipografía limpia y botones sobrios (sin franjas rojas superiores, cajas rosadas/coloreadas ni íconos llamativos de alerta). Referencia: `templates/estudiantes/components/confirmar-desactivar.html` y `templates/estudiantes/expedientes/ficha.html`.
 
 Tabs horizontales: Alpine guarda `activeTab` y la clase `.active`; HTMX carga el panel (`hx-target` + `hx-swap="innerHTML"`). El panel inicial usa `hx-trigger="load"` o un `th:replace` del primer fragmento. El CSS de `.config-tabs*` se copia dentro de un `<style>` del `index.html` del módulo. En un sub-módulo el estado y las funciones CRUD van en el mismo `x-data` del fragmento (`personal/regimen/index.html`). Un `x-data` anidado deja de ver las funciones del padre.
 
@@ -103,6 +105,7 @@ Textos de interfaz, validaciones y mensajes de error van en español.
 
 ## Tests
 
+- **No ejecutes pruebas (`./mvnw test` ni tests individuales) a menos que el usuario lo pida explícitamente.** Para verificar que los cambios no rompen la compilación usa `./mvnw compile`.
 - La mayoría de `src/test` son Mockito (`@ExtendWith(MockitoExtension.class)`) y no necesitan base.
 - `ProyectoApplicationTests`, `EntregasAcademicasFlujoTest` y `TareaDetalleFlujoTest` son `@SpringBootTest`: cargan el contexto dev y Postgres en `localhost:5433`. `DataInitializer` corre en ese arranque y escribe en esa base.
 - `./mvnw test` ejecuta las dos clases. Si Postgres no está arriba, fallan los de contexto, no los de Mockito.

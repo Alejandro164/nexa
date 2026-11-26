@@ -21,8 +21,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chavescr.nexa.entity.Direccion;
+import com.chavescr.nexa.entity.EstadoMatricula;
 import com.chavescr.nexa.entity.Institucion;
 import com.chavescr.nexa.entity.Materia;
+import com.chavescr.nexa.entity.MatriculaEstudiante;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.Rol;
 import com.chavescr.nexa.entity.TipoMateria;
@@ -30,6 +32,7 @@ import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.DireccionRepository;
 import com.chavescr.nexa.repository.InstitucionRepository;
 import com.chavescr.nexa.repository.MateriaRepository;
+import com.chavescr.nexa.repository.MatriculaEstudianteRepository;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.RolRepository;
 import com.chavescr.nexa.repository.TipoMateriaRepository;
@@ -72,6 +75,7 @@ public class DataInitializer implements ApplicationRunner {
     private final UsuarioRepository usuarioRepository;
     private final NivelAcademicoRepository nivelAcademicoRepository;
     private final InstitucionRepository institucionRepository;
+    private final MatriculaEstudianteRepository matriculaEstudianteRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(RolRepository rolRepository,
@@ -79,12 +83,14 @@ public class DataInitializer implements ApplicationRunner {
             UsuarioRepository usuarioRepository,
             NivelAcademicoRepository nivelAcademicoRepository,
             InstitucionRepository institucionRepository,
+            MatriculaEstudianteRepository matriculaEstudianteRepository,
             PasswordEncoder passwordEncoder) {
         this.rolRepository = rolRepository;
         this.direccionRepository = direccionRepository;
         this.usuarioRepository = usuarioRepository;
         this.nivelAcademicoRepository = nivelAcademicoRepository;
         this.institucionRepository = institucionRepository;
+        this.matriculaEstudianteRepository = matriculaEstudianteRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -256,7 +262,51 @@ public class DataInitializer implements ApplicationRunner {
         todosLosEstudiantes.addAll(estudiantesGenerados);
         asignarPadresFaltantes(todosLosEstudiantes, todosLosPadres);
 
+        // ── 8. Prematrículas y borradores de matrícula de ejemplo ────────────
+        sembrarPrematriculasYBorradores(instAlpha, nivelesAlpha);
+
         log.info("=== [DataInitializer] Datos iniciales listos ===");
+    }
+
+    private void sembrarPrematriculasYBorradores(Direccion direccion, List<NivelAcademico> niveles) {
+        if (matriculaEstudianteRepository.countByDireccionId(direccion.getId()) > 0) {
+            return;
+        }
+        int anioActual = Year.now().getValue();
+        NivelAcademico primero = niveles.isEmpty() ? null : niveles.get(0);
+        NivelAcademico segundo = niveles.size() > 1 ? niveles.get(1) : primero;
+
+        crearRegistroMatricula(direccion, EstadoMatricula.PREMATRICULA,
+                "Camila Herrera Vindas", "1-9001-0001", "camila.herrera@ejemplo.com", "camila.herrera",
+                primero, anioActual);
+        crearRegistroMatricula(direccion, EstadoMatricula.PREMATRICULA,
+                "Sebastián Mora Campos", "1-9002-0002", "sebastian.mora@ejemplo.com", "sebastian.mora",
+                segundo, anioActual + 1);
+        crearRegistroMatricula(direccion, EstadoMatricula.PREMATRICULA,
+                "Luciana Castro Araya", "1-9003-0003", null, null,
+                null, anioActual);
+
+        crearRegistroMatricula(direccion, EstadoMatricula.BORRADOR,
+                "Mateo Quirós Vargas", "1-9004-0004", "mateo.quiros@ejemplo.com", "mateo.quiros",
+                primero, anioActual);
+        crearRegistroMatricula(direccion, EstadoMatricula.BORRADOR,
+                "Isabella Solís Brenes", "1-9005-0005", null, null,
+                null, anioActual);
+    }
+
+    private void crearRegistroMatricula(Direccion direccion, EstadoMatricula estado, String nombre,
+            String cedula, String email, String usuario, NivelAcademico nivel, int anio) {
+        MatriculaEstudiante m = new MatriculaEstudiante();
+        m.setDireccion(direccion);
+        m.setEstado(estado);
+        m.setNombre(nombre);
+        m.setCedula(cedula);
+        m.setEmail(email);
+        m.setUsuario(usuario);
+        m.setNivelAcademico(nivel);
+        m.setAnioMatricula(anio);
+        m.setActivo(true);
+        matriculaEstudianteRepository.save(m);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

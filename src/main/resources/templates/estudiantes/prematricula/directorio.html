@@ -1,0 +1,175 @@
+<div th:fragment="content" class="tab-pane" xmlns:th="http://www.thymeleaf.org"
+     th:data-q-inicial="${q != null ? q : ''}"
+     th:data-campo-inicial="${campo != null ? campo : 'todas'}"
+     th:data-periodo-inicial="${periodo != null ? periodo : ''}"
+     x-data="{
+         q: $el.dataset.qInicial || '',
+         campo: $el.dataset.campoInicial || 'todas',
+         periodo: $el.dataset.periodoInicial || '',
+         _onGuardado: null,
+         _onActualizado: null,
+         placeholders: {
+             todas: 'Buscar por nombre, correo, cédula, sección...',
+             nombre: 'Buscar por nombre...',
+             email: 'Buscar por correo electrónico...',
+             cedula: 'Buscar por número de cédula...',
+             seccion: 'Buscar por sección (ej. 7 - A)...',
+             periodo: 'Buscar por año de matrícula (ej. 2026)...',
+             estado: 'Buscar por estado (Activo / Inactivo)...'
+         },
+         init() {
+             this._onGuardado = (evt) => {
+                 const anio = evt.detail && evt.detail.periodo;
+                 if (!anio) return;
+                 agregarOpcionPeriodo('pre-filtro-periodo', anio);
+             };
+             document.body.addEventListener('prematriculaGuardada', this._onGuardado);
+             this._onActualizado = () => {
+                 refrescarTablaEstudiantes(this.$refs.filtrosForm, 'pre-pagina-actual', '/estudiantes/prematricula/lista', '#prematricula-dir-content');
+             };
+             document.body.addEventListener('prematriculaActualizada', this._onActualizado);
+         },
+         destroy() {
+             if (this._onGuardado) document.body.removeEventListener('prematriculaGuardada', this._onGuardado);
+             if (this._onActualizado) document.body.removeEventListener('prematriculaActualizada', this._onActualizado);
+         },
+         placeholderActual() {
+             return this.placeholders[this.campo] || this.placeholders.todas;
+         },
+         hayFiltrosActivos() {
+             return this.q.trim() !== '' || this.campo !== 'todas' || this.periodo !== '';
+         },
+         buscar() {
+             this.$nextTick(() => {
+                 if (this.$refs.filtrosForm && window.htmx) {
+                     window.htmx.trigger(this.$refs.filtrosForm, 'filtrar');
+                 }
+             });
+         },
+         alCambiarCampo() {
+             if (this.q.trim() !== '') this.buscar();
+             this.$nextTick(() => { if (this.$refs.inputBuscar) this.$refs.inputBuscar.focus(); });
+         },
+         limpiarBusqueda() {
+             this.q = '';
+             this.buscar();
+             this.$nextTick(() => { if (this.$refs.inputBuscar) this.$refs.inputBuscar.focus(); });
+         },
+         limpiarFiltros() {
+             this.q = '';
+             this.campo = 'todas';
+             this.periodo = '';
+             this.buscar();
+         }
+     }"
+     @open-prematricula-modal.window="abrirModalEstudiantes('prematricula-modal-container')"
+     @close-prematricula-modal.window="cerrarModalEstudiantes('prematricula-modal-container')"
+     @open-prematricula-ficha.window="abrirModalEstudiantes('prematricula-ficha-container')"
+     @close-prematricula-ficha.window="cerrarModalEstudiantes('prematricula-ficha-container')"
+     @keydown.escape.window="cerrarModalEstudiantes('prematricula-modal-container'); cerrarModalEstudiantes('prematricula-ficha-container')">
+
+    <div class="module-card">
+        <form id="prematricula-filtros-form"
+              x-ref="filtrosForm"
+              class="est-toolbar"
+              hx-get="/estudiantes/prematricula/lista"
+              hx-target="#prematricula-dir-content"
+              hx-swap="innerHTML"
+              hx-trigger="filtrar"
+              hx-indicator="#prematricula-dir-content"
+              @submit.prevent="buscar()">
+
+            <input type="hidden" id="pre-tamano-input" name="tamano" th:value="${tamano != null ? tamano : 10}">
+
+            <div class="est-search-group">
+                <div class="est-campo-wrap">
+                    <select name="campo" class="est-campo-select"
+                            x-model="campo"
+                            @change="alCambiarCampo()"
+                            aria-label="Buscar por columna">
+                        <option value="todas" th:selected="${campo == null or campo == 'todas'}">Todas</option>
+                        <option value="nombre" th:selected="${campo == 'nombre'}">Nombre</option>
+                        <option value="email" th:selected="${campo == 'email'}">Email</option>
+                        <option value="cedula" th:selected="${campo == 'cedula'}">Cédula</option>
+                        <option value="seccion" th:selected="${campo == 'seccion'}">Sección</option>
+                        <option value="periodo" th:selected="${campo == 'periodo'}">Período</option>
+                        <option value="estado" th:selected="${campo == 'estado'}">Estado</option>
+                    </select>
+                    <svg class="est-select-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 8l4 4 4-4"/>
+                    </svg>
+                </div>
+
+                <div class="est-input-wrap">
+                    <svg class="est-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="M20 20l-3.5-3.5"/>
+                    </svg>
+                    <input type="text"
+                           name="q"
+                           x-ref="inputBuscar"
+                           x-model="q"
+                           class="est-search-input"
+                           th:value="${q}"
+                           :placeholder="placeholderActual()"
+                           @input.debounce.350ms="buscar()"
+                           @keydown.enter.prevent="buscar()"
+                           autocomplete="off"
+                           aria-label="Buscar prematrículas">
+                    <button type="button"
+                            class="est-clear-btn"
+                            x-show="q.length > 0"
+                            x-cloak
+                            @click="limpiarBusqueda()"
+                            aria-label="Limpiar búsqueda">&times;</button>
+                </div>
+            </div>
+
+            <div class="est-periodo-group" :class="{ 'is-active': periodo !== '' }">
+                <label for="pre-filtro-periodo" class="est-filter-label">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18"/>
+                    </svg>
+                    Período
+                </label>
+                <select id="pre-filtro-periodo"
+                        name="periodo"
+                        class="est-periodo-select"
+                        x-model="periodo"
+                        @change="buscar()"
+                        aria-label="Filtrar por período">
+                    <option value="">Todos</option>
+                    <option th:each="anio : ${periodos}"
+                            th:value="${anio}"
+                            th:text="${anio}"
+                            th:selected="${periodo != null and periodo == anio}">2026</option>
+                </select>
+                <svg class="est-select-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 8l4 4 4-4"/>
+                </svg>
+            </div>
+
+            <button type="button"
+                    class="est-reset-btn"
+                    x-show="hayFiltrosActivos()"
+                    x-cloak
+                    @click="limpiarFiltros()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Limpiar
+            </button>
+
+            <button type="button" class="btn-primary est-add-btn"
+                    hx-get="/estudiantes/prematricula/form"
+                    hx-target="#prematricula-modal-container" hx-swap="innerHTML"
+                    hx-on:htmx:after-request="if(event.detail.successful) window.dispatchEvent(new CustomEvent('open-prematricula-modal'))">+ Agregar prematrícula</button>
+        </form>
+
+        <div id="prematricula-dir-content" class="est-table-wrap" th:insert="~{estudiantes/prematricula/lista :: content}"></div>
+    </div>
+
+    <div id="prematricula-modal-container" style="display:none;"></div>
+    <div id="prematricula-ficha-container" style="display:none;"></div>
+</div>

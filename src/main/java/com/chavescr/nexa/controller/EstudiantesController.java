@@ -26,10 +26,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.chavescr.nexa.dto.HaciendaContribuyenteDTO;
+import com.chavescr.nexa.entity.EstadoMatricula;
+import com.chavescr.nexa.entity.MatriculaEstudiante;
 import com.chavescr.nexa.entity.Usuario;
 import com.chavescr.nexa.repository.NivelAcademicoRepository;
 import com.chavescr.nexa.repository.UsuarioRepository;
 import com.chavescr.nexa.service.HaciendaService;
+import com.chavescr.nexa.service.MatriculaEstudianteService;
 import com.chavescr.nexa.service.PersonalService;
 
 @Controller
@@ -51,6 +54,9 @@ public class EstudiantesController {
 
     @Autowired
     private HaciendaService haciendaService;
+
+    @Autowired
+    private MatriculaEstudianteService matriculaEstudianteService;
 
     // ─── EXPEDIENTES ─────────────────────────────────────────────
 
@@ -358,6 +364,410 @@ public class EstudiantesController {
         Long direccionId = requerirDireccion(session);
         personalService.desvincularPadre(direccionId, id, padreId);
         return padresTab(id, model, session);
+    }
+
+    // ─── PREMATRÍCULA ──────────────────────────────────────────
+
+    @GetMapping("/prematricula")
+    public String prematricula(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        cargarListaEtapa(model, direccionId, EstadoMatricula.PREMATRICULA, q, campo, periodo, pagina, tamano);
+        model.addAttribute("periodos", matriculaEstudianteService.listarPeriodos(direccionId, EstadoMatricula.PREMATRICULA));
+        return "estudiantes/prematricula/directorio :: content";
+    }
+
+    @GetMapping("/prematricula/lista")
+    public String prematriculaLista(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        cargarListaEtapa(model, direccionId, EstadoMatricula.PREMATRICULA, q, campo, periodo, pagina, tamano);
+        return "estudiantes/prematricula/lista :: content";
+    }
+
+    @GetMapping("/prematricula/form")
+    public String prematriculaFormCrear(Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        MatriculaEstudiante nuevo = new MatriculaEstudiante();
+        nuevo.setAnioMatricula(Year.now().getValue());
+        model.addAttribute("registro", nuevo);
+        model.addAttribute("anioActual", Year.now().getValue());
+        model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
+        return "estudiantes/prematricula/formulario :: form-content";
+    }
+
+    @PostMapping("/prematricula")
+    public String prematriculaGuardar(
+            @RequestParam String nombre,
+            @RequestParam(required = false) String cedula,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String usuario,
+            @RequestParam(required = false) String password,
+            @RequestParam(required = false) Long nivelId,
+            @RequestParam(required = false) Integer anioMatricula,
+            @RequestParam(defaultValue = "true") boolean activo,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            MatriculaEstudiante guardado = matriculaEstudianteService.crearPrematricula(
+                    direccionId, nombre, cedula, email, usuario, password, nivelId, anioMatricula, activo);
+            cargarListaEtapa(model, direccionId, EstadoMatricula.PREMATRICULA, q, campo, periodo, pagina, tamano);
+            response.setHeader("HX-Trigger",
+                    "{\"prematriculaGuardada\":{\"periodo\":" + guardado.getAnioMatricula()
+                            + "},\"notify\":{\"type\":\"success\",\"message\":\"Prematrícula registrada\"}}");
+            return "estudiantes/prematricula/lista :: content";
+        } catch (Exception e) {
+            response.setHeader("HX-Retarget", "#prematricula-modal-container");
+            response.setHeader("HX-Reswap", "innerHTML");
+            MatriculaEstudiante intento = construirIntento(nombre, cedula, email, usuario, anioMatricula, activo);
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("registro", intento);
+            model.addAttribute("nivelIdSeleccionado", nivelId);
+            model.addAttribute("anioActual", Year.now().getValue());
+            model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
+            return "estudiantes/prematricula/formulario :: form-content";
+        }
+    }
+
+    @GetMapping("/prematricula/ficha/{id}")
+    public String prematriculaFicha(@PathVariable Long id, Model model, HttpSession session, HttpServletRequest request) {
+        Long direccionId = requerirDireccion(session);
+        cargarModeloFichaEtapa(model, direccionId, id, EstadoMatricula.PREMATRICULA, request);
+        return "estudiantes/matricula/ficha :: modal";
+    }
+
+    @PostMapping("/prematricula/ficha/{id}")
+    public String prematriculaFichaActualizar(
+            @PathVariable Long id,
+            @RequestParam String campoEditar,
+            @RequestParam(required = false) String valorEditar,
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            MatriculaEstudiante actualizado = matriculaEstudianteService.actualizarCampo(
+                    direccionId, id, EstadoMatricula.PREMATRICULA, campoEditar, valorEditar);
+            cargarModeloFichaEtapa(model, direccionId, id, EstadoMatricula.PREMATRICULA, request);
+            response.setHeader("HX-Trigger",
+                    "{\"prematriculaActualizada\":true,\"prematriculaGuardada\":{\"periodo\":"
+                            + actualizado.getAnioMatricula()
+                            + "},\"notify\":{\"type\":\"success\",\"message\":\"Cambio guardado\"}}");
+            return "estudiantes/matricula/ficha :: modal";
+        } catch (Exception e) {
+            cargarModeloFichaEtapa(model, direccionId, id, EstadoMatricula.PREMATRICULA, request);
+            model.addAttribute("errorFicha", e.getMessage());
+            model.addAttribute("campoError", campoEditar);
+            model.addAttribute("valorError", valorEditar != null ? valorEditar : "");
+            return "estudiantes/matricula/ficha :: modal";
+        }
+    }
+
+    @PutMapping("/prematricula/{id}/activo")
+    public String prematriculaToggleActivo(
+            @PathVariable Long id,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        matriculaEstudianteService.toggleActivo(direccionId, id, EstadoMatricula.PREMATRICULA);
+        cargarListaEtapa(model, direccionId, EstadoMatricula.PREMATRICULA, q, campo, periodo, pagina, tamano);
+        return "estudiantes/prematricula/lista :: content";
+    }
+
+    @DeleteMapping("/prematricula/{id}")
+    public String prematriculaDesactivar(
+            @PathVariable Long id,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        matriculaEstudianteService.desactivar(direccionId, id, EstadoMatricula.PREMATRICULA);
+        cargarListaEtapa(model, direccionId, EstadoMatricula.PREMATRICULA, q, campo, periodo, pagina, tamano);
+        response.setHeader("HX-Trigger",
+                "{\"notify\":{\"type\":\"success\",\"message\":\"Prematrícula desactivada\"}}");
+        return "estudiantes/prematricula/lista :: content";
+    }
+
+    // ─── MATRÍCULA (BORRADORES Y COMPLETADO) ───────────────────
+
+    @GetMapping("/matricula")
+    public String matricula(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        cargarListaEtapa(model, direccionId, EstadoMatricula.BORRADOR, q, campo, periodo, pagina, tamano);
+        model.addAttribute("periodos", matriculaEstudianteService.listarPeriodos(direccionId, EstadoMatricula.BORRADOR));
+        return "estudiantes/matricula/directorio :: content";
+    }
+
+    @GetMapping("/matricula/lista")
+    public String matriculaLista(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        cargarListaEtapa(model, direccionId, EstadoMatricula.BORRADOR, q, campo, periodo, pagina, tamano);
+        return "estudiantes/matricula/lista :: content";
+    }
+
+    @GetMapping("/matricula/form")
+    public String matriculaFormCrear(Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        MatriculaEstudiante nuevo = new MatriculaEstudiante();
+        nuevo.setAnioMatricula(Year.now().getValue());
+        model.addAttribute("registro", nuevo);
+        model.addAttribute("anioActual", Year.now().getValue());
+        model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
+        return "estudiantes/matricula/formulario :: form-content";
+    }
+
+    @GetMapping("/matricula/buscar-prematricula")
+    @ResponseBody
+    public Map<String, Object> buscarPrematriculaPorCedula(@RequestParam String cedula, HttpSession session) {
+        Map<String, Object> resultado = new HashMap<>();
+        Long direccionId = direccionId(session);
+        Optional<MatriculaEstudiante> opt = direccionId == null
+                ? Optional.empty()
+                : matriculaEstudianteService.buscarPrematriculaPorCedula(direccionId, cedula);
+        if (opt.isPresent()) {
+            MatriculaEstudiante m = opt.get();
+            resultado.put("encontrado", true);
+            resultado.put("id", m.getId());
+            resultado.put("nombre", m.getNombre() != null ? m.getNombre() : "");
+            resultado.put("cedula", m.getCedula() != null ? m.getCedula() : "");
+            resultado.put("email", m.getEmail() != null ? m.getEmail() : "");
+            resultado.put("usuario", m.getUsuario() != null ? m.getUsuario() : "");
+            resultado.put("nivelId", m.getNivelAcademico() != null ? m.getNivelAcademico().getId() : "");
+            resultado.put("anioMatricula", m.getAnioMatricula() != null ? m.getAnioMatricula() : Year.now().getValue());
+            resultado.put("tienePassword", m.tienePassword());
+        } else {
+            resultado.put("encontrado", false);
+        }
+        return resultado;
+    }
+
+    @PostMapping("/matricula")
+    public String matriculaGuardar(
+            @RequestParam(required = false) Long prematriculaId,
+            @RequestParam(defaultValue = "borrador") String accion,
+            @RequestParam String nombre,
+            @RequestParam(required = false) String cedula,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String usuario,
+            @RequestParam(required = false) String password,
+            @RequestParam(required = false) Long nivelId,
+            @RequestParam(required = false) Integer anioMatricula,
+            @RequestParam(defaultValue = "true") boolean activo,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            if ("completar".equalsIgnoreCase(accion)) {
+                Usuario estudiante = matriculaEstudianteService.completarDesdeFormulario(
+                        direccionId, prematriculaId, nombre, cedula, email, usuario, password, nivelId, anioMatricula, activo);
+                cargarListaEtapa(model, direccionId, EstadoMatricula.BORRADOR, q, campo, periodo, pagina, tamano);
+                StringBuilder trigger = new StringBuilder("{\"estudianteActualizado\":true,\"prematriculaActualizada\":true,\"notify\":{\"type\":\"success\",\"message\":\"Matrícula completada. El estudiante pasó a Expedientes\"}}");
+                if (estudiante.getAnioMatricula() != null) {
+                    trigger = new StringBuilder("{\"estudianteActualizado\":true,\"prematriculaActualizada\":true,\"estudianteGuardado\":{\"periodo\":")
+                            .append(estudiante.getAnioMatricula())
+                            .append("},\"notify\":{\"type\":\"success\",\"message\":\"Matrícula completada. El estudiante pasó a Expedientes\"}}");
+                }
+                response.setHeader("HX-Trigger", trigger.toString());
+            } else {
+                MatriculaEstudiante borrador = matriculaEstudianteService.guardarBorrador(
+                        direccionId, prematriculaId, nombre, cedula, email, usuario, password, nivelId, anioMatricula, activo);
+                cargarListaEtapa(model, direccionId, EstadoMatricula.BORRADOR, q, campo, periodo, pagina, tamano);
+                response.setHeader("HX-Trigger",
+                        "{\"prematriculaActualizada\":true,\"matriculaGuardada\":{\"periodo\":"
+                                + borrador.getAnioMatricula()
+                                + "},\"notify\":{\"type\":\"success\",\"message\":\"Matrícula guardada en borrador\"}}");
+            }
+            return "estudiantes/matricula/lista :: content";
+        } catch (Exception e) {
+            response.setHeader("HX-Retarget", "#matricula-modal-container");
+            response.setHeader("HX-Reswap", "innerHTML");
+            MatriculaEstudiante intento = construirIntento(nombre, cedula, email, usuario, anioMatricula, activo);
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("registro", intento);
+            model.addAttribute("prematriculaId", prematriculaId);
+            model.addAttribute("nivelIdSeleccionado", nivelId);
+            model.addAttribute("anioActual", Year.now().getValue());
+            model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
+            return "estudiantes/matricula/formulario :: form-content";
+        }
+    }
+
+    @GetMapping("/matricula/ficha/{id}")
+    public String matriculaFicha(@PathVariable Long id, Model model, HttpSession session, HttpServletRequest request) {
+        Long direccionId = requerirDireccion(session);
+        cargarModeloFichaEtapa(model, direccionId, id, EstadoMatricula.BORRADOR, request);
+        return "estudiantes/matricula/ficha :: modal";
+    }
+
+    @PostMapping("/matricula/ficha/{id}")
+    public String matriculaFichaActualizar(
+            @PathVariable Long id,
+            @RequestParam String campoEditar,
+            @RequestParam(required = false) String valorEditar,
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            MatriculaEstudiante actualizado = matriculaEstudianteService.actualizarCampo(
+                    direccionId, id, EstadoMatricula.BORRADOR, campoEditar, valorEditar);
+            cargarModeloFichaEtapa(model, direccionId, id, EstadoMatricula.BORRADOR, request);
+            response.setHeader("HX-Trigger",
+                    "{\"matriculaActualizada\":true,\"matriculaGuardada\":{\"periodo\":"
+                            + actualizado.getAnioMatricula()
+                            + "},\"notify\":{\"type\":\"success\",\"message\":\"Cambio guardado\"}}");
+            return "estudiantes/matricula/ficha :: modal";
+        } catch (Exception e) {
+            cargarModeloFichaEtapa(model, direccionId, id, EstadoMatricula.BORRADOR, request);
+            model.addAttribute("errorFicha", e.getMessage());
+            model.addAttribute("campoError", campoEditar);
+            model.addAttribute("valorError", valorEditar != null ? valorEditar : "");
+            return "estudiantes/matricula/ficha :: modal";
+        }
+    }
+
+    @PostMapping("/matricula/{id}/completar")
+    public String matriculaCompletarDesdeFicha(
+            @PathVariable Long id,
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            Usuario estudiante = matriculaEstudianteService.completarBorrador(direccionId, id);
+            StringBuilder trigger = new StringBuilder(
+                    "{\"matriculaActualizada\":true,\"estudianteActualizado\":true,\"cerrarFichaMatricula\":true");
+            if (estudiante.getAnioMatricula() != null) {
+                trigger.append(",\"estudianteGuardado\":{\"periodo\":").append(estudiante.getAnioMatricula()).append("}");
+            }
+            trigger.append(",\"notify\":{\"type\":\"success\",\"message\":\"Matrícula completada. El estudiante pasó a Expedientes\"}}");
+            response.setHeader("HX-Trigger", trigger.toString());
+            return "estudiantes/matricula/ficha :: vacio";
+        } catch (Exception e) {
+            cargarModeloFichaEtapa(model, direccionId, id, EstadoMatricula.BORRADOR, request);
+            model.addAttribute("errorFicha", e.getMessage());
+            return "estudiantes/matricula/ficha :: modal";
+        }
+    }
+
+    @PutMapping("/matricula/{id}/activo")
+    public String matriculaToggleActivo(
+            @PathVariable Long id,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        matriculaEstudianteService.toggleActivo(direccionId, id, EstadoMatricula.BORRADOR);
+        cargarListaEtapa(model, direccionId, EstadoMatricula.BORRADOR, q, campo, periodo, pagina, tamano);
+        return "estudiantes/matricula/lista :: content";
+    }
+
+    @DeleteMapping("/matricula/{id}")
+    public String matriculaDesactivar(
+            @PathVariable Long id,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        matriculaEstudianteService.desactivar(direccionId, id, EstadoMatricula.BORRADOR);
+        cargarListaEtapa(model, direccionId, EstadoMatricula.BORRADOR, q, campo, periodo, pagina, tamano);
+        response.setHeader("HX-Trigger",
+                "{\"notify\":{\"type\":\"success\",\"message\":\"Borrador desactivado\"}}");
+        return "estudiantes/matricula/lista :: content";
+    }
+
+    private void cargarListaEtapa(Model model, Long direccionId, EstadoMatricula estado, String q, String campo,
+            Integer periodo, Integer paginaSolicitada, Integer tamanoSolicitado) {
+        String campoNormalizado = PersonalService.normalizarCampoEstudiante(campo);
+        List<MatriculaEstudiante> filtrados = matriculaEstudianteService.listar(
+                direccionId, estado, q, campoNormalizado, periodo);
+        int total = filtrados.size();
+        int tamano = normalizarTamanoPagina(tamanoSolicitado);
+        int totalPaginas = Math.max(1, (int) Math.ceil((double) total / tamano));
+        int pagina = paginaSolicitada == null ? 1 : Math.max(1, Math.min(paginaSolicitada, totalPaginas));
+
+        int inicio = (pagina - 1) * tamano;
+        int fin = Math.min(inicio + tamano, total);
+        List<MatriculaEstudiante> paginaRegistros = inicio >= total ? List.of() : filtrados.subList(inicio, fin);
+
+        boolean hayFiltros = (q != null && !q.isBlank()) || periodo != null;
+        model.addAttribute("registros", paginaRegistros);
+        model.addAttribute("totalRegistros", total);
+        model.addAttribute("pagina", pagina);
+        model.addAttribute("tamano", tamano);
+        model.addAttribute("totalPaginas", totalPaginas);
+        model.addAttribute("desde", total == 0 ? 0 : inicio + 1);
+        model.addAttribute("hasta", fin);
+        model.addAttribute("paginasVisibles", construirPaginasVisibles(pagina, totalPaginas));
+        model.addAttribute("q", q != null ? q : "");
+        model.addAttribute("campo", campoNormalizado);
+        model.addAttribute("periodo", periodo);
+        model.addAttribute("hayFiltros", hayFiltros);
+    }
+
+    private void cargarModeloFichaEtapa(Model model, Long direccionId, Long id, EstadoMatricula estado,
+            HttpServletRequest request) {
+        MatriculaEstudiante registro = matriculaEstudianteService.obtener(direccionId, id, estado);
+        boolean puedeEditar = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
+        boolean esBorrador = estado == EstadoMatricula.BORRADOR;
+        model.addAttribute("registro", registro);
+        model.addAttribute("esBorrador", esBorrador);
+        model.addAttribute("etapaRuta", esBorrador ? "matricula" : "prematricula");
+        model.addAttribute("fichaContainerId", esBorrador ? "#matricula-ficha-container" : "#prematricula-ficha-container");
+        model.addAttribute("closeEvent", esBorrador ? "close-matricula-ficha" : "close-prematricula-ficha");
+        model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
+        model.addAttribute("puedeEditar", puedeEditar);
+        model.addAttribute("anioActual", Year.now().getValue());
+    }
+
+    private static MatriculaEstudiante construirIntento(String nombre, String cedula, String email, String usuario,
+            Integer anioMatricula, boolean activo) {
+        MatriculaEstudiante m = new MatriculaEstudiante();
+        m.setNombre(nombre);
+        m.setCedula(cedula);
+        m.setEmail(email);
+        m.setUsuario(usuario);
+        m.setAnioMatricula(anioMatricula != null ? anioMatricula : Year.now().getValue());
+        m.setActivo(activo);
+        return m;
     }
 
     // ─── HELPERS ───────────────────────────────────────────────

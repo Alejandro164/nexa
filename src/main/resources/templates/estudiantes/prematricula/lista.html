@@ -1,0 +1,135 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <input type="hidden" id="pre-pagina-actual" name="pagina" th:value="${pagina != null ? pagina : 1}">
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Cédula</th>
+                    <th>Sección</th>
+                    <th>Período</th>
+                    <th>Etapa</th>
+                    <th>Estado</th>
+                    <th style="text-align:right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${registros == null or registros.empty}">
+                    <td colspan="8" class="table-empty"
+                        th:text="${hayFiltros ? 'No se encontraron prematrículas con los filtros aplicados.' : 'No hay prematrículas registradas.'}">
+                        No hay prematrículas registradas.
+                    </td>
+                </tr>
+                <tr th:each="r : ${registros}">
+                    <td><strong th:text="${r.nombre}" style="color:#0f172a;">Nombre</strong></td>
+                    <td th:text="${r.email != null ? r.email : '—'}" style="color:#64748b;">—</td>
+                    <td th:text="${r.cedula != null ? r.cedula : '—'}" style="color:#94a3b8;">—</td>
+                    <td th:text="${r.nivelAcademico != null ? r.nivelAcademico.nombreCompleto : '—'}" style="color:#64748b;">—</td>
+                    <td>
+                        <span th:if="${r.anioMatricula != null}" class="est-periodo-badge" th:text="${r.anioMatricula}">2026</span>
+                        <span th:if="${r.anioMatricula == null}" style="color:#94a3b8;">—</span>
+                    </td>
+                    <td><span class="badge-xs badge-estudiante">PREMATRÍCULA</span></td>
+                    <td>
+                        <button class="badge-xs" style="border:none;cursor:pointer;"
+                                th:classappend="${r.activo == true ? 'badge-activo' : 'badge-inactivo'}"
+                                th:text="${r.activo == true ? 'Activo' : 'Inactivo'}"
+                                th:attr="hx-put=@{/estudiantes/prematricula/{id}/activo(id=${r.id}, pagina=${pagina})}"
+                                hx-include="#prematricula-filtros-form"
+                                hx-target="#prematricula-dir-content" hx-swap="innerHTML">Estado</button>
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <span class="est-tooltip-wrap" data-tooltip="Ver detalle">
+                                <button type="button" class="btn-xs btn-ghost est-action-btn"
+                                        th:attr="hx-get='/estudiantes/prematricula/ficha/' + ${r.id}"
+                                        hx-target="#prematricula-ficha-container" hx-swap="innerHTML"
+                                        hx-on:htmx:after-request="if(event.detail.successful) window.dispatchEvent(new CustomEvent('open-prematricula-ficha'))"
+                                        aria-label="Ver detalle">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </button>
+                            </span>
+                            <span class="est-tooltip-wrap"
+                                  th:attr="data-tooltip=${r.activo == true ? 'Desactivar' : 'Prematrícula ya desactivada'}">
+                                <button type="button" class="btn-xs btn-danger-ghost est-action-btn est-deactivate-btn"
+                                        th:disabled="${r.activo != true}"
+                                        aria-label="Desactivar"
+                                        onclick="abrirConfirmacionDesactivar(this)"
+                                        th:attr="data-delete-url=@{/estudiantes/prematricula/{id}(id=${r.id}, q=${!#strings.isEmpty(q) ? q : null}, campo=${campo != null and campo != 'todas' ? campo : null}, periodo=${periodo}, pagina=${pagina}, tamano=${tamano})},data-delete-target='#prematricula-dir-content',data-delete-title='Desactivar prematrícula',data-delete-confirm-label='Desactivar',data-delete-message='¿Deseas desactivar la prematrícula de ' + ${r.nombre} + '? El registro pasará a estado inactivo.'">🗑️</button>
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="est-pagination-bar" th:if="${totalRegistros != null and totalRegistros > 0}">
+        <div class="est-pagination-info">
+            Mostrando <strong th:text="${desde}">1</strong>–<strong th:text="${hasta}">10</strong>
+            de <strong th:text="${totalRegistros}">0</strong>
+            <span th:text="${totalRegistros == 1 ? 'prematrícula' : 'prematrículas'}">prematrículas</span>
+        </div>
+
+        <div class="est-pagination-controls">
+            <label class="est-page-size">
+                <span>Filas</span>
+                <select class="est-page-size-select"
+                        name="tamano"
+                        aria-label="Prematrículas por página"
+                        onchange="const h = document.getElementById('pre-tamano-input'); if (h) h.value = this.value;"
+                        hx-get="/estudiantes/prematricula/lista"
+                        hx-include="#prematricula-filtros-form [name='campo'], #prematricula-filtros-form [name='q'], #prematricula-filtros-form [name='periodo']"
+                        hx-target="#prematricula-dir-content"
+                        hx-swap="innerHTML"
+                        hx-indicator="#prematricula-dir-content">
+                    <option value="10" th:selected="${tamano == 10}">10</option>
+                    <option value="25" th:selected="${tamano == 25}">25</option>
+                    <option value="50" th:selected="${tamano == 50}">50</option>
+                </select>
+            </label>
+
+            <nav class="pagination est-pagination-nav" aria-label="Paginación de prematrículas" th:if="${totalPaginas > 1}">
+                <button type="button"
+                        class="pagination-item"
+                        th:classappend="${pagina <= 1} ? 'disabled'"
+                        th:disabled="${pagina <= 1}"
+                        th:attr="hx-get=${pagina > 1} ? @{/estudiantes/prematricula/lista(pagina=${pagina - 1})} : null"
+                        hx-include="#prematricula-filtros-form"
+                        hx-target="#prematricula-dir-content"
+                        hx-swap="innerHTML"
+                        hx-indicator="#prematricula-dir-content"
+                        aria-label="Página anterior">&lsaquo;</button>
+
+                <th:block th:each="num : ${paginasVisibles}">
+                    <span th:if="${num == -1}" class="est-pagination-ellipsis" aria-hidden="true">&hellip;</span>
+                    <button th:if="${num != -1}"
+                            type="button"
+                            class="pagination-item"
+                            th:classappend="${num == pagina} ? 'active'"
+                            th:attr="hx-get=${num != pagina} ? @{/estudiantes/prematricula/lista(pagina=${num})} : null,aria-current=${num == pagina ? 'page' : null}"
+                            hx-include="#prematricula-filtros-form"
+                            hx-target="#prematricula-dir-content"
+                            hx-swap="innerHTML"
+                            hx-indicator="#prematricula-dir-content"
+                            th:text="${num}">1</button>
+                </th:block>
+
+                <button type="button"
+                        class="pagination-item"
+                        th:classappend="${pagina >= totalPaginas} ? 'disabled'"
+                        th:disabled="${pagina >= totalPaginas}"
+                        th:attr="hx-get=${pagina < totalPaginas} ? @{/estudiantes/prematricula/lista(pagina=${pagina + 1})} : null"
+                        hx-include="#prematricula-filtros-form"
+                        hx-target="#prematricula-dir-content"
+                        hx-swap="innerHTML"
+                        hx-indicator="#prematricula-dir-content"
+                        aria-label="Página siguiente">&rsaquo;</button>
+            </nav>
+        </div>
+    </div>
+</div>

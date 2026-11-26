@@ -1,0 +1,252 @@
+<div th:fragment="modal" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop"
+         th:data-puede-editar="${puedeEditar != null and puedeEditar}"
+         th:data-close-event="${closeEvent}"
+         th:data-campo-error="${campoError != null ? campoError : ''}"
+         th:data-valor-error="${valorError != null ? valorError : ''}"
+         th:data-nombre="${registro != null and registro.nombre != null ? registro.nombre : ''}"
+         th:data-cedula="${registro != null and registro.cedula != null ? registro.cedula : ''}"
+         th:data-email="${registro != null and registro.email != null ? registro.email : ''}"
+         th:data-usuario="${registro != null and registro.usuario != null ? registro.usuario : ''}"
+         th:data-nivel-id="${registro != null and registro.nivelAcademico != null ? registro.nivelAcademico.id : ''}"
+         th:data-anio-matricula="${registro != null and registro.anioMatricula != null ? registro.anioMatricula : (anioActual != null ? anioActual : '')}"
+         th:data-activo="${registro != null and registro.activo == true ? 'true' : 'false'}"
+         x-data="{
+             puedeEditar: $el.dataset.puedeEditar === 'true',
+             closeEvent: $el.dataset.closeEvent || 'close-prematricula-ficha',
+             campoEditando: $el.dataset.campoError || null,
+             valorEditado: $el.dataset.campoError ? ($el.dataset.valorError || '') : '',
+             originales: {
+                 nombre: $el.dataset.nombre || '',
+                 cedula: $el.dataset.cedula || '',
+                 email: $el.dataset.email || '',
+                 usuario: $el.dataset.usuario || '',
+                 nivelId: $el.dataset.nivelId || '',
+                 anioMatricula: $el.dataset.anioMatricula || '',
+                 activo: $el.dataset.activo || 'true',
+                 password: ''
+             },
+             init() {
+                 if (this.campoEditando) {
+                     this.enfocarCampo(this.campoEditando);
+                 }
+             },
+             editarCampo(campo) {
+                 if (!this.puedeEditar || this.campoEditando === campo) return;
+                 this.campoEditando = campo;
+                 this.valorEditado = this.originales[campo] ?? '';
+                 this.enfocarCampo(campo);
+             },
+             enfocarCampo(campo) {
+                 this.$nextTick(() => {
+                     const el = document.getElementById('mat-ficha-input-' + campo);
+                     if (el) {
+                         el.focus();
+                         if (el.tagName === 'INPUT' && el.type !== 'password' && typeof el.select === 'function') {
+                             el.select();
+                         }
+                     }
+                 });
+             },
+             cancelarEdicion() {
+                 this.campoEditando = null;
+                 this.valorEditado = '';
+             },
+             cerrar() {
+                 window.dispatchEvent(new CustomEvent(this.closeEvent));
+             }
+         }"
+         @click.self="cerrar()">
+
+        <div class="modal-dialog est-min-dialog" style="max-width:580px;">
+            <div class="est-min-header">
+                <div>
+                    <h3 class="est-min-title" th:text="${registro != null ? registro.nombre : 'Registro no encontrado'}">Detalle</h3>
+                    <p th:if="${registro != null}" class="est-min-subtitle"
+                       th:text="${esBorrador ? 'Matrícula en borrador' : 'Prematrícula'} + ' · ' + ${registro.activo == true ? 'Activo' : 'Inactivo'}">
+                        Prematrícula
+                    </p>
+                </div>
+                <button type="button" class="est-min-close" @click="cerrar()" aria-label="Cerrar">&times;</button>
+            </div>
+
+            <div class="est-min-body">
+                <th:block th:if="${registro != null}">
+                    <p class="est-min-hint" th:if="${puedeEditar}">
+                        Haz clic en cualquier campo para editarlo.
+                    </p>
+
+                    <p th:if="${errorFicha}" class="est-min-error" th:text="${errorFicha}"></p>
+
+                    <form th:attr="hx-post='/estudiantes/' + ${etapaRuta} + '/ficha/' + ${registro.id}, hx-target=${fichaContainerId}"
+                          hx-swap="innerHTML">
+                        <input type="hidden" name="campoEditar" :value="campoEditando || ''">
+
+                        <div class="est-detail-grid">
+                            <!-- Nombre completo -->
+                            <div class="est-detail-field est-detail-span-2"
+                                 :class="{ 'is-editable': puedeEditar && campoEditando !== 'nombre', 'is-editing': campoEditando === 'nombre' }"
+                                 @click="editarCampo('nombre')">
+                                <span class="est-detail-label">Nombre completo</span>
+                                <div x-show="campoEditando !== 'nombre'" class="est-detail-value"
+                                     th:text="${registro.nombre}">Nombre</div>
+                                <template x-if="campoEditando === 'nombre'">
+                                    <input id="mat-ficha-input-nombre" type="text" name="valorEditar"
+                                           class="est-min-input" required maxlength="100"
+                                           x-model="valorEditado"
+                                           @click.stop
+                                           @keydown.escape.stop.prevent="cancelarEdicion()">
+                                </template>
+                            </div>
+
+                            <!-- Cédula -->
+                            <div class="est-detail-field"
+                                 :class="{ 'is-editable': puedeEditar && campoEditando !== 'cedula', 'is-editing': campoEditando === 'cedula' }"
+                                 @click="editarCampo('cedula')">
+                                <span class="est-detail-label">Cédula</span>
+                                <div x-show="campoEditando !== 'cedula'" class="est-detail-value"
+                                     th:classappend="${registro.cedula == null} ? 'is-muted'"
+                                     th:text="${registro.cedula != null ? registro.cedula : '—'}">—</div>
+                                <template x-if="campoEditando === 'cedula'">
+                                    <input id="mat-ficha-input-cedula" type="text" name="valorEditar"
+                                           class="est-min-input" maxlength="30" placeholder="1-2345-6789"
+                                           x-model="valorEditado"
+                                           @click.stop
+                                           @keydown.escape.stop.prevent="cancelarEdicion()">
+                                </template>
+                            </div>
+
+                            <!-- Usuario -->
+                            <div class="est-detail-field"
+                                 :class="{ 'is-editable': puedeEditar && campoEditando !== 'usuario', 'is-editing': campoEditando === 'usuario' }"
+                                 @click="editarCampo('usuario')">
+                                <span class="est-detail-label">Usuario</span>
+                                <div x-show="campoEditando !== 'usuario'" class="est-detail-value"
+                                     th:classappend="${registro.usuario == null} ? 'is-muted'"
+                                     th:text="${registro.usuario != null ? registro.usuario : '—'}">—</div>
+                                <template x-if="campoEditando === 'usuario'">
+                                    <input id="mat-ficha-input-usuario" type="text" name="valorEditar"
+                                           class="est-min-input" maxlength="60" placeholder="nombre.apellido"
+                                           x-model="valorEditado"
+                                           @click.stop
+                                           @keydown.escape.stop.prevent="cancelarEdicion()">
+                                </template>
+                            </div>
+
+                            <!-- Sección -->
+                            <div class="est-detail-field"
+                                 :class="{ 'is-editable': puedeEditar && campoEditando !== 'nivelId', 'is-editing': campoEditando === 'nivelId' }"
+                                 @click="editarCampo('nivelId')">
+                                <span class="est-detail-label">Sección</span>
+                                <div x-show="campoEditando !== 'nivelId'" class="est-detail-value"
+                                     th:classappend="${registro.nivelAcademico == null} ? 'is-muted'"
+                                     th:text="${registro.nivelAcademico != null ? registro.nivelAcademico.nombreCompleto : '—'}">—</div>
+                                <template x-if="campoEditando === 'nivelId'">
+                                    <select id="mat-ficha-input-nivelId" name="valorEditar"
+                                            class="est-min-input"
+                                            x-model="valorEditado"
+                                            @click.stop
+                                            @keydown.escape.stop.prevent="cancelarEdicion()">
+                                        <option value="">Sin sección</option>
+                                        <option th:each="nivel : ${niveles}"
+                                                th:value="${nivel.id}"
+                                                th:text="${nivel.nombreCompleto}">7 - A</option>
+                                    </select>
+                                </template>
+                            </div>
+
+                            <!-- Período -->
+                            <div class="est-detail-field"
+                                 :class="{ 'is-editable': puedeEditar && campoEditando !== 'anioMatricula', 'is-editing': campoEditando === 'anioMatricula' }"
+                                 @click="editarCampo('anioMatricula')">
+                                <span class="est-detail-label">Período (Año)</span>
+                                <div x-show="campoEditando !== 'anioMatricula'" class="est-detail-value"
+                                     th:text="${registro.anioMatricula}">2026</div>
+                                <template x-if="campoEditando === 'anioMatricula'">
+                                    <input id="mat-ficha-input-anioMatricula" type="number" name="valorEditar"
+                                           class="est-min-input" required min="1990" max="2100" step="1"
+                                           x-model="valorEditado"
+                                           @click.stop
+                                           @keydown.escape.stop.prevent="cancelarEdicion()">
+                                </template>
+                            </div>
+
+                            <!-- Correo electrónico -->
+                            <div class="est-detail-field est-detail-span-2"
+                                 :class="{ 'is-editable': puedeEditar && campoEditando !== 'email', 'is-editing': campoEditando === 'email' }"
+                                 @click="editarCampo('email')">
+                                <span class="est-detail-label">Correo electrónico</span>
+                                <div x-show="campoEditando !== 'email'" class="est-detail-value"
+                                     th:classappend="${registro.email == null} ? 'is-muted'"
+                                     th:text="${registro.email != null ? registro.email : '—'}">—</div>
+                                <template x-if="campoEditando === 'email'">
+                                    <input id="mat-ficha-input-email" type="email" name="valorEditar"
+                                           class="est-min-input" maxlength="150" placeholder="correo@ejemplo.com"
+                                           x-model="valorEditado"
+                                           @click.stop
+                                           @keydown.escape.stop.prevent="cancelarEdicion()">
+                                </template>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="est-detail-field"
+                                 :class="{ 'is-editable': puedeEditar && campoEditando !== 'activo', 'is-editing': campoEditando === 'activo' }"
+                                 @click="editarCampo('activo')">
+                                <span class="est-detail-label">Estado</span>
+                                <div x-show="campoEditando !== 'activo'" class="est-detail-value"
+                                     th:text="${registro.activo == true ? 'Activo' : 'Inactivo'}">Activo</div>
+                                <template x-if="campoEditando === 'activo'">
+                                    <select id="mat-ficha-input-activo" name="valorEditar"
+                                            class="est-min-input"
+                                            x-model="valorEditado"
+                                            @click.stop
+                                            @keydown.escape.stop.prevent="cancelarEdicion()">
+                                        <option value="true">Activo</option>
+                                        <option value="false">Inactivo</option>
+                                    </select>
+                                </template>
+                            </div>
+
+                            <!-- Contraseña -->
+                            <div class="est-detail-field" th:if="${puedeEditar}"
+                                 :class="{ 'is-editable': puedeEditar && campoEditando !== 'password', 'is-editing': campoEditando === 'password' }"
+                                 @click="editarCampo('password')">
+                                <span class="est-detail-label">Contraseña</span>
+                                <div x-show="campoEditando !== 'password'" class="est-detail-value is-muted"
+                                     th:text="${registro.tienePassword() ? '••••••••' : 'Sin definir'}">Sin definir</div>
+                                <template x-if="campoEditando === 'password'">
+                                    <input id="mat-ficha-input-password" type="password" name="valorEditar"
+                                           class="est-min-input" required placeholder="Definir contraseña"
+                                           x-model="valorEditado"
+                                           @click.stop
+                                           @keydown.escape.stop.prevent="cancelarEdicion()">
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="est-min-footer est-min-footer-inline" x-show="campoEditando !== null" x-cloak>
+                            <button type="button" class="est-btn-outline" @click="cancelarEdicion()">Cancelar</button>
+                            <button type="submit" class="est-btn-solid">Guardar cambio</button>
+                        </div>
+                    </form>
+
+                    <!-- Acción para completar matrícula directamente desde el detalle de un borrador -->
+                    <div class="est-min-footer est-min-footer-inline"
+                         th:if="${esBorrador and puedeEditar and registro.activo == true}"
+                         x-show="campoEditando === null" x-cloak>
+                        <button type="button" class="est-btn-solid"
+                                th:attr="hx-post='/estudiantes/matricula/' + ${registro.id} + '/completar'"
+                                hx-target="#matricula-ficha-container"
+                                hx-swap="innerHTML">
+                            Completar matrícula
+                        </button>
+                    </div>
+                </th:block>
+
+                <p th:if="${registro == null}" class="table-empty">No se encontró información para este registro.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="vacio" xmlns:th="http://www.thymeleaf.org"></div>

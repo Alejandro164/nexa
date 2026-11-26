@@ -1,0 +1,152 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop"
+         th:data-prematricula-id="${prematriculaId != null ? prematriculaId : ''}"
+         th:data-nombre="${registro.nombre != null ? registro.nombre : ''}"
+         th:data-cedula="${registro.cedula != null ? registro.cedula : ''}"
+         th:data-email="${registro.email != null ? registro.email : ''}"
+         th:data-usuario="${registro.usuario != null ? registro.usuario : ''}"
+         th:data-nivel-id="${nivelIdSeleccionado != null ? nivelIdSeleccionado : ''}"
+         th:data-anio-matricula="${registro.anioMatricula != null ? registro.anioMatricula : anioActual}"
+         th:data-anio-actual="${anioActual}"
+         x-data="{
+             cedulaConsulta: $el.dataset.cedula || '',
+             buscando: false,
+             mensajeConsulta: '',
+             prematriculaId: $el.dataset.prematriculaId || '',
+             tienePassword: false,
+             nombre: $el.dataset.nombre || '',
+             cedula: $el.dataset.cedula || '',
+             email: $el.dataset.email || '',
+             usuario: $el.dataset.usuario || '',
+             nivelId: $el.dataset.nivelId || '',
+             anioMatricula: $el.dataset.anioMatricula || $el.dataset.anioActual || '',
+             anioActual: $el.dataset.anioActual || '',
+             consultarPrematricula() {
+                 const ced = this.cedulaConsulta.trim();
+                 if (!ced) {
+                     this.mensajeConsulta = 'Ingresa una cédula para consultar.';
+                     return;
+                 }
+                 this.buscando = true;
+                 this.mensajeConsulta = '';
+                 fetch('/estudiantes/matricula/buscar-prematricula?cedula=' + encodeURIComponent(ced))
+                     .then(r => r.json())
+                     .then(data => {
+                         if (data.encontrado) {
+                             this.prematriculaId = String(data.id);
+                             this.nombre = data.nombre || '';
+                             this.cedula = data.cedula || ced;
+                             this.email = data.email || '';
+                             this.usuario = data.usuario || '';
+                             this.nivelId = data.nivelId ? String(data.nivelId) : '';
+                             this.anioMatricula = data.anioMatricula ? String(data.anioMatricula) : this.anioActual;
+                             this.tienePassword = !!data.tienePassword;
+                             this.mensajeConsulta = 'Datos cargados desde prematrícula.';
+                         } else {
+                             this.prematriculaId = '';
+                             this.tienePassword = false;
+                             if (!this.cedula) this.cedula = ced;
+                             this.mensajeConsulta = 'No se encontró una prematrícula activa con esa cédula.';
+                         }
+                     })
+                     .catch(() => {
+                         this.mensajeConsulta = 'No se pudo consultar la prematrícula. Intenta de nuevo.';
+                     })
+                     .finally(() => {
+                         this.buscando = false;
+                     });
+             }
+         }"
+         @click.self="window.dispatchEvent(new CustomEvent('close-matricula-modal'))">
+
+        <div class="modal-dialog est-min-dialog" style="max-width:580px;">
+            <div class="est-min-header">
+                <div>
+                    <h3 class="est-min-title">Nueva matrícula</h3>
+                    <p class="est-min-subtitle">Consulta una prematrícula por cédula para precargar sus datos o llena el formulario.</p>
+                </div>
+                <button type="button" class="est-min-close"
+                        onclick="window.dispatchEvent(new CustomEvent('close-matricula-modal'))" aria-label="Cerrar">&times;</button>
+            </div>
+
+            <div class="est-min-body">
+                <!-- Consulta de prematrícula por cédula -->
+                <div class="est-lookup-section">
+                    <label class="est-min-label" for="mat-consulta-cedula">Consultar prematrícula por cédula</label>
+                    <div class="est-lookup-row">
+                        <input id="mat-consulta-cedula" type="text" class="est-min-input"
+                               x-model="cedulaConsulta"
+                               placeholder="Ej. 1-9001-0001"
+                               @keydown.enter.prevent="consultarPrematricula()">
+                        <button type="button" class="est-btn-outline"
+                                :disabled="buscando"
+                                @click="consultarPrematricula()"
+                                x-text="buscando ? 'Consultando...' : 'Consultar'">Consultar</button>
+                    </div>
+                    <p x-show="mensajeConsulta" x-cloak class="est-min-hint" style="margin:6px 0 0;"
+                       x-text="mensajeConsulta"></p>
+                </div>
+
+                <form hx-post="/estudiantes/matricula"
+                      hx-include="#matricula-filtros-form, #mat-pagina-actual"
+                      hx-target="#matricula-dir-content"
+                      hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful && !event.detail.xhr.getResponseHeader('HX-Retarget')) window.dispatchEvent(new CustomEvent('close-matricula-modal'))">
+
+                    <input type="hidden" name="prematriculaId" :value="prematriculaId">
+
+                    <p th:if="${error}" class="est-min-error" th:text="${error}"></p>
+
+                    <div class="est-min-form-grid">
+                        <div class="est-min-field est-detail-span-2">
+                            <label class="est-min-label">Nombre completo *</label>
+                            <input class="est-min-input" type="text" name="nombre" required maxlength="100"
+                                   x-model="nombre" placeholder="Ej. Camila Herrera Vindas">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Cédula</label>
+                            <input class="est-min-input" type="text" name="cedula" maxlength="30"
+                                   x-model="cedula" placeholder="1-2345-6789">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Período (Año) *</label>
+                            <input class="est-min-input" type="number" name="anioMatricula" required
+                                   min="1990" max="2100" step="1"
+                                   x-model="anioMatricula" placeholder="2026">
+                        </div>
+                        <div class="est-min-field est-detail-span-2">
+                            <label class="est-min-label">Correo electrónico</label>
+                            <input class="est-min-input" type="email" name="email" maxlength="150"
+                                   x-model="email" placeholder="correo@ejemplo.com">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Usuario</label>
+                            <input class="est-min-input" type="text" name="usuario" maxlength="60"
+                                   x-model="usuario" placeholder="camila.herrera">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Contraseña</label>
+                            <input class="est-min-input" type="password" name="password"
+                                   :placeholder="tienePassword ? 'Registrada en prematrícula (opcional)' : 'Contraseña de acceso'">
+                        </div>
+                        <div class="est-min-field est-detail-span-2">
+                            <label class="est-min-label">Sección</label>
+                            <select class="est-min-input" name="nivelId" x-model="nivelId">
+                                <option value="">Seleccione una sección</option>
+                                <option th:each="nivel : ${niveles}" th:value="${nivel.id}"
+                                        th:text="${nivel.nombreCompleto}"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="est-min-footer est-min-footer-inline">
+                        <button type="button" class="est-btn-outline" style="margin-right:auto;"
+                                onclick="window.dispatchEvent(new CustomEvent('close-matricula-modal'))">Cancelar</button>
+                        <button type="submit" name="accion" value="borrador" class="est-btn-outline">Guardar en borrador</button>
+                        <button type="submit" name="accion" value="completar" class="est-btn-solid">Completar matrícula</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

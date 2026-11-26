@@ -220,7 +220,9 @@ Nivel 2, dentro del fragmento (`personal/regimen/index.html`):
 
 ### Modales
 
-El botón pide `hx-get="/ruta/form"` hacia `#modal-container` y abre el flag de Alpine. El contenedor escucha `@close-modal.window` y Escape. El fragmento del formulario es `form-content`. Al guardar, el controller devuelve la lista actualizada o, si hay error de validación, reescribe el modal con `HX-Retarget` y `HX-Reswap`.
+El botón pide `hx-get="/ruta/form"` hacia `#modal-container` y abre el flag de Alpine (solo si `event.detail.successful`). El contenedor escucha `@close-modal.window` y Escape. El fragmento del formulario es `form-content`. Al guardar, el controller devuelve la lista actualizada o, si hay error de validación, reescribe el modal con `HX-Retarget` y `HX-Reswap` (comprobar `!event.detail.xhr.getResponseHeader('HX-Retarget')` antes de cerrar el modal).
+
+Estilo obligatorio de modales: **minimalistas**, sin fondos de color ni elementos visuales innecesarios. Superficie blanca (`#ffffff`), borde fino (`#e2e8f0`), divisores sutiles, tipografía limpia y botones sobrios (evitar franjas rojas superiores, cajas con relleno de color o íconos decorativos llamativos). Referencia: `templates/estudiantes/components/confirmar-desactivar.html` y `templates/estudiantes/expedientes/ficha.html`.
 
 ### Avisos
 
@@ -336,9 +338,11 @@ La columna “quién” resume `SecurityConfig`. El matcher exacto manda sobre e
 6. `requestMatchers` en `SecurityConfig` antes de `anyRequest`, con `hasAnyAuthority` y el rol completo.
 7. Templates como en la sección 6, copiando una página del mismo tipo (`personal/index.html` si tiene tabs). Título OOB incluido.
 8. Ítem en `layout/sidebar.html` con `sec:authorize` y `x-show="ve(...)"`, más `hx-push-url="true"`.
-9. `./mvnw compile`. Si el cambio es de service, un test Mockito al lado de los que ya están en `src/test/java/com/chavescr/nexa/service/`.
+9. `./mvnw compile`. No ejecutar pruebas automatizadas (`./mvnw test`) salvo que el usuario las solicite explícitamente.
 
 ## 12. Pruebas
+
+**Regla para agentes**: no ejecutar `./mvnw test` ni correr pruebas automatizadas por iniciativa propia; solo hacerlo cuando el usuario lo pida explícitamente. Para validar cambios alcanza con `./mvnw compile`.
 
 Los tests de service usan `@ExtendWith(MockitoExtension.class)` y no levantan Spring ni Postgres.
 

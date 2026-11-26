@@ -1,0 +1,74 @@
+<div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
+    <div class="modal-backdrop" @click.self="window.dispatchEvent(new CustomEvent('close-prematricula-modal'))">
+        <div class="modal-dialog est-min-dialog" style="max-width:560px;">
+            <div class="est-min-header">
+                <div>
+                    <h3 class="est-min-title">Nueva prematrícula</h3>
+                    <p class="est-min-subtitle">Solo nombre y período son obligatorios; puedes completar los demás datos luego.</p>
+                </div>
+                <button type="button" class="est-min-close"
+                        onclick="window.dispatchEvent(new CustomEvent('close-prematricula-modal'))" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="est-min-body">
+                <form hx-post="/estudiantes/prematricula"
+                      hx-include="#prematricula-filtros-form, #pre-pagina-actual"
+                      hx-target="#prematricula-dir-content"
+                      hx-swap="innerHTML"
+                      hx-on:htmx:after-request="if(event.detail.successful && !event.detail.xhr.getResponseHeader('HX-Retarget')) window.dispatchEvent(new CustomEvent('close-prematricula-modal'))">
+
+                    <p th:if="${error}" class="est-min-error" th:text="${error}"></p>
+
+                    <div class="est-min-form-grid">
+                        <div class="est-min-field est-detail-span-2">
+                            <label class="est-min-label">Nombre completo *</label>
+                            <input class="est-min-input" type="text" name="nombre" required maxlength="100"
+                                   th:value="${registro.nombre}" placeholder="Ej. Camila Herrera Vindas">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Cédula</label>
+                            <input class="est-min-input" type="text" name="cedula" maxlength="30"
+                                   th:value="${registro.cedula}" placeholder="1-2345-6789">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Período (Año) *</label>
+                            <input class="est-min-input" type="number" name="anioMatricula" required
+                                   min="1990" max="2100" step="1"
+                                   th:value="${registro.anioMatricula != null ? registro.anioMatricula : anioActual}"
+                                   placeholder="2026">
+                        </div>
+                        <div class="est-min-field est-detail-span-2">
+                            <label class="est-min-label">Correo electrónico</label>
+                            <input class="est-min-input" type="email" name="email" maxlength="150"
+                                   th:value="${registro.email}" placeholder="correo@ejemplo.com">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Usuario</label>
+                            <input class="est-min-input" type="text" name="usuario" maxlength="60"
+                                   th:value="${registro.usuario}" placeholder="camila.herrera">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Contraseña</label>
+                            <input class="est-min-input" type="password" name="password"
+                                   placeholder="Opcional en prematrícula">
+                        </div>
+                        <div class="est-min-field est-detail-span-2">
+                            <label class="est-min-label">Sección</label>
+                            <select class="est-min-input" name="nivelId">
+                                <option value="">Sin asignar todavía</option>
+                                <option th:each="nivel : ${niveles}" th:value="${nivel.id}"
+                                        th:text="${nivel.nombreCompleto}"
+                                        th:selected="${nivelIdSeleccionado != null and nivelIdSeleccionado == nivel.id}"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="est-min-footer est-min-footer-inline">
+                        <button type="button" class="est-btn-outline"
+                                onclick="window.dispatchEvent(new CustomEvent('close-prematricula-modal'))">Cancelar</button>
+                        <button type="submit" class="est-btn-solid">Guardar prematrícula</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

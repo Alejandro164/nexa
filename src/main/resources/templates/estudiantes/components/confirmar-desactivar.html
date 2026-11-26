@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="modal" id="est-deactivate-modal" class="modal-backdrop"
+     style="display: none; z-index: 10000;"
+     onclick="if (event.target === this) cerrarConfirmacionDesactivar()">
+    <div class="modal-dialog est-min-dialog" style="max-width: 420px;">
+        <div class="est-min-header">
+            <h3 id="est-deactivate-title" class="est-min-title">Desactivar registro</h3>
+            <button type="button" class="est-min-close" onclick="cerrarConfirmacionDesactivar()" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="est-min-body">
+            <p id="est-deactivate-message" class="est-min-text">¿Deseas desactivar este registro?</p>
+        </div>
+        <div class="est-min-footer">
+            <button type="button" class="est-btn-outline" onclick="cerrarConfirmacionDesactivar()">Cancelar</button>
+            <button type="button" id="est-deactivate-confirm-btn" class="est-btn-solid" onclick="confirmarDesactivacion()">Desactivar</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -6,8 +6,8 @@
          q: $el.dataset.qInicial || '',
          campo: $el.dataset.campoInicial || 'todas',
          periodo: $el.dataset.periodoInicial || '',
-         _onEstudianteGuardado: null,
-         _onEstudianteActualizado: null,
+         _onGuardado: null,
+         _onActualizado: null,
          placeholders: {
              todas: 'Buscar por nombre, correo, cédula, sección...',
              nombre: 'Buscar por nombre del estudiante...',
@@ -18,52 +18,20 @@
              estado: 'Buscar por estado (Activo / Inactivo)...'
          },
          init() {
-             this._onEstudianteGuardado = (evt) => {
+             this._onGuardado = (evt) => {
                  const anio = evt.detail && evt.detail.periodo;
                  if (!anio) return;
-                 const select = document.getElementById('est-filtro-periodo');
-                 if (!select) return;
-                 const valor = String(anio);
-                 const existe = Array.from(select.options).some(o => o.value === valor);
-                 if (!existe) {
-                     const opt = document.createElement('option');
-                     opt.value = valor;
-                     opt.textContent = valor;
-                     let insertado = false;
-                     for (let i = 1; i < select.options.length; i++) {
-                         if (Number(select.options[i].value) < Number(anio)) {
-                             select.insertBefore(opt, select.options[i]);
-                             insertado = true;
-                             break;
-                         }
-                     }
-                     if (!insertado) {
-                         select.appendChild(opt);
-                     }
-                 }
+                 agregarOpcionPeriodo('est-filtro-periodo', anio);
              };
-             document.body.addEventListener('estudianteGuardado', this._onEstudianteGuardado);
-             this._onEstudianteActualizado = () => {
-                 if (!window.htmx || !this.$refs.filtrosForm) return;
-                 const params = new URLSearchParams(new FormData(this.$refs.filtrosForm));
-                 const pagInput = document.getElementById('est-pagina-actual');
-                 if (pagInput && pagInput.value) {
-                     params.set('pagina', pagInput.value);
-                 }
-                 window.htmx.ajax('GET', '/estudiantes/expedientes/lista?' + params.toString(), {
-                     target: '#estudiantes-dir-content',
-                     swap: 'innerHTML'
-                 });
+             document.body.addEventListener('estudianteGuardado', this._onGuardado);
+             this._onActualizado = () => {
+                 refrescarTablaEstudiantes(this.$refs.filtrosForm, 'est-pagina-actual', '/estudiantes/expedientes/lista', '#estudiantes-dir-content');
              };
-             document.body.addEventListener('estudianteActualizado', this._onEstudianteActualizado);
+             document.body.addEventListener('estudianteActualizado', this._onActualizado);
          },
          destroy() {
-             if (this._onEstudianteGuardado) {
-                 document.body.removeEventListener('estudianteGuardado', this._onEstudianteGuardado);
-             }
-             if (this._onEstudianteActualizado) {
-                 document.body.removeEventListener('estudianteActualizado', this._onEstudianteActualizado);
-             }
+             if (this._onGuardado) document.body.removeEventListener('estudianteGuardado', this._onGuardado);
+             if (this._onActualizado) document.body.removeEventListener('estudianteActualizado', this._onActualizado);
          },
          placeholderActual() {
              return this.placeholders[this.campo] || this.placeholders.todas;
@@ -79,416 +47,26 @@
              });
          },
          alCambiarCampo() {
-             if (this.q.trim() !== '') {
-                 this.buscar();
-             }
-             this.$nextTick(() => {
-                 if (this.$refs.inputBuscar) {
-                     this.$refs.inputBuscar.focus();
-                 }
-             });
+             if (this.q.trim() !== '') this.buscar();
+             this.$nextTick(() => { if (this.$refs.inputBuscar) this.$refs.inputBuscar.focus(); });
          },
          limpiarBusqueda() {
              this.q = '';
              this.buscar();
-             this.$nextTick(() => {
-                 if (this.$refs.inputBuscar) {
-                     this.$refs.inputBuscar.focus();
-                 }
-             });
+             this.$nextTick(() => { if (this.$refs.inputBuscar) this.$refs.inputBuscar.focus(); });
          },
          limpiarFiltros() {
              this.q = '';
              this.campo = 'todas';
              this.periodo = '';
              this.buscar();
-         },
-         openModal(id) {
-             const el = document.getElementById(id);
-             el.style.display = 'block';
-             setTimeout(() => {
-                 void el.offsetWidth;
-                 el.classList.remove('dir-modal-closing');
-                 el.classList.add('dir-modal-visible');
-             }, 0);
-         },
-         closeModal(id) {
-             const el = document.getElementById(id);
-             el.classList.remove('dir-modal-visible');
-             el.classList.add('dir-modal-closing');
-             setTimeout(() => {
-                 el.style.display = 'none';
-                 el.classList.remove('dir-modal-closing');
-             }, 180);
          }
      }"
-     @open-modal.window="openModal('estudiantes-modal-container')"
-     @close-modal.window="closeModal('estudiantes-modal-container')"
-     @open-ficha.window="openModal('estudiantes-ficha-container')"
-     @close-ficha.window="closeModal('estudiantes-ficha-container')"
-     @keydown.escape.window="closeModal('estudiantes-modal-container'); closeModal('estudiantes-ficha-container')">
-
-    <style>
-        .est-toolbar {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            padding: 1rem 1.5rem;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .est-search-group {
-            flex: 1 1 340px;
-            max-width: 580px;
-            display: flex;
-            align-items: center;
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            min-height: 40px;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            overflow: hidden;
-        }
-        .est-search-group:focus-within {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
-        }
-        .est-campo-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-            flex-shrink: 0;
-            background: #f1f5f9;
-            border-right: 1px solid #e2e8f0;
-            align-self: stretch;
-        }
-        .est-campo-select {
-            appearance: none;
-            -webkit-appearance: none;
-            border: none;
-            background: transparent;
-            color: #334155;
-            font-family: inherit;
-            font-size: 0.82rem;
-            font-weight: 600;
-            padding: 0 28px 0 12px;
-            height: 100%;
-            min-height: 38px;
-            cursor: pointer;
-            outline: none;
-        }
-        .est-campo-select:hover {
-            color: var(--primary);
-        }
-        .est-select-chevron {
-            position: absolute;
-            right: 9px;
-            pointer-events: none;
-            color: #64748b;
-            width: 14px;
-            height: 14px;
-        }
-        .est-input-wrap {
-            position: relative;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            min-width: 0;
-        }
-        .est-search-icon {
-            position: absolute;
-            left: 11px;
-            width: 16px;
-            height: 16px;
-            color: #94a3b8;
-            pointer-events: none;
-            flex-shrink: 0;
-        }
-        .est-search-input {
-            width: 100%;
-            border: none;
-            background: transparent;
-            color: var(--text-primary);
-            font-family: inherit;
-            font-size: 0.86rem;
-            padding: 8px 34px 8px 34px;
-            outline: none;
-            min-width: 0;
-        }
-        .est-search-input::placeholder {
-            color: #94a3b8;
-        }
-        .est-clear-btn {
-            position: absolute;
-            right: 8px;
-            width: 22px;
-            height: 22px;
-            border: none;
-            border-radius: 50%;
-            background: #e2e8f0;
-            color: #475569;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 0.9rem;
-            line-height: 1;
-            padding: 0;
-            transition: background 0.15s, color 0.15s;
-        }
-        .est-clear-btn:hover {
-            background: #cbd5e1;
-            color: #0f172a;
-        }
-        .est-periodo-group {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            padding: 0 10px 0 12px;
-            min-height: 40px;
-            position: relative;
-            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
-        }
-        .est-periodo-group:focus-within {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
-        }
-        .est-periodo-group.is-active {
-            border-color: var(--primary);
-            background: rgba(45, 90, 135, 0.04);
-        }
-        .est-filter-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #64748b;
-            white-space: nowrap;
-            margin: 0;
-            cursor: pointer;
-        }
-        .est-periodo-group.is-active .est-filter-label {
-            color: var(--primary);
-        }
-        .est-periodo-select {
-            appearance: none;
-            -webkit-appearance: none;
-            border: none;
-            background: transparent;
-            color: #0f172a;
-            font-family: inherit;
-            font-size: 0.84rem;
-            font-weight: 600;
-            padding: 6px 22px 6px 4px;
-            cursor: pointer;
-            outline: none;
-            min-width: 78px;
-        }
-        .est-reset-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 8px 12px;
-            min-height: 40px;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
-            color: #475569;
-            font-family: inherit;
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s;
-            white-space: nowrap;
-        }
-        .est-reset-btn:hover {
-            border-color: #cbd5e1;
-            background: #f1f5f9;
-            color: #0f172a;
-        }
-        .est-add-btn {
-            margin-left: auto;
-            min-height: 40px;
-            font-size: 0.85rem;
-            padding: 8px 16px;
-            white-space: nowrap;
-        }
-        .est-periodo-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 8px;
-            border-radius: 6px;
-            background: #f1f5f9;
-            color: #334155;
-            font-size: 0.78rem;
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-        }
-        .est-action-btn {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            padding: 5px 8px;
-            border-radius: 7px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            line-height: 1;
-        }
-        .est-deactivate-btn:disabled {
-            opacity: 0.42;
-            cursor: not-allowed;
-        }
-        .est-tooltip-wrap {
-            position: relative;
-            display: inline-flex;
-        }
-        .est-tooltip-wrap::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: calc(100% + 7px);
-            right: 0;
-            background: #1e293b;
-            color: #ffffff;
-            font-size: 0.74rem;
-            font-weight: 500;
-            line-height: 1.3;
-            padding: 5px 9px;
-            border-radius: 6px;
-            white-space: nowrap;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.22);
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(4px);
-            transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s linear 0.14s;
-            pointer-events: none;
-            z-index: 40;
-        }
-        .est-tooltip-wrap::before {
-            content: '';
-            position: absolute;
-            bottom: calc(100% + 2px);
-            right: 11px;
-            border: 5px solid transparent;
-            border-top-color: #1e293b;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(4px);
-            transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s linear 0.14s;
-            pointer-events: none;
-            z-index: 40;
-        }
-        .est-tooltip-wrap:hover::after,
-        .est-tooltip-wrap:hover::before,
-        .est-tooltip-wrap:focus-within::after,
-        .est-tooltip-wrap:focus-within::before {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-            transition: opacity 0.14s ease, transform 0.14s ease, visibility 0s;
-        }
-        .est-pagination-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-            padding: 0.85rem 1.5rem;
-            border-top: 1px solid #e2e8f0;
-            background: #f8fafc;
-        }
-        .est-pagination-info {
-            font-size: 0.82rem;
-            color: #64748b;
-            font-variant-numeric: tabular-nums;
-        }
-        .est-pagination-info strong {
-            color: #1e293b;
-            font-weight: 600;
-        }
-        .est-pagination-controls {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        .est-page-size {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.8rem;
-            color: #64748b;
-        }
-        .est-page-size-select {
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            background: #ffffff;
-            color: #1e293b;
-            font-family: inherit;
-            font-size: 0.82rem;
-            font-weight: 600;
-            padding: 5px 10px;
-            cursor: pointer;
-            outline: none;
-        }
-        .est-page-size-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
-        }
-        .est-pagination-nav {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            margin-top: 0;
-        }
-        .est-pagination-nav .pagination-item {
-            min-width: 34px;
-            height: 34px;
-            font-size: 0.82rem;
-            border-color: #cbd5e1;
-        }
-        .est-pagination-ellipsis {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 28px;
-            height: 34px;
-            color: #94a3b8;
-            font-size: 0.85rem;
-            user-select: none;
-        }
-        #estudiantes-dir-content {
-            transition: opacity 0.15s ease;
-        }
-        #estudiantes-dir-content.htmx-request {
-            opacity: 0.55;
-        }
-        @media (max-width: 640px) {
-            .est-toolbar,
-            .est-pagination-bar {
-                padding: 0.85rem 1rem;
-            }
-            .est-search-group {
-                flex-basis: 100%;
-                max-width: none;
-            }
-            .est-periodo-group {
-                flex: 1;
-                justify-content: space-between;
-            }
-            .est-add-btn {
-                width: 100%;
-                margin-left: 0;
-                justify-content: center;
-            }
-        }
-    </style>
+     @open-modal.window="abrirModalEstudiantes('estudiantes-modal-container')"
+     @close-modal.window="cerrarModalEstudiantes('estudiantes-modal-container')"
+     @open-ficha.window="abrirModalEstudiantes('estudiantes-ficha-container')"
+     @close-ficha.window="cerrarModalEstudiantes('estudiantes-ficha-container')"
+     @keydown.escape.window="cerrarModalEstudiantes('estudiantes-modal-container'); cerrarModalEstudiantes('estudiantes-ficha-container')">
 
     <div class="module-card">
         <form id="estudiantes-filtros-form"
@@ -508,8 +86,7 @@
                     <select name="campo" class="est-campo-select"
                             x-model="campo"
                             @change="alCambiarCampo()"
-                            aria-label="Buscar por columna"
-                            title="Seleccionar columna de búsqueda">
+                            aria-label="Buscar por columna">
                         <option value="todas" th:selected="${campo == null or campo == 'todas'}">Todas</option>
                         <option value="nombre" th:selected="${campo == 'nombre'}">Nombre</option>
                         <option value="email" th:selected="${campo == 'email'}">Email</option>
@@ -544,7 +121,6 @@
                             x-show="q.length > 0"
                             x-cloak
                             @click="limpiarBusqueda()"
-                            title="Limpiar búsqueda"
                             aria-label="Limpiar búsqueda">&times;</button>
                 </div>
             </div>
@@ -562,7 +138,7 @@
                         class="est-periodo-select"
                         x-model="periodo"
                         @change="buscar()"
-                        aria-label="Filtrar por período (año de matrícula)">
+                        aria-label="Filtrar por período">
                     <option value="">Todos</option>
                     <option th:each="anio : ${periodos}"
                             th:value="${anio}"
@@ -578,8 +154,7 @@
                     class="est-reset-btn"
                     x-show="hayFiltrosActivos()"
                     x-cloak
-                    @click="limpiarFiltros()"
-                    title="Restablecer búsqueda y filtros">
+                    @click="limpiarFiltros()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -589,10 +164,10 @@
             <button type="button" class="btn-primary est-add-btn"
                     hx-get="/estudiantes/expedientes/form"
                     hx-target="#estudiantes-modal-container" hx-swap="innerHTML"
-                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))">+ Agregar estudiante</button>
+                    hx-on:htmx:after-request="if(event.detail.successful) window.dispatchEvent(new CustomEvent('open-modal'))">+ Agregar estudiante</button>
         </form>
 
-        <div id="estudiantes-dir-content" th:insert="~{estudiantes/expedientes/lista :: content}"></div>
+        <div id="estudiantes-dir-content" class="est-table-wrap" th:insert="~{estudiantes/expedientes/lista :: content}"></div>
     </div>
 
     <div id="estudiantes-modal-container" style="display:none;"></div>
