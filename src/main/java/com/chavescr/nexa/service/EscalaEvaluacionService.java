@@ -30,9 +30,10 @@ public class EscalaEvaluacionService {
     public void guardar(Long direccionId, CicloEducativo ciclo, Integer notaMinima, Integer notaMaxima,
             Integer decimales, Integer notaAprobacion, String tramosJson, String rebajasJson,
             QuienRegistraPuntosBoleta quienRegistraPuntosBoleta, ModoAsistencia modoAsistencia,
-            DestinoRebajaAsistencia destinoRebajaAsistencia, Integer tardiasPorAusencia) {
+            DestinoRebajaAsistencia destinoRebajaAsistencia, Integer tardiasPorAusencia,
+            Integer justificadasPorAusencia) {
         escalaNotasService.guardar(direccionId, ciclo, notaMinima, notaMaxima, decimales, notaAprobacion, tramosJson);
         rebajaConductaService.guardar(direccionId, rebajasJson, quienRegistraPuntosBoleta, modoAsistencia,
-                destinoRebajaAsistencia, tardiasPorAusencia);
+                destinoRebajaAsistencia, tardiasPorAusencia, justificadasPorAusencia);
     }
 }

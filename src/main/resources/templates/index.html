@@ -30,6 +30,10 @@
         // porque la función ya existía. Asentar al instante y enlazar Alpine después de los scripts.
         if (window.htmx) {
             htmx.config.defaultSettleDelay = 0;
+            // Las vistas con hx-history="false" (p. ej. Gestión Académica, que depende de datos que cambian en
+            // otras pantallas) no guardan copia en el historial. Al volver con "Atrás" htmx no tiene copia: sin
+            // esto pediría la URL como fragmento y lo metería en <body>; con esto recarga la página completa.
+            htmx.config.refreshOnHistoryMiss = true;
         }
 
         (function () {

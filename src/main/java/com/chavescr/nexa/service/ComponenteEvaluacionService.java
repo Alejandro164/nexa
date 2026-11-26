@@ -1,13 +1,17 @@
 package com.chavescr.nexa.service;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.dto.NombresRubros;
 import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Materia;
@@ -25,6 +29,9 @@ import com.chavescr.nexa.repository.MateriaRepository;
 public class ComponenteEvaluacionService {
 
     public static final String NOMBRE_GENERAL = "General";
+
+    private static final int LARGO_NOMBRE_RUBRO = 60;
+    private static final int LARGO_EMOJI = 16;
 
     private static final List<Predeterminado> PREDETERMINADOS = List.of(
             new Predeterminado(NOMBRE_GENERAL, "Reparto por defecto de Nexa", 40, 15, 20, 20, 5),
@@ -103,11 +110,28 @@ public class ComponenteEvaluacionService {
         if (repetido) {
             throw new IllegalArgumentException("Ya existe un componente con ese nombre");
         }
-        int cotidiano = porcentaje(datos.getCotidiano(), "Trabajo cotidiano");
-        int tareas = porcentaje(datos.getTareas(), "Tareas");
-        int proyecto = porcentaje(datos.getProyecto(), "Proyecto");
-        int pruebas = porcentaje(datos.getPruebas(), "Pruebas");
-        int asistencia = porcentaje(datos.getAsistencia(), "Asistencia");
+        String nombreCotidiano = nombreRubro(datos.getNombreCotidiano(), NombresRubros.COTIDIANO);
+        String nombreTareas = nombreRubro(datos.getNombreTareas(), NombresRubros.TAREAS);
+        String nombreProyecto = nombreRubro(datos.getNombreProyecto(), NombresRubros.PROYECTO);
+        String nombrePruebas = nombreRubro(datos.getNombrePruebas(), NombresRubros.PRUEBAS);
+        String nombreAsistencia = nombreRubro(datos.getNombreAsistencia(), NombresRubros.ASISTENCIA);
+        NombresRubros nombres = new NombresRubros(nombreCotidiano, nombreTareas, nombreProyecto, nombrePruebas,
+                nombreAsistencia);
+        validarNombresDistintos(nombres);
+        String emojiCotidiano = emojiRubro(datos.getEmojiCotidiano(), NombresRubros.EMOJI_COTIDIANO,
+                nombres.getCotidiano());
+        String emojiTareas = emojiRubro(datos.getEmojiTareas(), NombresRubros.EMOJI_TAREAS, nombres.getTareas());
+        String emojiProyecto = emojiRubro(datos.getEmojiProyecto(), NombresRubros.EMOJI_PROYECTO,
+                nombres.getProyecto());
+        String emojiPruebas = emojiRubro(datos.getEmojiPruebas(), NombresRubros.EMOJI_PRUEBAS, nombres.getPruebas());
+        String emojiAsistencia = emojiRubro(datos.getEmojiAsistencia(), NombresRubros.EMOJI_ASISTENCIA,
+                nombres.getAsistencia());
+
+        int cotidiano = porcentaje(datos.getCotidiano(), nombres.getCotidiano());
+        int tareas = porcentaje(datos.getTareas(), nombres.getTareas());
+        int proyecto = porcentaje(datos.getProyecto(), nombres.getProyecto());
+        int pruebas = porcentaje(datos.getPruebas(), nombres.getPruebas());
+        int asistencia = porcentaje(datos.getAsistencia(), nombres.getAsistencia());
         int total = cotidiano + tareas + proyecto + pruebas + asistencia;
         if (total != 100) {
             throw new IllegalArgumentException(
@@ -129,6 +153,16 @@ public class ComponenteEvaluacionService {
         componente.setProyecto(proyecto);
         componente.setPruebas(pruebas);
         componente.setAsistencia(asistencia);
+        componente.setNombreCotidiano(nombreCotidiano);
+        componente.setNombreTareas(nombreTareas);
+        componente.setNombreProyecto(nombreProyecto);
+        componente.setNombrePruebas(nombrePruebas);
+        componente.setNombreAsistencia(nombreAsistencia);
+        componente.setEmojiCotidiano(emojiCotidiano);
+        componente.setEmojiTareas(emojiTareas);
+        componente.setEmojiProyecto(emojiProyecto);
+        componente.setEmojiPruebas(emojiPruebas);
+        componente.setEmojiAsistencia(emojiAsistencia);
         componente.setActivo(datos.getActivo() == null || datos.getActivo());
         return repository.save(componente);
     }
@@ -141,6 +175,30 @@ public class ComponenteEvaluacionService {
                     "Este componente tiene materias asignadas; cámbialas de componente o desactívalo");
         }
         repository.delete(componente);
+    }
+
+    /** Nombres de los rubros según el componente de la materia; sin componente, los predeterminados. */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public NombresRubros nombresDeMateria(Long direccionId, Long materiaId) {
+        if (materiaId == null) {
+            return NombresRubros.PREDETERMINADOS;
+        }
+        return materiaRepository.findByIdAndDireccionId(materiaId, direccionId)
+                .map(Materia::getComponenteEvaluacion)
+                .map(ComponenteEvaluacion::getNombresRubros)
+                .orElse(NombresRubros.PREDETERMINADOS);
+    }
+
+    /** Nombres de los rubros de cada materia de la dirección que tiene componente, por id de materia. */
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public Map<Long, NombresRubros> nombresPorMateria(Long direccionId) {
+        Map<Long, NombresRubros> nombres = new HashMap<>();
+        for (Materia materia : materiaRepository.findByDireccionIdOrderByNombreAsc(direccionId)) {
+            if (materia.getComponenteEvaluacion() != null) {
+                nombres.put(materia.getId(), materia.getComponenteEvaluacion().getNombresRubros());
+            }
+        }
+        return nombres;
     }
 
     /** Pesos de la materia (cotidiano, tareas, proyecto, pruebas, asistencia). */
@@ -216,6 +274,49 @@ public class ComponenteEvaluacionService {
                 .mapToInt(Integer::intValue)
                 .max()
                 .orElse(0) + 1;
+    }
+
+    /**
+     * Nombre propio de un rubro: se guarda null si viene vacío o igual al predeterminado, para que el
+     * componente siga usando el nombre estándar.
+     */
+    private static String nombreRubro(String nombre, String predeterminado) {
+        String limpio = nombre == null ? "" : nombre.trim().replaceAll("\\s+", " ");
+        if (limpio.isEmpty() || limpio.equals(predeterminado)) {
+            return null;
+        }
+        if (limpio.length() > LARGO_NOMBRE_RUBRO) {
+            throw new IllegalArgumentException("El nombre del rubro «" + predeterminado + "» admite hasta "
+                    + LARGO_NOMBRE_RUBRO + " caracteres");
+        }
+        return limpio;
+    }
+
+    /**
+     * Emoji propio de un rubro: null si viene vacío o igual al predeterminado (sigue el de la institución). Solo
+     * acepta emojis: nada de letras, números ni etiquetas, y a lo sumo {@value #LARGO_EMOJI} caracteres (algunos
+     * emojis ocupan varios, como ✏️ o 👨‍🏫).
+     */
+    private static String emojiRubro(String emoji, String predeterminado, String rubro) {
+        String limpio = emoji == null ? "" : emoji.strip();
+        if (limpio.isEmpty() || limpio.equals(predeterminado)) {
+            return null;
+        }
+        if (limpio.length() > LARGO_EMOJI || limpio.codePoints().anyMatch(c -> Character.isLetterOrDigit(c)
+                || Character.isWhitespace(c) || c == '<' || c == '>' || c == '&' || c == '"' || c == '\'')) {
+            throw new IllegalArgumentException("El emoji del rubro «" + rubro + "» no es válido");
+        }
+        return limpio;
+    }
+
+    private static void validarNombresDistintos(NombresRubros nombres) {
+        Set<String> usados = new HashSet<>();
+        for (String nombre : List.of(nombres.getCotidiano(), nombres.getTareas(), nombres.getProyecto(),
+                nombres.getPruebas(), nombres.getAsistencia())) {
+            if (!usados.add(nombre.toLowerCase(Locale.ROOT))) {
+                throw new IllegalArgumentException("Dos rubros del componente no pueden llamarse «" + nombre + "»");
+            }
+        }
     }
 
     private int porcentaje(Integer valor, String rubro) {

@@ -3,6 +3,7 @@ package com.chavescr.nexa.controller;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,10 +13,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.dto.FilaPromedio;
+import com.chavescr.nexa.dto.PestanaRubro;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.service.AlcanceDocenteService;
+import com.chavescr.nexa.service.ComponenteEvaluacionService;
 import com.chavescr.nexa.service.EnvioNotasDocenteService;
 import com.chavescr.nexa.service.EscalaNotasService;
+import com.chavescr.nexa.service.GestionAcademicaService;
 import com.chavescr.nexa.service.PromedioService;
 import com.chavescr.nexa.service.RebajaConductaService;
 import com.chavescr.nexa.service.TipoComponenteService;
@@ -34,16 +38,22 @@ public class PromedioController {
     private final TipoComponenteService tipoComponenteService;
     private final EscalaNotasService escalaNotasService;
     private final RebajaConductaService rebajaConductaService;
+    private final ComponenteEvaluacionService componenteEvaluacionService;
+    private final GestionAcademicaService gestionAcademicaService;
 
     public PromedioController(PromedioService service, AlcanceDocenteService alcanceDocenteService,
             EnvioNotasDocenteService envioNotasDocenteService, TipoComponenteService tipoComponenteService,
-            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService) {
+            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService,
+            ComponenteEvaluacionService componenteEvaluacionService,
+            GestionAcademicaService gestionAcademicaService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
         this.envioNotasDocenteService = envioNotasDocenteService;
         this.tipoComponenteService = tipoComponenteService;
         this.escalaNotasService = escalaNotasService;
         this.rebajaConductaService = rebajaConductaService;
+        this.componenteEvaluacionService = componenteEvaluacionService;
+        this.gestionAcademicaService = gestionAcademicaService;
     }
 
     @GetMapping
@@ -60,7 +70,14 @@ public class PromedioController {
         if (materiaId == null && !materias.isEmpty()) {
             materiaId = materias.get(0).getId();
         }
-        var tipos = tipoComponenteService.listarActivos(direccionId);
+        // Solo las columnas de los rubros que califica el componente de la materia (los de 0% no tienen pestaña
+        // y tampoco cuentan en el promedio final).
+        var claves = gestionAcademicaService.pestanas(direccionId, materiaId).stream()
+                .map(PestanaRubro::getClave)
+                .collect(Collectors.toSet());
+        var tipos = tipoComponenteService.listarActivos(direccionId).stream()
+                .filter(tipo -> tipo.getClave() != null && claves.contains(tipo.getClave()))
+                .toList();
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
         List<FilaPromedio> filas = nivelId != null && materiaId != null
                 ? service.calcularPromedio(direccionId, nivelId, materiaId, tipos)
@@ -80,6 +97,7 @@ public class PromedioController {
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("tiposComponente", tipos);
+        model.addAttribute("nombresRubros", componenteEvaluacionService.nombresDeMateria(direccionId, materiaId));
         model.addAttribute("conAsistencia", conAsistencia);
         model.addAttribute("columnasPromedio", tipos.size() + (conAsistencia ? 3 : 2));
         model.addAttribute("filas", filas);

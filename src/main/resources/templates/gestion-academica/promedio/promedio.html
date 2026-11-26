@@ -83,18 +83,12 @@
         <div class="card-header" style="justify-content: flex-start;">
             <h3 class="card-title">Promedio de Componentes</h3>
             <div class="promedio-filtros">
-                <select class="form-input" name="materiaId"
-                        hx-get="/gestion-academica/promedio"
-                        hx-target="#promedio-panel" hx-swap="innerHTML"
-                        hx-include="[name='nivelId']">
-                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
-                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
-                            th:selected="${materiaId != null and materiaId == m.id}"></option>
-                </select>
+                <!-- La materia se elige arriba de las pestañas de Gestión Académica. -->
+                <input type="hidden" name="materiaId" th:value="${materiaId}">
                 <select class="form-input" name="nivelId"
                         hx-get="/gestion-academica/promedio"
                         hx-target="#promedio-panel" hx-swap="innerHTML"
-                        hx-include="[name='materiaId']">
+                        hx-include="closest .promedio-filtros">
                     <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
                     <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
                             th:selected="${nivelId != null and nivelId == n.id}"></option>
@@ -139,8 +133,9 @@
                     <thead>
                         <tr>
                             <th>Estudiante</th>
-                            <th th:each="tipo : ${tiposComponente}" th:text="${tipo.nombre}">Componente</th>
-                            <th th:if="${conAsistencia}">Asistencia</th>
+                            <th th:each="tipo : ${tiposComponente}"
+                                th:text="${tipo.clave != null and nombresRubros != null ? nombresRubros.de(tipo.clave) : tipo.nombre}">Componente</th>
+                            <th th:if="${conAsistencia}" th:text="${nombresRubros != null ? nombresRubros.asistencia : 'Asistencia'}">Asistencia</th>
                             <th style="background:rgba(45,90,135,0.08);">Promedio Final</th>
                         </tr>
                     </thead>

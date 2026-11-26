@@ -1,5 +1,6 @@
 package com.chavescr.nexa.service;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
@@ -9,6 +10,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.chavescr.nexa.entity.AsistenciaEstudiante.EstadoAsistencia;
 import com.chavescr.nexa.entity.TipoRebaja;
 
 class CalculoRebajaTest {
@@ -68,6 +70,101 @@ class CalculoRebajaTest {
         assertEquals(80, media.notaAsistencia(conteo(0, 0, 0, 4), 20));
         assertEquals(4.0, completa.ausenciasEquivalentes(conteo(0, 0, 0, 4)));
         assertEquals(60, completa.notaAsistencia(conteo(0, 0, 0, 4), 20));
+    }
+
+    @Test
+    void cadaGrupoCompletoDeJustificadasSumaUnaAusenciaInjustificada() {
+        CalculoRebaja cadaTres = new CalculoRebaja(Map.of(), false, 2, 3, true);
+
+        // 8 justificadas: dos grupos de 3 suman 2 ausencias; las 2 que sobran no cuentan.
+        assertEquals(2, cadaTres.ausenciasPorJustificadas(conteo(8, 0, 0, 0)));
+        assertEquals(2.0, cadaTres.ausenciasEquivalentes(conteo(8, 0, 0, 0)));
+        assertEquals(80, cadaTres.notaAsistencia(conteo(8, 0, 0, 0), 20));
+        // Se suman a las injustificadas y a las tardías; las tardías justificadas nunca cuentan.
+        assertEquals(4.0, cadaTres.ausenciasEquivalentes(conteo(6, 1, 9, 2)));
+        assertEquals(3, cadaTres.getJustificadasPorAusencia());
+    }
+
+    @Test
+    void conUnaJustificadaPorAusenciaCadaJustificadaCuentaComoInjustificada() {
+        CalculoRebaja una = new CalculoRebaja(Map.of(), false, 2, 1, true);
+
+        assertEquals(4.0, una.ausenciasEquivalentes(conteo(4, 0, 0, 0)));
+        assertEquals(60, una.notaAsistencia(conteo(4, 0, 0, 0), 20));
+    }
+
+    @Test
+    void laLeyendaDeNotasExplicaCuantasJustificadasFormanUnaAusencia() {
+        CalculoRebaja cadaTres = new CalculoRebaja(Map.of(), false, 2, 3, true);
+
+        String leyenda = NotasConsultaService.leyendaAsistencia(cadaTres, conteo(7, 1, 0, 0), 20, 80, 5, "Ciencias");
+
+        assertEquals("Ausencias injustificadas: 3 de 20 lecciones (cada tardía injustificada cuenta como media "
+                + "ausencia; cada 3 ausencias justificadas forman una injustificada, aquí suman 2), 15.0% del total. "
+                + "Según el artículo 37 se asigna 4 de 5, así que la asistencia queda en 80. Vale 5% de la nota de "
+                + "Ciencias.", leyenda);
+    }
+
+    @Test
+    void sinConfigurarLasJustificadasSiguenSinContar() {
+        CalculoRebaja calculo = new CalculoRebaja(Map.of(), false, 2, true);
+
+        assertEquals(0, calculo.getJustificadasPorAusencia());
+        assertEquals(0, calculo.ausenciasPorJustificadas(conteo(30, 0, 0, 0)));
+        assertEquals(100, calculo.notaAsistencia(conteo(30, 0, 0, 0), 20));
+    }
+
+    @Test
+    void conValoresPropiosLosGruposDeJustificadasEntranALaReglaDeInjustificadas() {
+        Map<TipoRebaja, int[]> reglas = Map.of(
+                TipoRebaja.AUSENCIA_INJUSTIFICADA, new int[] { 2, 5 },
+                TipoRebaja.AUSENCIA_JUSTIFICADA, new int[] { 1, 1 });
+        CalculoRebaja sinAjuste = new CalculoRebaja(reglas, true, 2, 0, false);
+        CalculoRebaja cadaTres = new CalculoRebaja(reglas, true, 2, 3, false);
+
+        // Sin ajuste: cada justificada baja 1 por su propia regla; la injustificada sola no completa grupo.
+        assertEquals(7, sinAjuste.rebajaAsistencia(conteo(7, 1, 0, 0)));
+        // Con 3: 7 justificadas forman 2 injustificadas; 1 + 2 = 3 injustificadas → un grupo de 2 → 5 puntos.
+        // La regla de justificadas deja de aplicar.
+        assertEquals(5, cadaTres.rebajaAsistencia(conteo(7, 1, 0, 0)));
+        assertEquals(95, cadaTres.notaAsistencia(conteo(7, 1, 0, 0), 20));
+        assertEquals(5, cadaTres.puntosAsistencia(conteo(7, 1, 0, 0)));
+    }
+
+    @Test
+    void losPuntosPorRegistroCarganEnLaJustificadaQueCompletaElGrupo() {
+        Map<TipoRebaja, int[]> reglas = Map.of(
+                TipoRebaja.AUSENCIA_INJUSTIFICADA, new int[] { 2, 5 },
+                TipoRebaja.AUSENCIA_JUSTIFICADA, new int[] { 1, 1 },
+                TipoRebaja.TARDIA_INJUSTIFICADA, new int[] { 2, 1 });
+        CalculoRebaja cadaTres = new CalculoRebaja(reglas, true, 2, 3, false);
+        List<EstadoAsistencia> enOrden = List.of(
+                EstadoAsistencia.JUSTIFICADA, EstadoAsistencia.JUSTIFICADA, EstadoAsistencia.JUSTIFICADA,
+                EstadoAsistencia.AUSENTE, EstadoAsistencia.TARDIA, EstadoAsistencia.TARDIA,
+                EstadoAsistencia.JUSTIFICADA, EstadoAsistencia.JUSTIFICADA, EstadoAsistencia.JUSTIFICADA,
+                EstadoAsistencia.AUSENTE, EstadoAsistencia.PRESENTE);
+
+        int[] marcas = cadaTres.puntosPorRegistroAsistencia(enOrden);
+
+        // La 3.ª justificada es la 1.ª injustificada; la ausencia siguiente completa el grupo de 2 y baja 5.
+        // La 6.ª justificada es la 3.ª injustificada y la última ausencia, la 4.ª: otro grupo, otros 5.
+        assertArrayEquals(new int[] { 0, 0, 0, 5, 0, 1, 0, 0, 0, 5, 0 }, marcas);
+        assertEquals(cadaTres.puntosAsistencia(conteo(6, 2, 0, 2)), Arrays.stream(marcas).sum());
+    }
+
+    @Test
+    void sinAjusteLosPuntosPorRegistroSonLosDeSiempre() {
+        Map<TipoRebaja, int[]> reglas = Map.of(
+                TipoRebaja.AUSENCIA_INJUSTIFICADA, new int[] { 2, 5 },
+                TipoRebaja.AUSENCIA_JUSTIFICADA, new int[] { 1, 1 });
+        CalculoRebaja calculo = new CalculoRebaja(reglas, true, 2, 0, false);
+        CalculoRebaja enComponente = new CalculoRebaja(reglas, false, 2, 3, false);
+        List<EstadoAsistencia> enOrden = List.of(EstadoAsistencia.JUSTIFICADA, EstadoAsistencia.AUSENTE,
+                EstadoAsistencia.JUSTIFICADA, EstadoAsistencia.AUSENTE);
+
+        assertArrayEquals(new int[] { 1, 0, 1, 5 }, calculo.puntosPorRegistroAsistencia(enOrden));
+        // Si la asistencia no rebaja la conducta, los detalles de conducta no muestran puntos.
+        assertArrayEquals(new int[] { 0, 0, 0, 0 }, enComponente.puntosPorRegistroAsistencia(enOrden));
     }
 
     @Test

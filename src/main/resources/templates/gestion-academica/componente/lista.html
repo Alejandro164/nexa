@@ -2,18 +2,12 @@
     <div class="card">
         <div class="card-header">
             <div class="filters-bar" style="width: 100%;">
-                <select class="form-input" style="max-width: 220px;" name="materiaId"
-                        th:attr="hx-get=${vista.listUrl},hx-target=${'#' + vista.panelId}"
-                        hx-swap="innerHTML"
-                        hx-include="[name='nivelId']">
-                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
-                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
-                            th:selected="${materiaId != null and materiaId == m.id}"></option>
-                </select>
+                <!-- La materia se elige arriba de las pestañas de Gestión Académica. -->
+                <input type="hidden" name="materiaId" th:value="${materiaId}">
                 <select class="form-input" style="max-width: 200px;" name="nivelId"
                         th:attr="hx-get=${vista.listUrl},hx-target=${'#' + vista.panelId}"
                         hx-swap="innerHTML"
-                        hx-include="[name='materiaId']">
+                        hx-include="closest .filters-bar">
                     <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
                     <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
                             th:selected="${nivelId != null and nivelId == n.id}"></option>
@@ -38,6 +32,10 @@
         </div>
 
         <th:block th:if="${nivelId != null and materiaId != null and periodoActivo != null}">
+            <p th:if="${nombreRubro != null}" class="text-muted text-sm" style="margin: 0.75rem 1.5rem 0;">
+                En el componente de evaluación de esta materia, este rubro se llama
+                <strong th:text="|«${nombreRubro}»|">«Exámenes»</strong>.
+            </p>
             <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
             <div class="table-container">
                 <table class="table">

@@ -64,13 +64,15 @@ public class RebajaConductaService {
         boolean reglamentoMep = rebaja.getModoAsistencia() == ModoAsistencia.REGLAMENTO_MEP;
         boolean enConducta = !reglamentoMep
                 && rebaja.getDestinoRebajaAsistencia() == DestinoRebajaAsistencia.CONDUCTA;
-        return new CalculoRebaja(reglas, enConducta, rebaja.getTardiasPorAusencia(), reglamentoMep);
+        return new CalculoRebaja(reglas, enConducta, rebaja.getTardiasPorAusencia(),
+                rebaja.getJustificadasPorAusencia(), reglamentoMep);
     }
 
     @Transactional(rollbackFor = Exception.class)
     public RebajaConducta guardar(Long direccionId, String reglasJson,
             QuienRegistraPuntosBoleta quienRegistraPuntosBoleta, ModoAsistencia modoAsistencia,
-            DestinoRebajaAsistencia destinoRebajaAsistencia, Integer tardiasPorAusencia) {
+            DestinoRebajaAsistencia destinoRebajaAsistencia, Integer tardiasPorAusencia,
+            Integer justificadasPorAusencia) {
         String canonico = canonizar(reglasJson);
         if (quienRegistraPuntosBoleta == null) {
             throw new IllegalArgumentException("Indica quién registra los puntos de las boletas");
@@ -84,6 +86,11 @@ public class RebajaConductaService {
         if (tardiasPorAusencia == null || (tardiasPorAusencia != 1 && tardiasPorAusencia != 2)) {
             throw new IllegalArgumentException("Indica cuánto vale cada tardía injustificada");
         }
+        int justificadas = justificadasPorAusencia == null ? 0 : justificadasPorAusencia;
+        if (justificadas < 0 || justificadas > CalculoRebaja.MAX_JUSTIFICADAS_POR_AUSENCIA) {
+            throw new IllegalArgumentException("Las ausencias justificadas que forman una injustificada van de 0 a "
+                    + CalculoRebaja.MAX_JUSTIFICADAS_POR_AUSENCIA + " (0 = no cuentan)");
+        }
         RebajaConducta rebaja = repository.findByDireccionId(direccionId).orElseGet(() -> nueva(direccionId));
         rebaja.setReglas(canonico);
         rebaja.setQuienRegistraPuntosBoleta(quienRegistraPuntosBoleta);
@@ -93,6 +100,9 @@ public class RebajaConductaService {
                 ? DestinoRebajaAsistencia.COMPONENTE
                 : destinoRebajaAsistencia);
         rebaja.setTardiasPorAusencia(tardiasPorAusencia);
+        // Aplica en los dos modos. Con valores propios, mientras sea mayor que 0 la regla de "Ausencia justificada"
+        // no se usa: los grupos de justificadas entran a la de injustificadas.
+        rebaja.setJustificadasPorAusencia(justificadas);
         return repository.save(rebaja);
     }
 

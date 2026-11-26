@@ -16,8 +16,14 @@ import com.chavescr.nexa.entity.TipoRebaja;
  * <p>
  * Asistencia con el reglamento del MEP (artículo 37 del Reglamento de Evaluación de los Aprendizajes): sale del
  * porcentaje de ausencias injustificadas sobre las lecciones impartidas en el período, según
- * {@link #TABLA_ASISTENCIA}. Cada tardía injustificada vale {@code 1 / tardiasPorAusencia} ausencias; las
- * justificadas no cuentan. Con valores propios, el rubro parte de 100 y resta los puntos de las reglas.
+ * {@link #TABLA_ASISTENCIA}. Cada tardía injustificada vale {@code 1 / tardiasPorAusencia} ausencias. Las
+ * ausencias justificadas no cuentan, salvo que la dirección indique cuántas forman una injustificada
+ * ({@code justificadasPorAusencia}): cada grupo completo suma una; las que no completan el grupo no cuentan. Las
+ * tardías justificadas nunca cuentan. Con valores propios, el rubro parte de 100 y resta los puntos de las reglas.
+ * <p>
+ * {@code justificadasPorAusencia} aplica en los dos modos. Con valores propios, cada grupo completo de justificadas
+ * entra a la regla de "Ausencia injustificada" como una más y la regla propia de "Ausencia justificada" deja de
+ * aplicar (si no, se contarían dos veces).
  */
 public final class CalculoRebaja {
 
@@ -25,6 +31,9 @@ public final class CalculoRebaja {
 
     /** Tardías injustificadas que forman una ausencia: 2 = cada tardía es media ausencia, 1 = una ausencia. */
     public static final int TARDIAS_POR_AUSENCIA_PREDETERMINADO = 2;
+
+    /** Máximo de ausencias justificadas por grupo, igual que el "cada" de las reglas. 0 = no cuentan. */
+    public static final int MAX_JUSTIFICADAS_POR_AUSENCIA = 30;
 
     /**
      * Tabla del artículo 37: {porcentaje de ausencias hasta el que aplica (exclusivo), porcentaje que se asigna de
@@ -38,6 +47,7 @@ public final class CalculoRebaja {
     private final Map<TipoRebaja, int[]> reglas;
     private final boolean asistenciaEnConducta;
     private final int tardiasPorAusencia;
+    private final int justificadasPorAusencia;
     private final boolean reglamentoMep;
 
     /** Valores propios: el rubro Asistencia parte de 100 y resta los puntos de las reglas. */
@@ -51,8 +61,20 @@ public final class CalculoRebaja {
      */
     public CalculoRebaja(Map<TipoRebaja, int[]> reglas, boolean asistenciaEnConducta, int tardiasPorAusencia,
             boolean reglamentoMep) {
+        this(reglas, asistenciaEnConducta, tardiasPorAusencia, 0, reglamentoMep);
+    }
+
+    /**
+     * @param justificadasPorAusencia ausencias justificadas que forman una injustificada (0 = no cuentan). Solo
+     *                                aplica con el reglamento del MEP.
+     */
+    public CalculoRebaja(Map<TipoRebaja, int[]> reglas, boolean asistenciaEnConducta, int tardiasPorAusencia,
+            int justificadasPorAusencia, boolean reglamentoMep) {
         this.reglamentoMep = reglamentoMep;
         this.tardiasPorAusencia = tardiasPorAusencia == 1 ? 1 : TARDIAS_POR_AUSENCIA_PREDETERMINADO;
+        this.justificadasPorAusencia = justificadasPorAusencia > 0
+                ? Math.min(justificadasPorAusencia, MAX_JUSTIFICADAS_POR_AUSENCIA)
+                : 0;
         this.reglas = new EnumMap<>(TipoRebaja.class);
         if (reglas != null) {
             reglas.forEach((tipo, valores) -> {
@@ -138,10 +160,63 @@ public final class CalculoRebaja {
         if (conteo == null || conteo.length < 4) {
             return 0;
         }
-        return bruto(TipoRebaja.AUSENCIA_JUSTIFICADA, conteo[0])
-                + bruto(TipoRebaja.AUSENCIA_INJUSTIFICADA, conteo[1])
+        int ausencias = justificadasPorAusencia > 0
+                // Los grupos de justificadas entran a la regla de injustificadas; la de justificadas no aplica.
+                ? bruto(TipoRebaja.AUSENCIA_INJUSTIFICADA, Math.max(0, conteo[1]) + ausenciasPorJustificadas(conteo))
+                : bruto(TipoRebaja.AUSENCIA_JUSTIFICADA, conteo[0]) + bruto(TipoRebaja.AUSENCIA_INJUSTIFICADA, conteo[1]);
+        return ausencias
                 + bruto(TipoRebaja.TARDIA_JUSTIFICADA, conteo[2])
                 + bruto(TipoRebaja.TARDIA_INJUSTIFICADA, conteo[3]);
+    }
+
+    /**
+     * Puntos que carga cada registro de asistencia, en el orden en que ocurrieron, para mostrarlos en los
+     * detalles. El registro que completa un grupo carga los puntos; los demás quedan en cero, como
+     * {@link #puntosPorRegistro}. Con {@code justificadasPorAusencia}, la justificada que completa su grupo
+     * cuenta como una injustificada más (y carga los puntos si con ella se completa un grupo de injustificadas);
+     * las demás justificadas quedan en cero. Igual que {@link #puntos}, solo hay puntos si la asistencia rebaja
+     * la conducta. La suma es {@link #puntosAsistencia}.
+     */
+    public int[] puntosPorRegistroAsistencia(List<EstadoAsistencia> estadosEnOrden) {
+        int total = estadosEnOrden == null ? 0 : estadosEnOrden.size();
+        int[] marcas = new int[total];
+        if (total == 0 || !asistenciaEnConducta) {
+            return marcas;
+        }
+        int[] vistos = new int[4];
+        int justificadas = 0;
+        for (int i = 0; i < total; i++) {
+            EstadoAsistencia estado = estadosEnOrden.get(i);
+            int indice = indice(estado);
+            if (indice < 0) {
+                continue;
+            }
+            TipoRebaja tipo = tipoDe(indice);
+            if (indice == 0 && justificadasPorAusencia > 0) {
+                justificadas++;
+                if (justificadas % justificadasPorAusencia != 0) {
+                    continue;
+                }
+                // Completa su grupo: es una injustificada más.
+                indice = 1;
+                tipo = TipoRebaja.AUSENCIA_INJUSTIFICADA;
+            }
+            vistos[indice]++;
+            int[] regla = reglaDe(tipo);
+            if (regla != null && vistos[indice] % regla[0] == 0) {
+                marcas[i] = regla[1];
+            }
+        }
+        return marcas;
+    }
+
+    private static TipoRebaja tipoDe(int indice) {
+        return switch (indice) {
+            case 0 -> TipoRebaja.AUSENCIA_JUSTIFICADA;
+            case 1 -> TipoRebaja.AUSENCIA_INJUSTIFICADA;
+            case 2 -> TipoRebaja.TARDIA_JUSTIFICADA;
+            default -> TipoRebaja.TARDIA_INJUSTIFICADA;
+        };
     }
 
     public boolean isReglamentoMep() {
@@ -152,12 +227,31 @@ public final class CalculoRebaja {
         return tardiasPorAusencia;
     }
 
-    /** Ausencias injustificadas más las tardías injustificadas convertidas a ausencias. */
+    public int getJustificadasPorAusencia() {
+        return justificadasPorAusencia;
+    }
+
+    /**
+     * Ausencias injustificadas que suman las justificadas: un grupo completo de {@code justificadasPorAusencia}
+     * vale una. 0 si no cuentan.
+     */
+    public int ausenciasPorJustificadas(int[] conteo) {
+        if (conteo == null || conteo.length < 4 || justificadasPorAusencia <= 0) {
+            return 0;
+        }
+        return Math.max(0, conteo[0]) / justificadasPorAusencia;
+    }
+
+    /**
+     * Ausencias injustificadas más las tardías injustificadas convertidas a ausencias y, si la dirección lo
+     * configuró, los grupos completos de ausencias justificadas.
+     */
     public double ausenciasEquivalentes(int[] conteo) {
         if (conteo == null || conteo.length < 4) {
             return 0;
         }
-        return Math.max(0, conteo[1]) + Math.max(0, conteo[3]) / (double) tardiasPorAusencia;
+        return Math.max(0, conteo[1]) + Math.max(0, conteo[3]) / (double) tardiasPorAusencia
+                + ausenciasPorJustificadas(conteo);
     }
 
     /** Porcentaje de ausencias injustificadas (con tardías) sobre las lecciones impartidas; 0 sin lecciones. */

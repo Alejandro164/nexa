@@ -125,12 +125,19 @@ public class MainController {
             Model model) throws IOException {
         Long usuarioId = (Long) session.getAttribute("SESSION_USUARIO_ID");
         boolean veTodas = veTodasLasInstituciones(request);
+        boolean veniaSinDireccion = session.getAttribute("SESSION_DIRECCION_ID") == null;
         if (!sesionDireccionService.cambiar(session, usuarioId, direccionId, veTodas)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return null;
         }
         if (!"true".equalsIgnoreCase(request.getHeader("HX-Request"))) {
             response.sendRedirect("/inicio");
+            return null;
+        }
+        // Un admin sin dirección recibió el menú lateral sin las secciones de la institución
+        // (sinDireccionAdmin). Ese menú no se vuelve a pintar con HTMX, así que se recarga la página.
+        if (veniaSinDireccion) {
+            response.setHeader("HX-Redirect", "/inicio");
             return null;
         }
         // Sin recarga del documento: el contenido y el selector cambian en el mismo paso.

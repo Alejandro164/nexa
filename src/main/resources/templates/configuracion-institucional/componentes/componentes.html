@@ -15,6 +15,14 @@
             font-size: 0.78rem;
             color: var(--text-secondary);
         }
+        .comp-eval-alias {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--primary);
+            white-space: normal;
+        }
         .comp-eval-nota {
             display: flex;
             gap: 0.6rem;
@@ -70,11 +78,31 @@
                             <strong th:text="${c.nombre}">General</strong>
                             <span class="comp-eval-detalle" th:if="${c.descripcion != null}" th:text="${c.descripcion}">Art. 41 a)</span>
                         </td>
-                        <td class="comp-eval-num" th:text="${c.cotidiano > 0 ? c.cotidiano + '%' : '—'}">40%</td>
-                        <td class="comp-eval-num" th:text="${c.tareas > 0 ? c.tareas + '%' : '—'}">15%</td>
-                        <td class="comp-eval-num" th:text="${c.proyecto > 0 ? c.proyecto + '%' : '—'}">20%</td>
-                        <td class="comp-eval-num" th:text="${c.pruebas > 0 ? c.pruebas + '%' : '—'}">20%</td>
-                        <td class="comp-eval-num" th:text="${c.asistencia > 0 ? c.asistencia + '%' : '—'}">5%</td>
+                        <td class="comp-eval-num">
+                            <span th:text="${c.cotidiano > 0 ? c.cotidiano + '%' : '—'}">0%</span>
+                            <span class="comp-eval-alias" th:if="${c.nombreCotidiano != null or c.emojiCotidiano != null}"
+                                  th:text="${(c.emojiCotidiano != null ? c.emojiCotidiano + ' ' : '') + c.nombresRubros.cotidiano}">Alias</span>
+                        </td>
+                        <td class="comp-eval-num">
+                            <span th:text="${c.tareas > 0 ? c.tareas + '%' : '—'}">0%</span>
+                            <span class="comp-eval-alias" th:if="${c.nombreTareas != null or c.emojiTareas != null}"
+                                  th:text="${(c.emojiTareas != null ? c.emojiTareas + ' ' : '') + c.nombresRubros.tareas}">Alias</span>
+                        </td>
+                        <td class="comp-eval-num">
+                            <span th:text="${c.proyecto > 0 ? c.proyecto + '%' : '—'}">0%</span>
+                            <span class="comp-eval-alias" th:if="${c.nombreProyecto != null or c.emojiProyecto != null}"
+                                  th:text="${(c.emojiProyecto != null ? c.emojiProyecto + ' ' : '') + c.nombresRubros.proyecto}">Alias</span>
+                        </td>
+                        <td class="comp-eval-num">
+                            <span th:text="${c.pruebas > 0 ? c.pruebas + '%' : '—'}">0%</span>
+                            <span class="comp-eval-alias" th:if="${c.nombrePruebas != null or c.emojiPruebas != null}"
+                                  th:text="${(c.emojiPruebas != null ? c.emojiPruebas + ' ' : '') + c.nombresRubros.pruebas}">Alias</span>
+                        </td>
+                        <td class="comp-eval-num">
+                            <span th:text="${c.asistencia > 0 ? c.asistencia + '%' : '—'}">0%</span>
+                            <span class="comp-eval-alias" th:if="${c.nombreAsistencia != null or c.emojiAsistencia != null}"
+                                  th:text="${(c.emojiAsistencia != null ? c.emojiAsistencia + ' ' : '') + c.nombresRubros.asistencia}">Alias</span>
+                        </td>
                         <td class="comp-eval-num comp-eval-total" th:text="${c.total + '%'}">100%</td>
                         <td class="comp-eval-num" th:text="${materias}">0</td>
                         <td>
@@ -109,7 +137,8 @@
             </svg>
             <span>
                 Porcentajes precargados según los artículos 40 y 41 del Reglamento de Evaluación de los Aprendizajes.
-                Un rubro con «—» no forma parte de la nota de ese componente.
+                Un rubro con «—» no forma parte de la nota de ese componente. Debajo del porcentaje se ve el emoji o el nombre
+                propio que el componente le dio al rubro, si los cambió.
                 <th:block th:unless="${asistenciaCuenta}">En esta dirección las ausencias y tardías rebajan la conducta, así que la asistencia no entra en la nota: su porcentaje se reparte entre los demás rubros.</th:block>
             </span>
         </div>

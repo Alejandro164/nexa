@@ -433,17 +433,21 @@ public class NotaConductaService {
         int[] conteo = null;
         if (aplicaAsistencia) {
             conteo = new int[4];
+            List<EstadoAsistencia> estados = new ArrayList<>();
             for (Object[] fila : asistencias) {
                 CalculoRebaja.sumar(conteo, (EstadoAsistencia) fila[2], 1);
+                estados.add((EstadoAsistencia) fila[2]);
             }
+            // Una sola pasada en orden: los grupos de justificadas que cuentan como injustificadas cargan sus puntos.
+            int[] marcas = calculo.puntosPorRegistroAsistencia(estados);
             conceptos.add(conceptoAsistencia("ausencia-injustificada", "Ausencias injustificadas",
-                    TipoRebaja.AUSENCIA_INJUSTIFICADA, EstadoAsistencia.AUSENTE, asistencias, calculo));
+                    EstadoAsistencia.AUSENTE, asistencias, marcas));
             conceptos.add(conceptoAsistencia("ausencia-justificada", "Ausencias justificadas",
-                    TipoRebaja.AUSENCIA_JUSTIFICADA, EstadoAsistencia.JUSTIFICADA, asistencias, calculo));
+                    EstadoAsistencia.JUSTIFICADA, asistencias, marcas));
             conceptos.add(conceptoAsistencia("tardia-injustificada", "Tardías injustificadas",
-                    TipoRebaja.TARDIA_INJUSTIFICADA, EstadoAsistencia.TARDIA, asistencias, calculo));
+                    EstadoAsistencia.TARDIA, asistencias, marcas));
             conceptos.add(conceptoAsistencia("tardia-justificada", "Tardías justificadas",
-                    TipoRebaja.TARDIA_JUSTIFICADA, EstadoAsistencia.TARDIA_JUSTIFICADA, asistencias, calculo));
+                    EstadoAsistencia.TARDIA_JUSTIFICADA, asistencias, marcas));
         }
         int nota = calculo.nota(puntosBoletas, llamadas.size(), conteo);
         Concepto base = new Concepto("base", "Nota base", String.valueOf(CalculoRebaja.NOTA_INICIAL), false,
@@ -475,17 +479,19 @@ public class NotaConductaService {
                 registros);
     }
 
-    private Concepto conceptoAsistencia(String clave, String etiqueta, TipoRebaja tipo, EstadoAsistencia estado,
-            List<Object[]> filas, CalculoRebaja calculo) {
-        List<Object[]> delTipo = filas.stream().filter(fila -> fila[2] == estado).toList();
-        int[] marcas = calculo.puntosPorRegistro(tipo, delTipo.size());
+    /** {@code marcas}: puntos de cada fila de {@code filas}, en el mismo orden. */
+    private Concepto conceptoAsistencia(String clave, String etiqueta, EstadoAsistencia estado, List<Object[]> filas,
+            int[] marcas) {
         List<Registro> registros = new ArrayList<>();
         int puntos = 0;
-        for (int i = 0; i < delTipo.size(); i++) {
+        for (int i = 0; i < filas.size(); i++) {
+            if (filas.get(i)[2] != estado) {
+                continue;
+            }
             puntos += marcas[i];
-            registros.add(registroAsistencia(delTipo.get(i), marcas[i]));
+            registros.add(registroAsistencia(filas.get(i), marcas[i]));
         }
-        return new Concepto(clave, etiqueta, String.valueOf(delTipo.size()), puntos == 0, puntosTexto(puntos),
+        return new Concepto(clave, etiqueta, String.valueOf(registros.size()), puntos == 0, puntosTexto(puntos),
                 registros);
     }
 

@@ -15,6 +15,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.dto.NombresRubros;
 import com.chavescr.nexa.dto.NotasBoletaDetalle;
 import com.chavescr.nexa.dto.NotasConductaDetalle;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Cuenta;
@@ -246,6 +247,7 @@ public class NotasConsultaService {
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
         CalculoRebaja calculo = conAsistencia ? rebajaConductaService.calculo(direccionId) : null;
         Distribuciones distribuciones = distribucionesDe(direccionId);
+        Map<Long, NombresRubros> nombresPorMateria = componenteEvaluacionService.nombresPorMateria(direccionId);
         Map<Long, int[]> asistencia = conAsistencia
                 ? asistenciaDeEstudiante(direccionId, estudianteId, periodo)
                 : Map.of();
@@ -263,7 +265,8 @@ public class NotasConsultaService {
                     pesosDeMateria(pesos, nivelId, vista.id, periodoId),
                     calculo);
             filas.add(new NotasDesgloseFila(vista.id, vista.nombre, vista.docente, nota.cotidiano(), nota.tareas(),
-                    nota.proyecto(), nota.pruebas(), nota.asistencia(), nota.porcentaje()));
+                    nota.proyecto(), nota.pruebas(), nota.asistencia(), nota.porcentaje(),
+                    nombresPorMateria == null ? null : nombresPorMateria.get(vista.id)));
         }
         return filas;
     }
@@ -288,6 +291,10 @@ public class NotasConsultaService {
 
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
         int[] dist = componenteEvaluacionService.pesosDeMateria(direccionId, materiaId);
+        NombresRubros nombres = componenteEvaluacionService.nombresDeMateria(direccionId, materiaId);
+        if (nombres == null) {
+            nombres = NombresRubros.PREDETERMINADOS;
+        }
         String nombre = materia.getNombre() == null || materia.getNombre().isBlank() ? "Materia" : materia.getNombre();
         String limpia = claveTexto == null ? "" : claveTexto.trim().toUpperCase(Locale.ROOT);
         if ("ASISTENCIA".equals(limpia)) {
@@ -295,7 +302,8 @@ public class NotasConsultaService {
                 throw new IllegalArgumentException(
                         "La asistencia no forma parte de la nota: las ausencias y tardías rebajan la conducta");
             }
-            return detalleAsistencia(direccionId, estudianteId, materiaId, periodo, nombre, dist[4]);
+            return detalleAsistencia(direccionId, estudianteId, materiaId, periodo, nombre, dist[4],
+                    nombres.getAsistencia());
         }
         ClaveComponente clave;
         try {
@@ -304,11 +312,11 @@ public class NotasConsultaService {
             throw new IllegalArgumentException("Componente no válido");
         }
         return detalleComponente(direccionId, nivel.getId(), estudianteId, materiaId, periodo, nombre, clave,
-                pesoDe(dist, clave));
+                pesoDe(dist, clave), nombres.de(clave));
     }
 
     private NotasMateriaDetalle detalleComponente(Long direccionId, Long nivelId, Long estudianteId, Long materiaId,
-            PeriodoAcademico periodo, String materia, ClaveComponente clave, int pesoNota) {
+            PeriodoAcademico periodo, String materia, ClaveComponente clave, int pesoNota, String etiqueta) {
         boolean acotadoAlPeriodo = clave == ClaveComponente.PROYECTO || clave == ClaveComponente.EXAMEN;
         List<Componente> componentes = new ArrayList<>(acotadoAlPeriodo
                 ? componenteRepository.findByDireccionIdAndClaveAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
@@ -370,14 +378,13 @@ public class NotasConsultaService {
                     ""));
         }
         Integer promedio = activo ? promedioDe(usados, clave, pesos) : null;
-        String etiqueta = etiquetaClave(clave);
         return new NotasMateriaDetalle(materia, etiqueta, false, activo, promedio, pesoNota, componentes.size(),
                 entran, leyendaComponente(clave, etiqueta, materia, entran, componentes.size(), pesoNota, activo),
                 muestraPuntos, rubros);
     }
 
     private NotasMateriaDetalle detalleAsistencia(Long direccionId, Long estudianteId, Long materiaId,
-            PeriodoAcademico periodo, String materia, int pesoNota) {
+            PeriodoAcademico periodo, String materia, int pesoNota, String etiqueta) {
         List<AsistenciaEstudiante> lecciones = new ArrayList<>(asistenciaRepository
                 .findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(
                         direccionId, estudianteId, materiaId, periodo.getFechaInicio(), periodo.getFechaFin()));
@@ -412,7 +419,7 @@ public class NotasConsultaService {
         String leyenda = total == 0
                 ? "No hay lecciones registradas en " + materia + " en este período."
                 : leyendaAsistencia(calculo, conteo, total, promedio, pesoNota, materia);
-        return new NotasMateriaDetalle(materia, "Asistencia", true, true, promedio, pesoNota, total, presentes,
+        return new NotasMateriaDetalle(materia, etiqueta, true, true, promedio, pesoNota, total, presentes,
                 leyenda, false, rubros);
     }
 
@@ -421,7 +428,11 @@ public class NotasConsultaService {
             String materia) {
         if (!calculo.isReglamentoMep()) {
             int rebaja = calculo.rebajaAsistencia(conteo);
-            return "Parte de 100. Las ausencias y tardías rebajan " + rebaja
+            int justificadas = calculo.getJustificadasPorAusencia();
+            String grupos = justificadas == 0 ? ""
+                    : justificadas == 1 ? " (cada ausencia justificada cuenta como una injustificada)"
+                    : " (cada " + justificadas + " ausencias justificadas cuentan como una injustificada)";
+            return "Parte de 100. Las ausencias y tardías" + grupos + " rebajan " + rebaja
                     + (rebaja == 1 ? " punto" : " puntos") + ", así que la asistencia queda en " + nota
                     + ". Vale " + pesoNota + "% de la nota de " + materia + ".";
         }
@@ -431,6 +442,14 @@ public class NotasConsultaService {
         String tardias = calculo.getTardiasPorAusencia() == 1
                 ? "cada tardía injustificada cuenta como una ausencia"
                 : "cada tardía injustificada cuenta como media ausencia";
+        int justificadas = calculo.getJustificadasPorAusencia();
+        if (justificadas == 1) {
+            tardias += " y cada ausencia justificada cuenta como una injustificada";
+        } else if (justificadas > 1) {
+            int porJustificadas = calculo.ausenciasPorJustificadas(conteo);
+            tardias += "; cada " + justificadas + " ausencias justificadas forman una injustificada"
+                    + (porJustificadas > 0 ? ", aquí suman " + porJustificadas : "");
+        }
         return "Ausencias injustificadas: " + formatoAusencias(ausencias) + " de " + lecciones
                 + (lecciones == 1 ? " lección" : " lecciones") + " (" + tardias + "), "
                 + String.format(Locale.US, "%.1f", porcentaje) + "% del total. Según el artículo 37 se asigna "
@@ -488,18 +507,9 @@ public class NotasConsultaService {
         return frase + materia + ".";
     }
 
+    /** El componente puede renombrar el rubro, así que no se adivina si es plural: se nombra entre comillas. */
     private String frasePeso(String etiqueta, int peso, String materia) {
-        boolean plural = "Tareas".equals(etiqueta) || "Pruebas".equals(etiqueta);
-        return etiqueta + (plural ? " valen " : " vale ") + peso + "% de la nota de " + materia + ".";
-    }
-
-    private String etiquetaClave(ClaveComponente clave) {
-        return switch (clave) {
-            case COTIDIANO -> "Cotidiano";
-            case TAREA -> "Tareas";
-            case PROYECTO -> "Proyecto";
-            case EXAMEN -> "Pruebas";
-        };
+        return "«" + etiqueta + "» vale " + peso + "% de la nota de " + materia + ".";
     }
 
     private String textoPorcentaje(double peso) {
@@ -708,11 +718,21 @@ public class NotasConsultaService {
                         etiquetaAusencia(estado), puntos[i], tipo == null ? null : tipo.id()));
             }
             registros.addAll(lista);
-            lineas.add(lineaAsistencia("Ausencias justificadas", conteo[0], TipoRebaja.AUSENCIA_JUSTIFICADA, calculo));
-            lineas.add(lineaAsistencia("Ausencias injustificadas", conteo[1], TipoRebaja.AUSENCIA_INJUSTIFICADA,
-                    calculo));
-            lineas.add(lineaAsistencia("Tardías justificadas", conteo[2], TipoRebaja.TARDIA_JUSTIFICADA, calculo));
-            lineas.add(lineaAsistencia("Tardías injustificadas", conteo[3], TipoRebaja.TARDIA_INJUSTIFICADA, calculo));
+            // Puntos de cada tipo = lo que cargan sus registros, para que las líneas sumen lo mismo que la nota.
+            int[] porTipo = new int[4];
+            for (int i = 0; i < filas.size(); i++) {
+                int indice = CalculoRebaja.indice((EstadoAsistencia) filas.get(i)[2]);
+                if (indice >= 0) {
+                    porTipo[indice] += puntos[i];
+                }
+            }
+            lineas.add(lineaAsistencia("Ausencias justificadas", conteo[0], porTipo[0],
+                    TipoRebaja.AUSENCIA_JUSTIFICADA));
+            lineas.add(lineaAsistencia("Ausencias injustificadas", conteo[1], porTipo[1],
+                    TipoRebaja.AUSENCIA_INJUSTIFICADA));
+            lineas.add(lineaAsistencia("Tardías justificadas", conteo[2], porTipo[2], TipoRebaja.TARDIA_JUSTIFICADA));
+            lineas.add(lineaAsistencia("Tardías injustificadas", conteo[3], porTipo[3],
+                    TipoRebaja.TARDIA_INJUSTIFICADA));
         }
         int nota = calculo.nota(puntosBoletas, llamadas, conteo);
         String etiqueta = periodo.getCodigo() == null || periodo.getCodigo().isBlank()
@@ -728,26 +748,16 @@ public class NotasConsultaService {
         return new Registro(fecha, motivo, docente, puntos, clave);
     }
 
-    private static Linea lineaAsistencia(String concepto, int cantidad, TipoRebaja tipo, CalculoRebaja calculo) {
-        return new Linea(concepto, cantidad, calculo.puntos(tipo, cantidad), tipo.id());
+    private static Linea lineaAsistencia(String concepto, int cantidad, int puntos, TipoRebaja tipo) {
+        return new Linea(concepto, cantidad, puntos, tipo.id());
     }
 
     private static int[] puntosDeCadaRegistro(CalculoRebaja calculo, List<Object[]> filas) {
-        Map<TipoRebaja, List<Integer>> posiciones = new HashMap<>();
-        for (int i = 0; i < filas.size(); i++) {
-            TipoRebaja tipo = tipoRebaja((EstadoAsistencia) filas.get(i)[2]);
-            if (tipo != null) {
-                posiciones.computeIfAbsent(tipo, k -> new ArrayList<>()).add(i);
-            }
+        List<EstadoAsistencia> estados = new ArrayList<>();
+        for (Object[] fila : filas) {
+            estados.add((EstadoAsistencia) fila[2]);
         }
-        int[] puntos = new int[filas.size()];
-        posiciones.forEach((tipo, indices) -> {
-            int[] marcas = calculo.puntosPorRegistro(tipo, indices.size());
-            for (int j = 0; j < marcas.length; j++) {
-                puntos[indices.get(j)] = marcas[j];
-            }
-        });
-        return puntos;
+        return calculo.puntosPorRegistroAsistencia(estados);
     }
 
     private static TipoRebaja tipoRebaja(EstadoAsistencia estado) {

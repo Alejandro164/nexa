@@ -26,6 +26,126 @@
             font-size: 0.75rem;
             color: var(--text-secondary);
         }
+        .comp-eval-rubro-nombre {
+            display: grid;
+            gap: 0.2rem;
+            min-width: 0;
+        }
+        .comp-eval-rubro-nombre .form-input {
+            height: 34px;
+            padding: 0.35rem 0.6rem;
+            font-weight: 600;
+        }
+        .comp-eval-nombre-fila {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            min-width: 0;
+        }
+        .comp-eval-nombre-fila > .form-input {
+            flex: 1;
+            min-width: 0;
+        }
+        .comp-eval-emoji {
+            position: relative;
+            flex: none;
+        }
+        .comp-eval-emoji-btn {
+            width: 38px;
+            height: 34px;
+            border: 1px solid var(--border-solid, #e2e8f0);
+            border-radius: 8px;
+            background: var(--input-bg, #f8fafc);
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .comp-eval-emoji-btn:hover,
+        .comp-eval-emoji-btn[aria-expanded="true"] {
+            border-color: var(--primary);
+        }
+        .comp-eval-emoji-btn.es-propio {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        .comp-eval-emoji-panel {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            width: 300px;
+            max-width: calc(100vw - 48px);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            z-index: 30;
+            overflow: hidden;
+        }
+        .comp-eval-emoji-tabs {
+            display: flex;
+            gap: 4px;
+            margin: 8px 8px 0;
+            padding: 4px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+        .comp-eval-emoji-tabs button {
+            flex: 1;
+            padding: 6px 4px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .comp-eval-emoji-tabs button.active {
+            background: var(--primary);
+            color: #fff;
+        }
+        .comp-eval-emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            padding: 8px;
+            max-height: 170px;
+            overflow-y: auto;
+        }
+        .comp-eval-emoji-grid button {
+            aspect-ratio: 1;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .comp-eval-emoji-grid button:hover,
+        .comp-eval-emoji-grid button.is-active {
+            background: var(--input-bg, #f1f5f9);
+        }
+        .comp-eval-emoji-grid button.is-active {
+            outline: 2px solid var(--primary);
+        }
+        .comp-eval-emoji-pie {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px 8px;
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .comp-eval-emoji-pie button {
+            border: 0;
+            background: none;
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
         .comp-eval-pct {
             display: flex;
             align-items: center;
@@ -100,47 +220,233 @@
                     </div>
 
                     <fieldset class="form-group" style="border: 0; padding: 0; margin: 0 0 1.25rem;">
-                        <legend class="form-label">Porcentaje de cada rubro</legend>
+                        <legend class="form-label">Rubros: emoji, nombre y porcentaje</legend>
+                        <p class="academic-help" style="margin: -0.25rem 0 0.6rem;">Puedes cambiar el emoji y el nombre de cualquier rubro solo en este componente (por ejemplo «📋 Pruebas» → «📝 Exámenes»). Nombre vacío = nombre predeterminado.</p>
                         <div class="comp-eval-rubros">
                             <div class="comp-eval-rubro">
-                                <label for="componente-cotidiano">Trabajo cotidiano<small>Indicadores evaluados en clase</small></label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <div class="comp-eval-nombre-fila">
+                                        <div class="comp-eval-emoji" x-data="emojiRubro($el)"
+                                             data-predeterminado="📝" th:data-emoji="${componente.emojiCotidiano}"
+                                             @click.outside="abierto = false" @keydown.escape.stop="abierto = false">
+                                            <input type="hidden" name="emojiCotidiano" :value="propio" th:value="${componente.emojiCotidiano}">
+                                            <button type="button" class="comp-eval-emoji-btn" :class="{ 'es-propio': propio }"
+                                                    aria-haspopup="true" :aria-expanded="abierto" @click="alternar()"
+                                                    aria-label="Emoji del rubro Cotidiano" title="Elegir emoji"
+                                                    x-text="actual()" th:text="${componente.emojiCotidiano != null ? componente.emojiCotidiano : '📝'}">📝</button>
+                                            <div class="comp-eval-emoji-panel" x-ref="panel" x-show="abierto" x-cloak style="display: none;">
+                                                <div class="comp-eval-emoji-tabs" role="tablist">
+                                                    <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                        <button type="button" role="tab" :class="{ 'active': categoria === i }"
+                                                                :aria-selected="categoria === i" @click="categoria = i"
+                                                                x-text="cat.icono + ' ' + cat.nombre"></button>
+                                                    </template>
+                                                </div>
+                                                <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                    <div class="comp-eval-emoji-grid" role="tabpanel" x-show="categoria === i">
+                                                        <template x-for="e in cat.lista" :key="e">
+                                                            <button type="button" :class="{ 'is-active': e === actual() }"
+                                                                    @click="elegir(e)" x-text="e" :aria-label="'Usar ' + e"></button>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <div class="comp-eval-emoji-pie">
+                                                    <span x-text="propio ? 'Emoji propio del componente' : 'Emoji de la institución'"></span>
+                                                    <button type="button" x-show="propio" @click="elegir('')">Usar predeterminado</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input class="form-input" name="nombreCotidiano" maxlength="60" placeholder="Cotidiano"
+                                               aria-label="Nombre del rubro Cotidiano" aria-describedby="ayuda-cotidiano"
+                                               th:value="${componente.nombreCotidiano}">
+                                    </div>
+                                    <label for="componente-cotidiano"><small id="ayuda-cotidiano">Indicadores evaluados en clase</small></label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-cotidiano" name="cotidiano" type="number"
+                                    <input class="form-input" id="componente-cotidiano" name="cotidiano" type="number" aria-label="Porcentaje de Cotidiano"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.cotidiano}">
                                     <span>%</span>
                                 </div>
                             </div>
                             <div class="comp-eval-rubro">
-                                <label for="componente-tareas">Tareas<small>Trabajos asignados fuera de la lección</small></label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <div class="comp-eval-nombre-fila">
+                                        <div class="comp-eval-emoji" x-data="emojiRubro($el)"
+                                             data-predeterminado="📚" th:data-emoji="${componente.emojiTareas}"
+                                             @click.outside="abierto = false" @keydown.escape.stop="abierto = false">
+                                            <input type="hidden" name="emojiTareas" :value="propio" th:value="${componente.emojiTareas}">
+                                            <button type="button" class="comp-eval-emoji-btn" :class="{ 'es-propio': propio }"
+                                                    aria-haspopup="true" :aria-expanded="abierto" @click="alternar()"
+                                                    aria-label="Emoji del rubro Tareas" title="Elegir emoji"
+                                                    x-text="actual()" th:text="${componente.emojiTareas != null ? componente.emojiTareas : '📚'}">📚</button>
+                                            <div class="comp-eval-emoji-panel" x-ref="panel" x-show="abierto" x-cloak style="display: none;">
+                                                <div class="comp-eval-emoji-tabs" role="tablist">
+                                                    <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                        <button type="button" role="tab" :class="{ 'active': categoria === i }"
+                                                                :aria-selected="categoria === i" @click="categoria = i"
+                                                                x-text="cat.icono + ' ' + cat.nombre"></button>
+                                                    </template>
+                                                </div>
+                                                <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                    <div class="comp-eval-emoji-grid" role="tabpanel" x-show="categoria === i">
+                                                        <template x-for="e in cat.lista" :key="e">
+                                                            <button type="button" :class="{ 'is-active': e === actual() }"
+                                                                    @click="elegir(e)" x-text="e" :aria-label="'Usar ' + e"></button>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <div class="comp-eval-emoji-pie">
+                                                    <span x-text="propio ? 'Emoji propio del componente' : 'Emoji de la institución'"></span>
+                                                    <button type="button" x-show="propio" @click="elegir('')">Usar predeterminado</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input class="form-input" name="nombreTareas" maxlength="60" placeholder="Tareas"
+                                               aria-label="Nombre del rubro Tareas" aria-describedby="ayuda-tareas"
+                                               th:value="${componente.nombreTareas}">
+                                    </div>
+                                    <label for="componente-tareas"><small id="ayuda-tareas">Trabajos asignados fuera de la lección</small></label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-tareas" name="tareas" type="number"
+                                    <input class="form-input" id="componente-tareas" name="tareas" type="number" aria-label="Porcentaje de Tareas"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.tareas}">
                                     <span>%</span>
                                 </div>
                             </div>
                             <div class="comp-eval-rubro">
-                                <label for="componente-proyecto">Proyecto<small>0% = no forma parte de la nota</small></label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <div class="comp-eval-nombre-fila">
+                                        <div class="comp-eval-emoji" x-data="emojiRubro($el)"
+                                             data-predeterminado="🎯" th:data-emoji="${componente.emojiProyecto}"
+                                             @click.outside="abierto = false" @keydown.escape.stop="abierto = false">
+                                            <input type="hidden" name="emojiProyecto" :value="propio" th:value="${componente.emojiProyecto}">
+                                            <button type="button" class="comp-eval-emoji-btn" :class="{ 'es-propio': propio }"
+                                                    aria-haspopup="true" :aria-expanded="abierto" @click="alternar()"
+                                                    aria-label="Emoji del rubro Proyecto" title="Elegir emoji"
+                                                    x-text="actual()" th:text="${componente.emojiProyecto != null ? componente.emojiProyecto : '🎯'}">🎯</button>
+                                            <div class="comp-eval-emoji-panel" x-ref="panel" x-show="abierto" x-cloak style="display: none;">
+                                                <div class="comp-eval-emoji-tabs" role="tablist">
+                                                    <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                        <button type="button" role="tab" :class="{ 'active': categoria === i }"
+                                                                :aria-selected="categoria === i" @click="categoria = i"
+                                                                x-text="cat.icono + ' ' + cat.nombre"></button>
+                                                    </template>
+                                                </div>
+                                                <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                    <div class="comp-eval-emoji-grid" role="tabpanel" x-show="categoria === i">
+                                                        <template x-for="e in cat.lista" :key="e">
+                                                            <button type="button" :class="{ 'is-active': e === actual() }"
+                                                                    @click="elegir(e)" x-text="e" :aria-label="'Usar ' + e"></button>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <div class="comp-eval-emoji-pie">
+                                                    <span x-text="propio ? 'Emoji propio del componente' : 'Emoji de la institución'"></span>
+                                                    <button type="button" x-show="propio" @click="elegir('')">Usar predeterminado</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input class="form-input" name="nombreProyecto" maxlength="60" placeholder="Proyecto"
+                                               aria-label="Nombre del rubro Proyecto" aria-describedby="ayuda-proyecto"
+                                               th:value="${componente.nombreProyecto}">
+                                    </div>
+                                    <label for="componente-proyecto"><small id="ayuda-proyecto">0% = no forma parte de la nota</small></label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-proyecto" name="proyecto" type="number"
+                                    <input class="form-input" id="componente-proyecto" name="proyecto" type="number" aria-label="Porcentaje de Proyecto"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.proyecto}">
                                     <span>%</span>
                                 </div>
                             </div>
                             <div class="comp-eval-rubro">
-                                <label for="componente-pruebas">Pruebas<small>Pruebas escritas del período</small></label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <div class="comp-eval-nombre-fila">
+                                        <div class="comp-eval-emoji" x-data="emojiRubro($el)"
+                                             data-predeterminado="📋" th:data-emoji="${componente.emojiPruebas}"
+                                             @click.outside="abierto = false" @keydown.escape.stop="abierto = false">
+                                            <input type="hidden" name="emojiPruebas" :value="propio" th:value="${componente.emojiPruebas}">
+                                            <button type="button" class="comp-eval-emoji-btn" :class="{ 'es-propio': propio }"
+                                                    aria-haspopup="true" :aria-expanded="abierto" @click="alternar()"
+                                                    aria-label="Emoji del rubro Pruebas" title="Elegir emoji"
+                                                    x-text="actual()" th:text="${componente.emojiPruebas != null ? componente.emojiPruebas : '📋'}">📋</button>
+                                            <div class="comp-eval-emoji-panel" x-ref="panel" x-show="abierto" x-cloak style="display: none;">
+                                                <div class="comp-eval-emoji-tabs" role="tablist">
+                                                    <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                        <button type="button" role="tab" :class="{ 'active': categoria === i }"
+                                                                :aria-selected="categoria === i" @click="categoria = i"
+                                                                x-text="cat.icono + ' ' + cat.nombre"></button>
+                                                    </template>
+                                                </div>
+                                                <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                    <div class="comp-eval-emoji-grid" role="tabpanel" x-show="categoria === i">
+                                                        <template x-for="e in cat.lista" :key="e">
+                                                            <button type="button" :class="{ 'is-active': e === actual() }"
+                                                                    @click="elegir(e)" x-text="e" :aria-label="'Usar ' + e"></button>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <div class="comp-eval-emoji-pie">
+                                                    <span x-text="propio ? 'Emoji propio del componente' : 'Emoji de la institución'"></span>
+                                                    <button type="button" x-show="propio" @click="elegir('')">Usar predeterminado</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input class="form-input" name="nombrePruebas" maxlength="60" placeholder="Pruebas"
+                                               aria-label="Nombre del rubro Pruebas" aria-describedby="ayuda-pruebas"
+                                               th:value="${componente.nombrePruebas}">
+                                    </div>
+                                    <label for="componente-pruebas"><small id="ayuda-pruebas">Pruebas escritas del período</small></label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-pruebas" name="pruebas" type="number"
+                                    <input class="form-input" id="componente-pruebas" name="pruebas" type="number" aria-label="Porcentaje de Pruebas"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.pruebas}">
                                     <span>%</span>
                                 </div>
                             </div>
                             <div class="comp-eval-rubro">
-                                <label for="componente-asistencia">Asistencia
-                                    <small th:if="${asistenciaCuenta}">Según la tabla del Art. 37</small>
-                                    <small th:unless="${asistenciaCuenta}">En esta dirección rebaja la conducta: su porcentaje se reparte entre los demás rubros</small>
-                                </label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <div class="comp-eval-nombre-fila">
+                                        <div class="comp-eval-emoji" x-data="emojiRubro($el)"
+                                             data-predeterminado="📅" th:data-emoji="${componente.emojiAsistencia}"
+                                             @click.outside="abierto = false" @keydown.escape.stop="abierto = false">
+                                            <input type="hidden" name="emojiAsistencia" :value="propio" th:value="${componente.emojiAsistencia}">
+                                            <button type="button" class="comp-eval-emoji-btn" :class="{ 'es-propio': propio }"
+                                                    aria-haspopup="true" :aria-expanded="abierto" @click="alternar()"
+                                                    aria-label="Emoji del rubro Asistencia" title="Elegir emoji"
+                                                    x-text="actual()" th:text="${componente.emojiAsistencia != null ? componente.emojiAsistencia : '📅'}">📅</button>
+                                            <div class="comp-eval-emoji-panel" x-ref="panel" x-show="abierto" x-cloak style="display: none;">
+                                                <div class="comp-eval-emoji-tabs" role="tablist">
+                                                    <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                        <button type="button" role="tab" :class="{ 'active': categoria === i }"
+                                                                :aria-selected="categoria === i" @click="categoria = i"
+                                                                x-text="cat.icono + ' ' + cat.nombre"></button>
+                                                    </template>
+                                                </div>
+                                                <template x-for="(cat, i) in categorias" :key="cat.nombre">
+                                                    <div class="comp-eval-emoji-grid" role="tabpanel" x-show="categoria === i">
+                                                        <template x-for="e in cat.lista" :key="e">
+                                                            <button type="button" :class="{ 'is-active': e === actual() }"
+                                                                    @click="elegir(e)" x-text="e" :aria-label="'Usar ' + e"></button>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <div class="comp-eval-emoji-pie">
+                                                    <span x-text="propio ? 'Emoji propio del componente' : 'Emoji de la institución'"></span>
+                                                    <button type="button" x-show="propio" @click="elegir('')">Usar predeterminado</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input class="form-input" name="nombreAsistencia" maxlength="60" placeholder="Asistencia"
+                                               aria-label="Nombre del rubro Asistencia" aria-describedby="ayuda-asistencia"
+                                               th:value="${componente.nombreAsistencia}">
+                                    </div>
+                                    <label for="componente-asistencia" id="ayuda-asistencia">
+                                        <small th:if="${asistenciaCuenta}">Según la tabla del Art. 37</small>
+                                        <small th:unless="${asistenciaCuenta}">En esta dirección rebaja la conducta: su porcentaje se reparte entre los demás rubros</small>
+                                    </label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-asistencia" name="asistencia" type="number"
+                                    <input class="form-input" id="componente-asistencia" name="asistencia" type="number" aria-label="Porcentaje de Asistencia"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.asistencia}">
                                     <span>%</span>
                                 </div>
@@ -180,6 +486,48 @@
         </div>
     </div>
     <script>
+        // Selector de emoji de cada rubro. Mismas categorías que el selector de Mensajería.
+        // propio = '' significa que el rubro usa el emoji de la institución (data-predeterminado).
+        function emojiRubro(el) {
+            return {
+                abierto: false,
+                categoria: 0,
+                propio: el.dataset.emoji || '',
+                predeterminado: el.dataset.predeterminado || '',
+                categorias: [
+                    { nombre: 'Escuela', icono: '📚', lista: ['📚', '📖', '📝', '✏️', '📏', '🎒', '🏫', '🎓', '🧪', '🔬', '🎨', '🎵', '⚽', '🏆', '🥇', '📅', '⏰', '📌', '📎', '📢', '🔔', '💡', '🍎', '🚌', '🎯', '📋', '🧠', '💻', '🗂️', '🧮', '🌎', '📐'] },
+                    { nombre: 'Gestos', icono: '👍', lista: ['👍', '👎', '👏', '🙌', '🙏', '💪', '👌', '✌️', '🤝', '👋', '🤞', '👀', '❤️', '💙', '💯', '🔥', '⭐', '✨', '🎉', '🎊', '✅', '❌', '⚠️', '❗'] },
+                    { nombre: 'Caritas', icono: '😀', lista: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🙂', '😉', '😊', '😍', '🥰', '😘', '😎', '🤗', '🤔', '😐', '😴', '😢', '😭', '😮', '😱', '😡', '🥳'] }
+                ],
+                actual: function () {
+                    return this.propio || this.predeterminado;
+                },
+                // El modal tiene scroll propio: al abrir, se desplaza lo justo para que el selector se vea completo.
+                alternar: function () {
+                    this.abierto = !this.abierto;
+                    if (!this.abierto) {
+                        return;
+                    }
+                    // Un cuadro después de mostrarlo, cuando el panel ya tiene tamaño.
+                    this.$nextTick(() => requestAnimationFrame(() => {
+                        const panel = this.$refs.panel;
+                        const caja = panel.closest('.modal-body');
+                        if (!caja) {
+                            return;
+                        }
+                        const sobra = panel.getBoundingClientRect().bottom - caja.getBoundingClientRect().bottom;
+                        if (sobra > 0) {
+                            caja.scrollBy({ top: sobra + 12, behavior: 'smooth' });
+                        }
+                    }));
+                },
+                elegir: function (emoji) {
+                    this.propio = emoji === this.predeterminado ? '' : emoji;
+                    this.abierto = false;
+                }
+            };
+        }
+
         function actualizarTotalComponente(form) {
             let total = 0;
             form.querySelectorAll('[data-rubro]').forEach(function (input) {

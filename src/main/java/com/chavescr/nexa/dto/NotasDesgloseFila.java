@@ -14,9 +14,17 @@ public class NotasDesgloseFila {
     private final Integer pruebas;
     private final Integer asistencia;
     private final Double promedio;
+    /** Nombres de los rubros según el componente de la materia. */
+    private final NombresRubros rubros;
 
     public NotasDesgloseFila(Long materiaId, String nombre, String docente, Integer cotidiano, Integer tareas,
             Integer proyecto, Integer pruebas, Integer asistencia, Double promedio) {
+        this(materiaId, nombre, docente, cotidiano, tareas, proyecto, pruebas, asistencia, promedio,
+                NombresRubros.PREDETERMINADOS);
+    }
+
+    public NotasDesgloseFila(Long materiaId, String nombre, String docente, Integer cotidiano, Integer tareas,
+            Integer proyecto, Integer pruebas, Integer asistencia, Double promedio, NombresRubros rubros) {
         this.materiaId = materiaId;
         this.nombre = nombre;
         this.docente = docente == null ? "" : docente;
@@ -26,6 +34,11 @@ public class NotasDesgloseFila {
         this.pruebas = pruebas;
         this.asistencia = asistencia;
         this.promedio = promedio;
+        this.rubros = rubros == null ? NombresRubros.PREDETERMINADOS : rubros;
+    }
+
+    public NombresRubros getRubros() {
+        return rubros;
     }
 
     public Long getMateriaId() {

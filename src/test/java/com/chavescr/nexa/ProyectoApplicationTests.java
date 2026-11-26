@@ -25,6 +25,7 @@ import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.dto.FilaPromedio;
 import com.chavescr.nexa.dto.NotasConductaDetalle;
+import com.chavescr.nexa.dto.PestanaRubro;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Cuenta;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Linea;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Registro;
@@ -38,6 +39,7 @@ import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.EscalaNotas;
 import com.chavescr.nexa.entity.HorarioLeccion;
+import com.chavescr.nexa.entity.ClaveComponente;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
@@ -316,6 +318,97 @@ class ProyectoApplicationTests {
 		context.setVariable("asistenciaCuenta", false);
 		String sinAsistencia = templateEngine.process("configuracion-institucional/componentes/componentes", context);
 		assertTrue(sinAsistencia.contains("rebajan la conducta"));
+	}
+
+	@Test
+	void cadaComponenteMuestraLosNombresQueLeDioASusRubros() {
+		ComponenteEvaluacion componente = new ComponenteEvaluacion();
+		componente.setId(1L);
+		componente.setNombre("Técnicas");
+		componente.setCotidiano(45);
+		componente.setTareas(10);
+		componente.setProyecto(0);
+		componente.setPruebas(40);
+		componente.setAsistencia(5);
+		componente.setNombrePruebas("Exámenes");
+
+		Context context = new Context();
+		context.setVariable("componentesEvaluacion", List.of(componente));
+		context.setVariable("materiasPorComponente", Map.of());
+		context.setVariable("componente", componente);
+		context.setVariable("materiasDelComponente", 0L);
+		context.setVariable("asistenciaCuenta", true);
+
+		String tabla = templateEngine.process("configuracion-institucional/componentes/componentes", context);
+		assertTrue(tabla.contains(">Exámenes<"));
+		assertTrue(tabla.contains(">Pruebas<"));
+
+		String formulario = templateEngine.process("configuracion-institucional/componentes/formulario", context);
+		assertTrue(formulario.contains("name=\"nombrePruebas\""));
+		assertTrue(formulario.contains("value=\"Exámenes\""));
+		assertTrue(formulario.contains("placeholder=\"Cotidiano\""));
+
+		componente.setEmojiPruebas("🧪");
+		String conEmoji = templateEngine.process("configuracion-institucional/componentes/componentes", context);
+		assertTrue(conEmoji.contains(">🧪 Exámenes<"));
+		String formularioEmoji = templateEngine.process("configuracion-institucional/componentes/formulario", context);
+		assertTrue(formularioEmoji.contains("name=\"emojiPruebas\""));
+		assertTrue(formularioEmoji.contains("data-emoji=\"🧪\""));
+		assertTrue(formularioEmoji.contains("data-predeterminado=\"📋\""));
+		assertTrue(formularioEmoji.contains("x-data=\"emojiRubro($el)\""));
+		componente.setEmojiPruebas(null);
+
+		TemplateSpec filas = new TemplateSpec("notas/detalle-por-componente", Set.of("filas"),
+				(org.thymeleaf.templatemode.TemplateMode) null, null);
+		Context notas = new Context();
+		notas.setVariable("escala", new VistaEscala(List.of(new VistaEscala.Tramo("Aprobado", 70, "bueno"))));
+		notas.setVariable("conAsistencia", false);
+		notas.setVariable("filas", new ArrayList<>(List.of(new NotasDesgloseFila(1L, "Taller", "Prof. Ana", 80,
+				null, null, 90, null, 85.0, componente.getNombresRubros()))));
+		String desglose = templateEngine.process(filas, notas);
+		assertTrue(desglose.contains("data-rubro=\"Exámenes\""));
+		assertTrue(desglose.contains("Ver Exámenes de Taller"));
+	}
+
+	@Test
+	void gestionAcademicaPideLaMateriaYMuestraSoloLosRubrosDeSuComponente() {
+		Materia matematica = new Materia();
+		matematica.setId(4L);
+		matematica.setNombre("Matemática");
+		Materia ciencias = new Materia();
+		ciencias.setId(7L);
+		ciencias.setNombre("Ciencias");
+
+		Context context = new Context();
+		context.setVariable("materias", List.of(matematica, ciencias));
+		context.setVariable("materiaId", 7L);
+		context.setVariable("tabInicial", "EXAMEN");
+		context.setVariable("pestanas", List.of(
+				new PestanaRubro(ClaveComponente.COTIDIANO, "Cotidiano", "📝", 45,
+						"/gestion-academica/cotidiano/indicadores", "indicadores-panel"),
+				new PestanaRubro(ClaveComponente.EXAMEN, "Exámenes", "📋", 40,
+						"/gestion-academica/examenes", "examenes-panel")));
+
+		TemplateSpec contenido = new TemplateSpec("gestion-academica/index", Set.of("htmx-content"),
+				(org.thymeleaf.templatemode.TemplateMode) null, null);
+		String html = templateEngine.process(contenido, context);
+
+		assertTrue(html.contains("id=\"ga-materia\""));
+		assertTrue(html.contains("<option value=\"7\" selected=\"selected\">Ciencias</option>"));
+		assertTrue(html.contains(">📋 Exámenes<"));
+		assertTrue(html.contains("data-tab=\"EXAMEN\""));
+		assertFalse(html.contains("data-tab=\"PROYECTO\""));
+		assertTrue(html.contains("hx-get=\"/gestion-academica/examenes?materiaId=7\""));
+		assertTrue(html.contains("hx-get=\"/gestion-academica/promedio?materiaId=7\""));
+		assertTrue(html.contains("hx-get=\"/gestion-academica/asistencia?materiaId=7\""));
+		assertTrue(html.contains("activeTab: 'EXAMEN'") || html.contains("activeTab: &#39;EXAMEN&#39;"));
+
+		context.setVariable("materias", List.of());
+		context.setVariable("materiaId", null);
+		context.setVariable("pestanas", List.of());
+		String vacio = templateEngine.process(contenido, context);
+		assertTrue(vacio.contains("No hay materias para calificar"));
+		assertFalse(vacio.contains("class=\"config-tabs-container\""));
 	}
 
 	@Test
