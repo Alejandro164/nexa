@@ -1,110 +1,178 @@
-<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org"
+     x-data="{
+         modalPadreAbierto: false,
+         estado: 'inicial',
+         padreEncontradoId: null,
+         padreEncontradoNombre: '',
+         padreEncontradoEmail: '',
+         nombre: '',
+         cedula: '',
+         email: '',
+         usuario: '',
+         password: '',
+         abrirModal() {
+             this.estado = 'inicial';
+             this.padreEncontradoId = null;
+             this.padreEncontradoNombre = '';
+             this.padreEncontradoEmail = '';
+             this.nombre = '';
+             this.cedula = '';
+             this.email = '';
+             this.usuario = '';
+             this.password = '';
+             this.modalPadreAbierto = true;
+         },
+         cerrarModal() {
+             this.modalPadreAbierto = false;
+         },
+         buscar() {
+             const cedula = this.cedula.trim();
+             this.padreEncontradoId = null;
+             if (!cedula) { this.estado = 'inicial'; return; }
+             this.estado = 'buscando';
+             fetch('/estudiantes/buscar-padre?cedula=' + encodeURIComponent(cedula))
+                 .then(r => r.json())
+                 .then(data => {
+                     if (data.encontrado) {
+                         this.padreEncontradoId = data.padreId;
+                         this.padreEncontradoNombre = data.nombre || '';
+                         this.padreEncontradoEmail = data.email || '';
+                         this.estado = 'encontrado-local';
+                         return;
+                     }
+                     fetch('/estudiantes/buscar-hacienda?identificacion=' + encodeURIComponent(cedula))
+                         .then(r => r.json())
+                         .then(h => {
+                             if (h.encontrado && h.nombre) {
+                                 this.nombre = h.nombre;
+                             }
+                             this.estado = 'inicial';
+                         })
+                         .catch(() => { this.estado = 'inicial'; });
+                 })
+                 .catch(() => { this.estado = 'error'; });
+         }
+     }">
 
     <p th:if="${errorPadre}" class="est-min-error" th:text="${errorPadre}"></p>
 
-    <div style="margin-bottom:1.15rem;">
-        <p th:if="${padresVinculados == null or padresVinculados.empty}" class="est-min-hint" style="margin-bottom:0;">
-            Todavía no hay padres o encargados vinculados.
-        </p>
-        <div th:each="p : ${padresVinculados}" class="est-parent-row">
-            <div>
-                <div class="est-detail-value" th:text="${p.nombre}">Nombre</div>
-                <div class="est-min-subtitle">
-                    <span th:text="${p.email}">email</span>
-                    <span th:if="${p.cedula != null}"> · <span th:text="${p.cedula}">cédula</span></span>
-                </div>
-            </div>
-            <span class="est-tooltip-wrap" data-tooltip="Desvincular">
-                <button type="button" class="btn-xs btn-danger-ghost est-action-btn"
-                        aria-label="Desvincular"
-                        onclick="abrirConfirmacionDesactivar(this)"
-                        th:attr="data-delete-url=${padresBaseUrl} + '/' + ${p.id},data-delete-target=${padresPanelId},data-delete-title='Desvincular encargado',data-delete-confirm-label='Desvincular',data-delete-message='¿Deseas desvincular a ' + ${p.nombre} + '? La cuenta del encargado no se elimina.'">🗑️</button>
-            </span>
-        </div>
+    <div class="est-padres-bar">
+        <span class="est-min-subtitle" style="margin:0;">Padres o encargados vinculados</span>
+        <button type="button" class="est-btn-solid est-btn-sm" @click="abrirModal()">+ Agregar</button>
     </div>
 
-    <div style="border-top:1px solid #f1f5f9;padding-top:1rem;"
-         x-data="{ estado: 'inicial', padreEncontradoId: null, padreEncontradoNombre: '', nombreSugerido: '', cedulaBuscada: '' }">
-        <label class="est-min-label">Agregar padre o encargado por cédula</label>
-        <div class="est-lookup-row">
-            <input type="text" x-ref="cedula" class="est-min-input" placeholder="Ej. 1-2345-6789"
-                   @keydown.enter.prevent="$refs.btnBuscarPadre.click()">
-            <button type="button" x-ref="btnBuscarPadre" class="est-btn-outline"
-                    @click="
-                        estado = 'buscando';
-                        const cedula = $refs.cedula.value.trim();
-                        cedulaBuscada = cedula;
-                        if (!cedula) { estado = 'inicial'; return; }
-                        fetch('/estudiantes/buscar-padre?cedula=' + encodeURIComponent(cedula))
-                            .then(r => r.json())
-                            .then(data => {
-                                if (data.encontrado) {
-                                    padreEncontradoId = data.padreId;
-                                    padreEncontradoNombre = data.nombre;
-                                    estado = 'encontrado-local';
-                                    return;
-                                }
-                                fetch('/estudiantes/buscar-hacienda?identificacion=' + encodeURIComponent(cedula))
-                                    .then(r => r.json())
-                                    .then(h => {
-                                        nombreSugerido = h.encontrado ? h.nombre : '';
-                                        estado = h.encontrado ? 'crear-con-nombre' : 'crear-manual';
-                                    })
-                                    .catch(() => { nombreSugerido = ''; estado = 'crear-manual'; });
-                            })
-                            .catch(() => { estado = 'error'; });
-                    ">Buscar</button>
-        </div>
-
-        <p x-show="estado === 'buscando'" x-cloak class="est-min-hint" style="margin-top:6px;">Buscando...</p>
-        <p x-show="estado === 'error'" x-cloak class="est-min-error" style="margin-top:8px;">Error al buscar. Intenta de nuevo.</p>
-
-        <div x-show="estado === 'encontrado-local'" x-cloak
-             style="margin-top:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
-            <div>
-                <div class="est-min-subtitle" style="margin:0;">Registrado en el sistema</div>
-                <div class="est-detail-value" x-text="padreEncontradoNombre"></div>
-            </div>
-            <form th:attr="hx-post=${padresBaseUrl} + '/vincular', hx-target=${padresPanelId}" hx-swap="innerHTML">
-                <input type="hidden" name="padreId" :value="padreEncontradoId">
-                <button type="submit" class="est-btn-solid">Vincular</button>
-            </form>
-        </div>
-
-        <div x-show="estado === 'crear-con-nombre' || estado === 'crear-manual'" x-cloak
-             style="margin-top:10px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;">
-            <p class="est-min-hint" style="margin-bottom:0.75rem;">
-                <span x-show="estado === 'crear-con-nombre'">Encontrado en Hacienda. Revisa y completa los datos para crear la cuenta.</span>
-                <span x-show="estado === 'crear-manual'">No se encontró registro previo. Completa los datos para crear la cuenta.</span>
-            </p>
-            <form th:attr="hx-post=${padresBaseUrl} + '/crear', hx-target=${padresPanelId}" hx-swap="innerHTML">
-                <div class="est-min-form-grid">
-                    <div class="est-min-field">
-                        <label class="est-min-label">Nombre completo *</label>
-                        <input class="est-min-input" type="text" name="nombre" required maxlength="100" :value="nombreSugerido">
-                    </div>
-                    <div class="est-min-field">
-                        <label class="est-min-label">Cédula</label>
-                        <input class="est-min-input" type="text" name="cedula" maxlength="30" :value="cedulaBuscada">
-                    </div>
-                    <div class="est-min-field est-detail-span-2">
-                        <label class="est-min-label">Correo electrónico *</label>
-                        <input class="est-min-input" type="email" name="email" required maxlength="150" placeholder="correo@ejemplo.com">
-                    </div>
-                    <div class="est-min-field">
-                        <label class="est-min-label">Usuario *</label>
-                        <input class="est-min-input" type="text" name="usuario" required maxlength="60" placeholder="ej. juan.perez">
-                    </div>
-                    <div class="est-min-field">
-                        <label class="est-min-label">Contraseña *</label>
-                        <input class="est-min-input" type="password" name="password" required placeholder="Contraseña inicial">
-                    </div>
-                </div>
-                <div class="est-min-footer est-min-footer-inline" style="margin-top:0.85rem;padding-top:0.75rem;">
-                    <button type="submit" class="est-btn-solid">Crear y vincular</button>
-                </div>
-            </form>
-        </div>
+    <div class="est-mini-table-wrap">
+        <table class="est-mini-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cédula</th>
+                    <th>Correo</th>
+                    <th style="text-align:right;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${padresVinculados == null or padresVinculados.empty}">
+                    <td colspan="4" class="est-mini-table-empty">Todavía no hay padres o encargados vinculados.</td>
+                </tr>
+                <tr th:each="p : ${padresVinculados}">
+                    <td><strong th:text="${p.nombre}" style="color:#0f172a;font-weight:500;">Nombre</strong></td>
+                    <td th:text="${p.cedula != null ? p.cedula : '—'}" style="color:#64748b;">—</td>
+                    <td th:text="${p.email}" style="color:#64748b;">email</td>
+                    <td style="text-align:right;">
+                        <span class="est-tooltip-wrap" data-tooltip="Desvincular">
+                            <button type="button" class="btn-xs btn-danger-ghost est-action-btn"
+                                    aria-label="Desvincular"
+                                    onclick="abrirConfirmacionDesactivar(this)"
+                                    th:attr="data-delete-url=${padresBaseUrl} + '/' + ${p.id},data-delete-target=${padresPanelId},data-delete-title='Desvincular encargado',data-delete-confirm-label='Desvincular',data-delete-message='¿Deseas desvincular a ' + ${p.nombre} + '? La cuenta del encargado no se elimina.'">🗑️</button>
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+
+    <!-- Modal secundario minimalista para agregar/vincular padre -->
+    <template x-teleport="body">
+        <div class="modal-backdrop"
+             style="z-index: 10050;"
+             :class="{ 'est-submodal-open': modalPadreAbierto }"
+             x-show="modalPadreAbierto"
+             x-cloak
+             x-init="$nextTick(() => { if (window.htmx) window.htmx.process($el); })"
+             @click.self="cerrarModal()"
+             @keydown.escape.window="if (modalPadreAbierto) cerrarModal()">
+            <div class="modal-dialog est-min-dialog" style="max-width:500px;">
+                <div class="est-min-header">
+                    <h3 class="est-min-title">Agregar padre o encargado</h3>
+                    <button type="button" class="est-min-close" @click="cerrarModal()" aria-label="Cerrar">&times;</button>
+                </div>
+
+                <div class="est-min-body">
+                    <p x-show="estado === 'error'" x-cloak class="est-min-error">Error al buscar. Intenta de nuevo.</p>
+
+                    <div x-show="estado === 'encontrado-local'" x-cloak
+                         style="margin-bottom:0.9rem;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+                        <div>
+                            <div class="est-min-subtitle" style="margin:0;">Ya registrado en el sistema</div>
+                            <div class="est-detail-value" x-text="padreEncontradoNombre"></div>
+                            <div class="est-min-subtitle" x-text="padreEncontradoEmail"></div>
+                        </div>
+                        <form th:attr="hx-post=${padresBaseUrl} + '/vincular', hx-target=${padresPanelId}"
+                              hx-swap="innerHTML"
+                              @submit="cerrarModal()">
+                            <input type="hidden" name="padreId" :value="padreEncontradoId">
+                            <button type="submit" class="est-btn-solid est-btn-sm">Vincular</button>
+                        </form>
+                    </div>
+
+                    <form th:attr="hx-post=${padresBaseUrl} + '/crear', hx-target=${padresPanelId}"
+                          hx-swap="innerHTML"
+                          @submit="cerrarModal()">
+                        <div class="est-min-form-grid">
+                            <div class="est-min-field est-detail-span-2">
+                                <label class="est-min-label">Cédula</label>
+                                <div class="est-lookup-row" style="margin-top:0;">
+                                    <input class="est-min-input" type="text" name="cedula" maxlength="30"
+                                           placeholder="Ej. 1-2345-6789"
+                                           x-model="cedula"
+                                           @input="if (estado === 'encontrado-local') { estado = 'inicial'; padreEncontradoId = null; }"
+                                           @keydown.enter.prevent="buscar()">
+                                    <button type="button" class="est-btn-outline"
+                                            :disabled="estado === 'buscando'"
+                                            @click="buscar()"
+                                            x-text="estado === 'buscando' ? 'Buscando...' : 'Buscar'">Buscar</button>
+                                </div>
+                            </div>
+                            <div class="est-min-field est-detail-span-2">
+                                <label class="est-min-label">Nombre completo *</label>
+                                <input class="est-min-input" type="text" name="nombre" required maxlength="100"
+                                       placeholder="Ej. Laura Soto Monge" x-model="nombre">
+                            </div>
+                            <div class="est-min-field est-detail-span-2">
+                                <label class="est-min-label">Correo electrónico *</label>
+                                <input class="est-min-input" type="email" name="email" required maxlength="150"
+                                       placeholder="correo@ejemplo.com" x-model="email">
+                            </div>
+                            <div class="est-min-field">
+                                <label class="est-min-label">Usuario *</label>
+                                <input class="est-min-input" type="text" name="usuario" required maxlength="60"
+                                       placeholder="ej. laura.soto" x-model="usuario">
+                            </div>
+                            <div class="est-min-field">
+                                <label class="est-min-label">Contraseña *</label>
+                                <input class="est-min-input" type="password" name="password" required
+                                       placeholder="Contraseña inicial" x-model="password">
+                            </div>
+                        </div>
+                        <div class="est-min-footer est-min-footer-inline">
+                            <button type="button" class="est-btn-outline" @click="cerrarModal()">Cancelar</button>
+                            <button type="submit" class="est-btn-solid">Guardar encargado</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </template>
 
 </div>

@@ -1,81 +1,115 @@
 <div th:fragment="selector" xmlns:th="http://www.thymeleaf.org">
-    <div style="margin-bottom:1.1rem;">
-        <p x-show="padresSeleccionados.length === 0" class="est-min-hint" style="margin-bottom:0;">
-            No has agregado padres o encargados todavía.
-        </p>
-        <template x-for="p in padresSeleccionados" :key="p.id">
-            <div class="est-parent-row">
-                <div>
-                    <div class="est-detail-value" x-text="p.nombre"></div>
-                    <div class="est-min-subtitle">
-                        <span x-text="p.email || ''"></span>
-                        <span x-show="p.cedula" x-text="(p.email ? ' · ' : '') + p.cedula"></span>
+    <div class="est-padres-bar">
+        <span class="est-min-subtitle" style="margin:0;">Padres o encargados asociados</span>
+        <button type="button" class="est-btn-solid est-btn-sm" @click="abrirModalPadre()">+ Agregar</button>
+    </div>
+
+    <div class="est-mini-table-wrap">
+        <table class="est-mini-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cédula</th>
+                    <th>Correo</th>
+                    <th style="text-align:right;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr x-show="padresSeleccionados.length === 0">
+                    <td colspan="4" class="est-mini-table-empty">No hay padres o encargados agregados.</td>
+                </tr>
+                <template x-for="p in padresSeleccionados" :key="p.id">
+                    <tr>
+                        <td><strong x-text="p.nombre" style="color:#0f172a;font-weight:500;"></strong></td>
+                        <td x-text="p.cedula || '—'" style="color:#64748b;"></td>
+                        <td x-text="p.email || '—'" style="color:#64748b;"></td>
+                        <td style="text-align:right;">
+                            <span class="est-tooltip-wrap" data-tooltip="Quitar">
+                                <button type="button" class="btn-xs btn-danger-ghost est-action-btn"
+                                        aria-label="Quitar"
+                                        @click="quitarPadre(p.id)">🗑️</button>
+                            </span>
+                        </td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal secundario minimalista para agregar información del padre -->
+    <template x-teleport="body">
+        <div class="modal-backdrop"
+             style="z-index: 10050;"
+             :class="{ 'est-submodal-open': modalPadreAbierto }"
+             x-show="modalPadreAbierto"
+             x-cloak
+             @click.self="cerrarModalPadre()"
+             @keydown.escape.window="if (modalPadreAbierto) cerrarModalPadre()">
+            <div class="modal-dialog est-min-dialog" style="max-width:500px;">
+                <div class="est-min-header">
+                    <h3 class="est-min-title">Agregar padre o encargado</h3>
+                    <button type="button" class="est-min-close" @click="cerrarModalPadre()" aria-label="Cerrar">&times;</button>
+                </div>
+
+                <div class="est-min-body">
+                    <p x-show="padreError" x-cloak class="est-min-error" x-text="padreError"></p>
+
+                    <div class="est-min-form-grid">
+                        <div class="est-min-field est-detail-span-2">
+                            <label class="est-min-label">Cédula</label>
+                            <div class="est-lookup-row" style="margin-top:0;">
+                                <input type="text" class="est-min-input" maxlength="30" placeholder="Ej. 1-2345-6789"
+                                       x-model="nuevoPadre.cedula"
+                                       @input="if (padreEstado === 'encontrado-local') { padreEstado = 'inicial'; padreEncontrado = null; }"
+                                       @keydown.enter.prevent="buscarPadrePorCedula()">
+                                <button type="button" class="est-btn-outline"
+                                        :disabled="padreEstado === 'buscando'"
+                                        @click="buscarPadrePorCedula()"
+                                        x-text="padreEstado === 'buscando' ? 'Buscando...' : 'Buscar'">Buscar</button>
+                            </div>
+                        </div>
+
+                        <div class="est-detail-span-2"
+                             x-show="padreEstado === 'encontrado-local' && padreEncontrado" x-cloak
+                             style="padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+                            <div>
+                                <div class="est-min-subtitle" style="margin:0;">Ya registrado en el sistema</div>
+                                <div class="est-detail-value" x-text="padreEncontrado ? padreEncontrado.nombre : ''"></div>
+                                <div class="est-min-subtitle" x-text="padreEncontrado && padreEncontrado.email ? padreEncontrado.email : ''"></div>
+                            </div>
+                            <button type="button" class="est-btn-solid est-btn-sm" @click="agregarPadreEncontrado()">Vincular</button>
+                        </div>
+
+                        <div class="est-min-field est-detail-span-2">
+                            <label class="est-min-label">Nombre completo *</label>
+                            <input class="est-min-input" type="text" maxlength="100" placeholder="Ej. Laura Soto Monge"
+                                   x-model="nuevoPadre.nombre">
+                        </div>
+                        <div class="est-min-field est-detail-span-2">
+                            <label class="est-min-label">Correo electrónico *</label>
+                            <input class="est-min-input" type="email" maxlength="150" placeholder="correo@ejemplo.com"
+                                   x-model="nuevoPadre.email">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Usuario *</label>
+                            <input class="est-min-input" type="text" maxlength="60" placeholder="ej. laura.soto"
+                                   x-model="nuevoPadre.usuario">
+                        </div>
+                        <div class="est-min-field">
+                            <label class="est-min-label">Contraseña *</label>
+                            <input class="est-min-input" type="password" placeholder="Contraseña inicial"
+                                   x-model="nuevoPadre.password">
+                        </div>
+                    </div>
+
+                    <div class="est-min-footer est-min-footer-inline">
+                        <button type="button" class="est-btn-outline" @click="cerrarModalPadre()">Cancelar</button>
+                        <button type="button" class="est-btn-solid" :disabled="creandoPadre"
+                                @click="crearYAgregarPadre()"
+                                x-text="creandoPadre ? 'Guardando...' : 'Guardar encargado'">Guardar encargado</button>
                     </div>
                 </div>
-                <button type="button" class="est-btn-outline" style="padding:4px 10px;font-size:0.78rem;"
-                        @click="quitarPadre(p.id)">Quitar</button>
-            </div>
-        </template>
-    </div>
-
-    <div style="border-top:1px solid #f1f5f9;padding-top:1rem;">
-        <label class="est-min-label">Buscar padre o encargado por cédula</label>
-        <div class="est-lookup-row">
-            <input type="text" class="est-min-input" placeholder="Ej. 1-2345-6789"
-                   x-model="padreBusquedaCedula"
-                   @keydown.enter.prevent="buscarPadrePorCedula()">
-            <button type="button" class="est-btn-outline"
-                    :disabled="padreEstado === 'buscando'"
-                    @click="buscarPadrePorCedula()"
-                    x-text="padreEstado === 'buscando' ? 'Buscando...' : 'Buscar'">Buscar</button>
-        </div>
-
-        <p x-show="padreError" x-cloak class="est-min-error" style="margin-top:8px;" x-text="padreError"></p>
-
-        <div x-show="padreEstado === 'encontrado-local' && padreEncontrado" x-cloak
-             style="margin-top:10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
-            <div>
-                <div class="est-min-subtitle" style="margin:0;">Registrado en el sistema</div>
-                <div class="est-detail-value" x-text="padreEncontrado ? padreEncontrado.nombre : ''"></div>
-                <div class="est-min-subtitle" x-text="padreEncontrado && padreEncontrado.email ? padreEncontrado.email : ''"></div>
-            </div>
-            <button type="button" class="est-btn-solid" @click="agregarPadreEncontrado()">Agregar</button>
-        </div>
-
-        <div x-show="padreEstado === 'crear-con-nombre' || padreEstado === 'crear-manual'" x-cloak
-             style="margin-top:10px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;">
-            <p class="est-min-hint" style="margin-bottom:0.75rem;">
-                <span x-show="padreEstado === 'crear-con-nombre'">Encontrado en Hacienda. Completa los datos para crear la cuenta y vincularlo.</span>
-                <span x-show="padreEstado === 'crear-manual'">No se encontró registro previo. Completa los datos para crear la cuenta y vincularlo.</span>
-            </p>
-            <div class="est-min-form-grid">
-                <div class="est-min-field">
-                    <label class="est-min-label">Nombre completo *</label>
-                    <input class="est-min-input" type="text" maxlength="100" x-model="nuevoPadre.nombre">
-                </div>
-                <div class="est-min-field">
-                    <label class="est-min-label">Cédula</label>
-                    <input class="est-min-input" type="text" maxlength="30" x-model="nuevoPadre.cedula">
-                </div>
-                <div class="est-min-field est-detail-span-2">
-                    <label class="est-min-label">Correo electrónico *</label>
-                    <input class="est-min-input" type="email" maxlength="150" placeholder="correo@ejemplo.com" x-model="nuevoPadre.email">
-                </div>
-                <div class="est-min-field">
-                    <label class="est-min-label">Usuario *</label>
-                    <input class="est-min-input" type="text" maxlength="60" placeholder="ej. juan.perez" x-model="nuevoPadre.usuario">
-                </div>
-                <div class="est-min-field">
-                    <label class="est-min-label">Contraseña *</label>
-                    <input class="est-min-input" type="password" placeholder="Contraseña inicial" x-model="nuevoPadre.password">
-                </div>
-            </div>
-            <div class="est-min-footer est-min-footer-inline" style="margin-top:0.85rem;padding-top:0.75rem;">
-                <button type="button" class="est-btn-outline" @click="padreEstado = 'inicial'; padreError = ''">Cancelar</button>
-                <button type="button" class="est-btn-solid" :disabled="creandoPadre"
-                        @click="crearYAgregarPadre()"
-                        x-text="creandoPadre ? 'Guardando...' : 'Crear y agregar'">Crear y agregar</button>
             </div>
         </div>
-    </div>
+    </template>
 </div>

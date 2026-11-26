@@ -66,7 +66,7 @@
      @close-modal.window="cerrarModalEstudiantes('estudiantes-modal-container')"
      @open-ficha.window="abrirModalEstudiantes('estudiantes-ficha-container')"
      @close-ficha.window="cerrarModalEstudiantes('estudiantes-ficha-container')"
-     @keydown.escape.window="cerrarModalEstudiantes('estudiantes-modal-container'); cerrarModalEstudiantes('estudiantes-ficha-container')">
+     @keydown.escape.window="cerrarModalesPorEscape('estudiantes-modal-container', 'estudiantes-ficha-container')">
 
     <div class="module-card">
         <form id="estudiantes-filtros-form"

@@ -72,7 +72,7 @@
      @close-matricula-modal.window="cerrarModalEstudiantes('matricula-modal-container')"
      @open-matricula-ficha.window="abrirModalEstudiantes('matricula-ficha-container')"
      @close-matricula-ficha.window="cerrarModalEstudiantes('matricula-ficha-container')"
-     @keydown.escape.window="cerrarModalEstudiantes('matricula-modal-container'); cerrarModalEstudiantes('matricula-ficha-container')">
+     @keydown.escape.window="cerrarModalesPorEscape('matricula-modal-container', 'matricula-ficha-container')">
 
     <div class="module-card">
         <form id="matricula-filtros-form"

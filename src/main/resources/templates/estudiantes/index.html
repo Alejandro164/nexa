@@ -604,6 +604,54 @@
                 padding: 0.65rem 0;
                 border-bottom: 1px solid #f1f5f9;
             }
+            .est-padres-bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+            .est-mini-table-wrap {
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                overflow-x: auto;
+                background: #ffffff;
+            }
+            .est-mini-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.84rem;
+                text-align: left;
+            }
+            .est-mini-table th {
+                padding: 8px 12px;
+                font-size: 0.72rem;
+                font-weight: 600;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                border-bottom: 1px solid #e2e8f0;
+                background: #ffffff;
+            }
+            .est-mini-table td {
+                padding: 9px 12px;
+                color: #334155;
+                border-bottom: 1px solid #f1f5f9;
+                vertical-align: middle;
+            }
+            .est-mini-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+            .est-mini-table-empty {
+                text-align: center;
+                color: #94a3b8;
+                padding: 1.25rem 1rem !important;
+                font-size: 0.84rem;
+            }
+            .est-btn-sm {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
             .est-min-footer {
                 display: flex;
                 justify-content: flex-end;
@@ -887,6 +935,13 @@
                 }, 180);
             }
 
+            function cerrarModalesPorEscape() {
+                if (document.querySelector('.est-submodal-open')) return;
+                for (let i = 0; i < arguments.length; i++) {
+                    cerrarModalEstudiantes(arguments[i]);
+                }
+            }
+
             function agregarOpcionPeriodo(selectId, anio) {
                 const select = document.getElementById(selectId);
                 if (!select || !anio) return;
@@ -961,6 +1016,7 @@
             function crearEstadoFormularioEstudiantes() {
                 return {
                     tab: 'general',
+                    modalPadreAbierto: false,
                     padresSeleccionados: [],
                     padreBusquedaCedula: '',
                     padreEstado: 'inicial',
@@ -968,8 +1024,20 @@
                     padreError: '',
                     creandoPadre: false,
                     nuevoPadre: { nombre: '', cedula: '', email: '', usuario: '', password: '' },
+                    abrirModalPadre() {
+                        this.padreBusquedaCedula = '';
+                        this.padreEstado = 'inicial';
+                        this.padreEncontrado = null;
+                        this.padreError = '';
+                        this.nuevoPadre = { nombre: '', cedula: '', email: '', usuario: '', password: '' };
+                        this.modalPadreAbierto = true;
+                    },
+                    cerrarModalPadre() {
+                        this.modalPadreAbierto = false;
+                        this.padreError = '';
+                    },
                     buscarPadrePorCedula() {
-                        const cedula = this.padreBusquedaCedula.trim();
+                        const cedula = (this.nuevoPadre.cedula || '').trim();
                         this.padreError = '';
                         this.padreEncontrado = null;
                         if (!cedula) {
@@ -993,18 +1061,13 @@
                                 fetch('/estudiantes/buscar-hacienda?identificacion=' + encodeURIComponent(cedula))
                                     .then(r => r.json())
                                     .then(h => {
-                                        this.nuevoPadre = {
-                                            nombre: h.encontrado ? (h.nombre || '') : '',
-                                            cedula: cedula,
-                                            email: '',
-                                            usuario: '',
-                                            password: ''
-                                        };
-                                        this.padreEstado = h.encontrado ? 'crear-con-nombre' : 'crear-manual';
+                                        if (h.encontrado && h.nombre) {
+                                            this.nuevoPadre.nombre = h.nombre;
+                                        }
+                                        this.padreEstado = 'inicial';
                                     })
                                     .catch(() => {
-                                        this.nuevoPadre = { nombre: '', cedula: cedula, email: '', usuario: '', password: '' };
-                                        this.padreEstado = 'crear-manual';
+                                        this.padreEstado = 'inicial';
                                     });
                             })
                             .catch(() => {
@@ -1017,10 +1080,7 @@
                         if (!this.padresSeleccionados.some(p => String(p.id) === String(this.padreEncontrado.id))) {
                             this.padresSeleccionados.push(this.padreEncontrado);
                         }
-                        this.padreBusquedaCedula = '';
-                        this.padreEncontrado = null;
-                        this.padreEstado = 'inicial';
-                        this.padreError = '';
+                        this.cerrarModalPadre();
                     },
                     crearYAgregarPadre() {
                         this.padreError = '';
@@ -1058,9 +1118,7 @@
                                         cedula: data.cedula || ''
                                     });
                                 }
-                                this.padreBusquedaCedula = '';
-                                this.padreEstado = 'inicial';
-                                this.nuevoPadre = { nombre: '', cedula: '', email: '', usuario: '', password: '' };
+                                this.cerrarModalPadre();
                             })
                             .catch(() => {
                                 this.padreError = 'Error al crear el encargado. Intenta de nuevo.';
