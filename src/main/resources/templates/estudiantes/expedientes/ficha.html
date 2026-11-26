@@ -1,56 +1,459 @@
 <div th:fragment="modal" xmlns:th="http://www.thymeleaf.org">
-    <div class="modal-backdrop" onclick="if(event.target===this) window.dispatchEvent(new CustomEvent('close-ficha'))">
-        <div class="modal-dialog" style="max-width:560px;">
+    <style>
+        .ficha-modal-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 1.15rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .ficha-modal-tab {
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ficha-modal-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .ficha-hint {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin: 0 0 0.9rem 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ficha-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .ficha-span-2 {
+            grid-column: span 2;
+        }
+        .ficha-field {
+            position: relative;
+            padding: 0.7rem 0.85rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f8fafc;
+            transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+        }
+        .ficha-field.is-editable {
+            cursor: pointer;
+        }
+        .ficha-field.is-editable:hover {
+            border-color: #cbd5e1;
+            background: #ffffff;
+        }
+        .ficha-field.is-editing {
+            cursor: default;
+            border-color: var(--primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.12);
+        }
+        .ficha-field-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .ficha-field-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #64748b;
+        }
+        .ficha-field-edit-icon {
+            color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+        .ficha-field.is-editable:hover .ficha-field-edit-icon {
+            opacity: 1;
+            color: var(--primary);
+        }
+        .ficha-field-value {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #0f172a;
+            word-break: break-word;
+            min-height: 22px;
+            display: flex;
+            align-items: center;
+        }
+        .ficha-field-value.is-muted {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .ficha-inline-input {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #0f172a;
+            font-family: inherit;
+            font-size: 0.88rem;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .ficha-inline-input:focus {
+            border-color: var(--primary);
+        }
+        .ficha-edit-footer {
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6rem;
+        }
+        @media (max-width: 560px) {
+            .ficha-grid {
+                grid-template-columns: 1fr;
+            }
+            .ficha-span-2 {
+                grid-column: span 1;
+            }
+        }
+    </style>
+
+    <div class="modal-backdrop"
+         th:data-puede-editar="${puedeEditar != null and puedeEditar}"
+         th:data-campo-error="${campoError != null ? campoError : ''}"
+         th:data-valor-error="${valorError != null ? valorError : ''}"
+         th:data-nombre="${estudiante != null and estudiante.nombre != null ? estudiante.nombre : ''}"
+         th:data-cedula="${estudiante != null and estudiante.cedula != null ? estudiante.cedula : ''}"
+         th:data-email="${estudiante != null and estudiante.email != null ? estudiante.email : ''}"
+         th:data-usuario="${estudiante != null and estudiante.usuario != null ? estudiante.usuario : ''}"
+         th:data-nivel-id="${estudiante != null and estudiante.nivelAcademico != null ? estudiante.nivelAcademico.id : ''}"
+         th:data-anio-matricula="${estudiante != null and estudiante.anioMatricula != null ? estudiante.anioMatricula : (anioActual != null ? anioActual : '')}"
+         th:data-activo="${estudiante != null and Boolean.TRUE.equals(estudiante.activo) ? 'true' : 'false'}"
+         x-data="{
+             tab: 'general',
+             puedeEditar: $el.dataset.puedeEditar === 'true',
+             campoEditando: $el.dataset.campoError || null,
+             valorEditado: $el.dataset.campoError ? ($el.dataset.valorError || '') : '',
+             originales: {
+                 nombre: $el.dataset.nombre || '',
+                 cedula: $el.dataset.cedula || '',
+                 email: $el.dataset.email || '',
+                 usuario: $el.dataset.usuario || '',
+                 nivelId: $el.dataset.nivelId || '',
+                 anioMatricula: $el.dataset.anioMatricula || '',
+                 activo: $el.dataset.activo || 'true',
+                 password: ''
+             },
+             init() {
+                 if (this.campoEditando) {
+                     this.enfocarCampo(this.campoEditando);
+                 }
+             },
+             editarCampo(campo) {
+                 if (!this.puedeEditar || this.campoEditando === campo) return;
+                 this.campoEditando = campo;
+                 this.valorEditado = this.originales[campo] ?? '';
+                 this.enfocarCampo(campo);
+             },
+             enfocarCampo(campo) {
+                 this.$nextTick(() => {
+                     const el = document.getElementById('ficha-input-' + campo);
+                     if (el) {
+                         el.focus();
+                         if (el.tagName === 'INPUT' && el.type !== 'password' && typeof el.select === 'function') {
+                             el.select();
+                         }
+                     }
+                 });
+             },
+             cancelarEdicion() {
+                 this.campoEditando = null;
+                 this.valorEditado = '';
+             }
+         }"
+         @click.self="window.dispatchEvent(new CustomEvent('close-ficha'))">
+
+        <div class="modal-dialog" style="max-width:600px;">
             <div class="modal-header">
-                <h3 class="modal-title" th:text="${estudiante != null ? estudiante.nombre : 'Estudiante no encontrado'}">Expediente</h3>
+                <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+                    <h3 class="modal-title" th:text="${estudiante != null ? estudiante.nombre : 'Estudiante no encontrado'}">Detalle del Estudiante</h3>
+                    <span th:if="${estudiante != null}" class="badge-xs"
+                          th:classappend="${estudiante.activo ? 'badge-activo' : 'badge-inactivo'}"
+                          th:text="${estudiante.activo ? 'Activo' : 'Inactivo'}">Estado</span>
+                </div>
                 <button type="button" class="close-btn"
                         onclick="window.dispatchEvent(new CustomEvent('close-ficha'))">&times;</button>
             </div>
+
             <div class="modal-body">
                 <th:block th:if="${estudiante != null}">
-                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem;">
-                        <span class="badge" th:classappend="${estudiante.activo ? 'badge-success' : 'badge-secondary'}"
-                              th:text="${estudiante.activo ? 'Estudiante Activo' : 'Estudiante Inactivo'}">Estado</span>
+                    <div class="ficha-modal-tabs">
+                        <button type="button" class="ficha-modal-tab"
+                                :class="{ active: tab === 'general' }"
+                                @click="tab = 'general'">
+                            Información General
+                        </button>
+                        <button type="button" class="ficha-modal-tab"
+                                th:if="${puedeEditar}"
+                                :class="{ active: tab === 'padres' }"
+                                th:attr="hx-get='/estudiantes/expedientes/' + ${estudiante.id} + '/padres'"
+                                hx-target="#estudiante-padres-panel" hx-swap="innerHTML"
+                                @click="cancelarEdicion(); tab = 'padres'">
+                            Padres / Encargados
+                            <span class="badge-xs badge-estudiante" th:text="${padres != null ? #lists.size(padres) : 0}">0</span>
+                        </button>
+                        <button type="button" class="ficha-modal-tab"
+                                th:if="${!puedeEditar}"
+                                :class="{ active: tab === 'padres' }"
+                                @click="tab = 'padres'">
+                            Padres / Encargados
+                            <span class="badge-xs badge-estudiante" th:text="${padres != null ? #lists.size(padres) : 0}">0</span>
+                        </button>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:1.25rem;">
-                        <div>
-                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Cédula</p>
-                            <p style="font-weight:600;" th:text="${estudiante.cedula != null ? estudiante.cedula : '—'}">—</p>
-                        </div>
-                        <div>
-                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Usuario</p>
-                            <p style="font-weight:600;" th:text="${estudiante.usuario}">usuario</p>
-                        </div>
-                        <div>
-                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Sección</p>
-                            <p style="font-weight:600;" th:text="${estudiante.nivelAcademico != null ? estudiante.nivelAcademico.nombreCompleto : '—'}">—</p>
-                        </div>
-                        <div>
-                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Período (Año de matrícula)</p>
-                            <p style="font-weight:600;" th:text="${estudiante.anioMatricula != null ? estudiante.anioMatricula : '—'}">—</p>
-                        </div>
-                        <div style="grid-column: span 2;">
-                            <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:2px;">Correo electrónico</p>
-                            <p style="font-weight:600;" th:text="${estudiante.email}">correo</p>
-                        </div>
+                    <!-- Tab Información General -->
+                    <div x-show="tab === 'general'">
+                        <p class="ficha-hint" th:if="${puedeEditar}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+                            </svg>
+                            Haz clic sobre cualquier campo para editarlo.
+                        </p>
+
+                        <div th:if="${errorFicha}" class="form-alert-error" style="margin-bottom:0.9rem;" th:text="${errorFicha}"></div>
+
+                        <form th:attr="hx-post='/estudiantes/expedientes/ficha/' + ${estudiante.id}"
+                              hx-target="#estudiantes-ficha-container"
+                              hx-swap="innerHTML">
+                            <input type="hidden" name="campoEditar" :value="campoEditando || ''">
+
+                            <div class="ficha-grid">
+                                <!-- Nombre completo -->
+                                <div class="ficha-field ficha-span-2"
+                                     :class="{ 'is-editable': puedeEditar && campoEditando !== 'nombre', 'is-editing': campoEditando === 'nombre' }"
+                                     @click="editarCampo('nombre')">
+                                    <div class="ficha-field-head">
+                                        <span class="ficha-field-label">Nombre completo</span>
+                                        <svg x-show="puedeEditar && campoEditando !== 'nombre'" class="ficha-field-edit-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </div>
+                                    <div x-show="campoEditando !== 'nombre'" class="ficha-field-value"
+                                         th:text="${estudiante.nombre}">Nombre</div>
+                                    <template x-if="campoEditando === 'nombre'">
+                                        <input id="ficha-input-nombre" type="text" name="valorEditar"
+                                               class="ficha-inline-input" required maxlength="100"
+                                               x-model="valorEditado"
+                                               @click.stop
+                                               @keydown.escape.stop.prevent="cancelarEdicion()">
+                                    </template>
+                                </div>
+
+                                <!-- Cédula -->
+                                <div class="ficha-field"
+                                     :class="{ 'is-editable': puedeEditar && campoEditando !== 'cedula', 'is-editing': campoEditando === 'cedula' }"
+                                     @click="editarCampo('cedula')">
+                                    <div class="ficha-field-head">
+                                        <span class="ficha-field-label">Cédula</span>
+                                        <svg x-show="puedeEditar && campoEditando !== 'cedula'" class="ficha-field-edit-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </div>
+                                    <div x-show="campoEditando !== 'cedula'" class="ficha-field-value"
+                                         th:classappend="${estudiante.cedula == null} ? 'is-muted'"
+                                         th:text="${estudiante.cedula != null ? estudiante.cedula : 'Sin cédula'}">—</div>
+                                    <template x-if="campoEditando === 'cedula'">
+                                        <input id="ficha-input-cedula" type="text" name="valorEditar"
+                                               class="ficha-inline-input" maxlength="30" placeholder="1-2345-6789"
+                                               x-model="valorEditado"
+                                               @click.stop
+                                               @keydown.escape.stop.prevent="cancelarEdicion()">
+                                    </template>
+                                </div>
+
+                                <!-- Nombre de usuario -->
+                                <div class="ficha-field"
+                                     :class="{ 'is-editable': puedeEditar && campoEditando !== 'usuario', 'is-editing': campoEditando === 'usuario' }"
+                                     @click="editarCampo('usuario')">
+                                    <div class="ficha-field-head">
+                                        <span class="ficha-field-label">Usuario</span>
+                                        <svg x-show="puedeEditar && campoEditando !== 'usuario'" class="ficha-field-edit-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </div>
+                                    <div x-show="campoEditando !== 'usuario'" class="ficha-field-value"
+                                         th:text="${estudiante.usuario}">usuario</div>
+                                    <template x-if="campoEditando === 'usuario'">
+                                        <input id="ficha-input-usuario" type="text" name="valorEditar"
+                                               class="ficha-inline-input" required maxlength="60"
+                                               x-model="valorEditado"
+                                               @click.stop
+                                               @keydown.escape.stop.prevent="cancelarEdicion()">
+                                    </template>
+                                </div>
+
+                                <!-- Sección -->
+                                <div class="ficha-field"
+                                     :class="{ 'is-editable': puedeEditar && campoEditando !== 'nivelId', 'is-editing': campoEditando === 'nivelId' }"
+                                     @click="editarCampo('nivelId')">
+                                    <div class="ficha-field-head">
+                                        <span class="ficha-field-label">Sección</span>
+                                        <svg x-show="puedeEditar && campoEditando !== 'nivelId'" class="ficha-field-edit-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </div>
+                                    <div x-show="campoEditando !== 'nivelId'" class="ficha-field-value"
+                                         th:classappend="${estudiante.nivelAcademico == null} ? 'is-muted'"
+                                         th:text="${estudiante.nivelAcademico != null ? estudiante.nivelAcademico.nombreCompleto : 'Sin sección'}">—</div>
+                                    <template x-if="campoEditando === 'nivelId'">
+                                        <select id="ficha-input-nivelId" name="valorEditar"
+                                                class="ficha-inline-input" required
+                                                x-model="valorEditado"
+                                                @click.stop
+                                                @keydown.escape.stop.prevent="cancelarEdicion()">
+                                            <option value="" disabled>Seleccione una sección</option>
+                                            <option th:each="nivel : ${niveles}"
+                                                    th:value="${nivel.id}"
+                                                    th:text="${nivel.nombreCompleto}">7 - A</option>
+                                        </select>
+                                    </template>
+                                </div>
+
+                                <!-- Período (Año de matrícula) -->
+                                <div class="ficha-field"
+                                     :class="{ 'is-editable': puedeEditar && campoEditando !== 'anioMatricula', 'is-editing': campoEditando === 'anioMatricula' }"
+                                     @click="editarCampo('anioMatricula')">
+                                    <div class="ficha-field-head">
+                                        <span class="ficha-field-label">Período (Año)</span>
+                                        <svg x-show="puedeEditar && campoEditando !== 'anioMatricula'" class="ficha-field-edit-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </div>
+                                    <div x-show="campoEditando !== 'anioMatricula'" class="ficha-field-value"
+                                         th:classappend="${estudiante.anioMatricula == null} ? 'is-muted'"
+                                         th:text="${estudiante.anioMatricula != null ? estudiante.anioMatricula : 'Sin período'}">—</div>
+                                    <template x-if="campoEditando === 'anioMatricula'">
+                                        <input id="ficha-input-anioMatricula" type="number" name="valorEditar"
+                                               class="ficha-inline-input" required min="1990" max="2100" step="1"
+                                               x-model="valorEditado"
+                                               @click.stop
+                                               @keydown.escape.stop.prevent="cancelarEdicion()">
+                                    </template>
+                                </div>
+
+                                <!-- Correo electrónico -->
+                                <div class="ficha-field ficha-span-2"
+                                     :class="{ 'is-editable': puedeEditar && campoEditando !== 'email', 'is-editing': campoEditando === 'email' }"
+                                     @click="editarCampo('email')">
+                                    <div class="ficha-field-head">
+                                        <span class="ficha-field-label">Correo electrónico</span>
+                                        <svg x-show="puedeEditar && campoEditando !== 'email'" class="ficha-field-edit-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </div>
+                                    <div x-show="campoEditando !== 'email'" class="ficha-field-value"
+                                         th:text="${estudiante.email}">correo</div>
+                                    <template x-if="campoEditando === 'email'">
+                                        <input id="ficha-input-email" type="email" name="valorEditar"
+                                               class="ficha-inline-input" required maxlength="150"
+                                               x-model="valorEditado"
+                                               @click.stop
+                                               @keydown.escape.stop.prevent="cancelarEdicion()">
+                                    </template>
+                                </div>
+
+                                <!-- Estado -->
+                                <div class="ficha-field"
+                                     :class="{ 'is-editable': puedeEditar && campoEditando !== 'activo', 'is-editing': campoEditando === 'activo' }"
+                                     @click="editarCampo('activo')">
+                                    <div class="ficha-field-head">
+                                        <span class="ficha-field-label">Estado</span>
+                                        <svg x-show="puedeEditar && campoEditando !== 'activo'" class="ficha-field-edit-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </div>
+                                    <div x-show="campoEditando !== 'activo'" class="ficha-field-value">
+                                        <span class="badge-xs"
+                                              th:classappend="${estudiante.activo ? 'badge-activo' : 'badge-inactivo'}"
+                                              th:text="${estudiante.activo ? 'Activo' : 'Inactivo'}">Activo</span>
+                                    </div>
+                                    <template x-if="campoEditando === 'activo'">
+                                        <select id="ficha-input-activo" name="valorEditar"
+                                                class="ficha-inline-input"
+                                                x-model="valorEditado"
+                                                @click.stop
+                                                @keydown.escape.stop.prevent="cancelarEdicion()">
+                                            <option value="true">Activo</option>
+                                            <option value="false">Inactivo</option>
+                                        </select>
+                                    </template>
+                                </div>
+
+                                <!-- Contraseña (solo editable para admin/director) -->
+                                <div class="ficha-field" th:if="${puedeEditar}"
+                                     :class="{ 'is-editable': puedeEditar && campoEditando !== 'password', 'is-editing': campoEditando === 'password' }"
+                                     @click="editarCampo('password')">
+                                    <div class="ficha-field-head">
+                                        <span class="ficha-field-label">Contraseña</span>
+                                        <svg x-show="puedeEditar && campoEditando !== 'password'" class="ficha-field-edit-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </div>
+                                    <div x-show="campoEditando !== 'password'" class="ficha-field-value is-muted">
+                                        ••••••••
+                                    </div>
+                                    <template x-if="campoEditando === 'password'">
+                                        <input id="ficha-input-password" type="password" name="valorEditar"
+                                               class="ficha-inline-input" required placeholder="Nueva contraseña"
+                                               x-model="valorEditado"
+                                               @click.stop
+                                               @keydown.escape.stop.prevent="cancelarEdicion()">
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div class="ficha-edit-footer" x-show="campoEditando !== null" x-cloak>
+                                <button type="button" class="btn-secondary" @click="cancelarEdicion()">Cancelar</button>
+                                <button type="submit" class="btn-primary">Guardar cambio</button>
+                            </div>
+                        </form>
                     </div>
 
-                    <h4 style="font-size:0.9rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.6rem;">
-                        👨‍👩‍👧 Padres / Encargados
-                    </h4>
-                    <div th:if="${padres == null or padres.empty}" style="color:var(--text-light); font-size:0.85rem;">
-                        No hay padres o encargados vinculados a este estudiante.
-                    </div>
-                    <div th:each="p : ${padres}" class="premium-list-item" style="margin-bottom:0.5rem;">
-                        <div>
-                            <h4 style="font-weight:600;" th:text="${p.nombre}">Nombre del padre</h4>
-                            <p style="font-size:0.85rem; color:var(--text-secondary);" th:text="${p.email}">correo</p>
+                    <!-- Tab Padres / Encargados -->
+                    <div x-show="tab === 'padres'" x-cloak>
+                        <div th:if="${puedeEditar}" id="estudiante-padres-panel">
+                            <p style="color:#94a3b8;font-size:0.85rem;">Cargando encargados...</p>
                         </div>
-                        <span class="badge" th:classappend="${p.activo ? 'badge-success' : 'badge-secondary'}"
-                              th:text="${p.activo ? 'Activo' : 'Inactivo'}">Estado</span>
+                        <th:block th:if="${!puedeEditar}">
+                            <div th:if="${padres == null or padres.empty}" style="color:var(--text-light); font-size:0.85rem;">
+                                No hay padres o encargados vinculados a este estudiante.
+                            </div>
+                            <div th:each="p : ${padres}" class="premium-list-item" style="margin-bottom:0.5rem;">
+                                <div>
+                                    <h4 style="font-weight:600;" th:text="${p.nombre}">Nombre del padre</h4>
+                                    <p style="font-size:0.85rem; color:var(--text-secondary);" th:text="${p.email}">correo</p>
+                                </div>
+                                <span class="badge" th:classappend="${p.activo ? 'badge-success' : 'badge-secondary'}"
+                                      th:text="${p.activo ? 'Activo' : 'Inactivo'}">Estado</span>
+                            </div>
+                        </th:block>
                     </div>
                 </th:block>
+
                 <p th:if="${estudiante == null}" class="table-empty">No se encontró información para este estudiante.</p>
             </div>
         </div>

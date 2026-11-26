@@ -48,20 +48,22 @@
                     </td>
                     <td>
                         <div class="table-actions">
-                            <button class="btn-xs btn-ghost"
+                            <button type="button" class="btn-xs btn-ghost est-action-btn"
                                     th:attr="hx-get='/estudiantes/expedientes/ficha/' + ${u.id}"
                                     hx-target="#estudiantes-ficha-container" hx-swap="innerHTML"
                                     hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-ficha'))"
-                                    title="Ver Ficha">📁</button>
-                            <button class="btn-xs btn-ghost"
-                                    th:attr="hx-get='/estudiantes/expedientes/form/' + ${u.id}"
-                                    hx-target="#estudiantes-modal-container" hx-swap="innerHTML"
-                                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
-                                    title="Editar">✏️</button>
-                            <button class="btn-xs btn-danger-ghost"
+                                    title="Ver detalle" aria-label="Ver detalle">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn-xs btn-danger-ghost est-action-btn est-deactivate-btn"
+                                    th:disabled="${!u.activo}"
+                                    th:title="${u.activo ? 'Desactivar' : 'Estudiante ya desactivado'}"
+                                    aria-label="Desactivar"
                                     onclick="abrirConfirmacionAcademica(this)"
-                                    th:attr="data-delete-url=@{/estudiantes/expedientes/{id}(id=${u.id}, q=${!#strings.isEmpty(q) ? q : null}, campo=${campo != null and campo != 'todas' ? campo : null}, periodo=${periodo}, pagina=${pagina}, tamano=${tamano})},data-delete-target='#estudiantes-dir-content',data-delete-title='Eliminar estudiante',data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
-                                    title="Eliminar">🗑️</button>
+                                    th:attr="data-delete-url=@{/estudiantes/expedientes/{id}(id=${u.id}, q=${!#strings.isEmpty(q) ? q : null}, campo=${campo != null and campo != 'todas' ? campo : null}, periodo=${periodo}, pagina=${pagina}, tamano=${tamano})},data-delete-target='#estudiantes-dir-content',data-delete-title='Desactivar estudiante',data-delete-confirm-label='Desactivar',data-delete-message='¿Deseas desactivar a ' + ${u.nombre} + '? El expediente pasará a estado inactivo y se conservará su historial.'">🗑️</button>
                         </div>
                     </td>
                 </tr>

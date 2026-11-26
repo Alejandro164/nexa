@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
@@ -81,12 +82,47 @@ public class EstudiantesController {
     }
 
     @GetMapping("/expedientes/ficha/{id}")
-    public String expedientesFicha(@PathVariable Long id, Model model, HttpSession session) {
+    public String expedientesFicha(@PathVariable Long id, Model model, HttpSession session,
+            HttpServletRequest request) {
         Long direccionId = requerirDireccion(session);
+        cargarModeloFicha(model, direccionId, id, request);
+        return "estudiantes/expedientes/ficha :: modal";
+    }
+
+    @PostMapping("/expedientes/ficha/{id}")
+    public String expedientesFichaActualizarCampo(
+            @PathVariable Long id,
+            @RequestParam String campoEditar,
+            @RequestParam(required = false) String valorEditar,
+            Model model, HttpSession session, HttpServletRequest request, HttpServletResponse response) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            Usuario actualizado = personalService.actualizarCampoEstudiante(direccionId, id, campoEditar, valorEditar);
+            cargarModeloFicha(model, direccionId, id, request);
+            StringBuilder trigger = new StringBuilder("{\"estudianteActualizado\":true,\"notify\":{\"type\":\"success\",\"message\":\"Cambio guardado correctamente\"}");
+            if (actualizado.getAnioMatricula() != null) {
+                trigger.append(",\"estudianteGuardado\":{\"periodo\":").append(actualizado.getAnioMatricula()).append("}");
+            }
+            trigger.append("}");
+            response.setHeader("HX-Trigger", trigger.toString());
+            return "estudiantes/expedientes/ficha :: modal";
+        } catch (Exception e) {
+            cargarModeloFicha(model, direccionId, id, request);
+            model.addAttribute("errorFicha", e.getMessage());
+            model.addAttribute("campoError", campoEditar);
+            model.addAttribute("valorError", valorEditar != null ? valorEditar : "");
+            return "estudiantes/expedientes/ficha :: modal";
+        }
+    }
+
+    private void cargarModeloFicha(Model model, Long direccionId, Long id, HttpServletRequest request) {
         Usuario estudiante = personalService.obtenerPorId(direccionId, id);
+        boolean puedeEditar = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
         model.addAttribute("estudiante", estudiante);
         model.addAttribute("padres", usuarioRepository.findPadresByEstudianteId(id));
-        return "estudiantes/expedientes/ficha :: modal";
+        model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
+        model.addAttribute("puedeEditar", puedeEditar);
+        model.addAttribute("anioActual", Year.now().getValue());
     }
 
     @GetMapping("/expedientes/form")
@@ -152,17 +188,19 @@ public class EstudiantesController {
     }
 
     @DeleteMapping("/expedientes/{id}")
-    public String expedientesEliminar(
+    public String expedientesDesactivar(
             @PathVariable Long id,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String campo,
             @RequestParam(required = false) Integer periodo,
             @RequestParam(required = false) Integer pagina,
             @RequestParam(required = false) Integer tamano,
-            Model model, HttpSession session) {
+            Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
-        personalService.eliminar(direccionId, id);
+        personalService.desactivar(direccionId, id);
         cargarListaExpedientes(model, direccionId, q, campo, periodo, pagina, tamano);
+        response.setHeader("HX-Trigger",
+                "{\"notify\":{\"type\":\"success\",\"message\":\"Estudiante desactivado correctamente\"}}");
         return "estudiantes/expedientes/lista :: content";
     }
 

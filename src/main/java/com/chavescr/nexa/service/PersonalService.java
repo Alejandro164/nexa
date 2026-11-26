@@ -318,6 +318,124 @@ public class PersonalService {
         usuarioRepository.save(u);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void desactivar(Long direccionId, Long id) {
+        Usuario u = obtenerPorId(direccionId, id);
+        if (Boolean.TRUE.equals(u.getActivo())) {
+            u.setActivo(false);
+            usuarioRepository.save(u);
+            log.info("Estudiante desactivado (soft delete): id={}", id);
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Usuario actualizarCampoEstudiante(Long direccionId, Long id, String campo, String valor) {
+        Usuario u = obtenerPorId(direccionId, id);
+        if (!esEstudiante(u.getRoles())) {
+            throw new IllegalArgumentException("Estudiante no encontrado.");
+        }
+        String clave = campo == null ? "" : campo.trim();
+        switch (clave) {
+            case "nombre" -> {
+                String limpio = valor == null ? "" : valor.trim();
+                if (limpio.isEmpty()) {
+                    throw new IllegalArgumentException("El nombre completo es obligatorio.");
+                }
+                if (limpio.length() > 100) {
+                    throw new IllegalArgumentException("El nombre completo no puede superar los 100 caracteres.");
+                }
+                u.setNombre(limpio);
+            }
+            case "cedula" -> {
+                String cedula = valor == null || valor.isBlank() ? null : valor.trim();
+                if (cedula != null && cedula.length() > 30) {
+                    throw new IllegalArgumentException("La cédula no puede superar los 30 caracteres.");
+                }
+                if (cedula != null && usuarioRepository.findByCedula(cedula)
+                        .filter(otro -> !otro.getId().equals(id))
+                        .isPresent()) {
+                    throw new IllegalArgumentException("Ya existe otra persona registrada con esa cédula.");
+                }
+                u.setCedula(cedula);
+            }
+            case "email" -> {
+                String email = valor == null ? "" : valor.trim().toLowerCase();
+                if (email.isEmpty() || !email.contains("@")) {
+                    throw new IllegalArgumentException("Ingresa un correo electrónico válido.");
+                }
+                if (email.length() > 150) {
+                    throw new IllegalArgumentException("El correo electrónico no puede superar los 150 caracteres.");
+                }
+                if (usuarioRepository.findByEmail(email)
+                        .filter(otro -> !otro.getId().equals(id))
+                        .isPresent()) {
+                    throw new IllegalArgumentException("Ya existe otra persona registrada con ese correo electrónico.");
+                }
+                u.setEmail(email);
+            }
+            case "usuario" -> {
+                String handle = valor == null ? "" : valor.trim().toLowerCase();
+                if (handle.isEmpty()) {
+                    throw new IllegalArgumentException("El nombre de usuario es obligatorio.");
+                }
+                if (handle.length() > 60) {
+                    throw new IllegalArgumentException("El nombre de usuario no puede superar los 60 caracteres.");
+                }
+                if (usuarioRepository.findByUsuario(handle)
+                        .filter(otro -> !otro.getId().equals(id))
+                        .isPresent()) {
+                    throw new IllegalArgumentException("Ese nombre de usuario ya está en uso.");
+                }
+                u.setUsuario(handle);
+            }
+            case "nivelId" -> {
+                if (valor == null || valor.isBlank()) {
+                    throw new IllegalArgumentException("Debes seleccionar una sección.");
+                }
+                Long nivelId;
+                try {
+                    nivelId = Long.valueOf(valor.trim());
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("La sección seleccionada no es válida.");
+                }
+                NivelAcademico nivel = nivelAcademicoRepository.findByIdAndDireccionId(nivelId, direccionId)
+                        .orElseThrow(() -> new IllegalArgumentException("Sección no encontrada."));
+                u.setNivelAcademico(nivel);
+            }
+            case "anioMatricula" -> {
+                if (valor == null || valor.isBlank()) {
+                    throw new IllegalArgumentException("El período es obligatorio.");
+                }
+                int anio;
+                try {
+                    anio = Integer.parseInt(valor.trim());
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("El período debe ser un año numérico válido.");
+                }
+                if (anio < 1990 || anio > 2100) {
+                    throw new IllegalArgumentException("El período debe ser un año válido entre 1990 y 2100.");
+                }
+                u.setAnioMatricula(anio);
+            }
+            case "activo" -> {
+                if (valor == null || (!"true".equalsIgnoreCase(valor.trim()) && !"false".equalsIgnoreCase(valor.trim()))) {
+                    throw new IllegalArgumentException("El estado seleccionado no es válido.");
+                }
+                u.setActivo(Boolean.parseBoolean(valor.trim()));
+            }
+            case "password" -> {
+                if (valor == null || valor.isBlank()) {
+                    throw new IllegalArgumentException("La nueva contraseña no puede estar vacía.");
+                }
+                u.setPassword(passwordEncoder.encode(valor));
+            }
+            default -> throw new IllegalArgumentException("El campo seleccionado no se puede editar.");
+        }
+        Usuario guardado = usuarioRepository.save(u);
+        log.info("Campo '{}' actualizado para estudiante id={}", clave, id);
+        return guardado;
+    }
+
     // ─── VÍNCULO PADRE-ESTUDIANTE ────────────────────────────────
     // La relación es dueña del lado padre.estudiantes (@JoinTable en esa dirección) — vincular y
     // desvincular siempre mutan y guardan al padre, nunca al estudiante directamente.

@@ -7,6 +7,7 @@
          campo: $el.dataset.campoInicial || 'todas',
          periodo: $el.dataset.periodoInicial || '',
          _onEstudianteGuardado: null,
+         _onEstudianteActualizado: null,
          placeholders: {
              todas: 'Buscar por nombre, correo, cédula, sección...',
              nombre: 'Buscar por nombre del estudiante...',
@@ -42,10 +43,26 @@
                  }
              };
              document.body.addEventListener('estudianteGuardado', this._onEstudianteGuardado);
+             this._onEstudianteActualizado = () => {
+                 if (!window.htmx || !this.$refs.filtrosForm) return;
+                 const params = new URLSearchParams(new FormData(this.$refs.filtrosForm));
+                 const pagInput = document.getElementById('est-pagina-actual');
+                 if (pagInput && pagInput.value) {
+                     params.set('pagina', pagInput.value);
+                 }
+                 window.htmx.ajax('GET', '/estudiantes/expedientes/lista?' + params.toString(), {
+                     target: '#estudiantes-dir-content',
+                     swap: 'innerHTML'
+                 });
+             };
+             document.body.addEventListener('estudianteActualizado', this._onEstudianteActualizado);
          },
          destroy() {
              if (this._onEstudianteGuardado) {
                  document.body.removeEventListener('estudianteGuardado', this._onEstudianteGuardado);
+             }
+             if (this._onEstudianteActualizado) {
+                 document.body.removeEventListener('estudianteActualizado', this._onEstudianteActualizado);
              }
          },
          placeholderActual() {
@@ -311,6 +328,22 @@
             font-size: 0.78rem;
             font-weight: 600;
             font-variant-numeric: tabular-nums;
+        }
+        .est-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 5px 8px;
+            border-radius: 7px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+        .est-deactivate-btn:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+            pointer-events: none;
         }
         .est-pagination-bar {
             display: flex;
