@@ -1,15 +1,20 @@
 package com.chavescr.nexa.controller;
 
+import java.util.List;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import com.chavescr.nexa.dto.PestanaRubro;
+import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 import com.chavescr.nexa.service.EscalaNotasService;
+import com.chavescr.nexa.service.GestionAcademicaService;
 import com.chavescr.nexa.service.NotasConsultaService;
 import com.chavescr.nexa.service.RebajaConductaService;
-import com.chavescr.nexa.service.TipoComponenteService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -17,17 +22,18 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 public class MenuController {
 
-    private final TipoComponenteService tipoComponenteService;
     private final NotasConsultaService notasConsultaService;
     private final EscalaNotasService escalaNotasService;
     private final RebajaConductaService rebajaConductaService;
+    private final GestionAcademicaService gestionAcademicaService;
 
-    public MenuController(TipoComponenteService tipoComponenteService, NotasConsultaService notasConsultaService,
-            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService) {
-        this.tipoComponenteService = tipoComponenteService;
+    public MenuController(NotasConsultaService notasConsultaService,
+            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService,
+            GestionAcademicaService gestionAcademicaService) {
         this.notasConsultaService = notasConsultaService;
         this.escalaNotasService = escalaNotasService;
         this.rebajaConductaService = rebajaConductaService;
+        this.gestionAcademicaService = gestionAcademicaService;
     }
 
     @GetMapping("/estudiantes")
@@ -35,14 +41,41 @@ public class MenuController {
         return htmxRequest ? "estudiantes/index :: htmx-content" : "estudiantes/index";
     }
 
+    /**
+     * Primero se elige la materia; las pestañas son los rubros que califica su componente de evaluación.
+     * La materia queda en sesión para volver a ella; {@code tab} conserva la pestaña al cambiar de materia.
+     */
     @GetMapping("/gestion-academica")
     public String gestionAcademica(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
-            Model model, HttpSession session) {
+            @RequestParam(required = false) Long materiaId, @RequestParam(required = false) String tab,
+            Model model, HttpSession session, HttpServletRequest request) {
         Long direccionId = (Long) session.getAttribute("SESSION_DIRECCION_ID");
-        model.addAttribute("tiposComponente", direccionId == null
-                ? java.util.List.of()
-                : tipoComponenteService.listarActivos(direccionId));
+        List<Materia> materias = direccionId == null ? List.of()
+                : gestionAcademicaService.materias(direccionId, docenteIdSiAplica(request, session));
+        Object recordada = session.getAttribute("SESSION_GESTION_MATERIA_ID");
+        Long elegida = gestionAcademicaService.elegirMateria(materias, materiaId,
+                recordada instanceof Long id ? id : null);
+        if (elegida != null) {
+            session.setAttribute("SESSION_GESTION_MATERIA_ID", elegida);
+        }
+        List<PestanaRubro> pestanas = direccionId == null ? List.of()
+                : gestionAcademicaService.pestanas(direccionId, elegida);
+
+        boolean tabValida = "asistencia".equals(tab) || "promedio".equals(tab)
+                || pestanas.stream().anyMatch(p -> p.getId().equals(tab));
+        model.addAttribute("materias", materias);
+        model.addAttribute("materiaId", elegida);
+        model.addAttribute("pestanas", pestanas);
+        model.addAttribute("tabInicial", tabValida ? tab : "asistencia");
         return htmxRequest ? "gestion-academica/index :: htmx-content" : "gestion-academica/index";
+    }
+
+    /** Un docente (sin rol de director ni admin) solo ve las materias de su horario. */
+    private static Long docenteIdSiAplica(HttpServletRequest request, HttpSession session) {
+        boolean soloDocente = request.isUserInRole("ROLE_DOCENTE")
+                && !request.isUserInRole("ROLE_ADMIN")
+                && !request.isUserInRole("ROLE_DIRECTOR");
+        return soloDocente ? (Long) session.getAttribute("SESSION_USUARIO_ID") : null;
     }
 
     @GetMapping("/gestion-especial")

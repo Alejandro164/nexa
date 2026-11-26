@@ -83,18 +83,12 @@
         <div class="card-header" style="justify-content: flex-start;">
             <h3 class="card-title">Promedio de Componentes</h3>
             <div class="promedio-filtros">
-                <select class="form-input" name="materiaId"
-                        hx-get="/gestion-academica/promedio"
-                        hx-target="#promedio-panel" hx-swap="innerHTML"
-                        hx-include="[name='nivelId']">
-                    <option value="" th:if="${materias == null or materias.empty}" disabled selected>Sin materias</option>
-                    <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"
-                            th:selected="${materiaId != null and materiaId == m.id}"></option>
-                </select>
+                <!-- La materia se elige arriba de las pestañas de Gestión Académica. -->
+                <input type="hidden" name="materiaId" th:value="${materiaId}">
                 <select class="form-input" name="nivelId"
                         hx-get="/gestion-academica/promedio"
                         hx-target="#promedio-panel" hx-swap="innerHTML"
-                        hx-include="[name='materiaId']">
+                        hx-include="closest .promedio-filtros">
                     <option value="" th:if="${niveles == null or niveles.empty}" disabled selected>Sin secciones</option>
                     <option th:each="n : ${niveles}" th:value="${n.id}" th:text="'Sección ' + ${n.nombreCompleto}"
                             th:selected="${nivelId != null and nivelId == n.id}"></option>

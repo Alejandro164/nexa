@@ -25,6 +25,7 @@ import com.chavescr.nexa.dto.EventoCalendarioDTO;
 import com.chavescr.nexa.dto.EventoMepDTO;
 import com.chavescr.nexa.dto.FilaPromedio;
 import com.chavescr.nexa.dto.NotasConductaDetalle;
+import com.chavescr.nexa.dto.PestanaRubro;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Cuenta;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Linea;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Registro;
@@ -38,6 +39,7 @@ import com.chavescr.nexa.entity.CicloEducativo;
 import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.EscalaNotas;
 import com.chavescr.nexa.entity.HorarioLeccion;
+import com.chavescr.nexa.entity.ClaveComponente;
 import com.chavescr.nexa.entity.Materia;
 import com.chavescr.nexa.entity.NivelAcademico;
 import com.chavescr.nexa.entity.PeriodoAcademico;
@@ -356,6 +358,47 @@ class ProyectoApplicationTests {
 		String desglose = templateEngine.process(filas, notas);
 		assertTrue(desglose.contains("data-rubro=\"Exámenes\""));
 		assertTrue(desglose.contains("Ver Exámenes de Taller"));
+	}
+
+	@Test
+	void gestionAcademicaPideLaMateriaYMuestraSoloLosRubrosDeSuComponente() {
+		Materia matematica = new Materia();
+		matematica.setId(4L);
+		matematica.setNombre("Matemática");
+		Materia ciencias = new Materia();
+		ciencias.setId(7L);
+		ciencias.setNombre("Ciencias");
+
+		Context context = new Context();
+		context.setVariable("materias", List.of(matematica, ciencias));
+		context.setVariable("materiaId", 7L);
+		context.setVariable("tabInicial", "EXAMEN");
+		context.setVariable("pestanas", List.of(
+				new PestanaRubro(ClaveComponente.COTIDIANO, "Cotidiano", "📝", 45,
+						"/gestion-academica/cotidiano/indicadores", "indicadores-panel"),
+				new PestanaRubro(ClaveComponente.EXAMEN, "Exámenes", "📋", 40,
+						"/gestion-academica/examenes", "examenes-panel")));
+
+		TemplateSpec contenido = new TemplateSpec("gestion-academica/index", Set.of("htmx-content"),
+				(org.thymeleaf.templatemode.TemplateMode) null, null);
+		String html = templateEngine.process(contenido, context);
+
+		assertTrue(html.contains("id=\"ga-materia\""));
+		assertTrue(html.contains("<option value=\"7\" selected=\"selected\">Ciencias</option>"));
+		assertTrue(html.contains(">📋 Exámenes<"));
+		assertTrue(html.contains("data-tab=\"EXAMEN\""));
+		assertFalse(html.contains("data-tab=\"PROYECTO\""));
+		assertTrue(html.contains("hx-get=\"/gestion-academica/examenes?materiaId=7\""));
+		assertTrue(html.contains("hx-get=\"/gestion-academica/promedio?materiaId=7\""));
+		assertTrue(html.contains("hx-get=\"/gestion-academica/asistencia?materiaId=7\""));
+		assertTrue(html.contains("activeTab: 'EXAMEN'") || html.contains("activeTab: &#39;EXAMEN&#39;"));
+
+		context.setVariable("materias", List.of());
+		context.setVariable("materiaId", null);
+		context.setVariable("pestanas", List.of());
+		String vacio = templateEngine.process(contenido, context);
+		assertTrue(vacio.contains("No hay materias para calificar"));
+		assertFalse(vacio.contains("class=\"config-tabs-container\""));
 	}
 
 	@Test
