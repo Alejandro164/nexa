@@ -31,6 +31,7 @@ public class ComponenteEvaluacionService {
     public static final String NOMBRE_GENERAL = "General";
 
     private static final int LARGO_NOMBRE_RUBRO = 60;
+    private static final int LARGO_EMOJI = 16;
 
     private static final List<Predeterminado> PREDETERMINADOS = List.of(
             new Predeterminado(NOMBRE_GENERAL, "Reparto por defecto de Nexa", 40, 15, 20, 20, 5),
@@ -117,6 +118,14 @@ public class ComponenteEvaluacionService {
         NombresRubros nombres = new NombresRubros(nombreCotidiano, nombreTareas, nombreProyecto, nombrePruebas,
                 nombreAsistencia);
         validarNombresDistintos(nombres);
+        String emojiCotidiano = emojiRubro(datos.getEmojiCotidiano(), NombresRubros.EMOJI_COTIDIANO,
+                nombres.getCotidiano());
+        String emojiTareas = emojiRubro(datos.getEmojiTareas(), NombresRubros.EMOJI_TAREAS, nombres.getTareas());
+        String emojiProyecto = emojiRubro(datos.getEmojiProyecto(), NombresRubros.EMOJI_PROYECTO,
+                nombres.getProyecto());
+        String emojiPruebas = emojiRubro(datos.getEmojiPruebas(), NombresRubros.EMOJI_PRUEBAS, nombres.getPruebas());
+        String emojiAsistencia = emojiRubro(datos.getEmojiAsistencia(), NombresRubros.EMOJI_ASISTENCIA,
+                nombres.getAsistencia());
 
         int cotidiano = porcentaje(datos.getCotidiano(), nombres.getCotidiano());
         int tareas = porcentaje(datos.getTareas(), nombres.getTareas());
@@ -149,6 +158,11 @@ public class ComponenteEvaluacionService {
         componente.setNombreProyecto(nombreProyecto);
         componente.setNombrePruebas(nombrePruebas);
         componente.setNombreAsistencia(nombreAsistencia);
+        componente.setEmojiCotidiano(emojiCotidiano);
+        componente.setEmojiTareas(emojiTareas);
+        componente.setEmojiProyecto(emojiProyecto);
+        componente.setEmojiPruebas(emojiPruebas);
+        componente.setEmojiAsistencia(emojiAsistencia);
         componente.setActivo(datos.getActivo() == null || datos.getActivo());
         return repository.save(componente);
     }
@@ -274,6 +288,23 @@ public class ComponenteEvaluacionService {
         if (limpio.length() > LARGO_NOMBRE_RUBRO) {
             throw new IllegalArgumentException("El nombre del rubro «" + predeterminado + "» admite hasta "
                     + LARGO_NOMBRE_RUBRO + " caracteres");
+        }
+        return limpio;
+    }
+
+    /**
+     * Emoji propio de un rubro: null si viene vacío o igual al predeterminado (sigue el de la institución). Solo
+     * acepta emojis: nada de letras, números ni etiquetas, y a lo sumo {@value #LARGO_EMOJI} caracteres (algunos
+     * emojis ocupan varios, como ✏️ o 👨‍🏫).
+     */
+    private static String emojiRubro(String emoji, String predeterminado, String rubro) {
+        String limpio = emoji == null ? "" : emoji.strip();
+        if (limpio.isEmpty() || limpio.equals(predeterminado)) {
+            return null;
+        }
+        if (limpio.length() > LARGO_EMOJI || limpio.codePoints().anyMatch(c -> Character.isLetterOrDigit(c)
+                || Character.isWhitespace(c) || c == '<' || c == '>' || c == '&' || c == '"' || c == '\'')) {
+            throw new IllegalArgumentException("El emoji del rubro «" + rubro + "» no es válido");
         }
         return limpio;
     }

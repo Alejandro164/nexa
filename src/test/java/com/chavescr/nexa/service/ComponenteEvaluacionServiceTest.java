@@ -119,6 +119,37 @@ class ComponenteEvaluacionServiceTest {
     }
 
     @Test
+    void cadaComponentePuedeElegirElEmojiDeSusRubros() {
+        when(direccionRepository.findById(DIRECCION)).thenReturn(Optional.of(new Direccion()));
+        when(repository.findByDireccionIdOrderByOrdenAscNombreAsc(DIRECCION)).thenReturn(List.of());
+        when(repository.save(any(ComponenteEvaluacion.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
+        ComponenteEvaluacion datos = componente("Técnicas", 45, 10, 0, 40, 5);
+        datos.setEmojiPruebas(" 🧪 ");
+        datos.setEmojiTareas("📚");
+        datos.setEmojiCotidiano("✏️");
+
+        ComponenteEvaluacion guardado = service.guardar(DIRECCION, datos);
+
+        assertEquals("🧪", guardado.getEmojiPruebas());
+        assertNull(guardado.getEmojiTareas());
+        assertEquals("✏️", guardado.getEmojiCotidiano());
+        assertEquals("🧪 Pruebas", guardado.getNombresRubros().etiqueta(ClaveComponente.EXAMEN, "📋"));
+        assertEquals("📚 Tareas", guardado.getNombresRubros().etiqueta(ClaveComponente.TAREA, "📚"));
+    }
+
+    @Test
+    void elEmojiDeUnRubroNoPuedeLlevarTexto() {
+        ComponenteEvaluacion datos = componente("Técnicas", 45, 10, 0, 40, 5);
+        datos.setEmojiProyecto("🎯 hola");
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.guardar(DIRECCION, datos));
+
+        assertEquals("El emoji del rubro «Proyecto» no es válido", error.getMessage());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
     void dosRubrosDelComponenteNoPuedenLlamarseIgual() {
         ComponenteEvaluacion datos = componente("Técnicas", 45, 10, 0, 40, 5);
         datos.setNombreProyecto("tareas");

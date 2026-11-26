@@ -69,6 +69,21 @@ class GestionAcademicaServiceTest {
     }
 
     @Test
+    void laPestanaUsaElEmojiDelComponenteOElDeLaInstitucion() {
+        when(tipoComponenteService.listarActivos(DIRECCION)).thenReturn(List.of(
+                tipo(ClaveComponente.COTIDIANO, "Cotidiano", "📝"),
+                tipo(ClaveComponente.EXAMEN, "Pruebas", "📋")));
+        when(componenteEvaluacionService.pesosDeMateria(DIRECCION, MATERIA)).thenReturn(new int[] { 60, 0, 0, 35, 5 });
+        when(componenteEvaluacionService.nombresDeMateria(DIRECCION, MATERIA)).thenReturn(
+                new NombresRubros(null, null, null, "Exámenes", null, null, null, null, "🧪", null));
+
+        List<PestanaRubro> pestanas = service.pestanas(DIRECCION, MATERIA);
+
+        assertEquals("📝 Cotidiano", pestanas.get(0).getEtiqueta());
+        assertEquals("🧪 Exámenes", pestanas.get(1).getEtiqueta());
+    }
+
+    @Test
     void sinMateriaNoHayPestanas() {
         assertTrue(service.pestanas(DIRECCION, null).isEmpty());
         verifyNoInteractions(componenteEvaluacionService, tipoComponenteService);

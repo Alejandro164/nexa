@@ -3,8 +3,9 @@ package com.chavescr.nexa.dto;
 import com.chavescr.nexa.entity.ClaveComponente;
 
 /**
- * Nombres con los que un componente de evaluación muestra sus rubros. Cada componente puede renombrarlos
- * (por ejemplo "Pruebas" → "Exámenes"); los que no se renombran usan el nombre predeterminado.
+ * Nombres y emojis con los que un componente de evaluación muestra sus rubros. Cada componente puede
+ * renombrarlos (por ejemplo "Pruebas" → "Exámenes") y elegirles un emoji; los que no se renombran usan el nombre
+ * predeterminado, y los que no tienen emoji propio usan el de la institución (ver {@link #emojiDe}).
  */
 public class NombresRubros {
 
@@ -14,6 +15,13 @@ public class NombresRubros {
     public static final String PRUEBAS = "Pruebas";
     public static final String ASISTENCIA = "Asistencia";
 
+    /** Emojis predeterminados: los mismos que TipoComponenteService le da a cada dirección. */
+    public static final String EMOJI_COTIDIANO = "📝";
+    public static final String EMOJI_TAREAS = "📚";
+    public static final String EMOJI_PROYECTO = "🎯";
+    public static final String EMOJI_PRUEBAS = "📋";
+    public static final String EMOJI_ASISTENCIA = "📅";
+
     public static final NombresRubros PREDETERMINADOS =
             new NombresRubros(COTIDIANO, TAREAS, PROYECTO, PRUEBAS, ASISTENCIA);
 
@@ -22,14 +30,35 @@ public class NombresRubros {
     private final String proyecto;
     private final String pruebas;
     private final String asistencia;
+    private final String emojiCotidiano;
+    private final String emojiTareas;
+    private final String emojiProyecto;
+    private final String emojiPruebas;
+    private final String emojiAsistencia;
 
-    /** Un nombre null o en blanco toma el predeterminado de ese rubro. */
+    /** Un nombre null o en blanco toma el predeterminado de ese rubro. Sin emojis propios. */
     public NombresRubros(String cotidiano, String tareas, String proyecto, String pruebas, String asistencia) {
+        this(cotidiano, tareas, proyecto, pruebas, asistencia, null, null, null, null, null);
+    }
+
+    /** Un emoji null o en blanco significa que el rubro no tiene emoji propio en el componente. */
+    public NombresRubros(String cotidiano, String tareas, String proyecto, String pruebas, String asistencia,
+            String emojiCotidiano, String emojiTareas, String emojiProyecto, String emojiPruebas,
+            String emojiAsistencia) {
         this.cotidiano = o(cotidiano, COTIDIANO);
         this.tareas = o(tareas, TAREAS);
         this.proyecto = o(proyecto, PROYECTO);
         this.pruebas = o(pruebas, PRUEBAS);
         this.asistencia = o(asistencia, ASISTENCIA);
+        this.emojiCotidiano = vacioANull(emojiCotidiano);
+        this.emojiTareas = vacioANull(emojiTareas);
+        this.emojiProyecto = vacioANull(emojiProyecto);
+        this.emojiPruebas = vacioANull(emojiPruebas);
+        this.emojiAsistencia = vacioANull(emojiAsistencia);
+    }
+
+    private static String vacioANull(String texto) {
+        return texto == null || texto.isBlank() ? null : texto;
     }
 
     private static String o(String nombre, String predeterminado) {
@@ -38,6 +67,41 @@ public class NombresRubros {
 
     public static String predeterminado(ClaveComponente clave) {
         return PREDETERMINADOS.de(clave);
+    }
+
+    public static String emojiPredeterminado(ClaveComponente clave) {
+        if (clave == null) {
+            return null;
+        }
+        return switch (clave) {
+            case COTIDIANO -> EMOJI_COTIDIANO;
+            case TAREA -> EMOJI_TAREAS;
+            case PROYECTO -> EMOJI_PROYECTO;
+            case EXAMEN -> EMOJI_PRUEBAS;
+        };
+    }
+
+    /** Emoji propio del rubro en el componente; null si no eligió uno (se usa el de la institución). */
+    public String emojiDe(ClaveComponente clave) {
+        if (clave == null) {
+            return null;
+        }
+        return switch (clave) {
+            case COTIDIANO -> emojiCotidiano;
+            case TAREA -> emojiTareas;
+            case PROYECTO -> emojiProyecto;
+            case EXAMEN -> emojiPruebas;
+        };
+    }
+
+    /** Emoji y nombre del rubro; sin emoji propio usa {@code emojiInstitucion} (puede ser null). */
+    public String etiqueta(ClaveComponente clave, String emojiInstitucion) {
+        String emoji = emojiDe(clave);
+        if (emoji == null) {
+            emoji = emojiInstitucion;
+        }
+        String nombre = de(clave);
+        return emoji == null || emoji.isBlank() ? nombre : emoji + " " + nombre;
     }
 
     public String getCotidiano() {
@@ -82,5 +146,25 @@ public class NombresRubros {
         } catch (IllegalArgumentException | NullPointerException e) {
             return "Componente";
         }
+    }
+
+    public String getEmojiCotidiano() {
+        return emojiCotidiano;
+    }
+
+    public String getEmojiTareas() {
+        return emojiTareas;
+    }
+
+    public String getEmojiProyecto() {
+        return emojiProyecto;
+    }
+
+    public String getEmojiPruebas() {
+        return emojiPruebas;
+    }
+
+    public String getEmojiAsistencia() {
+        return emojiAsistencia;
     }
 }

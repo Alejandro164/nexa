@@ -17,7 +17,8 @@ import jakarta.persistence.UniqueConstraint;
  * Componente de evaluación de una dirección: cuánto vale cada rubro (trabajo cotidiano, tareas, proyecto,
  * pruebas y asistencia) en la nota del período. Cada materia tiene uno asignado y toma sus porcentajes;
  * al cambiar un porcentaje, todas las materias del componente se calculan con el valor nuevo. Cada componente
- * puede además renombrar sus rubros (columnas nombre_*); null = nombre predeterminado.
+ * puede además renombrar sus rubros (columnas nombre_*; null = nombre predeterminado) y elegirles un emoji
+ * (columnas emoji_*; null = el emoji de la institución).
  * Reemplaza a la antigua distribución porcentual por materia y período.
  */
 @Entity
@@ -74,6 +75,21 @@ public class ComponenteEvaluacion {
     @Column(name = "nombre_asistencia", length = 60)
     private String nombreAsistencia;
 
+    @Column(name = "emoji_cotidiano", length = 16)
+    private String emojiCotidiano;
+
+    @Column(name = "emoji_tareas", length = 16)
+    private String emojiTareas;
+
+    @Column(name = "emoji_proyecto", length = 16)
+    private String emojiProyecto;
+
+    @Column(name = "emoji_pruebas", length = 16)
+    private String emojiPruebas;
+
+    @Column(name = "emoji_asistencia", length = 16)
+    private String emojiAsistencia;
+
     @Column(nullable = false)
     private Integer orden = 0;
 
@@ -91,7 +107,8 @@ public class ComponenteEvaluacion {
 
     /** Nombres de los rubros de este componente, con el predeterminado en los que no se renombraron. */
     public NombresRubros getNombresRubros() {
-        return new NombresRubros(nombreCotidiano, nombreTareas, nombreProyecto, nombrePruebas, nombreAsistencia);
+        return new NombresRubros(nombreCotidiano, nombreTareas, nombreProyecto, nombrePruebas, nombreAsistencia,
+                emojiCotidiano, emojiTareas, emojiProyecto, emojiPruebas, emojiAsistencia);
     }
 
     private static int valor(Integer numero) {
@@ -224,5 +241,45 @@ public class ComponenteEvaluacion {
 
     public void setNombreAsistencia(String nombreAsistencia) {
         this.nombreAsistencia = nombreAsistencia;
+    }
+
+    public String getEmojiCotidiano() {
+        return emojiCotidiano;
+    }
+
+    public void setEmojiCotidiano(String emojiCotidiano) {
+        this.emojiCotidiano = emojiCotidiano;
+    }
+
+    public String getEmojiTareas() {
+        return emojiTareas;
+    }
+
+    public void setEmojiTareas(String emojiTareas) {
+        this.emojiTareas = emojiTareas;
+    }
+
+    public String getEmojiProyecto() {
+        return emojiProyecto;
+    }
+
+    public void setEmojiProyecto(String emojiProyecto) {
+        this.emojiProyecto = emojiProyecto;
+    }
+
+    public String getEmojiPruebas() {
+        return emojiPruebas;
+    }
+
+    public void setEmojiPruebas(String emojiPruebas) {
+        this.emojiPruebas = emojiPruebas;
+    }
+
+    public String getEmojiAsistencia() {
+        return emojiAsistencia;
+    }
+
+    public void setEmojiAsistencia(String emojiAsistencia) {
+        this.emojiAsistencia = emojiAsistencia;
     }
 }

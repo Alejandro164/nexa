@@ -78,7 +78,9 @@ public class GestionAcademicaService {
             if (peso <= 0) {
                 continue;
             }
-            pestanas.add(new PestanaRubro(clave, nombres.de(clave), tipo.getEmoji(), peso, url(clave), panelId(clave)));
+            // El emoji que el componente eligió para el rubro; si no eligió, el de la institución.
+            String emoji = nombres.emojiDe(clave) != null ? nombres.emojiDe(clave) : tipo.getEmoji();
+            pestanas.add(new PestanaRubro(clave, nombres.de(clave), emoji, peso, url(clave), panelId(clave)));
         }
         return pestanas;
     }

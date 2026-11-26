@@ -348,6 +348,16 @@ class ProyectoApplicationTests {
 		assertTrue(formulario.contains("value=\"Exámenes\""));
 		assertTrue(formulario.contains("placeholder=\"Cotidiano\""));
 
+		componente.setEmojiPruebas("🧪");
+		String conEmoji = templateEngine.process("configuracion-institucional/componentes/componentes", context);
+		assertTrue(conEmoji.contains(">🧪 Exámenes<"));
+		String formularioEmoji = templateEngine.process("configuracion-institucional/componentes/formulario", context);
+		assertTrue(formularioEmoji.contains("name=\"emojiPruebas\""));
+		assertTrue(formularioEmoji.contains("data-emoji=\"🧪\""));
+		assertTrue(formularioEmoji.contains("data-predeterminado=\"📋\""));
+		assertTrue(formularioEmoji.contains("x-data=\"emojiRubro($el)\""));
+		componente.setEmojiPruebas(null);
+
 		TemplateSpec filas = new TemplateSpec("notas/detalle-por-componente", Set.of("filas"),
 				(org.thymeleaf.templatemode.TemplateMode) null, null);
 		Context notas = new Context();
