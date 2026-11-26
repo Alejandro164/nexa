@@ -1,13 +1,6 @@
 <div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
-    <div class="module-card">
-        <div class="module-card-header">
-            <h3 class="module-card-title" th:text="'Expedientes (' + ${estudiantes != null ? #lists.size(estudiantes) : 0} + ')'">Expedientes (0)</h3>
-            <button class="btn-primary"
-                    hx-get="/estudiantes/expedientes/form"
-                    hx-target="#estudiantes-modal-container" hx-swap="innerHTML"
-                    hx-on:htmx:after-request="window.dispatchEvent(new CustomEvent('open-modal'))"
-                    style="font-size:0.85rem;padding:8px 16px;">+ Agregar</button>
-        </div>
+    <input type="hidden" id="est-pagina-actual" name="pagina" th:value="${pagina != null ? pagina : 1}">
+    <div class="table-container">
         <table class="table">
             <thead>
                 <tr>
@@ -15,6 +8,7 @@
                     <th>Email</th>
                     <th>Cédula</th>
                     <th>Sección</th>
+                    <th>Período</th>
                     <th>Roles</th>
                     <th>Estado</th>
                     <th style="text-align:right;">Acciones</th>
@@ -22,13 +16,20 @@
             </thead>
             <tbody>
                 <tr th:if="${estudiantes == null or estudiantes.empty}">
-                    <td colspan="7" class="table-empty">No se encontraron estudiantes.</td>
+                    <td colspan="8" class="table-empty"
+                        th:text="${hayFiltros ? 'No se encontraron estudiantes con los filtros aplicados.' : 'No se encontraron estudiantes.'}">
+                        No se encontraron estudiantes.
+                    </td>
                 </tr>
                 <tr th:each="u : ${estudiantes}">
                     <td><strong th:text="${u.nombre}" style="color:#0f172a;">Nombre</strong></td>
                     <td th:text="${u.email}" style="color:#64748b;">email</td>
                     <td th:text="${u.cedula != null ? u.cedula : '—'}" style="color:#94a3b8;">—</td>
                     <td th:text="${u.nivelAcademico != null ? u.nivelAcademico.nombreCompleto : '—'}" style="color:#64748b;">—</td>
+                    <td>
+                        <span th:if="${u.anioMatricula != null}" class="est-periodo-badge" th:text="${u.anioMatricula}">2026</span>
+                        <span th:if="${u.anioMatricula == null}" style="color:#94a3b8;">—</span>
+                    </td>
                     <td>
                         <div style="display:flex;flex-wrap:wrap;gap:2px;">
                             <span th:each="r : ${u.roles}" class="badge-xs"
@@ -41,7 +42,8 @@
                         <button class="badge-xs" style="border:none;cursor:pointer;"
                                 th:classappend="${u.activo ? 'badge-activo' : 'badge-inactivo'}"
                                 th:text="${u.activo ? 'Activo' : 'Inactivo'}"
-                                th:attr="hx-put='/estudiantes/expedientes/' + ${u.id} + '/activo'"
+                                th:attr="hx-put=@{/estudiantes/expedientes/{id}/activo(id=${u.id}, pagina=${pagina})}"
+                                hx-include="#estudiantes-filtros-form"
                                 hx-target="#estudiantes-dir-content" hx-swap="innerHTML">Estado</button>
                     </td>
                     <td>
@@ -58,12 +60,79 @@
                                     title="Editar">✏️</button>
                             <button class="btn-xs btn-danger-ghost"
                                     onclick="abrirConfirmacionAcademica(this)"
-                                    th:attr="data-delete-url='/estudiantes/expedientes/' + ${u.id},data-delete-target='#estudiantes-dir-content',data-delete-title='Eliminar estudiante',data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
+                                    th:attr="data-delete-url=@{/estudiantes/expedientes/{id}(id=${u.id}, q=${!#strings.isEmpty(q) ? q : null}, campo=${campo != null and campo != 'todas' ? campo : null}, periodo=${periodo}, pagina=${pagina}, tamano=${tamano})},data-delete-target='#estudiantes-dir-content',data-delete-title='Eliminar estudiante',data-delete-message='¿Deseas eliminar a ' + ${u.nombre} + '? Esta acción no se puede deshacer.'"
                                     title="Eliminar">🗑️</button>
                         </div>
                     </td>
                 </tr>
             </tbody>
         </table>
+    </div>
+
+    <div class="est-pagination-bar" th:if="${totalEstudiantes != null and totalEstudiantes > 0}">
+        <div class="est-pagination-info">
+            Mostrando <strong th:text="${desde}">1</strong>–<strong th:text="${hasta}">10</strong>
+            de <strong th:text="${totalEstudiantes}">0</strong>
+            <span th:text="${totalEstudiantes == 1 ? 'estudiante' : 'estudiantes'}">estudiantes</span>
+        </div>
+
+        <div class="est-pagination-controls">
+            <label class="est-page-size">
+                <span>Filas</span>
+                <select class="est-page-size-select"
+                        name="tamano"
+                        aria-label="Estudiantes por página"
+                        onchange="const h = document.getElementById('est-tamano-input'); if (h) h.value = this.value;"
+                        hx-get="/estudiantes/expedientes/lista"
+                        hx-include="#estudiantes-filtros-form [name='campo'], #estudiantes-filtros-form [name='q'], #estudiantes-filtros-form [name='periodo']"
+                        hx-target="#estudiantes-dir-content"
+                        hx-swap="innerHTML"
+                        hx-indicator="#estudiantes-dir-content">
+                    <option value="10" th:selected="${tamano == 10}">10</option>
+                    <option value="25" th:selected="${tamano == 25}">25</option>
+                    <option value="50" th:selected="${tamano == 50}">50</option>
+                </select>
+            </label>
+
+            <nav class="pagination est-pagination-nav" aria-label="Paginación de estudiantes" th:if="${totalPaginas > 1}">
+                <button type="button"
+                        class="pagination-item"
+                        th:classappend="${pagina <= 1} ? 'disabled'"
+                        th:disabled="${pagina <= 1}"
+                        th:attr="hx-get=${pagina > 1} ? @{/estudiantes/expedientes/lista(pagina=${pagina - 1})} : null"
+                        hx-include="#estudiantes-filtros-form"
+                        hx-target="#estudiantes-dir-content"
+                        hx-swap="innerHTML"
+                        hx-indicator="#estudiantes-dir-content"
+                        title="Página anterior"
+                        aria-label="Página anterior">&lsaquo;</button>
+
+                <th:block th:each="num : ${paginasVisibles}">
+                    <span th:if="${num == -1}" class="est-pagination-ellipsis" aria-hidden="true">&hellip;</span>
+                    <button th:if="${num != -1}"
+                            type="button"
+                            class="pagination-item"
+                            th:classappend="${num == pagina} ? 'active'"
+                            th:attr="hx-get=${num != pagina} ? @{/estudiantes/expedientes/lista(pagina=${num})} : null,aria-current=${num == pagina ? 'page' : null}"
+                            hx-include="#estudiantes-filtros-form"
+                            hx-target="#estudiantes-dir-content"
+                            hx-swap="innerHTML"
+                            hx-indicator="#estudiantes-dir-content"
+                            th:text="${num}">1</button>
+                </th:block>
+
+                <button type="button"
+                        class="pagination-item"
+                        th:classappend="${pagina >= totalPaginas} ? 'disabled'"
+                        th:disabled="${pagina >= totalPaginas}"
+                        th:attr="hx-get=${pagina < totalPaginas} ? @{/estudiantes/expedientes/lista(pagina=${pagina + 1})} : null"
+                        hx-include="#estudiantes-filtros-form"
+                        hx-target="#estudiantes-dir-content"
+                        hx-swap="innerHTML"
+                        hx-indicator="#estudiantes-dir-content"
+                        title="Página siguiente"
+                        aria-label="Página siguiente">&rsaquo;</button>
+            </nav>
+        </div>
     </div>
 </div>

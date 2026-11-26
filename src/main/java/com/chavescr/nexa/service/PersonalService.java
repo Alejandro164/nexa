@@ -1,10 +1,14 @@
 package com.chavescr.nexa.service;
 
 import java.text.Normalizer;
+import java.time.Year;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -81,6 +85,98 @@ public class PersonalService {
                 .toList();
     }
 
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public List<Usuario> listarEstudiantes(Long direccionId, String filtro, String campo, Integer periodo) {
+        List<Usuario> todos = usuarioRepository.findAllByDireccionIdAndRol(direccionId, "ROLE_ESTUDIANTE");
+        String campoNormalizado = normalizarCampoEstudiante(campo);
+        String f = filtro == null || filtro.isBlank() ? null : normalizar(filtro.trim());
+
+        return todos.stream()
+                .filter(u -> periodo == null || periodo.equals(u.getAnioMatricula()))
+                .filter(u -> f == null || coincideBusquedaEstudiante(u, f, campoNormalizado))
+                .toList();
+    }
+
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public List<Integer> listarPeriodosEstudiantes(Long direccionId) {
+        List<Usuario> estudiantes = usuarioRepository.findAllByDireccionIdAndRol(direccionId, "ROLE_ESTUDIANTE");
+        TreeSet<Integer> anios = new TreeSet<>(Comparator.reverseOrder());
+        for (Usuario u : estudiantes) {
+            if (u.getAnioMatricula() != null) {
+                anios.add(u.getAnioMatricula());
+            }
+        }
+        anios.add(Year.now().getValue());
+        return new ArrayList<>(anios);
+    }
+
+    public static String normalizarCampoEstudiante(String campo) {
+        if (campo == null || campo.isBlank()) {
+            return "todas";
+        }
+        return switch (campo.trim().toLowerCase()) {
+            case "nombre", "email", "cedula", "seccion", "periodo", "estado" -> campo.trim().toLowerCase();
+            default -> "todas";
+        };
+    }
+
+    private boolean coincideBusquedaEstudiante(Usuario u, String f, String campo) {
+        return switch (campo) {
+            case "nombre" -> contieneNormalizado(u.getNombre(), f);
+            case "email" -> contieneNormalizado(u.getEmail(), f);
+            case "cedula" -> coincideCedula(u.getCedula(), f);
+            case "seccion" -> coincideSeccion(u.getNivelAcademico(), f);
+            case "periodo" -> u.getAnioMatricula() != null && String.valueOf(u.getAnioMatricula()).contains(f);
+            case "estado" -> coincideEstado(u.getActivo(), f, false);
+            default -> contieneNormalizado(u.getNombre(), f)
+                    || contieneNormalizado(u.getEmail(), f)
+                    || coincideCedula(u.getCedula(), f)
+                    || coincideSeccion(u.getNivelAcademico(), f)
+                    || (u.getAnioMatricula() != null && String.valueOf(u.getAnioMatricula()).contains(f))
+                    || coincideEstado(u.getActivo(), f, true);
+        };
+    }
+
+    private boolean contieneNormalizado(String valor, String filtroNormalizado) {
+        return valor != null && normalizar(valor).contains(filtroNormalizado);
+    }
+
+    private boolean coincideCedula(String cedula, String filtroNormalizado) {
+        if (cedula == null) {
+            return false;
+        }
+        if (normalizar(cedula).contains(filtroNormalizado)) {
+            return true;
+        }
+        String filtroSinSeparadores = filtroNormalizado.replaceAll("[\\s-]", "");
+        if (filtroSinSeparadores.isEmpty()) {
+            return false;
+        }
+        String cedulaSinSeparadores = normalizar(cedula).replaceAll("[\\s-]", "");
+        return cedulaSinSeparadores.contains(filtroSinSeparadores);
+    }
+
+    private boolean coincideSeccion(NivelAcademico nivel, String filtroNormalizado) {
+        if (nivel == null) {
+            return false;
+        }
+        String completo = normalizar(nivel.getNombreCompleto());
+        if (completo.contains(filtroNormalizado)) {
+            return true;
+        }
+        String compacto = completo.replaceAll("\\s+", "");
+        String filtroCompacto = filtroNormalizado.replaceAll("\\s+", "");
+        return !filtroCompacto.isEmpty() && compacto.contains(filtroCompacto);
+    }
+
+    private boolean coincideEstado(Boolean activo, String filtroNormalizado, boolean modoTodas) {
+        if (modoTodas && filtroNormalizado.length() < 3) {
+            return false;
+        }
+        String etiqueta = Boolean.TRUE.equals(activo) ? "activo" : "inactivo";
+        return etiqueta.startsWith(filtroNormalizado);
+    }
+
     private String normalizar(String texto) {
         return Normalizer.normalize(texto, Normalizer.Form.NFD)
                 .replaceAll("[^\\p{ASCII}]", "")
@@ -114,6 +210,13 @@ public class PersonalService {
     public Usuario guardar(Long direccionId, Long id, String nombre, String email,
                            String usuario, String cedula, String rawPassword,
                            boolean activo, List<Long> rolIds, Long nivelId) {
+        return guardar(direccionId, id, nombre, email, usuario, cedula, rawPassword, activo, rolIds, nivelId, null);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Usuario guardar(Long direccionId, Long id, String nombre, String email,
+                           String usuario, String cedula, String rawPassword,
+                           boolean activo, List<Long> rolIds, Long nivelId, Integer anioMatricula) {
         if (direccionId == null) {
             throw new IllegalArgumentException("Seleccione una dirección antes de registrar personas.");
         }
@@ -182,6 +285,17 @@ public class PersonalService {
             u.setNivelAcademico(nivel);
         } else if (esEstudiante(roles)) {
             u.setNivelAcademico(null);
+        }
+
+        if (esEstudiante(roles)) {
+            if (anioMatricula != null) {
+                if (anioMatricula < 1990 || anioMatricula > 2100) {
+                    throw new IllegalArgumentException("El período debe ser un año válido entre 1990 y 2100.");
+                }
+                u.setAnioMatricula(anioMatricula);
+            } else if (u.getAnioMatricula() == null) {
+                u.setAnioMatricula(Year.now().getValue());
+            }
         }
 
         Usuario guardado = usuarioRepository.save(u);

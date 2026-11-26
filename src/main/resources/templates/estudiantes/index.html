@@ -16,7 +16,7 @@
          (fuera de ese contenedor) se sincroniza aparte para que no se quede con el de la página anterior. -->
     <h2 id="topbar-page-title" hx-swap-oob="true">Módulo de Estudiantes</h2>
     <p id="topbar-page-subtitle" hx-swap-oob="true">Administra los expedientes estudiantiles, matrículas, encargados y adecuaciones especiales</p>
-    <main layout:fragment="content">
+    <main layout:fragment="content" hx-history="false">
         <style>
             .config-tabs-container {
                 margin-bottom: 2rem;
@@ -73,32 +73,80 @@
             }
         </style>
 
-        <div x-data="{ activeTab: 'expedientes' }">
+        <div th:data-tab-inicial="${tabInicial != null ? tabInicial : 'expedientes'}"
+             x-data="{
+                 activeTab: $el.dataset.tabInicial || 'expedientes',
+                 tabsValidas: ['expedientes', 'prematricula', 'matricula', 'consolidar', 'familiares', 'adecuaciones'],
+                 _onPopState: null,
+                 init() {
+                     const params = new URLSearchParams(window.location.search);
+                     if (window.location.pathname === '/estudiantes' && !params.has('tab')) {
+                         window.history.replaceState(window.history.state, '', '/estudiantes?tab=' + encodeURIComponent(this.activeTab));
+                     }
+                     this._onPopState = () => {
+                         if (window.location.pathname !== '/estudiantes') return;
+                         const tab = new URLSearchParams(window.location.search).get('tab') || 'expedientes';
+                         this.activeTab = this.tabsValidas.includes(tab) ? tab : 'expedientes';
+                     };
+                     window.addEventListener('popstate', this._onPopState);
+                 },
+                 destroy() {
+                     if (this._onPopState) {
+                         window.removeEventListener('popstate', this._onPopState);
+                     }
+                 },
+                 cambiarTab(tab) {
+                     if (!this.tabsValidas.includes(tab)) return;
+                     this.activeTab = tab;
+                     const url = '/estudiantes?tab=' + encodeURIComponent(tab);
+                     if (window.location.pathname + window.location.search !== url) {
+                         window.history.pushState({ estudiantesTab: tab }, '', url);
+                     }
+                 }
+             }">
             <div class="config-tabs-container">
-                <div class="config-tabs">
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'expedientes' }" @click="activeTab = 'expedientes'">
+                <div class="config-tabs" role="tablist">
+                    <a href="/estudiantes?tab=expedientes" class="config-tab-btn" role="tab"
+                       :aria-selected="activeTab === 'expedientes'"
+                       :class="{ 'active': activeTab === 'expedientes' }"
+                       @click.prevent="cambiarTab('expedientes')">
                         📁 Expedientes
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'prematricula' }" @click="activeTab = 'prematricula'">
+                    </a>
+                    <a href="/estudiantes?tab=prematricula" class="config-tab-btn" role="tab"
+                       :aria-selected="activeTab === 'prematricula'"
+                       :class="{ 'active': activeTab === 'prematricula' }"
+                       @click.prevent="cambiarTab('prematricula')">
                         📝 Prematrícula
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'matricula' }" @click="activeTab = 'matricula'">
+                    </a>
+                    <a href="/estudiantes?tab=matricula" class="config-tab-btn" role="tab"
+                       :aria-selected="activeTab === 'matricula'"
+                       :class="{ 'active': activeTab === 'matricula' }"
+                       @click.prevent="cambiarTab('matricula')">
                         🎓 Matrícula
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'consolidar' }" @click="activeTab = 'consolidar'">
+                    </a>
+                    <a href="/estudiantes?tab=consolidar" class="config-tab-btn" role="tab"
+                       :aria-selected="activeTab === 'consolidar'"
+                       :class="{ 'active': activeTab === 'consolidar' }"
+                       @click.prevent="cambiarTab('consolidar')">
                         👥 Consolidar Grupos
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'familiares' }" @click="activeTab = 'familiares'">
+                    </a>
+                    <a href="/estudiantes?tab=familiares" class="config-tab-btn" role="tab"
+                       :aria-selected="activeTab === 'familiares'"
+                       :class="{ 'active': activeTab === 'familiares' }"
+                       @click.prevent="cambiarTab('familiares')">
                         👨‍👩‍👧 Relaciones Familiares
-                    </button>
-                    <button class="config-tab-btn" :class="{ 'active': activeTab === 'adecuaciones' }" @click="activeTab = 'adecuaciones'">
+                    </a>
+                    <a href="/estudiantes?tab=adecuaciones" class="config-tab-btn" role="tab"
+                       :aria-selected="activeTab === 'adecuaciones'"
+                       :class="{ 'active': activeTab === 'adecuaciones' }"
+                       @click.prevent="cambiarTab('adecuaciones')">
                         ♿ Adecuaciones
-                    </button>
+                    </a>
                 </div>
             </div>
 
             <!-- Expedientes -->
-            <div x-show="activeTab === 'expedientes'" class="tab-pane">
+            <div x-show="activeTab === 'expedientes'" class="tab-pane" x-cloak>
                 <div hx-get="/estudiantes/expedientes" hx-trigger="load" hx-swap="innerHTML"></div>
             </div>
 

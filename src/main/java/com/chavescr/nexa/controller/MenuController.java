@@ -36,8 +36,16 @@ public class MenuController {
         this.gestionAcademicaService = gestionAcademicaService;
     }
 
+    private static final java.util.Set<String> TABS_ESTUDIANTES = java.util.Set.of(
+            "expedientes", "prematricula", "matricula", "consolidar", "familiares", "adecuaciones");
+
     @GetMapping("/estudiantes")
-    public String estudiantes(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest) {
+    public String estudiantes(@RequestHeader(value = "HX-Request", required = false) boolean htmxRequest,
+            @RequestParam(required = false) String tab, Model model) {
+        String tabNormalizada = tab != null && TABS_ESTUDIANTES.contains(tab.trim().toLowerCase())
+                ? tab.trim().toLowerCase()
+                : "expedientes";
+        model.addAttribute("tabInicial", tabNormalizada);
         return htmxRequest ? "estudiantes/index :: htmx-content" : "estudiantes/index";
     }
 

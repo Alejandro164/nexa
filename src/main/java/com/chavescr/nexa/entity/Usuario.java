@@ -76,6 +76,10 @@ public class Usuario implements UserDetails {
     @JoinColumn(name = "nivel_academico_id")
     private NivelAcademico nivelAcademico;
 
+    // Año lectivo de matrícula del estudiante (período), si aplica
+    @Column(name = "anio_matricula")
+    private Integer anioMatricula;
+
     // Última dirección con la que trabajó, para auto-seleccionarla en el próximo login
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ultima_direccion_id")
@@ -227,6 +231,14 @@ public class Usuario implements UserDetails {
 
     public void setNivelAcademico(NivelAcademico nivelAcademico) {
         this.nivelAcademico = nivelAcademico;
+    }
+
+    public Integer getAnioMatricula() {
+        return anioMatricula;
+    }
+
+    public void setAnioMatricula(Integer anioMatricula) {
+        this.anioMatricula = anioMatricula;
     }
 
     public Direccion getUltimaDireccion() {

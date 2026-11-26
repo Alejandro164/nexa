@@ -2,6 +2,8 @@ package com.chavescr.nexa.controller;
 
 import com.chavescr.nexa.exception.DireccionNoSeleccionadaException;
 
+import java.time.Year;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,7 @@ public class EstudiantesController {
 
     private static final String ROL_ESTUDIANTE = "ROLE_ESTUDIANTE";
     private static final String ROL_PADRE = "ROLE_PADRE";
+    private static final int TAMANO_PAGINA_DEFECTO = 10;
 
     @Autowired
     private PersonalService personalService;
@@ -51,18 +54,29 @@ public class EstudiantesController {
     // ─── EXPEDIENTES ─────────────────────────────────────────────
 
     @GetMapping("/expedientes")
-    public String expedientes(@RequestParam(required = false) String q, Model model, HttpSession session) {
+    public String expedientes(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE, q));
-        model.addAttribute("q", q);
+        cargarListaExpedientes(model, direccionId, q, campo, periodo, pagina, tamano);
+        model.addAttribute("periodos", personalService.listarPeriodosEstudiantes(direccionId));
         return "estudiantes/expedientes/directorio :: content";
     }
 
     @GetMapping("/expedientes/lista")
-    public String expedientesLista(@RequestParam(required = false) String q, Model model, HttpSession session) {
+    public String expedientesLista(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE, q));
-        model.addAttribute("q", q);
+        cargarListaExpedientes(model, direccionId, q, campo, periodo, pagina, tamano);
         return "estudiantes/expedientes/lista :: content";
     }
 
@@ -80,7 +94,9 @@ public class EstudiantesController {
         Long direccionId = requerirDireccion(session);
         Usuario nuevo = new Usuario();
         nuevo.setRoles(java.util.Set.of(personalService.obtenerRolPorNombre(ROL_ESTUDIANTE)));
+        nuevo.setAnioMatricula(Year.now().getValue());
         model.addAttribute("usuario", nuevo);
+        model.addAttribute("anioActual", Year.now().getValue());
         model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
         return "estudiantes/expedientes/formulario :: form-content";
     }
@@ -89,6 +105,7 @@ public class EstudiantesController {
     public String expedientesFormEditar(@PathVariable Long id, Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
         model.addAttribute("usuario", personalService.obtenerPorId(direccionId, id));
+        model.addAttribute("anioActual", Year.now().getValue());
         model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
         return "estudiantes/expedientes/formulario :: form-content";
     }
@@ -103,19 +120,31 @@ public class EstudiantesController {
             @RequestParam(required = false) String password,
             @RequestParam(defaultValue = "false") boolean activo,
             @RequestParam(required = false) Long nivelId,
+            @RequestParam(required = false) Integer anioMatricula,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
             Model model, HttpSession session, HttpServletResponse response) {
         Long direccionId = requerirDireccion(session);
         try {
             // El rol de una cuenta creada desde este módulo siempre es Estudiante — no lo elige el admin
             // (a diferencia de Personal, que sí permite cualquier combinación de roles).
             List<Long> rolIds = List.of(personalService.obtenerRolPorNombre(ROL_ESTUDIANTE).getId());
-            personalService.guardar(direccionId, id, nombre, email, usuario, cedula, password, activo, rolIds, nivelId);
-            model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE));
+            Usuario guardado = personalService.guardar(direccionId, id, nombre, email, usuario, cedula, password,
+                    activo, rolIds, nivelId, anioMatricula);
+            cargarListaExpedientes(model, direccionId, q, campo, periodo, pagina, tamano);
+            if (guardado.getAnioMatricula() != null) {
+                response.setHeader("HX-Trigger",
+                        "{\"estudianteGuardado\":{\"periodo\":" + guardado.getAnioMatricula() + "}}");
+            }
             return "estudiantes/expedientes/lista :: content";
         } catch (Exception e) {
             response.setHeader("HX-Retarget", "#estudiantes-modal-container");
             response.setHeader("HX-Reswap", "innerHTML");
             model.addAttribute("error", e.getMessage());
+            model.addAttribute("anioActual", Year.now().getValue());
             model.addAttribute("usuario", id == null ? new Usuario() : personalService.obtenerPorId(direccionId, id));
             model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));
             return "estudiantes/expedientes/formulario :: form-content";
@@ -123,19 +152,95 @@ public class EstudiantesController {
     }
 
     @DeleteMapping("/expedientes/{id}")
-    public String expedientesEliminar(@PathVariable Long id, Model model, HttpSession session) {
+    public String expedientesEliminar(
+            @PathVariable Long id,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
         personalService.eliminar(direccionId, id);
-        model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE));
+        cargarListaExpedientes(model, direccionId, q, campo, periodo, pagina, tamano);
         return "estudiantes/expedientes/lista :: content";
     }
 
     @PutMapping("/expedientes/{id}/activo")
-    public String expedientesToggleActivo(@PathVariable Long id, Model model, HttpSession session) {
+    public String expedientesToggleActivo(
+            @PathVariable Long id,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String campo,
+            @RequestParam(required = false) Integer periodo,
+            @RequestParam(required = false) Integer pagina,
+            @RequestParam(required = false) Integer tamano,
+            Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
         personalService.toggleActivo(direccionId, id);
-        model.addAttribute("estudiantes", personalService.listarPorRol(direccionId, ROL_ESTUDIANTE));
+        cargarListaExpedientes(model, direccionId, q, campo, periodo, pagina, tamano);
         return "estudiantes/expedientes/lista :: content";
+    }
+
+    private void cargarListaExpedientes(Model model, Long direccionId, String q, String campo,
+            Integer periodo, Integer paginaSolicitada, Integer tamanoSolicitado) {
+        String campoNormalizado = PersonalService.normalizarCampoEstudiante(campo);
+        List<Usuario> filtrados = personalService.listarEstudiantes(direccionId, q, campoNormalizado, periodo);
+        int total = filtrados.size();
+        int tamano = normalizarTamanoPagina(tamanoSolicitado);
+        int totalPaginas = Math.max(1, (int) Math.ceil((double) total / tamano));
+        int pagina = paginaSolicitada == null ? 1 : Math.max(1, Math.min(paginaSolicitada, totalPaginas));
+
+        int inicio = (pagina - 1) * tamano;
+        int fin = Math.min(inicio + tamano, total);
+        List<Usuario> paginaEstudiantes = inicio >= total ? List.of() : filtrados.subList(inicio, fin);
+
+        boolean hayFiltros = (q != null && !q.isBlank()) || periodo != null;
+        model.addAttribute("estudiantes", paginaEstudiantes);
+        model.addAttribute("totalEstudiantes", total);
+        model.addAttribute("pagina", pagina);
+        model.addAttribute("tamano", tamano);
+        model.addAttribute("totalPaginas", totalPaginas);
+        model.addAttribute("desde", total == 0 ? 0 : inicio + 1);
+        model.addAttribute("hasta", fin);
+        model.addAttribute("paginasVisibles", construirPaginasVisibles(pagina, totalPaginas));
+        model.addAttribute("q", q != null ? q : "");
+        model.addAttribute("campo", campoNormalizado);
+        model.addAttribute("periodo", periodo);
+        model.addAttribute("hayFiltros", hayFiltros);
+    }
+
+    private static int normalizarTamanoPagina(Integer tamano) {
+        if (tamano == null) {
+            return TAMANO_PAGINA_DEFECTO;
+        }
+        return switch (tamano) {
+            case 10, 25, 50 -> tamano;
+            default -> TAMANO_PAGINA_DEFECTO;
+        };
+    }
+
+    private static List<Integer> construirPaginasVisibles(int actual, int totalPaginas) {
+        List<Integer> paginas = new ArrayList<>();
+        if (totalPaginas <= 7) {
+            for (int i = 1; i <= totalPaginas; i++) {
+                paginas.add(i);
+            }
+            return paginas;
+        }
+        paginas.add(1);
+        if (actual > 3) {
+            paginas.add(-1);
+        }
+        int rangoInicio = Math.max(2, actual - 1);
+        int rangoFin = Math.min(totalPaginas - 1, actual + 1);
+        for (int i = rangoInicio; i <= rangoFin; i++) {
+            paginas.add(i);
+        }
+        if (actual < totalPaginas - 2) {
+            paginas.add(-1);
+        }
+        paginas.add(totalPaginas);
+        return paginas;
     }
 
     // ─── PESTAÑA PADRES (dentro del modal de crear/editar estudiante) ──

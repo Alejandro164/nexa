@@ -54,6 +54,7 @@
                 <div x-show="tab === 'general'">
                     <form th:action="@{/estudiantes/expedientes}" method="post"
                           hx-post="/estudiantes/expedientes"
+                          hx-include="#estudiantes-filtros-form, #est-pagina-actual"
                           hx-target="#estudiantes-dir-content" hx-swap="innerHTML"
                           hx-on:htmx:after-request="if(event.detail.successful) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
                         <input type="hidden" name="id" th:value="${usuario.id}">
@@ -94,17 +95,26 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Sección *</label>
-                            <select class="form-input" name="nivelId" required>
-                                <option value="" disabled th:selected="${usuario.nivelAcademico == null}">Seleccione una sección</option>
-                                <option th:each="nivel : ${niveles}" th:value="${nivel.id}"
-                                        th:text="${nivel.nombreCompleto}"
-                                        th:selected="${usuario.nivelAcademico != null and usuario.nivelAcademico.id == nivel.id}"></option>
-                            </select>
-                            <p th:if="${niveles == null or niveles.empty}" style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">
-                                No hay secciones activas configuradas. Créalas en Configuración Académica.
-                            </p>
+                        <div class="form-row">
+                            <div class="form-group" style="flex:2;">
+                                <label class="form-label">Sección *</label>
+                                <select class="form-input" name="nivelId" required>
+                                    <option value="" disabled th:selected="${usuario.nivelAcademico == null}">Seleccione una sección</option>
+                                    <option th:each="nivel : ${niveles}" th:value="${nivel.id}"
+                                            th:text="${nivel.nombreCompleto}"
+                                            th:selected="${usuario.nivelAcademico != null and usuario.nivelAcademico.id == nivel.id}"></option>
+                                </select>
+                                <p th:if="${niveles == null or niveles.empty}" style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">
+                                    No hay secciones activas configuradas. Créalas en Configuración Académica.
+                                </p>
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">Período (Año) *</label>
+                                <input class="form-input" type="number" name="anioMatricula" required
+                                       min="1990" max="2100" step="1"
+                                       th:value="${usuario.anioMatricula != null ? usuario.anioMatricula : anioActual}"
+                                       placeholder="2026">
+                            </div>
                         </div>
 
                         <div class="form-group">

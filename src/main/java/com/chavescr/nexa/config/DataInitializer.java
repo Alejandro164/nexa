@@ -1,6 +1,7 @@
 package com.chavescr.nexa.config;
 
 import java.text.Normalizer;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -195,19 +196,25 @@ public class DataInitializer implements ApplicationRunner {
                 "9-5678-9012", "user1234", true,
                 Set.of(rolEstudiante), Set.of(instGamma));
 
-        // ── 3.1 Secciones de los estudiantes creados a mano ───────────────────
+        // ── 3.1 Secciones y período de matrícula de los estudiantes creados a mano ──
         List<NivelAcademico> nivelesAlpha = nivelAcademicoRepository
                 .findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(instAlpha.getId());
         asignarSeccionFaltante(sofia, nivelesAlpha, 0);
+        asignarAnioMatriculaFaltante(sofia, 0);
         asignarSeccionFaltante(diego, nivelesAlpha, 1);
+        asignarAnioMatriculaFaltante(diego, 2);
         List<NivelAcademico> nivelesBeta = nivelAcademicoRepository
                 .findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(instBeta.getId());
         asignarSeccionFaltante(valeria, nivelesBeta, 0);
+        asignarAnioMatriculaFaltante(valeria, 0);
         asignarSeccionFaltante(kevin, nivelesBeta, 1);
+        asignarAnioMatriculaFaltante(kevin, 2);
         List<NivelAcademico> nivelesGamma = nivelAcademicoRepository
                 .findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(instGamma.getId());
         asignarSeccionFaltante(fernanda, nivelesGamma, 0);
+        asignarAnioMatriculaFaltante(fernanda, 0);
         asignarSeccionFaltante(andres, nivelesGamma, 1);
+        asignarAnioMatriculaFaltante(andres, 2);
 
         // ── 3.2 Docentes con más de una dirección asociada ──────────────────
         // Un docente puede impartir materias en varios colegios a la vez.
@@ -366,9 +373,24 @@ public class DataInitializer implements ApplicationRunner {
         for (int i = 0; i < cantidad; i++) {
             Usuario estudiante = generarPersona(offset + i, rolEstudiante, Set.of(direccion));
             asignarSeccionFaltante(estudiante, niveles, i);
+            asignarAnioMatriculaFaltante(estudiante, i);
             generados.add(estudiante);
         }
         return generados;
+    }
+
+    /**
+     * Asigna un año de matrícula de ejemplo a los estudiantes que aún no tienen período,
+     * repartiendo entre el año actual y los dos anteriores para facilitar pruebas de filtro.
+     */
+    private void asignarAnioMatriculaFaltante(Usuario estudiante, int indice) {
+        if (estudiante.getAnioMatricula() != null) {
+            return;
+        }
+        int anioActual = Year.now().getValue();
+        int[] anios = { anioActual, anioActual, anioActual - 1, anioActual - 2 };
+        estudiante.setAnioMatricula(anios[indice % anios.length]);
+        usuarioRepository.save(estudiante);
     }
 
     /**
