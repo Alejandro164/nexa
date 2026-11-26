@@ -222,7 +222,7 @@ Nivel 2, dentro del fragmento (`personal/regimen/index.html`):
 
 El botón pide `hx-get="/ruta/form"` hacia `#modal-container` y abre el flag de Alpine (solo si `event.detail.successful`). El contenedor escucha `@close-modal.window` y Escape. El fragmento del formulario es `form-content`. Al guardar, el controller devuelve la lista actualizada o, si hay error de validación, reescribe el modal con `HX-Retarget` y `HX-Reswap` (comprobar `!event.detail.xhr.getResponseHeader('HX-Retarget')` antes de cerrar el modal).
 
-Estilo obligatorio de modales: **minimalistas**, sin fondos de color ni elementos visuales innecesarios. Superficie blanca (`#ffffff`), borde fino (`#e2e8f0`), divisores sutiles, tipografía limpia y botones sobrios (evitar franjas rojas superiores, cajas con relleno de color o íconos decorativos llamativos). Referencia: `templates/estudiantes/components/confirmar-desactivar.html` y `templates/estudiantes/expedientes/ficha.html`.
+Estilo obligatorio de modales: **minimalistas**, sin fondos de color ni elementos visuales innecesarios. Superficie blanca (`#ffffff`), borde fino (`#e2e8f0`), divisores sutiles, tipografía limpia y botones sobrios usando el azul del sistema (`var(--primary)`) para la acción principal (evitar franjas rojas superiores, cajas con relleno de color o íconos decorativos llamativos). Referencia: `templates/estudiantes/components/confirmar-desactivar.html` y `templates/estudiantes/expedientes/ficha.html`.
 
 ### Avisos
 

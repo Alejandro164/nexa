@@ -500,8 +500,8 @@
                 transition: color 0.15s, border-color 0.15s;
             }
             .est-min-tab.active {
-                color: #0f172a;
-                border-bottom-color: #0f172a;
+                color: var(--primary);
+                border-bottom-color: var(--primary);
             }
             .est-detail-grid {
                 display: grid;
@@ -576,7 +576,8 @@
                 transition: border-color 0.15s;
             }
             .est-min-input:focus {
-                border-color: #0f172a;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
             }
             .est-min-check {
                 display: inline-flex;
@@ -640,18 +641,18 @@
             .est-btn-solid {
                 padding: 8px 16px;
                 border-radius: 8px;
-                border: 1px solid #0f172a;
-                background: #0f172a;
+                border: 1px solid var(--primary);
+                background: var(--primary);
                 color: #ffffff;
                 font-family: inherit;
                 font-size: 0.84rem;
                 font-weight: 500;
                 cursor: pointer;
-                transition: opacity 0.15s;
+                transition: filter 0.15s;
                 white-space: nowrap;
             }
             .est-btn-solid:hover {
-                opacity: 0.9;
+                filter: brightness(1.08);
             }
 
             @media (max-width: 640px) {
