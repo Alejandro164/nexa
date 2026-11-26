@@ -1,5 +1,7 @@
 package com.chavescr.nexa.entity;
 
+import com.chavescr.nexa.dto.NombresRubros;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -14,7 +16,8 @@ import jakarta.persistence.UniqueConstraint;
 /**
  * Componente de evaluación de una dirección: cuánto vale cada rubro (trabajo cotidiano, tareas, proyecto,
  * pruebas y asistencia) en la nota del período. Cada materia tiene uno asignado y toma sus porcentajes;
- * al cambiar un porcentaje, todas las materias del componente se calculan con el valor nuevo.
+ * al cambiar un porcentaje, todas las materias del componente se calculan con el valor nuevo. Cada componente
+ * puede además renombrar sus rubros (columnas nombre_*); null = nombre predeterminado.
  * Reemplaza a la antigua distribución porcentual por materia y período.
  */
 @Entity
@@ -56,6 +59,21 @@ public class ComponenteEvaluacion {
     @Column(nullable = false)
     private Integer asistencia = 0;
 
+    @Column(name = "nombre_cotidiano", length = 60)
+    private String nombreCotidiano;
+
+    @Column(name = "nombre_tareas", length = 60)
+    private String nombreTareas;
+
+    @Column(name = "nombre_proyecto", length = 60)
+    private String nombreProyecto;
+
+    @Column(name = "nombre_pruebas", length = 60)
+    private String nombrePruebas;
+
+    @Column(name = "nombre_asistencia", length = 60)
+    private String nombreAsistencia;
+
     @Column(nullable = false)
     private Integer orden = 0;
 
@@ -69,6 +87,11 @@ public class ComponenteEvaluacion {
 
     public int getTotal() {
         return valor(cotidiano) + valor(tareas) + valor(proyecto) + valor(pruebas) + valor(asistencia);
+    }
+
+    /** Nombres de los rubros de este componente, con el predeterminado en los que no se renombraron. */
+    public NombresRubros getNombresRubros() {
+        return new NombresRubros(nombreCotidiano, nombreTareas, nombreProyecto, nombrePruebas, nombreAsistencia);
     }
 
     private static int valor(Integer numero) {
@@ -161,5 +184,45 @@ public class ComponenteEvaluacion {
 
     public void setActivo(Boolean activo) {
         this.activo = activo;
+    }
+
+    public String getNombreCotidiano() {
+        return nombreCotidiano;
+    }
+
+    public void setNombreCotidiano(String nombreCotidiano) {
+        this.nombreCotidiano = nombreCotidiano;
+    }
+
+    public String getNombreTareas() {
+        return nombreTareas;
+    }
+
+    public void setNombreTareas(String nombreTareas) {
+        this.nombreTareas = nombreTareas;
+    }
+
+    public String getNombreProyecto() {
+        return nombreProyecto;
+    }
+
+    public void setNombreProyecto(String nombreProyecto) {
+        this.nombreProyecto = nombreProyecto;
+    }
+
+    public String getNombrePruebas() {
+        return nombrePruebas;
+    }
+
+    public void setNombrePruebas(String nombrePruebas) {
+        this.nombrePruebas = nombrePruebas;
+    }
+
+    public String getNombreAsistencia() {
+        return nombreAsistencia;
+    }
+
+    public void setNombreAsistencia(String nombreAsistencia) {
+        this.nombreAsistencia = nombreAsistencia;
     }
 }

@@ -15,6 +15,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.chavescr.nexa.dto.NombresRubros;
 import com.chavescr.nexa.dto.NotasBoletaDetalle;
 import com.chavescr.nexa.dto.NotasConductaDetalle;
 import com.chavescr.nexa.dto.NotasConductaDetalle.Cuenta;
@@ -246,6 +247,7 @@ public class NotasConsultaService {
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
         CalculoRebaja calculo = conAsistencia ? rebajaConductaService.calculo(direccionId) : null;
         Distribuciones distribuciones = distribucionesDe(direccionId);
+        Map<Long, NombresRubros> nombresPorMateria = componenteEvaluacionService.nombresPorMateria(direccionId);
         Map<Long, int[]> asistencia = conAsistencia
                 ? asistenciaDeEstudiante(direccionId, estudianteId, periodo)
                 : Map.of();
@@ -263,7 +265,8 @@ public class NotasConsultaService {
                     pesosDeMateria(pesos, nivelId, vista.id, periodoId),
                     calculo);
             filas.add(new NotasDesgloseFila(vista.id, vista.nombre, vista.docente, nota.cotidiano(), nota.tareas(),
-                    nota.proyecto(), nota.pruebas(), nota.asistencia(), nota.porcentaje()));
+                    nota.proyecto(), nota.pruebas(), nota.asistencia(), nota.porcentaje(),
+                    nombresPorMateria == null ? null : nombresPorMateria.get(vista.id)));
         }
         return filas;
     }
@@ -288,6 +291,10 @@ public class NotasConsultaService {
 
         boolean conAsistencia = rebajaConductaService.asistenciaRebajaComponente(direccionId);
         int[] dist = componenteEvaluacionService.pesosDeMateria(direccionId, materiaId);
+        NombresRubros nombres = componenteEvaluacionService.nombresDeMateria(direccionId, materiaId);
+        if (nombres == null) {
+            nombres = NombresRubros.PREDETERMINADOS;
+        }
         String nombre = materia.getNombre() == null || materia.getNombre().isBlank() ? "Materia" : materia.getNombre();
         String limpia = claveTexto == null ? "" : claveTexto.trim().toUpperCase(Locale.ROOT);
         if ("ASISTENCIA".equals(limpia)) {
@@ -295,7 +302,8 @@ public class NotasConsultaService {
                 throw new IllegalArgumentException(
                         "La asistencia no forma parte de la nota: las ausencias y tardías rebajan la conducta");
             }
-            return detalleAsistencia(direccionId, estudianteId, materiaId, periodo, nombre, dist[4]);
+            return detalleAsistencia(direccionId, estudianteId, materiaId, periodo, nombre, dist[4],
+                    nombres.getAsistencia());
         }
         ClaveComponente clave;
         try {
@@ -304,11 +312,11 @@ public class NotasConsultaService {
             throw new IllegalArgumentException("Componente no válido");
         }
         return detalleComponente(direccionId, nivel.getId(), estudianteId, materiaId, periodo, nombre, clave,
-                pesoDe(dist, clave));
+                pesoDe(dist, clave), nombres.de(clave));
     }
 
     private NotasMateriaDetalle detalleComponente(Long direccionId, Long nivelId, Long estudianteId, Long materiaId,
-            PeriodoAcademico periodo, String materia, ClaveComponente clave, int pesoNota) {
+            PeriodoAcademico periodo, String materia, ClaveComponente clave, int pesoNota, String etiqueta) {
         boolean acotadoAlPeriodo = clave == ClaveComponente.PROYECTO || clave == ClaveComponente.EXAMEN;
         List<Componente> componentes = new ArrayList<>(acotadoAlPeriodo
                 ? componenteRepository.findByDireccionIdAndClaveAndNivelIdAndMateriaIdAndPeriodoIdOrderByIdAsc(
@@ -370,14 +378,13 @@ public class NotasConsultaService {
                     ""));
         }
         Integer promedio = activo ? promedioDe(usados, clave, pesos) : null;
-        String etiqueta = etiquetaClave(clave);
         return new NotasMateriaDetalle(materia, etiqueta, false, activo, promedio, pesoNota, componentes.size(),
                 entran, leyendaComponente(clave, etiqueta, materia, entran, componentes.size(), pesoNota, activo),
                 muestraPuntos, rubros);
     }
 
     private NotasMateriaDetalle detalleAsistencia(Long direccionId, Long estudianteId, Long materiaId,
-            PeriodoAcademico periodo, String materia, int pesoNota) {
+            PeriodoAcademico periodo, String materia, int pesoNota, String etiqueta) {
         List<AsistenciaEstudiante> lecciones = new ArrayList<>(asistenciaRepository
                 .findByDireccionIdAndEstudianteIdAndMateriaIdAndFechaBetween(
                         direccionId, estudianteId, materiaId, periodo.getFechaInicio(), periodo.getFechaFin()));
@@ -412,7 +419,7 @@ public class NotasConsultaService {
         String leyenda = total == 0
                 ? "No hay lecciones registradas en " + materia + " en este período."
                 : leyendaAsistencia(calculo, conteo, total, promedio, pesoNota, materia);
-        return new NotasMateriaDetalle(materia, "Asistencia", true, true, promedio, pesoNota, total, presentes,
+        return new NotasMateriaDetalle(materia, etiqueta, true, true, promedio, pesoNota, total, presentes,
                 leyenda, false, rubros);
     }
 
@@ -488,18 +495,9 @@ public class NotasConsultaService {
         return frase + materia + ".";
     }
 
+    /** El componente puede renombrar el rubro, así que no se adivina si es plural: se nombra entre comillas. */
     private String frasePeso(String etiqueta, int peso, String materia) {
-        boolean plural = "Tareas".equals(etiqueta) || "Pruebas".equals(etiqueta);
-        return etiqueta + (plural ? " valen " : " vale ") + peso + "% de la nota de " + materia + ".";
-    }
-
-    private String etiquetaClave(ClaveComponente clave) {
-        return switch (clave) {
-            case COTIDIANO -> "Cotidiano";
-            case TAREA -> "Tareas";
-            case PROYECTO -> "Proyecto";
-            case EXAMEN -> "Pruebas";
-        };
+        return "«" + etiqueta + "» vale " + peso + "% de la nota de " + materia + ".";
     }
 
     private String textoPorcentaje(double peso) {

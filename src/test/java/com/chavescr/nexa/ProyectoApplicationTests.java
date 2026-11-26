@@ -319,6 +319,46 @@ class ProyectoApplicationTests {
 	}
 
 	@Test
+	void cadaComponenteMuestraLosNombresQueLeDioASusRubros() {
+		ComponenteEvaluacion componente = new ComponenteEvaluacion();
+		componente.setId(1L);
+		componente.setNombre("Técnicas");
+		componente.setCotidiano(45);
+		componente.setTareas(10);
+		componente.setProyecto(0);
+		componente.setPruebas(40);
+		componente.setAsistencia(5);
+		componente.setNombrePruebas("Exámenes");
+
+		Context context = new Context();
+		context.setVariable("componentesEvaluacion", List.of(componente));
+		context.setVariable("materiasPorComponente", Map.of());
+		context.setVariable("componente", componente);
+		context.setVariable("materiasDelComponente", 0L);
+		context.setVariable("asistenciaCuenta", true);
+
+		String tabla = templateEngine.process("configuracion-institucional/componentes/componentes", context);
+		assertTrue(tabla.contains(">Exámenes<"));
+		assertTrue(tabla.contains(">Pruebas<"));
+
+		String formulario = templateEngine.process("configuracion-institucional/componentes/formulario", context);
+		assertTrue(formulario.contains("name=\"nombrePruebas\""));
+		assertTrue(formulario.contains("value=\"Exámenes\""));
+		assertTrue(formulario.contains("placeholder=\"Cotidiano\""));
+
+		TemplateSpec filas = new TemplateSpec("notas/detalle-por-componente", Set.of("filas"),
+				(org.thymeleaf.templatemode.TemplateMode) null, null);
+		Context notas = new Context();
+		notas.setVariable("escala", new VistaEscala(List.of(new VistaEscala.Tramo("Aprobado", 70, "bueno"))));
+		notas.setVariable("conAsistencia", false);
+		notas.setVariable("filas", new ArrayList<>(List.of(new NotasDesgloseFila(1L, "Taller", "Prof. Ana", 80,
+				null, null, 90, null, 85.0, componente.getNombresRubros()))));
+		String desglose = templateEngine.process(filas, notas);
+		assertTrue(desglose.contains("data-rubro=\"Exámenes\""));
+		assertTrue(desglose.contains("Ver Exámenes de Taller"));
+	}
+
+	@Test
 	void desgloseDeNotasMuestraLaAsistenciaSoloSiRebajaElComponente() {
 		TemplateSpec filas = new TemplateSpec("notas/detalle-por-componente", Set.of("filas"),
 				(org.thymeleaf.templatemode.TemplateMode) null, null);

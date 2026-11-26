@@ -26,6 +26,16 @@
             font-size: 0.75rem;
             color: var(--text-secondary);
         }
+        .comp-eval-rubro-nombre {
+            display: grid;
+            gap: 0.2rem;
+            min-width: 0;
+        }
+        .comp-eval-rubro-nombre .form-input {
+            height: 34px;
+            padding: 0.35rem 0.6rem;
+            font-weight: 600;
+        }
         .comp-eval-pct {
             display: flex;
             align-items: center;
@@ -100,47 +110,73 @@
                     </div>
 
                     <fieldset class="form-group" style="border: 0; padding: 0; margin: 0 0 1.25rem;">
-                        <legend class="form-label">Porcentaje de cada rubro</legend>
+                        <legend class="form-label">Rubros: nombre y porcentaje</legend>
+                        <p class="academic-help" style="margin: -0.25rem 0 0.6rem;">Puedes renombrar cualquier rubro solo en este componente (por ejemplo «Pruebas» → «Exámenes»). Vacío = nombre predeterminado.</p>
                         <div class="comp-eval-rubros">
                             <div class="comp-eval-rubro">
-                                <label for="componente-cotidiano">Trabajo cotidiano<small>Indicadores evaluados en clase</small></label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <input class="form-input" name="nombreCotidiano" maxlength="60" placeholder="Cotidiano"
+                                           aria-label="Nombre del rubro Cotidiano" aria-describedby="ayuda-cotidiano"
+                                           th:value="${componente.nombreCotidiano}">
+                                    <label for="componente-cotidiano"><small id="ayuda-cotidiano">Indicadores evaluados en clase</small></label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-cotidiano" name="cotidiano" type="number"
+                                    <input class="form-input" id="componente-cotidiano" name="cotidiano" type="number" aria-label="Porcentaje de Cotidiano"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.cotidiano}">
                                     <span>%</span>
                                 </div>
                             </div>
                             <div class="comp-eval-rubro">
-                                <label for="componente-tareas">Tareas<small>Trabajos asignados fuera de la lección</small></label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <input class="form-input" name="nombreTareas" maxlength="60" placeholder="Tareas"
+                                           aria-label="Nombre del rubro Tareas" aria-describedby="ayuda-tareas"
+                                           th:value="${componente.nombreTareas}">
+                                    <label for="componente-tareas"><small id="ayuda-tareas">Trabajos asignados fuera de la lección</small></label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-tareas" name="tareas" type="number"
+                                    <input class="form-input" id="componente-tareas" name="tareas" type="number" aria-label="Porcentaje de Tareas"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.tareas}">
                                     <span>%</span>
                                 </div>
                             </div>
                             <div class="comp-eval-rubro">
-                                <label for="componente-proyecto">Proyecto<small>0% = no forma parte de la nota</small></label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <input class="form-input" name="nombreProyecto" maxlength="60" placeholder="Proyecto"
+                                           aria-label="Nombre del rubro Proyecto" aria-describedby="ayuda-proyecto"
+                                           th:value="${componente.nombreProyecto}">
+                                    <label for="componente-proyecto"><small id="ayuda-proyecto">0% = no forma parte de la nota</small></label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-proyecto" name="proyecto" type="number"
+                                    <input class="form-input" id="componente-proyecto" name="proyecto" type="number" aria-label="Porcentaje de Proyecto"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.proyecto}">
                                     <span>%</span>
                                 </div>
                             </div>
                             <div class="comp-eval-rubro">
-                                <label for="componente-pruebas">Pruebas<small>Pruebas escritas del período</small></label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <input class="form-input" name="nombrePruebas" maxlength="60" placeholder="Pruebas"
+                                           aria-label="Nombre del rubro Pruebas" aria-describedby="ayuda-pruebas"
+                                           th:value="${componente.nombrePruebas}">
+                                    <label for="componente-pruebas"><small id="ayuda-pruebas">Pruebas escritas del período</small></label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-pruebas" name="pruebas" type="number"
+                                    <input class="form-input" id="componente-pruebas" name="pruebas" type="number" aria-label="Porcentaje de Pruebas"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.pruebas}">
                                     <span>%</span>
                                 </div>
                             </div>
                             <div class="comp-eval-rubro">
-                                <label for="componente-asistencia">Asistencia
-                                    <small th:if="${asistenciaCuenta}">Según la tabla del Art. 37</small>
-                                    <small th:unless="${asistenciaCuenta}">En esta dirección rebaja la conducta: su porcentaje se reparte entre los demás rubros</small>
-                                </label>
+                                <div class="comp-eval-rubro-nombre">
+                                    <input class="form-input" name="nombreAsistencia" maxlength="60" placeholder="Asistencia"
+                                           aria-label="Nombre del rubro Asistencia" aria-describedby="ayuda-asistencia"
+                                           th:value="${componente.nombreAsistencia}">
+                                    <label for="componente-asistencia" id="ayuda-asistencia">
+                                        <small th:if="${asistenciaCuenta}">Según la tabla del Art. 37</small>
+                                        <small th:unless="${asistenciaCuenta}">En esta dirección rebaja la conducta: su porcentaje se reparte entre los demás rubros</small>
+                                    </label>
+                                </div>
                                 <div class="comp-eval-pct">
-                                    <input class="form-input" id="componente-asistencia" name="asistencia" type="number"
+                                    <input class="form-input" id="componente-asistencia" name="asistencia" type="number" aria-label="Porcentaje de Asistencia"
                                            min="0" max="100" step="1" required data-rubro th:value="${componente.asistencia}">
                                     <span>%</span>
                                 </div>

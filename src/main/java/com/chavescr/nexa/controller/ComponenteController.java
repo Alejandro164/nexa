@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.chavescr.nexa.dto.FilaRubro;
+import com.chavescr.nexa.dto.NombresRubros;
 import com.chavescr.nexa.dto.VistaComponente;
 import com.chavescr.nexa.entity.AccionHistorial;
 import com.chavescr.nexa.entity.ClaveComponente;
@@ -24,6 +25,7 @@ import com.chavescr.nexa.entity.Componente;
 import com.chavescr.nexa.entity.ModuloAcademico;
 import com.chavescr.nexa.security.CustomUserDetails;
 import com.chavescr.nexa.service.AlcanceDocenteService;
+import com.chavescr.nexa.service.ComponenteEvaluacionService;
 import com.chavescr.nexa.service.ComponenteService;
 import com.chavescr.nexa.service.HistorialCambioService;
 
@@ -71,12 +73,14 @@ public class ComponenteController {
     private final ComponenteService service;
     private final AlcanceDocenteService alcanceDocenteService;
     private final HistorialCambioService historialService;
+    private final ComponenteEvaluacionService componenteEvaluacionService;
 
     public ComponenteController(ComponenteService service, AlcanceDocenteService alcanceDocenteService,
-            HistorialCambioService historialService) {
+            HistorialCambioService historialService, ComponenteEvaluacionService componenteEvaluacionService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
         this.historialService = historialService;
+        this.componenteEvaluacionService = componenteEvaluacionService;
     }
 
     @GetMapping({
@@ -322,6 +326,11 @@ public class ComponenteController {
         model.addAttribute("periodoActivo", periodoActivo);
         model.addAttribute("totalEstudiantesSeccion", totalEstudiantesSeccion);
         model.addAttribute("vista", perfil.vista());
+        // El componente de evaluación de la materia puede haber renombrado este rubro.
+        String nombreRubro = materiaId == null ? null
+                : componenteEvaluacionService.nombresDeMateria(direccionId, materiaId).de(perfil.clave());
+        model.addAttribute("nombreRubro",
+                nombreRubro != null && !nombreRubro.equals(NombresRubros.predeterminado(perfil.clave())) ? nombreRubro : null);
         model.addAttribute("rubros", componentes.stream()
                 .map(c -> new FilaRubro(c.getId(), c.getTitulo(), c.getFecha(), c.isPonderado(),
                         c.getPuntosTotales(), promedios.get(c.getId()), pesosEfectivos.get(c.getId()),

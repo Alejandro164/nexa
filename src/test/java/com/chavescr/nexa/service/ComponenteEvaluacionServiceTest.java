@@ -2,6 +2,7 @@ package com.chavescr.nexa.service;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -19,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.chavescr.nexa.entity.ClaveComponente;
 import com.chavescr.nexa.entity.ComponenteEvaluacion;
 import com.chavescr.nexa.entity.Direccion;
 import com.chavescr.nexa.entity.Materia;
@@ -94,6 +96,61 @@ class ComponenteEvaluacionServiceTest {
         assertEquals("III Ciclo — Básicas", guardado.getNombre());
         assertEquals(direccion, guardado.getDireccion());
         assertArrayEquals(new int[] { 45, 10, 0, 40, 5 }, guardado.pesos());
+    }
+
+    @Test
+    void cadaComponentePuedeRenombrarSusRubros() {
+        when(direccionRepository.findById(DIRECCION)).thenReturn(Optional.of(new Direccion()));
+        when(repository.findByDireccionIdOrderByOrdenAscNombreAsc(DIRECCION)).thenReturn(List.of());
+        when(repository.save(any(ComponenteEvaluacion.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
+        ComponenteEvaluacion datos = componente("Técnicas", 45, 10, 0, 40, 5);
+        datos.setNombrePruebas("  Exámenes   escritos ");
+        datos.setNombreCotidiano("Cotidiano");
+        datos.setNombreTareas("   ");
+
+        ComponenteEvaluacion guardado = service.guardar(DIRECCION, datos);
+
+        assertEquals("Exámenes escritos", guardado.getNombrePruebas());
+        assertNull(guardado.getNombreCotidiano());
+        assertNull(guardado.getNombreTareas());
+        assertEquals("Exámenes escritos", guardado.getNombresRubros().de(ClaveComponente.EXAMEN));
+        assertEquals("Tareas", guardado.getNombresRubros().getTareas());
+        assertEquals("Asistencia", guardado.getNombresRubros().de("ASISTENCIA"));
+    }
+
+    @Test
+    void dosRubrosDelComponenteNoPuedenLlamarseIgual() {
+        ComponenteEvaluacion datos = componente("Técnicas", 45, 10, 0, 40, 5);
+        datos.setNombreProyecto("tareas");
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.guardar(DIRECCION, datos));
+
+        assertEquals("Dos rubros del componente no pueden llamarse «tareas»", error.getMessage());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void elNombreDeUnRubroAdmiteHasta60Caracteres() {
+        ComponenteEvaluacion datos = componente("Técnicas", 45, 10, 0, 40, 5);
+        datos.setNombreAsistencia("x".repeat(61));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> service.guardar(DIRECCION, datos));
+
+        assertEquals("El nombre del rubro «Asistencia» admite hasta 60 caracteres", error.getMessage());
+    }
+
+    @Test
+    void laMateriaTomaLosNombresDeSuComponente() {
+        Materia materia = new Materia();
+        ComponenteEvaluacion componente = componente("Técnicas", 45, 10, 0, 40, 5);
+        componente.setNombrePruebas("Exámenes");
+        materia.setComponenteEvaluacion(componente);
+        when(materiaRepository.findByIdAndDireccionId(MATERIA, DIRECCION)).thenReturn(Optional.of(materia));
+
+        assertEquals("Exámenes", service.nombresDeMateria(DIRECCION, MATERIA).getPruebas());
+        assertEquals("Cotidiano", service.nombresDeMateria(DIRECCION, MATERIA).getCotidiano());
     }
 
     @Test

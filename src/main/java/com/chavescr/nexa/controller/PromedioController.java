@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.chavescr.nexa.dto.FilaPromedio;
 import com.chavescr.nexa.entity.PeriodoAcademico;
 import com.chavescr.nexa.service.AlcanceDocenteService;
+import com.chavescr.nexa.service.ComponenteEvaluacionService;
 import com.chavescr.nexa.service.EnvioNotasDocenteService;
 import com.chavescr.nexa.service.EscalaNotasService;
 import com.chavescr.nexa.service.PromedioService;
@@ -34,16 +35,19 @@ public class PromedioController {
     private final TipoComponenteService tipoComponenteService;
     private final EscalaNotasService escalaNotasService;
     private final RebajaConductaService rebajaConductaService;
+    private final ComponenteEvaluacionService componenteEvaluacionService;
 
     public PromedioController(PromedioService service, AlcanceDocenteService alcanceDocenteService,
             EnvioNotasDocenteService envioNotasDocenteService, TipoComponenteService tipoComponenteService,
-            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService) {
+            EscalaNotasService escalaNotasService, RebajaConductaService rebajaConductaService,
+            ComponenteEvaluacionService componenteEvaluacionService) {
         this.service = service;
         this.alcanceDocenteService = alcanceDocenteService;
         this.envioNotasDocenteService = envioNotasDocenteService;
         this.tipoComponenteService = tipoComponenteService;
         this.escalaNotasService = escalaNotasService;
         this.rebajaConductaService = rebajaConductaService;
+        this.componenteEvaluacionService = componenteEvaluacionService;
     }
 
     @GetMapping
@@ -80,6 +84,7 @@ public class PromedioController {
         model.addAttribute("nivelId", nivelId);
         model.addAttribute("materiaId", materiaId);
         model.addAttribute("tiposComponente", tipos);
+        model.addAttribute("nombresRubros", componenteEvaluacionService.nombresDeMateria(direccionId, materiaId));
         model.addAttribute("conAsistencia", conAsistencia);
         model.addAttribute("columnasPromedio", tipos.size() + (conAsistencia ? 3 : 2));
         model.addAttribute("filas", filas);

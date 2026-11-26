@@ -139,8 +139,9 @@
                     <thead>
                         <tr>
                             <th>Estudiante</th>
-                            <th th:each="tipo : ${tiposComponente}" th:text="${tipo.nombre}">Componente</th>
-                            <th th:if="${conAsistencia}">Asistencia</th>
+                            <th th:each="tipo : ${tiposComponente}"
+                                th:text="${tipo.clave != null and nombresRubros != null ? nombresRubros.de(tipo.clave) : tipo.nombre}">Componente</th>
+                            <th th:if="${conAsistencia}" th:text="${nombresRubros != null ? nombresRubros.asistencia : 'Asistencia'}">Asistencia</th>
                             <th style="background:rgba(45,90,135,0.08);">Promedio Final</th>
                         </tr>
                     </thead>

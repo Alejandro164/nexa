@@ -48,11 +48,12 @@
                                 <option th:each="c : ${componentesEvaluacion}"
                                         th:value="${c.id}"
                                         th:selected="${materia.componenteEvaluacion != null and materia.componenteEvaluacion.id == c.id}"
-                                        th:attr="data-resumen=${(c.cotidiano > 0 ? 'Cotidiano ' + c.cotidiano + '%|' : '')
-                                                 + (c.tareas > 0 ? 'Tareas ' + c.tareas + '%|' : '')
-                                                 + (c.proyecto > 0 ? 'Proyecto ' + c.proyecto + '%|' : '')
-                                                 + (c.pruebas > 0 ? 'Pruebas ' + c.pruebas + '%|' : '')
-                                                 + (c.asistencia > 0 ? 'Asistencia ' + c.asistencia + '%' : '')}"
+                                        th:with="n=${c.nombresRubros}"
+                                        th:attr="data-resumen=${(c.cotidiano > 0 ? n.cotidiano + ' ' + c.cotidiano + '%|' : '')
+                                                 + (c.tareas > 0 ? n.tareas + ' ' + c.tareas + '%|' : '')
+                                                 + (c.proyecto > 0 ? n.proyecto + ' ' + c.proyecto + '%|' : '')
+                                                 + (c.pruebas > 0 ? n.pruebas + ' ' + c.pruebas + '%|' : '')
+                                                 + (c.asistencia > 0 ? n.asistencia + ' ' + c.asistencia + '%' : '')}"
                                         th:text="${c.nombre}">Componente</option>
                             </select>
                             <div class="materia-componente-resumen" data-componente-resumen hidden>

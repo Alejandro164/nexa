@@ -649,8 +649,12 @@
                         return;
                     }
                     actual.dataset.modo = modo;
+                    // source = el propio inicio: sin source htmx usa el <body>, y en la carga completa este
+                    // script corre antes de que htmx inicialice el body; el contador de peticiones del body
+                    // se reinicia y la clase htmx-request nunca se quita, dejando visibles todos los
+                    // indicadores de carga (p. ej. "Guardando..." en Configuración institucional).
                     htmx.ajax('GET', '/inicio?modo=' + encodeURIComponent(modo),
-                        { target: '.content-area', swap: 'innerHTML' });
+                        { source: actual, target: '.content-area', swap: 'innerHTML' });
                 };
                 let guardado = null;
                 try {

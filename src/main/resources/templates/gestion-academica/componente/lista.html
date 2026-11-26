@@ -38,6 +38,10 @@
         </div>
 
         <th:block th:if="${nivelId != null and materiaId != null and periodoActivo != null}">
+            <p th:if="${nombreRubro != null}" class="text-muted text-sm" style="margin: 0.75rem 1.5rem 0;">
+                En el componente de evaluación de esta materia, este rubro se llama
+                <strong th:text="|«${nombreRubro}»|">«Exámenes»</strong>.
+            </p>
             <div th:if="${error}" class="form-alert-error" style="margin: 1rem 1.5rem 0;" th:text="${error}"></div>
             <div class="table-container">
                 <table class="table">
