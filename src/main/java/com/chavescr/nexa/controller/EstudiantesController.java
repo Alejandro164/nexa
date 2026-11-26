@@ -163,6 +163,7 @@ public class EstudiantesController {
             @RequestParam(defaultValue = "false") boolean activo,
             @RequestParam(required = false) Long nivelId,
             @RequestParam(required = false) Integer anioMatricula,
+            @RequestParam(required = false) List<Long> padreIds,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String campo,
             @RequestParam(required = false) Integer periodo,
@@ -176,6 +177,13 @@ public class EstudiantesController {
             List<Long> rolIds = List.of(personalService.obtenerRolPorNombre(ROL_ESTUDIANTE).getId());
             Usuario guardado = personalService.guardar(direccionId, id, nombre, email, usuario, cedula, password,
                     activo, rolIds, nivelId, anioMatricula);
+            if (padreIds != null) {
+                for (Long padreId : padreIds) {
+                    if (padreId != null) {
+                        personalService.vincularPadre(direccionId, guardado.getId(), padreId);
+                    }
+                }
+            }
             cargarListaExpedientes(model, direccionId, q, campo, periodo, pagina, tamano);
             if (guardado.getAnioMatricula() != null) {
                 response.setHeader("HX-Trigger",
@@ -292,8 +300,9 @@ public class EstudiantesController {
     @GetMapping("/expedientes/{id}/padres")
     public String padresTab(@PathVariable Long id, Model model, HttpSession session) {
         Long direccionId = requerirDireccion(session);
-        model.addAttribute("estudiante", personalService.obtenerPorId(direccionId, id));
         model.addAttribute("padresVinculados", personalService.listarPadresDe(direccionId, id));
+        model.addAttribute("padresBaseUrl", "/estudiantes/expedientes/" + id + "/padres");
+        model.addAttribute("padresPanelId", "#estudiante-padres-panel");
         return "estudiantes/expedientes/padres-tab :: content";
     }
 
@@ -309,8 +318,37 @@ public class EstudiantesController {
             resultado.put("encontrado", true);
             resultado.put("padreId", padre.getId());
             resultado.put("nombre", padre.getNombre());
+            resultado.put("email", padre.getEmail() != null ? padre.getEmail() : "");
+            resultado.put("cedula", padre.getCedula() != null ? padre.getCedula() : "");
         } else {
             resultado.put("encontrado", false);
+        }
+        return resultado;
+    }
+
+    @PostMapping("/padres/crear-rapido")
+    @ResponseBody
+    public Map<String, Object> crearPadreRapido(
+            @RequestParam String nombre,
+            @RequestParam String email,
+            @RequestParam String usuario,
+            @RequestParam(required = false) String cedula,
+            @RequestParam String password,
+            HttpSession session) {
+        Map<String, Object> resultado = new HashMap<>();
+        Long direccionId = requerirDireccion(session);
+        try {
+            Long rolPadreId = personalService.obtenerRolPorNombre(ROL_PADRE).getId();
+            Usuario nuevoPadre = personalService.guardar(direccionId, null, nombre, email, usuario, cedula,
+                    password, true, List.of(rolPadreId));
+            resultado.put("ok", true);
+            resultado.put("id", nuevoPadre.getId());
+            resultado.put("nombre", nuevoPadre.getNombre());
+            resultado.put("email", nuevoPadre.getEmail() != null ? nuevoPadre.getEmail() : "");
+            resultado.put("cedula", nuevoPadre.getCedula() != null ? nuevoPadre.getCedula() : "");
+        } catch (Exception e) {
+            resultado.put("ok", false);
+            resultado.put("error", e.getMessage());
         }
         return resultado;
     }
@@ -353,8 +391,9 @@ public class EstudiantesController {
             return padresTab(id, model, session);
         } catch (Exception e) {
             model.addAttribute("errorPadre", e.getMessage());
-            model.addAttribute("estudiante", personalService.obtenerPorId(direccionId, id));
             model.addAttribute("padresVinculados", personalService.listarPadresDe(direccionId, id));
+            model.addAttribute("padresBaseUrl", "/estudiantes/expedientes/" + id + "/padres");
+            model.addAttribute("padresPanelId", "#estudiante-padres-panel");
             return "estudiantes/expedientes/padres-tab :: content";
         }
     }
@@ -416,6 +455,7 @@ public class EstudiantesController {
             @RequestParam(required = false) Long nivelId,
             @RequestParam(required = false) Integer anioMatricula,
             @RequestParam(defaultValue = "true") boolean activo,
+            @RequestParam(required = false) List<Long> padreIds,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String campo,
             @RequestParam(required = false) Integer periodo,
@@ -425,7 +465,7 @@ public class EstudiantesController {
         Long direccionId = requerirDireccion(session);
         try {
             MatriculaEstudiante guardado = matriculaEstudianteService.crearPrematricula(
-                    direccionId, nombre, cedula, email, usuario, password, nivelId, anioMatricula, activo);
+                    direccionId, nombre, cedula, email, usuario, password, nivelId, anioMatricula, activo, padreIds);
             cargarListaEtapa(model, direccionId, EstadoMatricula.PREMATRICULA, q, campo, periodo, pagina, tamano);
             response.setHeader("HX-Trigger",
                     "{\"prematriculaGuardada\":{\"periodo\":" + guardado.getAnioMatricula()
@@ -567,6 +607,19 @@ public class EstudiantesController {
             resultado.put("nivelId", m.getNivelAcademico() != null ? m.getNivelAcademico().getId() : "");
             resultado.put("anioMatricula", m.getAnioMatricula() != null ? m.getAnioMatricula() : Year.now().getValue());
             resultado.put("tienePassword", m.tienePassword());
+            List<Map<String, Object>> padresLista = matriculaEstudianteService
+                    .listarPadresDe(direccionId, m.getId(), EstadoMatricula.PREMATRICULA)
+                    .stream()
+                    .map(p -> {
+                        Map<String, Object> pm = new HashMap<>();
+                        pm.put("id", p.getId());
+                        pm.put("nombre", p.getNombre() != null ? p.getNombre() : "");
+                        pm.put("email", p.getEmail() != null ? p.getEmail() : "");
+                        pm.put("cedula", p.getCedula() != null ? p.getCedula() : "");
+                        return pm;
+                    })
+                    .toList();
+            resultado.put("padres", padresLista);
         } else {
             resultado.put("encontrado", false);
         }
@@ -585,6 +638,7 @@ public class EstudiantesController {
             @RequestParam(required = false) Long nivelId,
             @RequestParam(required = false) Integer anioMatricula,
             @RequestParam(defaultValue = "true") boolean activo,
+            @RequestParam(required = false) List<Long> padreIds,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String campo,
             @RequestParam(required = false) Integer periodo,
@@ -595,7 +649,7 @@ public class EstudiantesController {
         try {
             if ("completar".equalsIgnoreCase(accion)) {
                 Usuario estudiante = matriculaEstudianteService.completarDesdeFormulario(
-                        direccionId, prematriculaId, nombre, cedula, email, usuario, password, nivelId, anioMatricula, activo);
+                        direccionId, prematriculaId, nombre, cedula, email, usuario, password, nivelId, anioMatricula, activo, padreIds);
                 cargarListaEtapa(model, direccionId, EstadoMatricula.BORRADOR, q, campo, periodo, pagina, tamano);
                 StringBuilder trigger = new StringBuilder("{\"estudianteActualizado\":true,\"prematriculaActualizada\":true,\"notify\":{\"type\":\"success\",\"message\":\"Matrícula completada. El estudiante pasó a Expedientes\"}}");
                 if (estudiante.getAnioMatricula() != null) {
@@ -606,7 +660,7 @@ public class EstudiantesController {
                 response.setHeader("HX-Trigger", trigger.toString());
             } else {
                 MatriculaEstudiante borrador = matriculaEstudianteService.guardarBorrador(
-                        direccionId, prematriculaId, nombre, cedula, email, usuario, password, nivelId, anioMatricula, activo);
+                        direccionId, prematriculaId, nombre, cedula, email, usuario, password, nivelId, anioMatricula, activo, padreIds);
                 cargarListaEtapa(model, direccionId, EstadoMatricula.BORRADOR, q, campo, periodo, pagina, tamano);
                 response.setHeader("HX-Trigger",
                         "{\"prematriculaActualizada\":true,\"matriculaGuardada\":{\"periodo\":"
@@ -743,14 +797,102 @@ public class EstudiantesController {
         model.addAttribute("hayFiltros", hayFiltros);
     }
 
+    // ─── PADRES / ENCARGADOS EN PREMATRÍCULA Y MATRÍCULA ───────
+
+    @GetMapping("/prematricula/{id}/padres")
+    public String prematriculaPadresTab(@PathVariable Long id, Model model, HttpSession session) {
+        return cargarPadresTabEtapa(id, EstadoMatricula.PREMATRICULA, model, session);
+    }
+
+    @PostMapping("/prematricula/{id}/padres/vincular")
+    public String prematriculaVincularPadre(@PathVariable Long id, @RequestParam Long padreId,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        matriculaEstudianteService.vincularPadre(direccionId, id, EstadoMatricula.PREMATRICULA, padreId);
+        return cargarPadresTabEtapa(id, EstadoMatricula.PREMATRICULA, model, session);
+    }
+
+    @PostMapping("/prematricula/{id}/padres/crear")
+    public String prematriculaCrearYVincularPadre(@PathVariable Long id,
+            @RequestParam String nombre, @RequestParam String email, @RequestParam String usuario,
+            @RequestParam(required = false) String cedula, @RequestParam String password,
+            Model model, HttpSession session) {
+        return crearYVincularPadreEtapa(id, EstadoMatricula.PREMATRICULA, nombre, email, usuario, cedula, password, model, session);
+    }
+
+    @DeleteMapping("/prematricula/{id}/padres/{padreId}")
+    public String prematriculaDesvincularPadre(@PathVariable Long id, @PathVariable Long padreId,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        matriculaEstudianteService.desvincularPadre(direccionId, id, EstadoMatricula.PREMATRICULA, padreId);
+        return cargarPadresTabEtapa(id, EstadoMatricula.PREMATRICULA, model, session);
+    }
+
+    @GetMapping("/matricula/{id}/padres")
+    public String matriculaPadresTab(@PathVariable Long id, Model model, HttpSession session) {
+        return cargarPadresTabEtapa(id, EstadoMatricula.BORRADOR, model, session);
+    }
+
+    @PostMapping("/matricula/{id}/padres/vincular")
+    public String matriculaVincularPadre(@PathVariable Long id, @RequestParam Long padreId,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        matriculaEstudianteService.vincularPadre(direccionId, id, EstadoMatricula.BORRADOR, padreId);
+        return cargarPadresTabEtapa(id, EstadoMatricula.BORRADOR, model, session);
+    }
+
+    @PostMapping("/matricula/{id}/padres/crear")
+    public String matriculaCrearYVincularPadre(@PathVariable Long id,
+            @RequestParam String nombre, @RequestParam String email, @RequestParam String usuario,
+            @RequestParam(required = false) String cedula, @RequestParam String password,
+            Model model, HttpSession session) {
+        return crearYVincularPadreEtapa(id, EstadoMatricula.BORRADOR, nombre, email, usuario, cedula, password, model, session);
+    }
+
+    @DeleteMapping("/matricula/{id}/padres/{padreId}")
+    public String matriculaDesvincularPadre(@PathVariable Long id, @PathVariable Long padreId,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        matriculaEstudianteService.desvincularPadre(direccionId, id, EstadoMatricula.BORRADOR, padreId);
+        return cargarPadresTabEtapa(id, EstadoMatricula.BORRADOR, model, session);
+    }
+
+    private String cargarPadresTabEtapa(Long id, EstadoMatricula estado, Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        String ruta = estado == EstadoMatricula.BORRADOR ? "matricula" : "prematricula";
+        model.addAttribute("padresVinculados", matriculaEstudianteService.listarPadresDe(direccionId, id, estado));
+        model.addAttribute("padresBaseUrl", "/estudiantes/" + ruta + "/" + id + "/padres");
+        model.addAttribute("padresPanelId", "#" + ruta + "-padres-panel");
+        return "estudiantes/expedientes/padres-tab :: content";
+    }
+
+    private String crearYVincularPadreEtapa(Long id, EstadoMatricula estado,
+            String nombre, String email, String usuario, String cedula, String password,
+            Model model, HttpSession session) {
+        Long direccionId = requerirDireccion(session);
+        try {
+            Long rolPadreId = personalService.obtenerRolPorNombre(ROL_PADRE).getId();
+            Usuario nuevoPadre = personalService.guardar(direccionId, null, nombre, email, usuario, cedula,
+                    password, true, List.of(rolPadreId));
+            matriculaEstudianteService.vincularPadre(direccionId, id, estado, nuevoPadre.getId());
+            return cargarPadresTabEtapa(id, estado, model, session);
+        } catch (Exception e) {
+            model.addAttribute("errorPadre", e.getMessage());
+            return cargarPadresTabEtapa(id, estado, model, session);
+        }
+    }
+
     private void cargarModeloFichaEtapa(Model model, Long direccionId, Long id, EstadoMatricula estado,
             HttpServletRequest request) {
         MatriculaEstudiante registro = matriculaEstudianteService.obtener(direccionId, id, estado);
         boolean puedeEditar = request.isUserInRole("ROLE_ADMIN") || request.isUserInRole("ROLE_DIRECTOR");
         boolean esBorrador = estado == EstadoMatricula.BORRADOR;
+        String ruta = esBorrador ? "matricula" : "prematricula";
         model.addAttribute("registro", registro);
+        model.addAttribute("padres", matriculaEstudianteService.listarPadresDe(direccionId, id, estado));
         model.addAttribute("esBorrador", esBorrador);
-        model.addAttribute("etapaRuta", esBorrador ? "matricula" : "prematricula");
+        model.addAttribute("etapaRuta", ruta);
+        model.addAttribute("padresPanelId", ruta + "-padres-panel");
         model.addAttribute("fichaContainerId", esBorrador ? "#matricula-ficha-container" : "#prematricula-ficha-container");
         model.addAttribute("closeEvent", esBorrador ? "close-matricula-ficha" : "close-prematricula-ficha");
         model.addAttribute("niveles", nivelAcademicoRepository.findByDireccionIdAndActivoTrueOrderByGradoAscSeccionAsc(direccionId));

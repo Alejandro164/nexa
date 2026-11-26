@@ -1,6 +1,8 @@
 package com.chavescr.nexa.entity;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +13,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -60,6 +64,12 @@ public class MatriculaEstudiante {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "estudiante_id")
     private Usuario estudiante;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "matricula_padres",
+            joinColumns = @JoinColumn(name = "matricula_id"),
+            inverseJoinColumns = @JoinColumn(name = "padre_id"))
+    private Set<Usuario> padres = new HashSet<>();
 
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
@@ -179,6 +189,14 @@ public class MatriculaEstudiante {
 
     public void setEstudiante(Usuario estudiante) {
         this.estudiante = estudiante;
+    }
+
+    public Set<Usuario> getPadres() {
+        return padres;
+    }
+
+    public void setPadres(Set<Usuario> padres) {
+        this.padres = padres;
     }
 
     public LocalDateTime getFechaCreacion() {

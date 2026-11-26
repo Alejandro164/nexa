@@ -1,31 +1,42 @@
 <div th:fragment="form-content" xmlns:th="http://www.thymeleaf.org">
-    <div class="modal-backdrop" @click.self="$dispatch('close-modal')" x-data="{ tab: 'general' }">
+    <div class="modal-backdrop" @click.self="$dispatch('close-modal')"
+         x-data="crearEstadoFormularioEstudiantes()">
         <div class="modal-dialog est-min-dialog" style="max-width:560px;">
             <div class="est-min-header">
                 <h3 class="est-min-title" th:text="${usuario.id == null ? 'Agregar estudiante' : 'Editar estudiante'}">Estudiante</h3>
                 <button type="button" class="est-min-close" @click="$dispatch('close-modal')" aria-label="Cerrar">&times;</button>
             </div>
             <div class="est-min-body">
-                <div class="est-min-tabs" th:if="${usuario.id != null}">
+                <div class="est-min-tabs">
                     <button type="button" class="est-min-tab" :class="{active: tab === 'general'}" @click="tab = 'general'">
                         Información general
                     </button>
                     <button type="button" class="est-min-tab" :class="{active: tab === 'padres'}"
+                            th:if="${usuario.id == null}"
+                            @click="tab = 'padres'">
+                        Padres / Encargados (<span x-text="padresSeleccionados.length">0</span>)
+                    </button>
+                    <button type="button" class="est-min-tab" :class="{active: tab === 'padres'}"
+                            th:if="${usuario.id != null}"
                             th:attr="hx-get='/estudiantes/expedientes/' + ${usuario.id} + '/padres'"
                             hx-target="#estudiante-padres-panel" hx-swap="innerHTML"
                             @click="tab = 'padres'">
-                        Encargados
+                        Padres / Encargados
                     </button>
                 </div>
 
-                <div x-show="tab === 'general'">
-                    <form th:action="@{/estudiantes/expedientes}" method="post"
-                          hx-post="/estudiantes/expedientes"
-                          hx-include="#estudiantes-filtros-form, #est-pagina-actual"
-                          hx-target="#estudiantes-dir-content" hx-swap="innerHTML"
-                          hx-on:htmx:after-request="if(event.detail.successful && !event.detail.xhr.getResponseHeader('HX-Retarget')) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
-                        <input type="hidden" name="id" th:value="${usuario.id}">
+                <form th:action="@{/estudiantes/expedientes}" method="post"
+                      hx-post="/estudiantes/expedientes"
+                      hx-include="#estudiantes-filtros-form, #est-pagina-actual"
+                      hx-target="#estudiantes-dir-content" hx-swap="innerHTML"
+                      @invalid.capture="tab = 'general'"
+                      hx-on:htmx:after-request="if(event.detail.successful && !event.detail.xhr.getResponseHeader('HX-Retarget')) this.dispatchEvent(new CustomEvent('close-modal',{bubbles:true}))">
+                    <input type="hidden" name="id" th:value="${usuario.id}">
+                    <template x-for="p in padresSeleccionados" :key="'hid-' + p.id">
+                        <input type="hidden" name="padreIds" :value="p.id">
+                    </template>
 
+                    <div x-show="tab === 'general'">
                         <p th:if="${error}" class="est-min-error" th:text="${error}"></p>
 
                         <div class="est-min-form-grid">
@@ -83,15 +94,23 @@
                                 </label>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="est-min-footer est-min-footer-inline">
-                            <button type="button" class="est-btn-outline" @click="$dispatch('close-modal')">Cancelar</button>
-                            <button type="submit" class="est-btn-solid">Guardar</button>
-                        </div>
-                    </form>
-                </div>
+                    <div x-show="tab === 'padres'" x-cloak th:if="${usuario.id == null}">
+                        <div th:replace="~{estudiantes/components/padres-selector :: selector}"></div>
+                    </div>
 
-                <div x-show="tab === 'padres'" id="estudiante-padres-panel"></div>
+                    <div class="est-min-footer est-min-footer-inline" th:if="${usuario.id == null}" x-show="tab === 'general' || tab === 'padres'">
+                        <button type="button" class="est-btn-outline" @click="$dispatch('close-modal')">Cancelar</button>
+                        <button type="submit" class="est-btn-solid">Guardar</button>
+                    </div>
+                    <div class="est-min-footer est-min-footer-inline" th:if="${usuario.id != null}" x-show="tab === 'general'">
+                        <button type="button" class="est-btn-outline" @click="$dispatch('close-modal')">Cancelar</button>
+                        <button type="submit" class="est-btn-solid">Guardar</button>
+                    </div>
+                </form>
+
+                <div x-show="tab === 'padres'" x-cloak th:if="${usuario.id != null}" id="estudiante-padres-panel"></div>
             </div>
         </div>
     </div>

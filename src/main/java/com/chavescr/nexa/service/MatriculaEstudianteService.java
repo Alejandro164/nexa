@@ -113,12 +113,14 @@ public class MatriculaEstudianteService {
 
     @Transactional(rollbackFor = Exception.class)
     public MatriculaEstudiante crearPrematricula(Long direccionId, String nombre, String cedula,
-            String email, String usuario, String rawPassword, Long nivelId, Integer anioMatricula, boolean activo) {
+            String email, String usuario, String rawPassword, Long nivelId, Integer anioMatricula,
+            boolean activo, List<Long> padreIds) {
         Direccion direccion = obtenerDireccion(direccionId);
         MatriculaEstudiante m = new MatriculaEstudiante();
         m.setDireccion(direccion);
         m.setEstado(EstadoMatricula.PREMATRICULA);
         aplicarDatosFormulario(direccionId, m, nombre, cedula, email, usuario, rawPassword, nivelId, anioMatricula, activo);
+        sincronizarPadres(direccion, m, padreIds);
         MatriculaEstudiante guardado = matriculaRepository.save(m);
         log.info("Prematrícula creada: id={}, nombre={}", guardado.getId(), guardado.getNombre());
         return guardado;
@@ -126,7 +128,8 @@ public class MatriculaEstudianteService {
 
     @Transactional(rollbackFor = Exception.class)
     public MatriculaEstudiante guardarBorrador(Long direccionId, Long prematriculaId, String nombre, String cedula,
-            String email, String usuario, String rawPassword, Long nivelId, Integer anioMatricula, boolean activo) {
+            String email, String usuario, String rawPassword, Long nivelId, Integer anioMatricula,
+            boolean activo, List<Long> padreIds) {
         Direccion direccion = obtenerDireccion(direccionId);
         MatriculaEstudiante m;
         if (prematriculaId != null) {
@@ -137,6 +140,9 @@ public class MatriculaEstudianteService {
         }
         m.setEstado(EstadoMatricula.BORRADOR);
         aplicarDatosFormulario(direccionId, m, nombre, cedula, email, usuario, rawPassword, nivelId, anioMatricula, activo);
+        if (padreIds != null) {
+            sincronizarPadres(direccion, m, padreIds);
+        }
         MatriculaEstudiante guardado = matriculaRepository.save(m);
         log.info("Borrador de matrícula guardado: id={}, nombre={}", guardado.getId(), guardado.getNombre());
         return guardado;
@@ -144,7 +150,8 @@ public class MatriculaEstudianteService {
 
     @Transactional(rollbackFor = Exception.class)
     public Usuario completarDesdeFormulario(Long direccionId, Long prematriculaId, String nombre, String cedula,
-            String email, String usuario, String rawPassword, Long nivelId, Integer anioMatricula, boolean activo) {
+            String email, String usuario, String rawPassword, Long nivelId, Integer anioMatricula,
+            boolean activo, List<Long> padreIds) {
         Direccion direccion = obtenerDireccion(direccionId);
         MatriculaEstudiante m;
         if (prematriculaId != null) {
@@ -155,7 +162,36 @@ public class MatriculaEstudianteService {
             m.setEstado(EstadoMatricula.BORRADOR);
         }
         aplicarDatosFormulario(direccionId, m, nombre, cedula, email, usuario, rawPassword, nivelId, anioMatricula, activo);
+        if (padreIds != null) {
+            sincronizarPadres(direccion, m, padreIds);
+        }
         return finalizarMatricula(direccion, m);
+    }
+
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public List<Usuario> listarPadresDe(Long direccionId, Long id, EstadoMatricula estadoEsperado) {
+        MatriculaEstudiante m = obtener(direccionId, id, estadoEsperado);
+        return m.getPadres().stream()
+                .sorted(Comparator.comparing(Usuario::getNombre, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void vincularPadre(Long direccionId, Long id, EstadoMatricula estadoEsperado, Long padreId) {
+        Direccion direccion = obtenerDireccion(direccionId);
+        MatriculaEstudiante m = obtener(direccionId, id, estadoEsperado);
+        Usuario padre = obtenerPadreValido(direccion, padreId);
+        if (m.getPadres().stream().noneMatch(p -> p.getId().equals(padre.getId()))) {
+            m.getPadres().add(padre);
+            matriculaRepository.save(m);
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void desvincularPadre(Long direccionId, Long id, EstadoMatricula estadoEsperado, Long padreId) {
+        MatriculaEstudiante m = obtener(direccionId, id, estadoEsperado);
+        m.getPadres().removeIf(p -> p.getId().equals(padreId));
+        matriculaRepository.save(m);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -305,6 +341,17 @@ public class MatriculaEstudianteService {
         estudiante.setDirecciones(new HashSet<>(Set.of(direccion)));
 
         Usuario guardado = usuarioRepository.save(estudiante);
+        for (Usuario padre : m.getPadres()) {
+            boolean yaEnDireccion = padre.getDirecciones().stream()
+                    .anyMatch(d -> d.getId().equals(direccion.getId()));
+            if (!yaEnDireccion) {
+                padre.getDirecciones().add(direccion);
+            }
+            if (!usuarioRepository.existeVinculoPadreEstudiante(padre.getId(), guardado.getId())) {
+                padre.getEstudiantes().add(guardado);
+                usuarioRepository.save(padre);
+            }
+        }
         m.setEstudiante(guardado);
         m.setEstado(EstadoMatricula.COMPLETADA);
         matriculaRepository.save(m);
@@ -312,6 +359,34 @@ public class MatriculaEstudianteService {
         log.info("Matrícula completada: matriculaId={}, estudianteId={}, nombre={}",
                 m.getId(), guardado.getId(), guardado.getNombre());
         return guardado;
+    }
+
+    private void sincronizarPadres(Direccion direccion, MatriculaEstudiante m, List<Long> padreIds) {
+        if (padreIds == null) {
+            return;
+        }
+        Set<Usuario> nuevos = new HashSet<>();
+        for (Long padreId : padreIds) {
+            if (padreId != null) {
+                nuevos.add(obtenerPadreValido(direccion, padreId));
+            }
+        }
+        m.setPadres(nuevos);
+    }
+
+    private Usuario obtenerPadreValido(Direccion direccion, Long padreId) {
+        Usuario padre = usuarioRepository.findById(padreId)
+                .orElseThrow(() -> new IllegalArgumentException("Padre o encargado no encontrado."));
+        if (padre.getRoles().stream().noneMatch(r -> "ROLE_PADRE".equals(r.getNombre()))) {
+            throw new IllegalArgumentException("La persona indicada no tiene rol de padre o encargado.");
+        }
+        boolean yaEnDireccion = padre.getDirecciones().stream()
+                .anyMatch(d -> d.getId().equals(direccion.getId()));
+        if (!yaEnDireccion) {
+            padre.getDirecciones().add(direccion);
+            usuarioRepository.save(padre);
+        }
+        return padre;
     }
 
     private void aplicarDatosFormulario(Long direccionId, MatriculaEstudiante m, String nombre, String cedula,

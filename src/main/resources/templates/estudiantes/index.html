@@ -957,6 +957,178 @@
                 window.htmx.ajax('DELETE', req.url, { target: req.target, swap: req.swap })
                     .then(() => cerrarConfirmacionDesactivar());
             }
+
+            function crearEstadoFormularioEstudiantes() {
+                return {
+                    tab: 'general',
+                    padresSeleccionados: [],
+                    padreBusquedaCedula: '',
+                    padreEstado: 'inicial',
+                    padreEncontrado: null,
+                    padreError: '',
+                    creandoPadre: false,
+                    nuevoPadre: { nombre: '', cedula: '', email: '', usuario: '', password: '' },
+                    buscarPadrePorCedula() {
+                        const cedula = this.padreBusquedaCedula.trim();
+                        this.padreError = '';
+                        this.padreEncontrado = null;
+                        if (!cedula) {
+                            this.padreEstado = 'inicial';
+                            return;
+                        }
+                        this.padreEstado = 'buscando';
+                        fetch('/estudiantes/buscar-padre?cedula=' + encodeURIComponent(cedula))
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.encontrado) {
+                                    this.padreEncontrado = {
+                                        id: data.padreId,
+                                        nombre: data.nombre || '',
+                                        email: data.email || '',
+                                        cedula: data.cedula || cedula
+                                    };
+                                    this.padreEstado = 'encontrado-local';
+                                    return;
+                                }
+                                fetch('/estudiantes/buscar-hacienda?identificacion=' + encodeURIComponent(cedula))
+                                    .then(r => r.json())
+                                    .then(h => {
+                                        this.nuevoPadre = {
+                                            nombre: h.encontrado ? (h.nombre || '') : '',
+                                            cedula: cedula,
+                                            email: '',
+                                            usuario: '',
+                                            password: ''
+                                        };
+                                        this.padreEstado = h.encontrado ? 'crear-con-nombre' : 'crear-manual';
+                                    })
+                                    .catch(() => {
+                                        this.nuevoPadre = { nombre: '', cedula: cedula, email: '', usuario: '', password: '' };
+                                        this.padreEstado = 'crear-manual';
+                                    });
+                            })
+                            .catch(() => {
+                                this.padreEstado = 'inicial';
+                                this.padreError = 'Error al buscar. Intenta de nuevo.';
+                            });
+                    },
+                    agregarPadreEncontrado() {
+                        if (!this.padreEncontrado) return;
+                        if (!this.padresSeleccionados.some(p => String(p.id) === String(this.padreEncontrado.id))) {
+                            this.padresSeleccionados.push(this.padreEncontrado);
+                        }
+                        this.padreBusquedaCedula = '';
+                        this.padreEncontrado = null;
+                        this.padreEstado = 'inicial';
+                        this.padreError = '';
+                    },
+                    crearYAgregarPadre() {
+                        this.padreError = '';
+                        const n = this.nuevoPadre;
+                        if (!n.nombre.trim() || !n.email.trim() || !n.usuario.trim() || !n.password.trim()) {
+                            this.padreError = 'Completa nombre, correo, usuario y contraseña del encargado.';
+                            return;
+                        }
+                        this.creandoPadre = true;
+                        const tokenMeta = document.querySelector('meta[name="_csrf"]');
+                        const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+                        const headers = { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' };
+                        if (tokenMeta && headerMeta) {
+                            headers[headerMeta.getAttribute('content')] = tokenMeta.getAttribute('content');
+                        }
+                        const body = new URLSearchParams({
+                            nombre: n.nombre.trim(),
+                            cedula: (n.cedula || '').trim(),
+                            email: n.email.trim(),
+                            usuario: n.usuario.trim(),
+                            password: n.password
+                        });
+                        fetch('/estudiantes/padres/crear-rapido', { method: 'POST', headers, body })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (!data.ok) {
+                                    this.padreError = data.error || 'No se pudo crear el encargado.';
+                                    return;
+                                }
+                                if (!this.padresSeleccionados.some(p => String(p.id) === String(data.id))) {
+                                    this.padresSeleccionados.push({
+                                        id: data.id,
+                                        nombre: data.nombre || '',
+                                        email: data.email || '',
+                                        cedula: data.cedula || ''
+                                    });
+                                }
+                                this.padreBusquedaCedula = '';
+                                this.padreEstado = 'inicial';
+                                this.nuevoPadre = { nombre: '', cedula: '', email: '', usuario: '', password: '' };
+                            })
+                            .catch(() => {
+                                this.padreError = 'Error al crear el encargado. Intenta de nuevo.';
+                            })
+                            .finally(() => {
+                                this.creandoPadre = false;
+                            });
+                    },
+                    quitarPadre(id) {
+                        this.padresSeleccionados = this.padresSeleccionados.filter(p => String(p.id) !== String(id));
+                    }
+                };
+            }
+
+            function crearEstadoFormularioMatricula(el) {
+                const base = crearEstadoFormularioEstudiantes();
+                const ds = el ? el.dataset : {};
+                return Object.assign(base, {
+                    cedulaConsulta: ds.cedula || '',
+                    buscando: false,
+                    mensajeConsulta: '',
+                    prematriculaId: ds.prematriculaId || '',
+                    tienePassword: false,
+                    nombre: ds.nombre || '',
+                    cedula: ds.cedula || '',
+                    email: ds.email || '',
+                    usuario: ds.usuario || '',
+                    nivelId: ds.nivelId || '',
+                    anioMatricula: ds.anioMatricula || ds.anioActual || '',
+                    anioActual: ds.anioActual || '',
+                    consultarPrematricula() {
+                        const ced = this.cedulaConsulta.trim();
+                        if (!ced) {
+                            this.mensajeConsulta = 'Ingresa una cédula para consultar.';
+                            return;
+                        }
+                        this.buscando = true;
+                        this.mensajeConsulta = '';
+                        fetch('/estudiantes/matricula/buscar-prematricula?cedula=' + encodeURIComponent(ced))
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.encontrado) {
+                                    this.prematriculaId = String(data.id);
+                                    this.nombre = data.nombre || '';
+                                    this.cedula = data.cedula || ced;
+                                    this.email = data.email || '';
+                                    this.usuario = data.usuario || '';
+                                    this.nivelId = data.nivelId ? String(data.nivelId) : '';
+                                    this.anioMatricula = data.anioMatricula ? String(data.anioMatricula) : this.anioActual;
+                                    this.tienePassword = !!data.tienePassword;
+                                    this.padresSeleccionados = Array.isArray(data.padres) ? data.padres : [];
+                                    this.mensajeConsulta = 'Datos cargados desde prematrícula.';
+                                } else {
+                                    this.prematriculaId = '';
+                                    this.tienePassword = false;
+                                    if (!this.cedula) this.cedula = ced;
+                                    this.mensajeConsulta = 'No se encontró una prematrícula activa con esa cédula.';
+                                }
+                            })
+                            .catch(() => {
+                                this.mensajeConsulta = 'No se pudo consultar la prematrícula. Intenta de nuevo.';
+                            })
+                            .finally(() => {
+                                this.buscando = false;
+                            });
+                    }
+                });
+            }
         </script>
     </main>
     </th:block>

@@ -12,6 +12,7 @@
          th:data-anio-matricula="${registro != null and registro.anioMatricula != null ? registro.anioMatricula : (anioActual != null ? anioActual : '')}"
          th:data-activo="${registro != null and registro.activo == true ? 'true' : 'false'}"
          x-data="{
+             tab: 'general',
              puedeEditar: $el.dataset.puedeEditar === 'true',
              closeEvent: $el.dataset.closeEvent || 'close-prematricula-ficha',
              campoEditando: $el.dataset.campoError || null,
@@ -72,6 +73,29 @@
 
             <div class="est-min-body">
                 <th:block th:if="${registro != null}">
+                    <div class="est-min-tabs">
+                        <button type="button" class="est-min-tab"
+                                :class="{ active: tab === 'general' }"
+                                @click="tab = 'general'">
+                            Información general
+                        </button>
+                        <button type="button" class="est-min-tab"
+                                th:if="${puedeEditar}"
+                                :class="{ active: tab === 'padres' }"
+                                th:attr="hx-get='/estudiantes/' + ${etapaRuta} + '/' + ${registro.id} + '/padres', hx-target='#' + ${padresPanelId}"
+                                hx-swap="innerHTML"
+                                @click="cancelarEdicion(); tab = 'padres'">
+                            Padres / Encargados (<span th:text="${padres != null ? #lists.size(padres) : 0}">0</span>)
+                        </button>
+                        <button type="button" class="est-min-tab"
+                                th:if="${!puedeEditar}"
+                                :class="{ active: tab === 'padres' }"
+                                @click="tab = 'padres'">
+                            Padres / Encargados (<span th:text="${padres != null ? #lists.size(padres) : 0}">0</span>)
+                        </button>
+                    </div>
+
+                    <div x-show="tab === 'general'">
                     <p class="est-min-hint" th:if="${puedeEditar}">
                         Haz clic en cualquier campo para editarlo.
                     </p>
@@ -240,6 +264,25 @@
                                 hx-swap="innerHTML">
                             Completar matrícula
                         </button>
+                    </div>
+                    </div>
+
+                    <div x-show="tab === 'padres'" x-cloak>
+                        <div th:if="${puedeEditar}" th:id="${padresPanelId}">
+                            <p class="est-min-hint">Cargando encargados...</p>
+                        </div>
+                        <th:block th:if="${!puedeEditar}">
+                            <p th:if="${padres == null or padres.empty}" class="est-min-hint">
+                                No hay padres o encargados vinculados.
+                            </p>
+                            <div th:each="p : ${padres}" class="est-parent-row">
+                                <div>
+                                    <div class="est-detail-value" th:text="${p.nombre}">Nombre</div>
+                                    <div class="est-min-subtitle" th:text="${p.email}">correo</div>
+                                </div>
+                                <span class="est-min-subtitle" th:text="${p.activo == true ? 'Activo' : 'Inactivo'}">Activo</span>
+                            </div>
+                        </th:block>
                     </div>
                 </th:block>
 
