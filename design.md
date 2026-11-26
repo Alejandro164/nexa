@@ -1,706 +1,345 @@
 # Nexa — Documento de Diseño
 
-## 1. Visión General
+Nexa (Núcleo de Experiencia Académica) es la plataforma de gestión de un centro educativo costarricense. Este documento describe el sistema tal como está en el código. `AGENTS.md` recoge las reglas cortas que hay que cumplir al editar. Si un párrafo de aquí y el código discrepan, manda el código y se corrige este archivo.
 
-**Nexa** es una plataforma de gestión educativa multi-direccion, construida como una SPA (Single Page Application) renderizada en servidor con Thymeleaf + HTMX. El frontend es reactivo sin necesidad de un framework JavaScript pesado; toda la navegación entre páginas ocurre mediante HTMX, que reemplaza solo el área de contenido principal sin recargar la página completa.
+## 1. Visión
 
-### Stack tecnológico
+La interfaz es una SPA de servidor: Thymeleaf pinta el HTML y HTMX sustituye `.content-area` sin recargar el shell (sidebar, topbar, toast). Alpine.js guarda el estado de la pantalla (pestaña activa, modal abierto, filtros). No hay bundler ni `node_modules`.
+
+Los textos de la interfaz y los mensajes de validación están en español.
+
+### Stack
 
 | Capa | Tecnología |
 |---|---|
 | Framework | Spring Boot 4.0.6, Spring MVC, Spring Security, Spring Data JPA |
-| Templates | Thymeleaf + Layout Dialect (`nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect`) |
-| Frontend interactivo | HTMX 1.9.12 + Alpine.js 3.13.8 |
-| Base de datos | PostgreSQL |
-| Sesiones/Caché (prod) | Redis (Spring Session + Spring Cache) |
-| Build | Maven, Java 17 |
-| Contenedores | Docker (app + postgres + redis) |
+| Templates | Thymeleaf + Layout Dialect (`nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect`) + `thymeleaf-extras-springsecurity6` |
+| Interacción | HTMX 1.9.12 + Alpine.js 3.13.8 (CDN, en `templates/index.html`) |
+| Base de datos | PostgreSQL 15 |
+| Sesión y caché en prod | Redis 7 (`spring-session-data-redis`) |
+| Correo en dev | Mailpit |
+| Build | Maven wrapper, Java 17 |
+| Contenedores | `docker-compose.yml` (dev), `docker-compose.prod.yml` (prod) |
 
----
+## 2. Decisiones que el código sigue
 
-## 2. Decisiones Arquitectónicas
+### SPA con Thymeleaf + HTMX
 
-### 2.1 SPA sin JavaScript framework
+Cada pantalla es una vista Thymeleaf. HTMX pide el mismo `GET` con el header `HX-Request: true` y el controller devuelve un fragmento. El sidebar usa `hx-get`, `hx-target=".content-area"`, `hx-swap="innerHTML"` y `hx-push-url="true"`.
 
-**Decisión**: Usar Thymeleaf + HTMX en lugar de React/Vue/Angular.
+### Layout Dialect
 
-**Justificación**:
-- El equipo tiene experiencia en backend Java, no en SPAs JavaScript.
-- HTMX permite navegación SPA (reemplazo parcial de DOM, pushState) sin salir del ecosistema Spring.
-- Alpine.js cubre interactividad cliente (modales, toasts, dropdowns) con sintaxis mínima.
-- Menor complejidad de build: no hay bundlers, webpack, ni node_modules en frontend.
+`templates/index.html` es el shell: CSS global, HTMX, Alpine, meta CSRF, sidebar, topbar y toast. Las páginas hijas declaran `layout:decorate="~{index}"` e inyectan `page-title`, `page-subtitle`, `content` y, cuando hace falta, `head-extra`.
 
-**Consecuencia**: Cada controlador devuelve vistas Thymeleaf. Las respuestas HTMX son fragmentos (`"vista :: nombre-fragmento"`) en lugar de JSON.
+### Controller → Service → Repository
 
-### 2.2 Layout Dialect como decorador
+El controller habla HTTP y HTMX. El service tiene la regla de negocio y la transacción. El repository es una interfaz Spring Data. Un controller nuevo no inyecta un repository. Hay controllers antiguos que sí lo hacen; ese atajo no se extiende.
 
-**Decisión**: Usar `thymeleaf-layout-dialect` con patrón decorador (`layout:decorate`).
+### DTO solo cuando aporta
 
-**Justificación**:
-- Evita duplicar el shell HTML (sidebar, header, toast) en cada página.
-- Los fragmentos `layout:fragment` permiten que cada página inyecte título, subtítulo, contenido y scripts sin sobrecarga.
-- El shell (`index.html`) contiene todo el CSS/JS global, fuentes, meta CSRF y el estado Alpine.js raíz.
+Un formulario simple se enlaza a la entidad. Se crea un DTO de escritura cuando hay mass-assignment, validaciones distintas entre crear y editar, o hay que aplanar relaciones. El mapeo vive en el service.
 
-### 2.3 Controlador → Servicio → Repositorio (unidireccional)
+Para pintar una vista que junta varias tablas se usa un DTO de lectura (`dto/Fila*`, `Vista*`, `Panel*`). Eso no obliga a crear un DTO de escritura.
 
-**Decisión**: Capa estricta sin saltos. El Controller NUNCA llama al Repository.
+### Transacciones con rollback explícito
 
-**Justificación**:
-- Separación de responsabilidades: Controller maneja HTTP/HTMX, Service contiene lógica de negocio y transacciones, Repository solo acceso a datos.
-- Testabilidad: cada capa se prueba aislada.
-- Las validaciones de negocio viven en el Service, no en el Controller.
+Spring solo revierte `RuntimeException`. Por eso la escritura lleva `@Transactional(rollbackFor = Exception.class)` y la lectura `@Transactional(readOnly = true, rollbackFor = Exception.class)`.
 
-### 2.4 DTOs solo cuando son necesarios
+### Consultas
 
-**Decisión**: No crear DTOs por defecto. Solo cuando hay riesgo de mass-assignment, validaciones diferenciadas crear/editar, o necesidad de aplanar relaciones.
+Los repository son `JpaRepository` (u otra interfaz Spring Data) con métodos derivados o `@Query`. `JdbcTemplate` aparece en seeders y en `DatabaseIndexInitializer`, no en los repository de dominio. No hay procedimientos almacenados ni carpeta `src/main/resources/db/`.
 
-**Justificación**:
-- Para CRUD simple (ej: una tabla con 2-3 campos sin datos sensibles), el DTO añade código sin valor.
-- El binding directo a Entity en el Service es más simple y legible.
-- Cuando se usa DTO, el mapeo Entity ↔ DTO se hace en el Service.
+## 3. Tenencia
 
-### 2.5 Transacciones con rollback explícito
+Una `Institucion` es el centro (cédula jurídica, nombre). Una `Direccion` es una sede u oferta educativa de esa institución (`oferta`, `principal`, código). El usuario tiene muchas direcciones y una dirección tiene muchos usuarios.
 
-**Decisión**: Todo método de escritura en el Service lleva `@Transactional(rollbackFor = Exception.class)`.
+La sesión trabaja con una dirección a la vez:
 
-**Justificación**:
-- Spring solo hace rollback en `RuntimeException` por defecto. `rollbackFor = Exception.class` asegura rollback en cualquier excepción.
-- Los métodos de solo lectura usan `@Transactional(readOnly = true)` para optimización de Hibernate.
+| Clave | Contenido |
+|---|---|
+| `SESSION_DIRECCION_ID` | Dirección activa. Es el filtro de tenant de casi todas las consultas. |
+| `SESSION_DIRECCION_NOMBRE` | Nombre que muestra el shell. |
+| `SESSION_USUARIO_ID` | Id del usuario autenticado. |
+| `SESSION_PUEDE_CAMBIAR_INSTITUCION` | El shell lo recuerda para no repetir la consulta en cada fragmento HTMX. |
+| `SESSION_GESTION_MATERIA_ID` | Materia elegida en Gestión Académica. |
 
-### 2.6 JdbcTemplate para consultas de alto rendimiento
+Los atributos del `Model` no usan el prefijo `SESSION_`.
 
-**Decisión**: Usar `NamedParameterJdbcTemplate` o `SimpleJdbcCall` con `RowMapper<T>` para queries de alta frecuencia (filtros, dropdowns, reportes), en lugar de JPA.
+`SesionDireccionService.resolver` corre en el login y en `GET /`. Si hay una sola dirección, la selecciona. Si hay varias, intenta la última elegida. `ROLE_ADMIN` puede seguir sin dirección (solo Inicio y Administración). `ROLE_SYSTEM_CONFIG` lista todas las instituciones; el resto, solo las suyas. Si un controller necesita dirección y no está en sesión, lanza `DireccionNoSeleccionadaException`.
 
-**Justificación**:
-- JPA genera overhead de sesión, dirty checking y snapshots que es innecesario para consultas de solo lectura.
-- Los `RowMapper<T>` garantizan type-safety sin el costo de JPA.
-- Los SPs en BD permiten lógica multi-step que sería ineficiente traer a capa Java.
+Toda consulta de datos escolares filtra por `SESSION_DIRECCION_ID` y, antes de actualizar o borrar, comprueba que la fila pertenece a esa dirección.
 
----
+## 4. Roles y autorización
 
-## 3. Backend
+Roles en `Rol.nombre` y en `DataInitializer`:
 
-### 3.1 Estructura de paquetes
+| Rol | Qué abre |
+|---|---|
+| `ROLE_SYSTEM_CONFIG` | Configuración de plataforma, usuarios, seguridad, direcciones, preferencias de cuenta. Ve todas las instituciones. |
+| `ROLE_ADMIN` | Operación de la dirección y los módulos marcados solo para administración. Puede entrar sin dirección elegida. |
+| `ROLE_DIRECTOR` | Operación de su dirección, incluida la configuración académica e institucional. |
+| `ROLE_DOCENTE` | Aula: gestión académica de sus materias, conducta, notas, classroom, contacto. |
+| `ROLE_ESTUDIANTE` | Consulta: horario, classroom, rendimiento, comunicación, nube, comedor, impresiones. |
+| `ROLE_PADRE` | Lo mismo que el estudiante en consulta, más reuniones. |
+
+La matriz exacta está en `SecurityConfig.filterChain`. Reglas para tocarla:
+
+- El authority ya trae el prefijo `ROLE_`. Se usa `hasAuthority` / `hasAnyAuthority`, nunca `hasRole`.
+- El primer `requestMatchers` que coincide gana. Una ruta nueva va **antes** de `.anyRequest().authenticated()`. Si no, cualquier sesión la abre.
+- El ítem del sidebar repite el mismo corte con `sec:authorize` y con `x-show="ve('admin director docente estudiante padre')"`. `ve()` lee el modo “Ver el menú como” de `layout/aside.html` (admin, system, director, docente, estudiante, padre, auxiliar, guarda). `sec:authorize` lee el rol real. Hacen falta los dos: uno decide si el HTML existe y el otro si el modo de vista lo muestra.
+- El alcance fino (un docente solo ve sus materias, un padre solo ve a sus hijos) vive en el service, no en `SecurityConfig`. Ejemplo: `MenuController.docenteIdSiAplica`, `HorarioConsultaService`, `ClassroomService`.
+
+El principal inyectado con `@AuthenticationPrincipal` es `CustomUserDetails`. `UserDetailsServiceImpl` carga el `Usuario` por email, usuario o cédula y lo envuelve. El parámetro del formulario de login se llama `email`.
+
+CSRF es el repositorio de sesión. No hay `CookieCsrfTokenRepository`. El shell publica `_csrf` y `_csrf_header`, y `htmx:configRequest` copia el token a cada request HTMX.
+
+Sesión: 60 minutos. En dev, en memoria. En prod, Redis, cookie `SESSION`, HttpOnly, SameSite Lax (`RedisSessionConfig`). Una sesión expirada durante un request HTMX responde 200 con `HX-Redirect` a `/login?expired`, para que navegue el browser entero. Un 403 HTMX redirige igual a `/inicio`.
+
+## 5. Backend
 
 ```
 com.chavescr.nexa/
 ├── ProyectoApplication.java
-├── config/           # Configuraciones Spring (@Configuration, @Profile)
-├── controller/       # @Controller — endpoints HTTP + soporte HTMX
-├── dto/              # DTOs (solo cuando aplica)
-├── entity/           # Entidades JPA
-├── exception/        # ResourceNotFoundException, BusinessException, GlobalExceptionHandler
-├── repository/       # JpaRepository + JdbcTemplate (consultas rápidas)
-├── security/         # SecurityConfig, CustomUserDetails, UserDetailsServiceImpl
-└── service/          # @Service + @Transactional — lógica de negocio
+├── config/        # seeders @Profile("dev"), CacheConfig, RedisSessionConfig, WebMvcConfig, jobs
+├── controller/    # @Controller
+├── dto/           # modelos de vista y, cuando aplica, de escritura
+├── entity/        # una entidad por tabla
+├── exception/     # DireccionNoSeleccionadaException, GlobalExceptionHandler, correo y WhatsApp
+├── repository/    # interfaces Spring Data
+├── security/      # SecurityConfig, CustomUserDetails, UserDetailsServiceImpl, login handlers
+└── service/       # un paquete plano
 ```
 
-### 3.2 Controllers
+No hay subpaquetes de service ni de controller. Un módulo nuevo no crea un paquete nuevo: crea las clases en esos paquetes y la carpeta de templates.
 
-- Nombrados `{Entidad}Controller.java` con `@RequestMapping("/ruta")`.
-- Soporte HTMX universal: cada `@GetMapping` verifica el header `HX-Request`.
-  - Si es HTMX → devuelve `"carpeta/vista :: htmx-content"` (fragmento).
-  - Si no → devuelve `"carpeta/vista"` (página completa decorada).
-- Métodos POST/PUT/DELETE redirigen con `RedirectAttributes` + mensajes flash.
-- Los mensajes flash se muestran vía el componente toast (Alpine.js) en el layout.
+### Controllers
 
-### 3.3 Services
+- `@Controller` y `@RequestMapping("/ruta")`. Inyección con `@Autowired` en campos. `MenuController` usa constructor; los nuevos siguen el `@Autowired` de campos.
+- El shell de varios módulos está en `MenuController`. Las acciones de ese módulo están en otro controller con el mismo prefijo de URL (`/gestion-academica` en `MenuController`, `/gestion-academica/asistencia` en `AsistenciaController`). Hay que buscar el prefijo completo antes de agregar un método.
+- Página del módulo: si `HX-Request` es `"true"`, `"carpeta/index :: htmx-content"`; si no, `"carpeta/index"`.
+- Tab, lista o modal: siempre `"carpeta/archivo :: content"` o `":: form-content"`, sin mirar `HX-Request`.
+- Una mutación HTMX devuelve el fragmento actualizado. El mensaje al usuario va en `HX-Trigger`.
+- Un POST de página completa (control de acceso) sí redirige con `RedirectAttributes` y `successMsg` / `errorMsg`. Esos atributos los pinta la propia vista, no el toast global.
+- `@ResponseBody` queda para streaming de archivos y para las búsquedas JSON que ya existen en Nube, visitas y estudiantes.
 
-- Anotados `@Service` + `@Transactional` a nivel de clase.
-- `@Autowired` en campos para inyección de dependencias en Controllers. Services mantienen constructor injection.
-- Lanzan `BusinessException` para violaciones de reglas, `ResourceNotFoundException` para 404.
-- CRUD estándar por entidad:
-  - `listarTodos()`, `obtenerPorId(Long id)`, `buscarPorNombre(String filtro)`
-  - `crear(...)`, `actualizar(Long id, ...)`, `eliminar(Long id)`
-  - `toggleActivo(Long id)` (soft delete)
+`GlobalModelAttributesAdvice` llena notificaciones, `sinDireccionAdmin`, el menú de direcciones y si el asistente está disponible. En un request HTMX no vuelve a consultar el menú: el shell no se redibuja.
 
-### 3.4 Repositories
+### Services
 
-- CRUD estándar: extienden `JpaRepository<T, Long>`.
-- Alto rendimiento: inyectan `JdbcTemplate` en el mismo Repository, método con `NamedParameterJdbcTemplate` + `RowMapper<T>`.
-- SPs en BD: versión SQL en `src/main/resources/db/sp_*.sql`. Llamada desde Java con `SimpleJdbcCall`.
+`@Service`. Constructor con `private final`. Escritura y lectura con el `@Transactional` de la sección 2. El mensaje de una regla rota es `IllegalArgumentException` en español; el controller lo muestra.
 
-### 3.5 Domain entities
+### Excepciones
 
-| Entity | Table | Purpose |
-|---|---|---|
-| Usuario | `usuarios` | Usuarios del sistema. Implementa `UserDetails`. M2M con `roles` e `direcciones`. Login por email/usuario/cédula. |
-| Rol | `roles` | Roles de seguridad: `ROLE_ADMIN`, `ROLE_EDITOR`, `ROLE_USER`. |
-| Direccion | `direcciones` | Instituciones educativos. M2M con `Usuario`. |
-| Visita | `visitas` | Registro de visitantes. Ciclo de vida: PENDIENTE → AUTORIZADA/DENEGADA → FINALIZADA. |
-| RegistroAsistencia | `registros_asistencia` | Asistencia de personal. Tipos: ENTRADA, SALIDA. |
-| NubeNodo | `nube_nodos` | Sistema de archivos auto-referenciado. Tipos: CARPETA, ARCHIVO. |
-| PeriodoAcademico | `periodos_academicos` | Períodos lectivos. UK: (direccion, codigo). |
-| NivelAcademico | `niveles_academicos` | Niveles/grados/secciones. UK: (direccion, grado, seccion). |
-| Materia | `materias` | Materias/asignaturas. UK: (direccion, codigo). |
-| HorarioLeccion | `horario_lecciones` | Grid de horario. UK: (periodo, nivel, dia, numeroLeccion). |
+| Clase | Uso |
+|---|---|
+| `DireccionNoSeleccionadaException` | Falta `SESSION_DIRECCION_ID`. `GlobalExceptionHandler` responde redirect a `/`, con `HX-Redirect` si es HTMX. |
+| `CorreoEnvioException`, `WhatsAppApiException` | Fallos de esos canales. Las atrapa el controller del módulo. |
+| `IllegalArgumentException` | Regla de negocio. |
 
-### 3.6 Excepciones
+`GlobalExceptionHandler` no convierte el resto de las excepciones en flash messages.
 
-- `ResourceNotFoundException`: recurso no encontrado → redirige con `errorMsg`.
-- `BusinessException`: violación de regla de negocio → redirige con `errorMsg`.
-- `GlobalExceptionHandler` (`@ControllerAdvice`): captura todas las excepciones y redirige con mensajes flash.
+### Perfiles
 
-### 3.7 Perfiles Spring Boot
+| Archivo | Qué fija |
+|---|---|
+| `application.properties` | Nombre, `spring.profiles.active=dev`, sesión 60m, multipart 100MB. OSIV sigue activo: las vistas recorren lazy loads. No se desactiva. |
+| `application-dev.properties` | `ddl-auto=update`, SQL en log, sesión y caché en memoria, Thymeleaf y estáticos desde `file:src/main/resources/`, DevTools con restart y LiveReload (polling 2s), `ruta.recursos`, SMTP a Mailpit, clave de WhatsApp de desarrollo. |
+| `application-prod.properties` | `ddl-auto=validate`, Thymeleaf con caché, Redis, gzip, `ruta.recursos`, SMTP y `WHATSAPP_ENCRYPTION_KEY` por entorno. |
 
-| Archivo | Entorno | Características |
-|---|---|---|
-| `application.properties` | Compartido | `spring.application.name`, `spring.profiles.active=dev`, session timeout, multipart limits |
-| `application-dev.properties` | Desarrollo | `ddl-auto=update`, `thymeleaf.cache=false`, sesión en memoria, sin Redis |
-| `application-prod.properties` | Producción | `ddl-auto=validate`, `thymeleaf.cache=true`, Redis (sesión + caché), Gzip, HTTP/2, connection pooling |
+`CacheConfig` (TTL 15 min) y `RedisSessionConfig` solo existen con `@Profile("prod")`.
 
-**Redis solo en producción**:
-- Dev: `spring.session.store-type=none`, `spring.cache.type=none`
-- Prod: `spring.session.store-type=redis`, `spring.cache.type=redis`, TTL 15min caché, 60min sesión
+## 6. Frontend
 
-### 3.8 Configuraciones condicionales
-
-```java
-@Configuration @Profile("prod") public class RedisSessionConfig { ... }
-@Configuration @Profile("prod") public class CacheConfig { ... }
-```
-
-DevTools en Docker (dev):
-- `restart.enabled=false` (evita `ClassCastException`)
-- `livereload.enabled=true`
-- Polling cada 2s (inotify no funciona en volúmenes Docker Mac)
-- Templates y recursos leídos directamente del filesystem (`file:src/main/resources/templates/`)
-
----
-
-## 4. Frontend
-
-### 4.1 Estructura de templates
+### Árbol
 
 ```
 templates/
-├── index.html              # Decorador raíz (shell HTML, CSS/JS global, meta CSRF)
-├── layout/
-│   ├── aside.html          # Sidebar shell (toggle, logo, footer usuario)
-│   ├── sidebar.html        # Nav items con HTMX (9 secciones de navegación)
-│   ├── header.html         # Topbar (título, subtítulo, perfil dropdown, cambiar cuenta)
-│   └── toast.html          # Toast notifications (Alpine.js)
-├── auth/
-│   └── login.html          # Login (standalone, sin decorador)
-├── inicio/                 # Dashboard
-│   ├── inicio.html
-│   ├── lista-direcciones.html
-│   └── direcciones-modal.html
-├── {modulo}/                # Una carpeta por módulo/controlador
-│   ├── index.html           # Shell: decorador + tabs + CSS global del módulo
-│   ├── formulario.html      # Modal crear/editar (cuando aplica)
-│   ├── tab1/                # Cada opción del menú horizontal tiene su carpeta
-│   │   └── tab1.html        # Fragmento th:fragment="content" + JS propio
-│   ├── tab2/
-│   │   └── tab2.html
-│   └── submodulo/           # Sub-módulos con menú secundario
-│       ├── submodulo.html   # Fragmento con sub-tabs + JS del sub-módulo
-│       ├── tabla.html       # Fragmento de tabla (recargable vía HTMX)
-│       └── formulario.html  # Modal del sub-módulo
-└── fragments/               # Fragmentos reusables
-    ├── tabla-usuarios.html
-    └── tabla-instituciones.html
+├── index.html                 # shell
+├── layout/                    # aside, sidebar, header, toast, notificaciones
+├── auth/login.html            # sin decorador
+├── fragments/                 # trozos reutilizables (preview de archivo, tabla de instituciones)
+├── {modulo}/
+│   ├── index.html             # página decorada: th:block htmx-content + main
+│   ├── formulario.html        # modal, th:fragment="form-content", cuando aplica
+│   └── {tab}/
+│       └── {tab}.html         # th:fragment="content"
+└── componentes/               # catálogo visual en /componentes (ROLE_ADMIN)
 ```
 
-**Reglas de organización:**
-- Cada módulo = una carpeta en `templates/` (nombrada igual que la ruta del controlador).
-- `index.html` es el shell decorado con `layout:decorate`. Contiene el CSS específico del módulo en `<style>` y el JS del módulo (funciones Alpine globales del módulo) en `layout:fragment="head-extra"`.
-- Si el módulo tiene menú horizontal primario (tabs), cada opción del menú tiene su propia sub-carpeta con su HTML y su JS. El JS específico de cada tab va DENTRO del fragmento (en `<script>` o en el `x-data`), NO en el `index.html`.
-- Si un tab tiene sub-tabs (menú secundario), el fragmento raíz contiene el `x-data` con las funciones CRUD y los sub-tabs. Las funciones van dentro del mismo `x-data` (ver §4.9.2).
-- Tablas recargables vía HTMX van en archivos separados (ej: `tabla.html` con `th:fragment="tabla"`).
-- Modales (crear/editar) van en `formulario.html` con `th:fragment="form-content"`.
+La carpeta repite la ruta del controller: `/personal/regimen/todos` → `templates/personal/regimen/todos/todos.html`. Un sub-módulo repite la forma del módulo. Referencia real: `templates/personal/regimen/`.
 
-### 4.2 Patrón decorador
+```
+personal/regimen/
+├── index.html                 # th:fragment="content", x-data, sub-tabs, modal
+├── formulario.html
+├── todos/todos.html           # th:fragment="content"
+├── llamadas/llamadas.html
+├── amonestaciones/amonestaciones.html
+└── procesos/procesos.html
+```
 
-**`index.html`** (shell):
-- Define `<html th:fragment="html">` con layout:fragment slots para `title`, `head-extra`, `page-title`, `page-subtitle`, `content`.
-- Incluye Google Fonts, CSS global (`style.css`, `components.css`), HTMX CDN, Alpine.js CDN.
-- Meta tags CSRF + listener HTMX para adjuntar token en cada request.
-- Estado Alpine.js raíz: `sidebarCollapsed`, `mobileMenuOpen`, `userMenuOpen`.
-- Layout: `th:replace` de `aside`, `header`, `toast`.
+`index.html` de un sub-módulo cargado como tab no lleva `layout:decorate`. Solo el `index.html` que abre el sidebar es página decorada.
 
-**Páginas hijas**:
+### Página decorada
+
 ```html
 <html layout:decorate="~{index}">
 <body>
-    <th:block layout:fragment="page-title">Título</th:block>
-    <th:block layout:fragment="page-subtitle">Subtítulo</th:block>
-    <main layout:fragment="content" th:fragment="htmx-content" x-data="miComponente()">
-        ... contenido ...
-    </main>
-    <th:block layout:fragment="head-extra">
-        <script>function miComponente() { ... }</script>
+    <h2 layout:fragment="page-title">Título</h2>
+    <p layout:fragment="page-subtitle">Subtítulo</p>
+
+    <th:block th:fragment="htmx-content">
+        <h2 id="topbar-page-title" hx-swap-oob="true">Título</h2>
+        <p id="topbar-page-subtitle" hx-swap-oob="true">Subtítulo</p>
+        <main layout:fragment="content">
+            ...
+        </main>
     </th:block>
 </body>
 </html>
 ```
 
-### 4.3 Navegación SPA con HTMX
+El `th:block` es el fragmento HTMX, no el `<main>`. Los dos nodos con `hx-swap-oob="true"` actualizan el topbar, que está fuera de `.content-area`. Sin ellos, al cambiar de módulo el título se queda en el anterior.
 
-**Flujo**:
-1. Usuario hace clic en link del sidebar.
-2. HTMX envía `GET /ruta` con header `HX-Request: true`.
-3. Controller detecta HTMX → devuelve solo `<main th:fragment="htmx-content">`.
-4. HTMX inserta respuesta en `.content-area` vía `innerHTML`.
-5. Navegador actualiza URL (`hx-push-url="true"`).
+### Tabs
 
-**CSRF**: El token se envía automáticamente vía listener `htmx:configRequest` usando los meta tags `_csrf` y `_csrf_header`.
+Nivel 1, dentro del `<main>` decorado (`personal/index.html`, `agenda/index.html`, `configuracion-academica/index.html`):
 
-### 4.4 Fragmentos nombrados
+- `x-data="{ activeTab: '...' }"`.
+- Botones `.config-tab-btn` con `:class`, `@click`, `hx-get`, `hx-target="#...-content"`, `hx-swap="innerHTML"`.
+- El panel tiene `hx-get` del primer tab y `hx-trigger="load"`, o un `th:replace` del primer fragmento.
+- Alpine solo cambia la clase `.active`. HTMX trae el HTML.
+- El CSS de `.config-tabs-container`, `.config-tabs`, `.config-tab-btn` y `.tab-pane` se copia en un `<style>` de esa página. Ya está en los módulos citados.
 
-| Fragmento | Propósito |
-|---|---|
-| `htmx-content` | El `<main>` que se devuelve en respuestas HTMX parciales |
-| `tabla-{entidad}` | Tabla de listado (para actualizaciones vía búsqueda) |
-| `formulario` | Modal de crear/editar |
-| `form-content` | Contenido del formulario modal |
-| `nube-content-area` | Área de navegación de archivos en Nube Nexa |
-| `modal-content` | Contenido de diálogo modal genérico |
+Nivel 2, dentro del fragmento (`personal/regimen/index.html`):
 
-### 4.5 Búsqueda en tiempo real (Alpine.js + HTMX)
+- El `x-data` del fragmento guarda `subTab`, `modalOpen` y las funciones (`abrirForm`, `eliminar`, `cambiarEstado`).
+- Esas funciones no van a un `<script>` suelto ni a `Alpine.data()`.
+- El primer panel entra con `th:replace`. Los siguientes, con `hx-get` al endpoint del sub-tab.
+- No se anida otro `x-data`: el interno no ve las funciones del padre.
 
-```html
-<main x-data="listaFiltrable()">
-    <input x-model="filtro" @input.debounce.300ms="buscar()">
-    <th:block th:replace="~{dominio/index :: tabla-dominio}" />
-</main>
-<script>
-function listaFiltrable() {
-    return {
-        filtro: '',
-        buscar() {
-            const params = new URLSearchParams({ filtro: this.filtro });
-            htmx.ajax('GET', '/dominio/buscar?' + params.toString(), {
-                target: '#tabla-dominio', swap: 'outerHTML'
-            });
-        }
-    };
-}
-</script>
-```
+### Modales
 
-### 4.6 Modales (HTMX + Alpine.js)
+El botón pide `hx-get="/ruta/form"` hacia `#modal-container` y abre el flag de Alpine. El contenedor escucha `@close-modal.window` y Escape. El fragmento del formulario es `form-content`. Al guardar, el controller devuelve la lista actualizada o, si hay error de validación, reescribe el modal con `HX-Retarget` y `HX-Reswap`.
 
-- Botón disparador: `hx-get="/ruta/formulario"` + `hx-target="#modal-container"` + `@click="abrirModal = true"`.
-- Contenedor: `x-show="abrirModal"` + listener `@close-modal.window` para cerrar.
-- Formulario (en `formulario.html`): emite `$dispatch('close-modal')` al cancelar/guardar.
+### Avisos
 
-### 4.7 Toast notifications (Alpine.js)
+`layout/toast.html` escucha `@notify.window` y se oculta a los 3 segundos. Para usarlo, el `HX-Trigger` dispara `notify` con `{type, message}`.
 
-- Componente en `layout/toast.html`. Escucha evento `@notify.window`.
-- El backend envía `HX-Trigger` header con `{"notify": {"type": "success", "message": "..."}}`.
-- Se oculta automáticamente tras 3 segundos.
+La mayoría de los módulos disparan un evento propio (`academicoGuardado`, `usuarioError`, `classroomGuardado`, …) y la pantalla lo escucha. Al tocar un módulo, se reutiliza el evento que esa pantalla ya escucha.
 
-### 4.8 CSS y estilos
+### CSS y JavaScript
 
-- CSS global en `static/css/style.css` y `static/css/components.css`.
-- Variables CSS en `:root` dentro del decorador `index.html`.
-- CSS específico por página: archivo en `static/css/` cargado con `<link>` en `layout:fragment="head-extra"`.
-- Clases utilitarias: `d-flex`, `gap-{1-4}`, `text-muted`, `text-sm`, `font-medium`, etc.
+- Global: `static/css/style.css` y `static/css/componentes.css`, más las variables de `:root` en el shell.
+- De una pantalla: un `<style>` dentro de su HTML. El shell, en `htmx:afterSwap`, vuelve a insertar esos `<style>` porque Chrome no aplica los que llegan dentro del HTML de HTMX.
+- No se agrega un CSS por página en `static/css/`.
+- JS de un tab: dentro del fragmento, en `<script>` o en el `x-data`.
+- JS del módulo decorado que Alpine necesita en la carga completa: `layout:fragment="head-extra"`.
+- `static/js/componentes.js` se carga con `defer` antes de Alpine. Ahí viven funciones globales que el primer pintado ya referencia (`nubeNexaComponente`, `planTrabajoComponente`). Solo se añade algo ahí cuando el shell lo necesita antes de Alpine.
+- `static/js/configuracion/**` es legado de esas pantallas. Se edita el archivo existente; no se crea otro.
+- `const` por defecto, `let` si la variable se reasigna. Las funciones que sobreviven a un swap se declaran `function nombre() {}`.
 
-### 4.9 Configuración de menús horizontales (tabs y sub-tabs)
+`templates/index.html` deja `htmx.config.defaultSettleDelay = 0` y monta Alpine después de ejecutar los scripts del swap. También destruye el árbol Alpine del HTML que sale. Una vista cuya información cambia en otra pantalla lleva `hx-history="false"`; al volver con Atrás el shell recarga la página (`refreshOnHistoryMiss`).
 
-El proyecto usa dos niveles de menú horizontal con HTMX + Alpine.js. Ambos siguen el mismo mecanismo: Alpine.js maneja el estado visual (`activeTab`/`subTab`) y HTMX carga el contenido bajo demanda.
+El catálogo visual está en `/componentes` (`templates/componentes/`). Las clases utilitarias (`d-flex`, `gap-*`, `text-muted`, `text-sm`, `font-medium`) salen de `style.css`.
 
-#### 4.9.1 Menú horizontal primario (Nivel 1 — Tabs de página)
+## 7. Esquema
 
-Es el menú de pestañas principal dentro del `<main>` de una página decorada. Se usa en `personal/index.html`, `agenda/index.html` y `configuracion-academica/index.html`.
+En dev Hibernate actualiza el esquema (`ddl-auto=update`). En prod solo valida (`ddl-auto=validate`).
 
-**Estructura obligatoria:**
+No hay Flyway ni Liquibase. Un cambio de tabla o columna lleva un SQL idempotente en `docker/migraciones/AAAA-MM-DD-descripcion.sql`. La cabecera de los archivos existentes dice qué cambia, de qué script depende, que en dev lo crea Hibernate y que en prod hay que aplicarlo con `psql` antes de desplegar. `docker/init/01-seed.sql` solo corre con el volumen de Postgres vacío.
 
-```html
-<!-- 1. CONTENEDOR Alpine con estado activeTab -->
-<div x-data="{ activeTab: 'tab1' }">
+`DataInitializer` (`@Profile("dev")`, `@Order(10)`) siembra roles, instituciones, direcciones, usuarios y estructura académica. Es idempotente. También corren otros seeders de dev (`CicloEducativoSeeder`, `TipoMateriaSeeder`, `TipoAulaSeeder`, `ComponenteEvaluacionSeeder`).
 
-    <!-- 2. CONTENEDOR CSS de tabs -->
-    <div class="config-tabs-container">
-        <div class="config-tabs">
+## 8. Nube Nexa
 
-            <!-- 3. CADA BOTÓN sigue este patrón exacto -->
-            <button class="config-tab-btn"
-                    :class="{ 'active': activeTab === 'tab1' }"
-                    @click="activeTab = 'tab1'"
-                    hx-get="/modulo/tab1"
-                    hx-target="#modulo-content"
-                    hx-swap="innerHTML">
-                🏷️ Nombre Tab
-            </button>
-            <!-- ... más tabs ... -->
-        </div>
-    </div>
+`NubeNodo` es un árbol (`padre` / `hijos`) de tipo `CARPETA` o `ARCHIVO`. La carpeta no crea directorio físico. El archivo se guarda bajo `${ruta.recursos}` (`/home/datos-nexa` en dev y en prod). En Docker ese path es el volumen `datos_nexa_dev` o `datos_nexa_prod`.
 
-    <!-- 4. CONTENEDOR de contenido HTMX -->
-    <div id="modulo-content" class="tab-pane"
-         hx-get="/modulo/tab1"
-         hx-trigger="load"
-         hx-swap="innerHTML">
-    </div>
-</div>
-```
+Operaciones en `NubeNodoService` y `NubeController` (`/nube-nexa`): crear carpeta, subir, descargar archivo, descargar carpeta en ZIP, previsualizar, renombrar, borrar en cascada, compartir. El breadcrumb recorre `padre` hasta la raíz. La cédula jurídica de la institución participa en la ruta física.
 
-**CSS requerido (copiar tal cual):**
-```css
-.config-tabs-container {
-    margin-bottom: 2rem;
-    background: #ffffff;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 6px;
-    display: flex;
-    width: 100%;
-    box-shadow: var(--shadow-sm);
-    overflow-x: auto;
-}
-.config-tabs {
-    display: flex;
-    width: 100%;
-    gap: 6px;
-}
-.config-tab-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 10px 16px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-decoration: none;
-    border-radius: 10px;
-    transition: all 0.25s ease;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    white-space: nowrap;
-}
-.config-tab-btn:hover {
-    color: var(--primary);
-    background-color: var(--input-bg);
-}
-.config-tab-btn.active {
-    color: white !important;
-    background-color: var(--primary) !important;
-    box-shadow: 0 4px 14px rgba(45, 90, 135, 0.25);
-}
-.tab-pane {
-    animation: fadeIn 0.35s ease-out;
-}
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-```
+## 9. Cómo se corre
 
-**Reglas del menú primario:**
-- El `activeTab` default es el primer tab.
-- El `hx-trigger="load"` en el contenedor carga el contenido del primer tab al abrir la página.
-- Cada tab tiene su propio endpoint en el controller que devuelve `"carpeta/archivo :: content"`.
-- El `hx-target` es siempre el `id` del contenedor de contenido.
-- El `hx-swap` es siempre `"innerHTML"`.
-- Alpine.js solo controla la clase `.active` visual; HTMX controla la carga del contenido.
+### Dev (`docker compose up`)
 
-#### 4.9.2 Menú horizontal secundario (Nivel 2 — Sub-tabs dentro de un fragmento)
-
-Es un sub-menú que aparece dentro de un fragmento cargado por un tab primario. El caso de referencia es `personal/regimen/regimen.html`. Se usa cuando un tab primario necesita segregar contenido en sub-categorías.
-
-**Estructura obligatoria:**
-
-```html
-<!-- 1. El fragmento raíz contiene x-data con subTab + funciones -->
-<div th:fragment="content" class="tab-pane"
-     x-data="{ subTab: 'TODOS', modalOpen: false,
-         abrirForm(id) { ... },
-         eliminar(id) { ... }
-     }">
-
-    <!-- 2. Sub-tabs con Alpine + HTMX -->
-    <div class="reg-tabs">
-        <button class="reg-tab"
-                :class="{ 'active': subTab === 'TODOS' }"
-                @click="subTab = 'TODOS'"
-                hx-get="/modulo/submodulo?tipo=TODOS"
-                hx-target="#sub-content"
-                hx-swap="innerHTML">📋 Todos</button>
-        <button class="reg-tab"
-                :class="{ 'active': subTab === 'TIPO_A' }"
-                @click="subTab = 'TIPO_A'"
-                hx-get="/modulo/submodulo?tipo=TIPO_A"
-                hx-target="#sub-content"
-                hx-swap="innerHTML">🟡 Tipo A</button>
-        <!-- ... más sub-tabs ... -->
-    </div>
-
-    <!-- 3. Contenedor del contenido de sub-tabs -->
-    <div id="sub-content" th:replace="~{modulo/submodulo/tabla :: tabla}"></div>
-
-    <!-- 4. Modal container compartido -->
-    <div id="modal-container" x-show="modalOpen" x-cloak style="display: none;"
-         @close-modal.window="modalOpen = false"
-         @keydown.escape.window="modalOpen = false"></div>
-</div>
-```
-
-**CSS para sub-tabs (copiar tal cual, ajustar prefijo):**
-```css
-.reg-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 1.25rem;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 4px;
-}
-.reg-tab {
-    flex: 1;
-    text-align: center;
-    padding: 8px 12px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    border-radius: 7px;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-.reg-tab:hover {
-    color: var(--primary);
-    background: var(--input-bg);
-}
-.reg-tab.active {
-    color: #fff;
-    background: var(--primary);
-}
-```
-
-**Reglas del menú secundario:**
-- El `subTab` default es `'TODOS'` (o el primer valor lógico).
-- Las funciones CRUD (`abrirForm`, `eliminar`, `cambiarEstado`) van DENTRO del mismo `x-data` del fragmento, NO en `<script>` separado ni en `Alpine.data()`.
-- El contenido inicial se carga con `th:replace` (renderizado servidor en la primera carga).
-- Los sub-tabs subsecuentes cargan vía HTMX (`hx-get` con query param `?tipo=`).
-- El modal container usa `x-show="modalOpen"` y se controla con `@close-modal.window`.
-- El `hx-target` del sub-tab apunta al contenedor `#sub-content`.
-- La tabla fragment (`tabla.html`) lleva `th:fragment="tabla"`.
-
-**⚠️ Error común a evitar:** NO anidar dos `x-data` en el fragmento secundario. Si el `x-data` está en el `th:fragment`, los sub-tabs deben estar directamente dentro (sin otro `x-data` intermedio), porque un `x-data` anidado rompe el acceso a las funciones y propiedades del scope padre.
-
----
-
-## 5. Seguridad
-
-### 5.1 Autenticación
-
-- Spring Security con `UserDetailsServiceImpl` personalizado.
-- Login por email, usuario o cédula (campo único `identifier`).
-- `Usuario` implementa `UserDetails`.
-- Página de login en `auth/login.html` (sin decorador, standalone).
-
-### 5.2 Autorización
-
-- `ROLE_ADMIN`: acceso total, incluyendo gestión de direcciones y usuarios.
-- `ROLE_EDITOR`: gestión académica y operativa.
-- `ROLE_USER`: acceso básico.
-- La sección "Administración" del sidebar solo visible con `ROLE_ADMIN`.
-
-### 5.3 CSRF
-
-- `CookieCsrfTokenRepository.withHttpOnlyFalse()` para evitar crear sesión al renderizar login.
-- Meta tags `_csrf` y `_csrf_header` en el layout.
-- Listener HTMX `htmx:configRequest` adjunta el token en cada petición.
-
-### 5.4 Sesión
-
-- Dev: sesión en memoria (sin Redis).
-- Prod: sesión en Redis (`spring-session-data-redis`).
-- Timeout: 60 minutos.
-- Cookie: `SESSION`, HttpOnly, SameSite=Lax.
-
----
-
-## 6. Nube Nexa (Sistema de archivos)
-
-### 6.1 Modelo auto-referenciado
-
-`NubeNodo` se referencia a sí mismo: `padre` (M2O) y `hijos` (O2M). Tipos: `CARPETA`, `ARCHIVO`.
-
-### 6.2 Operaciones
-
-| Operación | Descripción |
-|---|---|
-| Crear carpeta | Crea `NubeNodo` con `tipo=CARPETA`. No crea directorio físico. |
-| Subir archivo | Guarda `MultipartFile` en filesystem (`${ruta.recursos}`). Crea `NubeNodo` con metadatos (tamaño, extensión). |
-| Descargar archivo | Streaming con `UrlResource`. |
-| Descargar carpeta | ZIP streaming recursivo. |
-| Previsualizar | Content-Disposition inline. Detecta tipo (PDF, imagen, texto, video, audio). |
-| Renombrar | Actualiza `nombre` en BD y archivo físico. |
-| Eliminar | Borrado recursivo: archivos físicos + registros BD. Transaccional. |
-
-### 6.3 Breadcrumb
-
-`obtenerRutaBreadcrumb(Long nodoId)` recorre `padre` recursivamente hasta la raíz para construir la ruta de navegación.
-
----
-
-## 7. Control de Acceso (Visitas)
-
-### 7.1 Ciclo de vida
-
-```
-PENDIENTE → AUTORIZADA → (registra ingreso) → (registra salida) → FINALIZADA
-         ↘ DENEGADA (fin)
-```
-
-### 7.2 Funcionalidades
-
-- **Registrar visita**: `POST /control-de-acceso/registrar` → estado PENDIENTE.
-- **Autorizar/Denegar**: `POST /control-de-acceso/autorizar` o `/denegar` → transición de estado.
-- **Registrar ingreso/salida**: timestamps `fechaHoraIngreso` / `fechaHoraSalida`.
-- **Búsqueda**: filtro por nombre, identificación, estado, fecha.
-- **Asistencia de personal**: `RegistroAsistencia` ENTRADA/SALIDA con contador de presentes.
-
----
-
-## 8. Configuración Académica
-
-Módulo CRUD completo para la estructura académica de cada dirección:
-
-| Sub-módulo | Entidad | Operaciones |
+| Servicio | Publicación | Notas |
 |---|---|---|
-| Períodos | `PeriodoAcademico` | CRUD + toggle activo |
-| Niveles | `NivelAcademico` | CRUD + toggle activo. UK: (grado, seccion) |
-| Materias | `Materia` | CRUD + toggle activo. Campo `color` para identificación visual |
-| Horario | `HorarioLeccion` | Grid semanal (L-V) × 8 lecciones. Asigna materia + docente a cada celda |
+| `app` | `localhost:8082` → 8080, debug `5005` | `Dockerfile.dev`, código montado en `/app`, Maven en el volumen `maven_cache` |
+| `db` | `localhost:5433` → 5432 | Postgres 15, base `nexa`, usuario `postgres`, clave `1234` |
+| `mailpit` | UI `8025`, SMTP `1025` | El contenedor de la app usa `MAIL_HOST=mailpit` |
+| `redis` | `6379` | Solo con el perfil de Compose `prod` |
 
-Todas las operaciones requieren `SESSION_DIRECCION_ID` de la sesión. Cada entidad valida pertenencia a la dirección antes de operar.
+Un `./mvnw` lanzado en el host usa `localhost:5433`. El proceso de dentro del contenedor recibe `SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/nexa`.
 
----
+Cuentas de dev (las crea `DataInitializer`):
 
-## 9. Convenciones
-
-### 9.1 Nombres de archivos Java
-
-- `Entidad.java` (singular, PascalCase)
-- `EntidadController.java`, `EntidadService.java`, `EntidadRepository.java`
-- `EntidadDTO.java` (solo si aplica)
-
-### 9.2 Nombres de templates
-
-- `{entidad}/index.html` — vista principal
-- `{entidad}/formulario.html` — modal crear/editar
-- `{entidad}/subfuncion/index.html` — sub-sección
-
-### 9.3 Rutas HTTP
-
-- `GET /entidad` — vista principal
-- `GET /entidad/formulario?id=` — formulario (crear/editar)
-- `POST /entidad` — crear
-- `PUT /entidad/{id}` — actualizar
-- `DELETE /entidad/{id}` — eliminar
-- `PUT /entidad/{id}/toggle` — activar/desactivar
-- `GET /entidad/buscar?filtro=` — búsqueda (devuelve fragmento tabla)
-
-### 9.4 Sesiones HTTP
-
-Toda clave en `HttpSession` sigue el formato:
-
-```
-SESSION_<OBJETO>_<PROPIEDAD>
-```
-
-Ejemplos:
-```java
-session.setAttribute("SESSION_DIRECCION_ID", id);
-session.setAttribute("SESSION_DIRECCION_NOMBRE", nombre);
-session.setAttribute("SESSION_USUARIO_ID", usuarioId);
-session.getAttribute("SESSION_USUARIO_ROL");
-```
-
-**Las claves del `Model` NO llevan este prefijo.** Solo aplica a `HttpSession`.
-
-### 9.5 Injection
-
-**Controllers**: usar `@Autowired` en campos. No usar constructor injection.
-
-```java
-@Controller
-@RequestMapping("/modulo")
-public class ModuloController {
-
-    @Autowired
-    private MiService service;
-
-    // métodos...
-}
-```
-
-**Services**: constructor injection con `private final`. Sin `@Autowired` en campos.
-
-```java
-@Service
-@Transactional
-public class MiService {
-
-    private final MiRepository repository;
-    private final OtroService otroService;
-
-    public MiService(MiRepository repository, OtroService otroService) {
-        this.repository = repository;
-        this.otroService = otroService;
-    }
-}
-```
-
-### 9.6 Logging
-
-- `log.info(...)` para operaciones de escritura exitosas (registrar ID y entidad).
-- `log.error(...)` para errores en catch blocks.
-- Usar `@Slf4j` de Lombok o `LoggerFactory.getLogger()`.
-
----
-
-## 10. Docker
-
-### 10.1 Servicios
-
-| Servicio | Puerto | Perfil |
+| Usuario | Clave | Rol |
 |---|---|---|
-| `app` | 8080 | Dev: hot-reload, debug remoto 5005. Prod: multi-stage, non-root user |
-| `db` | 5432 | PostgreSQL |
-| `redis` | 6379 | Solo prod |
+| `admin` | `admin` | ADMIN y SYSTEM_CONFIG, las tres direcciones |
+| `director` | `123` | DIRECTOR, Liceo Alpha |
+| `carlos.lopez` | `user1234` | DOCENTE |
+| `rosa.jimenez` | `user1234` | PADRE |
+| `sofia.alpizar` | `user1234` | ESTUDIANTE |
 
-### 10.2 Dockerfiles
+### Prod (`docker-compose.prod.yml`)
 
-- `Dockerfile`: multi-stage build (Maven + JDK → JRE runtime).
-- `Dockerfile.dev`: hot-reload con DevTools + volumen del código fuente + remote debug.
-- `Dockerfile.prod`: multi-stage optimizado, non-root user, healthcheck.
+La app se construye con `Dockerfile` (no hay `Dockerfile.prod`). Publica `${APP_PORT:-8082}:8080`. Postgres está fuera de Compose (`host.docker.internal`). Redis exige clave. El volumen de archivos es `datos_nexa_prod`.
 
-### 10.3 Volúmenes (dev)
+## 10. Mapa de módulos
 
-```yaml
-volumes:
-  - .:/app                    # Código fuente para hot-reload
-  - maven_cache:/root/.m2     # Cache de dependencias Maven
-```
+La columna “quién” resume `SecurityConfig`. El matcher exacto manda sobre esta tabla. “Shell” es quién responde el `GET` de la página.
 
----
+| Ruta | Templates | Shell | Quién entra |
+|---|---|---|---|
+| `/`, `/inicio` | `inicio/` | `MainController` | Autenticado |
+| `/contacto` | `contacto/` | `ContactoController` | Admin, director, docente |
+| `/estudiantes` | `estudiantes/` | `MenuController` + `EstudiantesController` | Lectura: staff. Escritura: admin, director |
+| `/docentes` | `docentes/` | `DocentesController` | Admin, director, docente |
+| `/personal` | `personal/` | `MenuController` + `PersonalController` | Admin, director. Solicitudes: también docente |
+| `/control-de-acceso` | `control-acceso/` | `VisitaController` | Admin, director |
+| `/gestion-academica` | `gestion-academica/` | `MenuController` + asistencia, promedio, historial, componente | Admin, director, docente. Un docente ve sus materias |
+| `/rendimiento-academico` | `rendimiento-academico/` | `RendimientoAcademicoController` | Admin, estudiante, padre |
+| `/notas` | `notas/` | `MenuController` + `NotasController` | Admin, director, docente |
+| `/conducta` | `conducta/` | `ConductaController` | Admin, director, docente |
+| `/classroom` | `classroom/` | `ClassroomController` | GET: también padre. Escritura: admin, director, docente, estudiante. La clase se valida en el service |
+| `/horario` | `horario/` | `HorarioController` | Admin, director, docente, estudiante, padre |
+| `/horario-periferica` | `horario-periferica/` | `HorarioPerifericaController` | Admin, director, docente |
+| `/entregas-academicas` | `entregas-academicas/` | `EntregasAcademicasController` | Staff. Mantenimiento: admin, director |
+| `/agenda` | `agenda/` | `MenuController` + `AgendaController` + `TareaController` | Calendario: todos. Reuniones: staff y padre. Actividad: admin, director. Resto: staff |
+| `/comunicacion` | `comunicacion/` | `ComunicacionController` | Todos los roles |
+| `/comedor` | `comedor/` | `MenuController` | Todos los roles de la comunidad |
+| `/impresiones` | `impresiones/` | `ImpresionesController` | Comunidad. La cola de imprimir: admin, director |
+| `/nube-nexa` | `nube/` | `NubeController` | GET: staff, estudiante, padre. Escritura: staff |
+| `/oficios` | `oficios/` | `OficioController` | Admin, director |
+| `/apelaciones`, `/ampliacion` | `apelaciones/`, `ampliacion/` | `MenuController` | Admin, director, docente |
+| `/coordinacion-academica` | `coordinacion-academica/` | `MenuController` | Admin, director. El sidebar lo muestra solo a admin |
+| `/archivo-graduados` | `archivo/` | `MenuController` | Admin, director |
+| `/archivos` | sin vista: descarga de archivo | `ArchivoController` | Admin, director, docente |
+| `/reportes` | `reportes/` | `MenuController` | Admin, director, docente |
+| `/mis-cursos` | `curso/` | `CursoController` | Admin, director, docente |
+| `/gestion-especial`, `/evaluacion-academica` | su carpeta | `MenuController` | Admin, director, docente. El sidebar los muestra solo a admin |
+| `/configuracion-academica`, `/configuracion-institucional`, `/grupos-por-area` | su carpeta | su controller | Admin, director |
+| `/configuracion`, `/usuarios`, `/seguridad`, `/direcciones` | su carpeta | su controller | SYSTEM_CONFIG |
+| `/configuracion-cuenta` | `configuracion-cuenta/` | `ConfiguracionCuentaController` | SYSTEM_CONFIG |
+| `/perfil` | `perfil/` | `PerfilController` | Autenticado |
+| `/componentes` | `componentes/` | `ComponentesController` | Admin |
+| `/login` | `auth/login.html` | `AuthController` | Público |
 
-## 11. Checklist para nuevos módulos
+`/asistente` es el widget de chat del shell. Su disponibilidad la decide `AsistenteConfiguracionService` y solo se evalúa en la página completa.
 
-Al agregar un nuevo dominio (ej: "Curso"):
+## 11. Checklist de un módulo nuevo
 
-1. **Entity**: `entity/Curso.java` con anotaciones JPA.
-2. **Repository**:
-   - CRUD estándar: extender `JpaRepository<Curso, Long>`.
-   - Alto rendimiento: inyectar `JdbcTemplate`, agregar `RowMapper<T>` y método con `NamedParameterJdbcTemplate` o `SimpleJdbcCall`.
-   - Si usa SP: crear script SQL en `src/main/resources/db/sp_NombreProcedimiento.sql`.
-3. **DTO**: `dto/CursoDTO.java` con validaciones Jakarta. **Solo si aplica** (formularios con campos sensibles, validaciones diferenciadas crear/editar, o necesidad de aplanar relaciones).
-4. **Service**: `service/CursoService.java` con `@Transactional` y CRUD completo.
-   - Cache Redis: `@Cacheable` / `@CacheEvict` (solo prod).
-5. **Controller**: `controller/CursoController.java` con `@RequestMapping("/curso")` y soporte HTMX.
-   - Datos en sesión con prefijo `SESSION_`.
-6. **Templates**: `templates/curso/index.html` (decorador + tabla + Alpine.js + modal container) y `templates/curso/formulario.html` (modal).
-7. **Sidebar**: Agregar link en `layout/sidebar.html` con HTMX.
-8. **Verificar**: `mvn compile`.
+1. Entidad en `entity/`, si hay tabla nueva. Repository Spring Data en `repository/`.
+2. SQL idempotente en `docker/migraciones/` para prod. En dev, Hibernate aplica el cambio al arrancar.
+3. Service con constructor, `@Transactional(rollbackFor = Exception.class)` en la escritura y `readOnly` en la lectura. Filtra por `SESSION_DIRECCION_ID`. Si falta, `DireccionNoSeleccionadaException`.
+4. DTO solo en los casos de la sección 2.
+5. Controller `@Controller` con `@Autowired`. El `GET` de la página distingue `HX-Request`. Tabs y modales devuelven `:: content` o `:: form-content`.
+6. `requestMatchers` en `SecurityConfig` antes de `anyRequest`, con `hasAnyAuthority` y el rol completo.
+7. Templates como en la sección 6, copiando una página del mismo tipo (`personal/index.html` si tiene tabs). Título OOB incluido.
+8. Ítem en `layout/sidebar.html` con `sec:authorize` y `x-show="ve(...)"`, más `hx-push-url="true"`.
+9. `./mvnw compile`. Si el cambio es de service, un test Mockito al lado de los que ya están en `src/test/java/com/chavescr/nexa/service/`.
+
+## 12. Pruebas
+
+Los tests de service usan `@ExtendWith(MockitoExtension.class)` y no levantan Spring ni Postgres.
+
+`ProyectoApplicationTests`, `EntregasAcademicasFlujoTest` y `TareaDetalleFlujoTest` son `@SpringBootTest`. Necesitan el Postgres de dev en `localhost:5433`. En ese arranque corre `DataInitializer` contra esa base. `./mvnw test` ejecuta ambos grupos. El plugin hace fork de la JVM de test.
