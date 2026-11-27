@@ -18,6 +18,24 @@
         #institucional-escala-notas-panel .rebaja-inactiva .form-input {
             opacity: 0.55;
         }
+        #institucional-escala-notas-panel .rebaja-ajuste td {
+            background: #f8fafc;
+            border-top: 1px dashed var(--border);
+        }
+        #institucional-escala-notas-panel .rebaja-ajuste label {
+            display: block;
+            margin: 0;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        #institucional-escala-notas-panel .rebaja-ajuste-ayuda {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            white-space: normal;
+        }
         #institucional-escala-notas-panel .rebaja-reemplazada {
             display: block;
             margin-top: 2px;
@@ -315,6 +333,8 @@
         <input type="hidden" name="notaAprobacion" :value="notaAprobacion">
         <input type="hidden" name="tramos" :value="tramosJson">
         <input type="hidden" name="rebajas" :value="reglasJson">
+        <input type="hidden" name="justificadasPorAusencia" :value="justificadasPorAusencia"
+               th:value="${rebajaConducta.justificadasPorAusencia}">
 
         <section class="card" aria-labelledby="escala-titulo">
             <div class="card-header">
@@ -478,28 +498,6 @@
                                 th:selected="${rebajaConducta.destinoRebajaAsistencia != null and rebajaConducta.destinoRebajaAsistencia.name() == 'CONDUCTA'}">El total de la conducta</option>
                     </select>
                 </div>
-                <!-- Aplica en los dos modos: con valores propios los grupos entran a la regla de ausencia injustificada. -->
-                <div class="form-group">
-                    <label class="form-label" for="asistencia-justificadas">Ausencias justificadas que forman una injustificada</label>
-                    <div class="rebaja-cantidad">
-                        <input class="form-input escala-input-num" type="number" inputmode="numeric"
-                               id="asistencia-justificadas" name="justificadasPorAusencia"
-                               min="0" max="30" step="1" required
-                               x-model.number="justificadasPorAusencia" @change="normalizarJustificadas()" @wheel.prevent
-                               aria-describedby="asistencia-justificadas-ayuda"
-                               th:value="${rebajaConducta.justificadasPorAusencia}">
-                        <span x-text="Number(justificadasPorAusencia) === 1 ? 'ausencia' : 'ausencias'">ausencias</span>
-                    </div>
-                    <small class="academic-help" id="asistencia-justificadas-ayuda"
-                           x-text="Number(justificadasPorAusencia) > 0
-                               ? (Number(justificadasPorAusencia) === 1
-                                   ? 'Cada ausencia justificada cuenta como una injustificada.'
-                                   : 'Cada ' + justificadasPorAusencia + ' ausencias justificadas suman una injustificada; las que no completan el grupo no cuentan.')
-                                 + (modoAsistencia === 'PERSONALIZADO' ? ' Entran a la regla de «Ausencia injustificada».' : '')
-                               : (modoAsistencia === 'REGLAMENTO_MEP'
-                                   ? '0 = no cuentan, como indica el reglamento.'
-                                   : '0 = las ausencias justificadas siguen su propia regla en la tabla.')">0 = no cuentan, como indica el reglamento.</small>
-                </div>
             </div>
 
             <div x-show="modoAsistencia === 'REGLAMENTO_MEP'">
@@ -521,6 +519,23 @@
                                 <td th:text="${t.nota()}">100</td>
                             </tr>
                         </tbody>
+                        <tfoot>
+                            <tr class="rebaja-ajuste">
+                                <td>
+                                    <label for="asistencia-justificadas-mep">Ausencias justificadas que forman una injustificada</label>
+                                    <small class="rebaja-ajuste-ayuda" x-text="ayudaJustificadas()"></small>
+                                </td>
+                                <td colspan="2">
+                                    <div class="rebaja-cantidad">
+                                        <input class="form-input escala-input-num" type="number" inputmode="numeric"
+                                               id="asistencia-justificadas-mep" min="0" max="30" step="1" required
+                                               x-model.number="justificadasPorAusencia" @change="normalizarJustificadas()" @wheel.prevent
+                                               th:value="${rebajaConducta.justificadasPorAusencia}">
+                                        <span x-text="Number(justificadasPorAusencia) === 1 ? 'ausencia' : 'ausencias'">ausencias</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
                 <p class="asistencia-nota">
@@ -539,13 +554,36 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="fila in rebajasAsistencia" :key="fila.id">
-                                <tr :class="{ 'rebaja-inactiva': reemplazadaPorJustificadas(fila) }">
+                            <!-- filasAsistencia mete la fila del ajuste ('ajuste-justificadas') después de "Ausencia justificada".
+                                 Las celdas van con x-if para que el campo del ajuste exista solo en esa fila. -->
+                            <template x-for="fila in filasAsistencia" :key="fila.id">
+                                <tr :class="{ 'rebaja-inactiva': reemplazadaPorJustificadas(fila), 'rebaja-ajuste': esAjuste(fila) }">
                                     <td style="font-weight: 500;">
-                                        <span x-text="fila.nombre"></span>
-                                        <small class="rebaja-reemplazada" x-show="reemplazadaPorJustificadas(fila)"
-                                               x-text="'No aplica: cada ' + justificadasPorAusencia + (Number(justificadasPorAusencia) === 1 ? ' cuenta' : ' cuentan') + ' como una ausencia injustificada.'"></small>
+                                        <template x-if="esAjuste(fila)">
+                                            <div>
+                                                <label for="asistencia-justificadas">Ausencias justificadas que forman una injustificada</label>
+                                                <small class="rebaja-ajuste-ayuda" x-text="ayudaJustificadas()"></small>
+                                            </div>
+                                        </template>
+                                        <template x-if="!esAjuste(fila)">
+                                            <div>
+                                                <span x-text="fila.nombre"></span>
+                                                <small class="rebaja-reemplazada" x-show="reemplazadaPorJustificadas(fila)"
+                                                       x-text="'No aplica: cada ' + justificadasPorAusencia + (Number(justificadasPorAusencia) === 1 ? ' cuenta' : ' cuentan') + ' como una ausencia injustificada.'"></small>
+                                            </div>
+                                        </template>
                                     </td>
+                                    <template x-if="esAjuste(fila)">
+                                    <td colspan="2">
+                                        <div class="rebaja-cantidad">
+                                            <input class="form-input escala-input-num" type="number" inputmode="numeric"
+                                                   id="asistencia-justificadas" min="0" max="30" step="1" required
+                                                   x-model.number="justificadasPorAusencia" @change="normalizarJustificadas()" @wheel.prevent>
+                                            <span x-text="Number(justificadasPorAusencia) === 1 ? 'ausencia' : 'ausencias'">ausencias</span>
+                                        </div>
+                                    </td>
+                                    </template>
+                                    <template x-if="!esAjuste(fila)">
                                     <td>
                                         <div class="rebaja-cantidad">
                                             <input class="form-input escala-input-num" type="number" inputmode="numeric"
@@ -556,6 +594,8 @@
                                             <span x-text="unidadDe(fila)"></span>
                                         </div>
                                     </td>
+                                    </template>
+                                    <template x-if="!esAjuste(fila)">
                                     <td>
                                         <div class="rebaja-cantidad">
                                             <input class="form-input escala-input-num" type="number" inputmode="numeric"
@@ -566,6 +606,7 @@
                                             <span x-text="Number(fila.puntos) === 1 ? 'punto' : 'puntos'"></span>
                                         </div>
                                     </td>
+                                    </template>
                                 </tr>
                             </template>
                         </tbody>
@@ -950,6 +991,33 @@
                 // Asistencia (solo con valores propios). El servidor guarda la lista completa de reglas.
                 get rebajasConducta() {
                     return this.rebajas.filter(function (fila) { return fila.id === 'llamada'; });
+                },
+                // Reglas de asistencia con la fila del ajuste de justificadas justo después de "Ausencia justificada",
+                // la regla que reemplaza cuando es mayor que 0.
+                get filasAsistencia() {
+                    const filas = [];
+                    this.rebajasAsistencia.forEach(function (fila) {
+                        filas.push(fila);
+                        if (fila.id === 'ausencia-justificada') {
+                            filas.push({ id: 'ajuste-justificadas' });
+                        }
+                    });
+                    return filas;
+                },
+                esAjuste: function (fila) {
+                    return fila.id === 'ajuste-justificadas';
+                },
+                ayudaJustificadas: function () {
+                    const n = Number(this.justificadasPorAusencia);
+                    if (n > 0) {
+                        return (n === 1
+                            ? 'Cada ausencia justificada cuenta como una injustificada.'
+                            : 'Cada ' + n + ' ausencias justificadas suman una injustificada; las que no completan el grupo no cuentan.')
+                            + (this.modoAsistencia === 'PERSONALIZADO' ? ' Entran a la regla de «Ausencia injustificada».' : '');
+                    }
+                    return this.modoAsistencia === 'REGLAMENTO_MEP'
+                        ? '0 = no cuentan, como indica el reglamento.'
+                        : '0 = las ausencias justificadas siguen su propia regla.';
                 },
                 get rebajasAsistencia() {
                     return this.rebajas.filter(function (fila) { return fila.id !== 'llamada'; });

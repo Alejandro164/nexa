@@ -167,4 +167,30 @@ public class NombresRubros {
     public String getEmojiAsistencia() {
         return emojiAsistencia;
     }
+
+    // Etiquetas para encabezados: emoji propio del componente (o el predeterminado) y nombre del rubro.
+
+    public String getEtiquetaCotidiano() {
+        return unir(emojiCotidiano, EMOJI_COTIDIANO, cotidiano);
+    }
+
+    public String getEtiquetaTareas() {
+        return unir(emojiTareas, EMOJI_TAREAS, tareas);
+    }
+
+    public String getEtiquetaProyecto() {
+        return unir(emojiProyecto, EMOJI_PROYECTO, proyecto);
+    }
+
+    public String getEtiquetaPruebas() {
+        return unir(emojiPruebas, EMOJI_PRUEBAS, pruebas);
+    }
+
+    public String getEtiquetaAsistencia() {
+        return unir(emojiAsistencia, EMOJI_ASISTENCIA, asistencia);
+    }
+
+    private static String unir(String emoji, String emojiPredeterminado, String nombre) {
+        return (emoji != null ? emoji : emojiPredeterminado) + " " + nombre;
+    }
 }
