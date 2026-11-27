@@ -60,13 +60,14 @@
                             <div class="est-lookup-row" style="margin-top:0;">
                                 <input type="text" class="est-min-input" maxlength="30" placeholder="Ej. 1-2345-6789"
                                        x-model="nuevoPadre.cedula"
-                                       @input="if (padreEstado === 'encontrado-local') { padreEstado = 'inicial'; padreEncontrado = null; }"
+                                       @input="padreAviso = ''; if (padreEstado === 'encontrado-local') { padreEstado = 'inicial'; padreEncontrado = null; }"
                                        @keydown.enter.prevent="buscarPadrePorCedula()">
                                 <button type="button" class="est-btn-outline"
                                         :disabled="padreEstado === 'buscando'"
                                         @click="buscarPadrePorCedula()"
                                         x-text="padreEstado === 'buscando' ? 'Buscando...' : 'Buscar'">Buscar</button>
                             </div>
+                            <p x-show="padreAviso" x-cloak class="est-min-hint" style="margin:6px 0 0;" x-text="padreAviso"></p>
                         </div>
 
                         <div class="est-detail-span-2"
@@ -83,22 +84,22 @@
                         <div class="est-min-field est-detail-span-2">
                             <label class="est-min-label">Nombre completo *</label>
                             <input class="est-min-input" type="text" maxlength="100" placeholder="Ej. Laura Soto Monge"
-                                   x-model="nuevoPadre.nombre">
+                                   x-model="nuevoPadre.nombre" @input="padreError = ''">
                         </div>
                         <div class="est-min-field est-detail-span-2">
                             <label class="est-min-label">Correo electrónico *</label>
                             <input class="est-min-input" type="email" maxlength="150" placeholder="correo@ejemplo.com"
-                                   x-model="nuevoPadre.email">
+                                   x-model="nuevoPadre.email" @input="padreError = ''">
                         </div>
                         <div class="est-min-field">
                             <label class="est-min-label">Usuario *</label>
                             <input class="est-min-input" type="text" maxlength="60" placeholder="ej. laura.soto"
-                                   x-model="nuevoPadre.usuario">
+                                   x-model="nuevoPadre.usuario" @input="padreError = ''">
                         </div>
                         <div class="est-min-field">
                             <label class="est-min-label">Contraseña *</label>
                             <input class="est-min-input" type="password" placeholder="Contraseña inicial"
-                                   x-model="nuevoPadre.password">
+                                   x-model="nuevoPadre.password" @input="padreError = ''">
                         </div>
                     </div>
 

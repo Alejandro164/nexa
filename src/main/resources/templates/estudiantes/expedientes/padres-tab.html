@@ -5,6 +5,7 @@
          padreEncontradoId: null,
          padreEncontradoNombre: '',
          padreEncontradoEmail: '',
+         avisoBusqueda: '',
          nombre: '',
          cedula: '',
          email: '',
@@ -15,6 +16,7 @@
              this.padreEncontradoId = null;
              this.padreEncontradoNombre = '';
              this.padreEncontradoEmail = '';
+             this.avisoBusqueda = '';
              this.nombre = '';
              this.cedula = '';
              this.email = '';
@@ -24,10 +26,12 @@
          },
          cerrarModal() {
              this.modalPadreAbierto = false;
+             this.avisoBusqueda = '';
          },
          buscar() {
              const cedula = this.cedula.trim();
              this.padreEncontradoId = null;
+             this.avisoBusqueda = '';
              if (!cedula) { this.estado = 'inicial'; return; }
              this.estado = 'buscando';
              fetch('/estudiantes/buscar-padre?cedula=' + encodeURIComponent(cedula))
@@ -45,10 +49,15 @@
                          .then(h => {
                              if (h.encontrado && h.nombre) {
                                  this.nombre = h.nombre;
+                             } else {
+                                 this.avisoBusqueda = 'No se encontró la cédula registrada. Ingresa el nombre manualmente.';
                              }
                              this.estado = 'inicial';
                          })
-                         .catch(() => { this.estado = 'inicial'; });
+                         .catch(() => {
+                             this.avisoBusqueda = 'No se encontró la cédula registrada. Ingresa el nombre manualmente.';
+                             this.estado = 'inicial';
+                         });
                  })
                  .catch(() => { this.estado = 'error'; });
          }
@@ -136,13 +145,14 @@
                                     <input class="est-min-input" type="text" name="cedula" maxlength="30"
                                            placeholder="Ej. 1-2345-6789"
                                            x-model="cedula"
-                                           @input="if (estado === 'encontrado-local') { estado = 'inicial'; padreEncontradoId = null; }"
+                                           @input="avisoBusqueda = ''; if (estado === 'encontrado-local') { estado = 'inicial'; padreEncontradoId = null; }"
                                            @keydown.enter.prevent="buscar()">
                                     <button type="button" class="est-btn-outline"
                                             :disabled="estado === 'buscando'"
                                             @click="buscar()"
                                             x-text="estado === 'buscando' ? 'Buscando...' : 'Buscar'">Buscar</button>
                                 </div>
+                                <p x-show="avisoBusqueda" x-cloak class="est-min-hint" style="margin:6px 0 0;" x-text="avisoBusqueda"></p>
                             </div>
                             <div class="est-min-field est-detail-span-2">
                                 <label class="est-min-label">Nombre completo *</label>
