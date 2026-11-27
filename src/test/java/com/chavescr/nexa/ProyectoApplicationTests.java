@@ -305,9 +305,12 @@ class ProyectoApplicationTests {
 		assertTrue(tabla.contains("III Ciclo — Básicas"));
 		assertTrue(tabla.contains("Art. 41 a)"));
 		assertTrue(tabla.contains(">45%<"));
-		assertTrue(tabla.contains(">—<"));
+		// Proyecto vale 0% en este componente: su columna no aparece.
+		assertFalse(tabla.contains("🎯 Proyecto"));
+		assertTrue(tabla.contains(">📋 Pruebas<"));
 		assertTrue(tabla.contains(">100%<"));
-		assertTrue(tabla.contains(">18<"));
+		assertTrue(tabla.contains(">18 materias<"));
+		assertTrue(tabla.contains(">📝 Cotidiano<"));
 		assertFalse(tabla.contains("rebajan la conducta"));
 
 		String formulario = templateEngine.process("configuracion-institucional/componentes/formulario", context);
@@ -340,8 +343,10 @@ class ProyectoApplicationTests {
 		context.setVariable("asistenciaCuenta", true);
 
 		String tabla = templateEngine.process("configuracion-institucional/componentes/componentes", context);
-		assertTrue(tabla.contains(">Exámenes<"));
-		assertTrue(tabla.contains(">Pruebas<"));
+		// Cada componente tiene su tabla: el nombre propio es el encabezado de la columna, no una nota bajo el porcentaje.
+		assertTrue(tabla.contains("class=\"es-propio\">📋 Exámenes</th>"));
+		assertTrue(tabla.contains("<th>Total</th>"));
+		assertFalse(tabla.contains(">📋 Pruebas<"));
 
 		String formulario = templateEngine.process("configuracion-institucional/componentes/formulario", context);
 		assertTrue(formulario.contains("name=\"nombrePruebas\""));
@@ -350,7 +355,7 @@ class ProyectoApplicationTests {
 
 		componente.setEmojiPruebas("🧪");
 		String conEmoji = templateEngine.process("configuracion-institucional/componentes/componentes", context);
-		assertTrue(conEmoji.contains(">🧪 Exámenes<"));
+		assertTrue(conEmoji.contains("class=\"es-propio\">🧪 Exámenes</th>"));
 		String formularioEmoji = templateEngine.process("configuracion-institucional/componentes/formulario", context);
 		assertTrue(formularioEmoji.contains("name=\"emojiPruebas\""));
 		assertTrue(formularioEmoji.contains("data-emoji=\"🧪\""));

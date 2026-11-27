@@ -1,13 +1,34 @@
 <div th:fragment="content" id="institucional-componentes-panel" xmlns:th="http://www.thymeleaf.org">
     <style>
-        .comp-eval-table td.comp-eval-num,
-        .comp-eval-table th.comp-eval-num {
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-            white-space: nowrap;
+        .comp-eval-lista {
+            display: grid;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
         }
-        .comp-eval-table .comp-eval-total {
-            font-weight: 700;
+        .comp-eval-bloque {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .comp-eval-bloque.is-inactivo {
+            background: #f8fafc;
+        }
+        .comp-eval-cabecera {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem 1rem;
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .comp-eval-titulo {
+            min-width: 0;
+        }
+        .comp-eval-titulo strong {
+            font-size: 0.95rem;
+            color: var(--text-primary);
         }
         .comp-eval-detalle {
             display: block;
@@ -15,13 +36,44 @@
             font-size: 0.78rem;
             color: var(--text-secondary);
         }
-        .comp-eval-alias {
-            display: block;
-            margin-top: 2px;
-            font-size: 0.72rem;
-            font-weight: 600;
+        .comp-eval-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .comp-eval-table {
+            margin: 0;
+        }
+        .comp-eval-table th,
+        .comp-eval-table td {
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        /* Los encabezados son los nombres que eligió el componente: se respetan tal cual (sin mayúsculas). */
+        #institucional-componentes-panel .comp-eval-table th {
+            white-space: nowrap;
+            text-transform: none;
+            letter-spacing: normal;
+            font-size: 0.82rem;
+        }
+        #institucional-componentes-panel .comp-eval-table th.es-propio {
             color: var(--primary);
-            white-space: normal;
+            font-weight: 700;
+        }
+        .comp-eval-table td {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .comp-eval-table .comp-eval-total {
+            font-weight: 800;
+        }
+        .comp-eval-vacio {
+            padding: 2rem 1.5rem;
+            text-align: center;
+            color: var(--text-secondary);
         }
         .comp-eval-nota {
             display: flex;
@@ -52,84 +104,76 @@
                     hx-target="#modal-container"
                     onclick="abrirModalInstitucional()">+ Nuevo componente</button>
         </div>
-        <div class="table-container">
-            <table class="table comp-eval-table">
-                <thead>
-                    <tr>
-                        <th>Componente</th>
-                        <th class="comp-eval-num">Cotidiano</th>
-                        <th class="comp-eval-num">Tareas</th>
-                        <th class="comp-eval-num">Proyecto</th>
-                        <th class="comp-eval-num">Pruebas</th>
-                        <th class="comp-eval-num">Asistencia</th>
-                        <th class="comp-eval-num">Total</th>
-                        <th class="comp-eval-num">Materias</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:if="${componentesEvaluacion == null or componentesEvaluacion.empty}">
-                        <td colspan="10" class="table-empty">No hay componentes registrados.</td>
-                    </tr>
-                    <tr th:each="c : ${componentesEvaluacion}"
-                        th:with="materias=${materiasPorComponente.get(c.id) ?: 0}">
-                        <td>
-                            <strong th:text="${c.nombre}">General</strong>
-                            <span class="comp-eval-detalle" th:if="${c.descripcion != null}" th:text="${c.descripcion}">Art. 41 a)</span>
-                        </td>
-                        <td class="comp-eval-num">
-                            <span th:text="${c.cotidiano > 0 ? c.cotidiano + '%' : '—'}">0%</span>
-                            <span class="comp-eval-alias" th:if="${c.nombreCotidiano != null or c.emojiCotidiano != null}"
-                                  th:text="${(c.emojiCotidiano != null ? c.emojiCotidiano + ' ' : '') + c.nombresRubros.cotidiano}">Alias</span>
-                        </td>
-                        <td class="comp-eval-num">
-                            <span th:text="${c.tareas > 0 ? c.tareas + '%' : '—'}">0%</span>
-                            <span class="comp-eval-alias" th:if="${c.nombreTareas != null or c.emojiTareas != null}"
-                                  th:text="${(c.emojiTareas != null ? c.emojiTareas + ' ' : '') + c.nombresRubros.tareas}">Alias</span>
-                        </td>
-                        <td class="comp-eval-num">
-                            <span th:text="${c.proyecto > 0 ? c.proyecto + '%' : '—'}">0%</span>
-                            <span class="comp-eval-alias" th:if="${c.nombreProyecto != null or c.emojiProyecto != null}"
-                                  th:text="${(c.emojiProyecto != null ? c.emojiProyecto + ' ' : '') + c.nombresRubros.proyecto}">Alias</span>
-                        </td>
-                        <td class="comp-eval-num">
-                            <span th:text="${c.pruebas > 0 ? c.pruebas + '%' : '—'}">0%</span>
-                            <span class="comp-eval-alias" th:if="${c.nombrePruebas != null or c.emojiPruebas != null}"
-                                  th:text="${(c.emojiPruebas != null ? c.emojiPruebas + ' ' : '') + c.nombresRubros.pruebas}">Alias</span>
-                        </td>
-                        <td class="comp-eval-num">
-                            <span th:text="${c.asistencia > 0 ? c.asistencia + '%' : '—'}">0%</span>
-                            <span class="comp-eval-alias" th:if="${c.nombreAsistencia != null or c.emojiAsistencia != null}"
-                                  th:text="${(c.emojiAsistencia != null ? c.emojiAsistencia + ' ' : '') + c.nombresRubros.asistencia}">Alias</span>
-                        </td>
-                        <td class="comp-eval-num comp-eval-total" th:text="${c.total + '%'}">100%</td>
-                        <td class="comp-eval-num" th:text="${materias}">0</td>
-                        <td>
-                            <span th:if="${c.activo}" class="badge badge-success">Activo</span>
-                            <span th:unless="${c.activo}" class="badge badge-secondary">Inactivo</span>
-                        </td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="btn-xs btn-ghost"
-                                        th:attr="hx-get=|/configuracion-institucional/componentes/form/${c.id}|"
-                                        hx-target="#modal-container"
-                                        onclick="abrirModalInstitucional()"
-                                        title="Editar">✏️</button>
-                                <button type="button" class="btn-xs btn-danger-ghost"
-                                        th:attr="data-delete-url=|/configuracion-institucional/componentes/${c.id}|,
-                                                 data-delete-message=|¿Deseas eliminar el componente ${c.nombre}? Solo se puede eliminar si ninguna materia lo usa.|"
-                                        data-delete-title="Eliminar componente"
-                                        data-delete-target="#institucional-componentes-panel"
-                                        data-delete-swap="outerHTML"
-                                        onclick="abrirConfirmacionAcademica(this)"
-                                        title="Eliminar">🗑️</button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+
+        <div th:if="${componentesEvaluacion == null or componentesEvaluacion.empty}" class="comp-eval-vacio">
+            No hay componentes registrados.
         </div>
+
+        <!-- Una tabla por componente: una columna por rubro con porcentaje (los de 0% no van), con el emoji y el nombre que ese componente les dio. -->
+        <div class="comp-eval-lista" th:unless="${componentesEvaluacion == null or componentesEvaluacion.empty}">
+            <section th:each="c : ${componentesEvaluacion}" class="comp-eval-bloque"
+                     th:classappend="${c.activo ? '' : 'is-inactivo'}"
+                     th:with="materias=${materiasPorComponente.get(c.id) ?: 0}, n=${c.nombresRubros}"
+                     th:attr="aria-label=${'Componente ' + c.nombre}">
+                <div class="comp-eval-cabecera">
+                    <div class="comp-eval-titulo">
+                        <strong th:text="${c.nombre}">General</strong>
+                        <span class="comp-eval-detalle" th:if="${c.descripcion != null}" th:text="${c.descripcion}">Art. 41 a)</span>
+                    </div>
+                    <div class="comp-eval-meta">
+                        <span th:text="${materias == 1 ? '1 materia' : materias + ' materias'}">0 materias</span>
+                        <span th:if="${c.activo}" class="badge badge-success">Activo</span>
+                        <span th:unless="${c.activo}" class="badge badge-secondary">Inactivo</span>
+                        <div class="table-actions">
+                            <button class="btn-xs btn-ghost"
+                                    th:attr="hx-get=|/configuracion-institucional/componentes/form/${c.id}|,aria-label=${'Editar ' + c.nombre}"
+                                    hx-target="#modal-container"
+                                    onclick="abrirModalInstitucional()"
+                                    title="Editar">✏️</button>
+                            <button type="button" class="btn-xs btn-danger-ghost"
+                                    th:attr="data-delete-url=|/configuracion-institucional/componentes/${c.id}|,
+                                             data-delete-message=|¿Deseas eliminar el componente ${c.nombre}? Solo se puede eliminar si ninguna materia lo usa.|,
+                                             aria-label=${'Eliminar ' + c.nombre}"
+                                    data-delete-title="Eliminar componente"
+                                    data-delete-target="#institucional-componentes-panel"
+                                    data-delete-swap="outerHTML"
+                                    onclick="abrirConfirmacionAcademica(this)"
+                                    title="Eliminar">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="table comp-eval-table">
+                        <thead>
+                            <tr>
+                                <th th:if="${c.cotidiano > 0}" th:classappend="${c.nombreCotidiano != null or c.emojiCotidiano != null ? 'es-propio' : ''}"
+                                    th:text="${n.etiquetaCotidiano}">📝 Cotidiano</th>
+                                <th th:if="${c.tareas > 0}" th:classappend="${c.nombreTareas != null or c.emojiTareas != null ? 'es-propio' : ''}"
+                                    th:text="${n.etiquetaTareas}">📚 Tareas</th>
+                                <th th:if="${c.proyecto > 0}" th:classappend="${c.nombreProyecto != null or c.emojiProyecto != null ? 'es-propio' : ''}"
+                                    th:text="${n.etiquetaProyecto}">🎯 Proyecto</th>
+                                <th th:if="${c.pruebas > 0}" th:classappend="${c.nombrePruebas != null or c.emojiPruebas != null ? 'es-propio' : ''}"
+                                    th:text="${n.etiquetaPruebas}">📋 Pruebas</th>
+                                <th th:if="${c.asistencia > 0}" th:classappend="${c.nombreAsistencia != null or c.emojiAsistencia != null ? 'es-propio' : ''}"
+                                    th:text="${n.etiquetaAsistencia}">📅 Asistencia</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td th:if="${c.cotidiano > 0}" th:text="${c.cotidiano + '%'}">40%</td>
+                                <td th:if="${c.tareas > 0}" th:text="${c.tareas + '%'}">15%</td>
+                                <td th:if="${c.proyecto > 0}" th:text="${c.proyecto + '%'}">20%</td>
+                                <td th:if="${c.pruebas > 0}" th:text="${c.pruebas + '%'}">20%</td>
+                                <td th:if="${c.asistencia > 0}" th:text="${c.asistencia + '%'}">5%</td>
+                                <td class="comp-eval-total" th:text="${c.total + '%'}">100%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
         <div class="comp-eval-nota">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -137,8 +181,8 @@
             </svg>
             <span>
                 Porcentajes precargados según los artículos 40 y 41 del Reglamento de Evaluación de los Aprendizajes.
-                Un rubro con «—» no forma parte de la nota de ese componente. Debajo del porcentaje se ve el emoji o el nombre
-                propio que el componente le dio al rubro, si los cambió.
+                Cada tabla muestra solo los rubros que forman parte de la nota de ese componente (los de 0% no aparecen). Los encabezados muestran el emoji y el nombre
+                que cada componente les dio a sus rubros; los que cambió se ven en azul y en negrita.
                 <th:block th:unless="${asistenciaCuenta}">En esta dirección las ausencias y tardías rebajan la conducta, así que la asistencia no entra en la nota: su porcentaje se reparte entre los demás rubros.</th:block>
             </span>
         </div>
